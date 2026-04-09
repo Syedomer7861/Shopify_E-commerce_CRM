@@ -4,8 +4,10 @@ const nextConfig = {
     serverActions: { allowedOrigins: ["*"] }
   },
   images: {
-    domains: ["cdn.shopify.com"],
-  },
+  remotePatterns: [
+    { protocol: 'https', hostname: 'example.com' }
+  ]
+},
 };
 
 module.exports = nextConfig;

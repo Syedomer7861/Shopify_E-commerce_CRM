@@ -5,12 +5,14 @@ function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 }
 
-// PATCH /api/tasks/[id]/complete
-export async function PATCH(req: NextRequest, { params }: { params: { id: string; action: string } }) {
+// PATCH /api/tasks/[id]/[action]
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string; action: string }> }
+) {
   const supabase = getSupabase();
   const body = await req.json();
-  const { id } = params;
-  const action = req.nextUrl.pathname.split("/").pop(); // complete | reschedule | skip
+  const { id, action } = await params; // ✅ await params (Next.js 15)
 
   if (action === "complete") {
     const now = new Date().toISOString();
@@ -18,10 +20,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const { data: task } = await supabase.from("tasks").select("customer_id").eq("id", id).single();
     if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
-    // Update task
     await supabase.from("tasks").update({ status: "done", completed_at: now }).eq("id", id);
 
-    // Insert call log
     await supabase.from("call_logs").insert({
       task_id: id,
       customer_id: task.customer_id,
