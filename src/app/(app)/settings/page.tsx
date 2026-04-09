@@ -20,6 +20,9 @@ export default function SettingsPage() {
     inactive_threshold_days: 45,
     whatsapp_enabled: false,
     whatsapp_bridge_url: "http://localhost:3001",
+    whatsapp_provider: "local",
+    ultramsg_instance_id: "",
+    ultramsg_token: "",
     whatsapp_review_template: "",
     whatsapp_reorder_template: "",
     whatsapp_recovery_template: "",
@@ -55,8 +58,11 @@ export default function SettingsPage() {
   const supabase = createClient();
 
   const fetchStatus = async () => {
-    try {
-      const res = await fetch("/api/whatsapp/status");
+      const { data: settings } = await supabase.from("settings").select("*").single();
+      const provider = settings?.whatsapp_provider || "local";
+      
+      const endpoint = provider === "cloud" ? "/api/whatsapp/cloud-status" : "/api/whatsapp/status";
+      const res = await fetch(endpoint);
       const data = await res.json();
       setWaStatus(data);
     } catch (err) {
@@ -497,93 +503,153 @@ export default function SettingsPage() {
       {/* WHATSAPP */}
       {tab === "notifications" && (
         <div className="space-y-5">
-          <div className="card p-5">
-            <div className="flex items-center justify-between py-3 border-b border-gray-50">
-              <div>
-                <div className="text-sm font-medium text-forest">WhatsApp Automation</div>
-                <div className="text-xs text-gray-400 mt-0.5">Enable sending messages via the local WhatsApp bridge</div>
-              </div>
-              <button onClick={() => setSettings({ ...settings, whatsapp_enabled: !settings.whatsapp_enabled })}>
-                {settings.whatsapp_enabled ? <ToggleRight className="w-8 h-8 text-forest" /> : <ToggleLeft className="w-8 h-8 text-gray-300" />}
+            <div className="flex items-center gap-4 mb-6 p-1 bg-gray-50 rounded-xl border border-gray-100">
+              <button 
+                onClick={() => setSettings({ ...settings, whatsapp_provider: "local" })}
+                className={cn("flex-1 py-2 px-4 rounded-lg text-xs font-bold transition-all", 
+                  settings.whatsapp_provider === "local" ? "bg-white text-forest shadow-sm" : "text-gray-400 hover:text-gray-600"
+                )}
+              >
+                Local Bridge (Local PC)
+              </button>
+              <button 
+                onClick={() => setSettings({ ...settings, whatsapp_provider: "cloud" })}
+                className={cn("flex-1 py-2 px-4 rounded-lg text-xs font-bold transition-all", 
+                  settings.whatsapp_provider === "cloud" ? "bg-white text-forest shadow-sm" : "text-gray-400 hover:text-gray-600"
+                )}
+              >
+                Cloud Instance (Scan & Go)
               </button>
             </div>
 
-            <div className={cn("space-y-4 pt-4 transition-all", !settings.whatsapp_enabled && "opacity-40 pointer-events-none")}>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between px-1">
-                  <label className="text-xs font-bold text-gray-700">WhatsApp Bridge URL</label>
-                  {typeof window !== "undefined" && window.location.hostname !== "localhost" && settings.whatsapp_bridge_url?.includes("localhost") && (
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-rose-50 text-rose-600 rounded-md border border-rose-100 animate-pulse">
-                      <ShieldCheck className="w-3 h-3" />
-                      <span className="text-[10px] font-bold">Cloud-to-Local Warning</span>
+            <div className={cn("space-y-4 transition-all", !settings.whatsapp_enabled && "opacity-40 pointer-events-none")}>
+              
+              {settings.whatsapp_provider === "local" ? (
+                <>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between px-1">
+                      <label className="text-xs font-bold text-gray-700">WhatsApp Bridge URL</label>
+                      {typeof window !== "undefined" && window.location.hostname !== "localhost" && settings.whatsapp_bridge_url?.includes("localhost") && (
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-rose-50 text-rose-600 rounded-md border border-rose-100 animate-pulse">
+                          <ShieldCheck className="w-3 h-3" />
+                          <span className="text-[10px] font-bold">Cloud-to-Local Warning</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-forest transition-colors">
+                        <Database className="w-4 h-4" />
+                      </div>
+                      <input 
+                        type="text" 
+                        value={settings.whatsapp_bridge_url || ""} 
+                        onChange={e => setSettings({ ...settings, whatsapp_bridge_url: e.target.value })}
+                        placeholder="http://localhost:3001"
+                        className="input pl-10 font-mono text-xs h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-all shadow-sm" 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Cloud connectivity guide */}
+                  {typeof window !== "undefined" && window.location.hostname !== "localhost" && (
+                    <div className="bg-forest rounded-2xl p-5 border border-white/10 shadow-xl relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-lime/10 rounded-full blur-2xl group-hover:bg-lime/20 transition-all" />
+                      <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-10 h-10 rounded-xl bg-lime/10 flex items-center justify-center border border-lime/20">
+                            <ShieldCheck className="w-5 h-5 text-lime" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-white">Tunnel Required for Local Bridge</h4>
+                            <p className="text-[10px] text-white/40">Bridge the gap between Vercel and your local machine</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <p className="text-xs text-white/60 leading-relaxed">
+                            Since your CRM is live on Vercel, it cannot reach your <code className="text-lime px-1 rounded">localhost</code>. 
+                            Use the **Cloud Instance** option to skip this setup entirely.
+                          </p>
+
+                          <div className="grid grid-cols-1 gap-3">
+                            <div className="bg-black/40 rounded-xl p-3 border border-white/5">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-[9px] font-bold text-white/30 tracking-widest uppercase">Start Ngrok Tunnel</span>
+                              </div>
+                              <code className="text-xs text-lime font-mono block select-all cursor-pointer bg-black/20 p-2 rounded-lg border border-lime/10 hover:border-lime/30 transition-all">
+                                ngrok http 3001
+                              </code>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
-                </div>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-forest transition-colors">
-                    <Database className="w-4 h-4" />
-                  </div>
-                  <input 
-                    type="text" 
-                    value={settings.whatsapp_bridge_url || ""} 
-                    onChange={e => setSettings({ ...settings, whatsapp_bridge_url: e.target.value })}
-                    placeholder="https://your-tunnel-url.ngrok-free.app"
-                    className="input pl-10 font-mono text-xs h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-all shadow-sm" 
-                  />
-                </div>
-              </div>
-
-              {/* Cloud connectivity guide */}
-              {typeof window !== "undefined" && window.location.hostname !== "localhost" && (
-                <div className="bg-forest rounded-2xl p-5 border border-white/10 shadow-xl relative overflow-hidden group">
-                  {/* Decorative background blur */}
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-lime/10 rounded-full blur-2xl group-hover:bg-lime/20 transition-all" />
-                  
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-xl bg-lime/10 flex items-center justify-center border border-lime/20">
-                        <ShieldCheck className="w-5 h-5 text-lime" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-white">Cloud Connectivity Required</h4>
-                        <p className="text-[10px] text-white/40">Bridge the gap between Vercel and your local machine</p>
-                      </div>
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-700">Instance ID</label>
+                      <input 
+                        type="text" 
+                        value={settings.ultramsg_instance_id || ""} 
+                        onChange={e => setSettings({ ...settings, ultramsg_instance_id: e.target.value })}
+                        placeholder="instance12345"
+                        className="input font-mono text-xs h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-all shadow-sm" 
+                      />
                     </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-700">API Token</label>
+                      <input 
+                        type="password" 
+                        value={settings.ultramsg_token || ""} 
+                        onChange={e => setSettings({ ...settings, ultramsg_token: e.target.value })}
+                        placeholder="••••••••••••"
+                        className="input font-mono text-xs h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-all shadow-sm" 
+                      />
+                    </div>
+                  </div>
 
-                    <div className="space-y-4">
-                      <p className="text-xs text-white/60 leading-relaxed">
-                        Since your CRM is live on Vercel, it cannot reach your <code className="text-lime px-1 rounded">localhost</code>. 
-                        You must run a secure tunnel to expose your local bridge safely.
-                      </p>
-
-                      <div className="grid grid-cols-1 gap-3">
-                        <div className="bg-black/40 rounded-xl p-3 border border-white/5">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[9px] font-bold text-white/30 tracking-widest uppercase">Stepen 1: Start Tunnel</span>
-                            <span className="text-[9px] font-bold text-lime/40">Recommended</span>
-                          </div>
-                          <code className="text-xs text-lime font-mono block select-all cursor-pointer bg-black/20 p-2 rounded-lg border border-lime/10 hover:border-lime/30 transition-all">
-                            ngrok http 3001
-                          </code>
+                  <div className="bg-forest rounded-2xl p-5 border border-white/10 shadow-xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-lime/10 rounded-full blur-2xl group-hover:bg-lime/20 transition-all" />
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-lime/10 flex items-center justify-center border border-lime/20">
+                          <Zap className="w-5 h-5 text-lime" />
                         </div>
-
-                        <div className="bg-black/40 rounded-xl p-3 border border-white/5">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[9px] font-bold text-white/30 tracking-widest uppercase">Step 2: Update URL</span>
-                          </div>
-                          <p className="text-[10px] text-white/40 leading-relaxed">
-                            Copy the <span className="text-white/80">https://...</span> address from Ngrok and paste it into the Bridge URL field above.
-                          </p>
+                        <div>
+                          <h4 className="text-sm font-bold text-white">Scan & Go Cloud Mode</h4>
+                          <p className="text-[10px] text-white/40">Professional automation without a local PC</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 pt-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-lime animate-pulse" />
-                        <span className="text-[10px] font-bold text-lime/60 uppercase tracking-widest">Secure Tunneling Active</span>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 gap-3">
+                          <div className="bg-black/40 rounded-xl p-4 border border-white/5 space-y-4">
+                            <div className="flex items-start gap-3">
+                              <div className="w-5 h-5 rounded-full bg-lime text-forest flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">1</div>
+                              <p className="text-[10px] text-white/60">Create an account at <a href="https://ultramsg.com" target="_blank" className="text-lime underline">ultramsg.com</a></p>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <div className="w-5 h-5 rounded-full bg-lime text-forest flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">2</div>
+                              <p className="text-[10px] text-white/60">Scan the QR code to connect your WhatsApp session to their cloud server.</p>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <div className="w-5 h-5 rounded-full bg-lime text-forest flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">3</div>
+                              <p className="text-[10px] text-white/60">Copy your <b>Instance ID</b> and <b>Token</b> into the fields above.</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-lime animate-pulse" />
+                          <span className="text-[10px] font-bold text-lime/60 uppercase tracking-widest leading-none">Cloud Native Engine Active</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </>
               )}
 
               <div className="grid grid-cols-2 gap-4">

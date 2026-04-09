@@ -1,4 +1,5 @@
 import { createClient } from "./supabase";
+import { sendUltraMsg } from "./whatsapp-ultramsg";
 
 export interface WhatsAppResponse {
   ok: boolean;
@@ -8,8 +9,22 @@ export interface WhatsAppResponse {
 export async function sendWhatsApp(phone: string, message: string, imagePath?: string): Promise<WhatsAppResponse> {
   const supabase = createClient();
   
-  // 1. Get Bridge URL from settings
-  const { data: settings } = await supabase.from("settings").select("whatsapp_bridge_url").single();
+  // 1. Get settings
+  const { data: settings } = await supabase.from("settings").select("*").single();
+  const provider = settings?.whatsapp_provider || "local";
+
+  if (provider === "cloud") {
+    const instanceId = settings?.ultramsg_instance_id;
+    const token = settings?.ultramsg_token;
+    
+    if (!instanceId || !token) {
+      return { ok: false, error: "Cloud Instance settings missing. Please check Instance ID and Token." };
+    }
+    
+    return sendUltraMsg(instanceId, token, phone, message, imagePath);
+  }
+
+  // 2. Default to Local Bridge
   const bridgeUrl = settings?.whatsapp_bridge_url || "http://localhost:3001";
 
   try {
@@ -27,9 +42,9 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
     
     let errorMessage = err.message || "Failed to reach WhatsApp bridge";
     if (isLocalhost && isProduction) {
-      errorMessage = "Bridge unreachable: Cannot reach 'localhost' from the cloud. Use a secure tunnel (like Ngrok) for production automation.";
+      errorMessage = "Bridge unreachable: Cannot reach 'localhost' from the cloud. Use the 'Cloud Instance' provider for production automation.";
     } else if (err.name === 'AbortError' || err.message?.includes('fetch')) {
-      errorMessage = "Bridge unreachable: Ensure your Ngrok tunnel or local bridge server is running.";
+      errorMessage = "Bridge unreachable: Ensure your bridge server or tunnel is running.";
     }
 
     return { ok: false, error: errorMessage };
