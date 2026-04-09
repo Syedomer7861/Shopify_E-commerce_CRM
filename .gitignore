@@ -20,3 +20,8 @@ yarn-error.log*
 # System files
 .DS_Store
 Thumbs.db
+
+# WhatsApp Session / Cache
+.wa_session/
+.wwebjs_cache/
+.wwebjs_auth/
