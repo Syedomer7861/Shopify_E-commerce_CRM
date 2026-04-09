@@ -509,16 +509,82 @@ export default function SettingsPage() {
             </div>
 
             <div className={cn("space-y-4 pt-4 transition-all", !settings.whatsapp_enabled && "opacity-40 pointer-events-none")}>
-              <div>
-                <label className="text-xs font-medium text-gray-600 block mb-1">WhatsApp Bridge URL</label>
-                <input 
-                  type="text" 
-                  value={settings.whatsapp_bridge_url || ""} 
-                  onChange={e => setSettings({ ...settings, whatsapp_bridge_url: e.target.value })}
-                  placeholder="http://localhost:3001"
-                  className="input font-mono text-xs" 
-                />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-xs font-bold text-gray-700">WhatsApp Bridge URL</label>
+                  {typeof window !== "undefined" && window.location.hostname !== "localhost" && settings.whatsapp_bridge_url?.includes("localhost") && (
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-rose-50 text-rose-600 rounded-md border border-rose-100 animate-pulse">
+                      <ShieldCheck className="w-3 h-3" />
+                      <span className="text-[10px] font-bold">Cloud-to-Local Warning</span>
+                    </div>
+                  )}
+                </div>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-forest transition-colors">
+                    <Database className="w-4 h-4" />
+                  </div>
+                  <input 
+                    type="text" 
+                    value={settings.whatsapp_bridge_url || ""} 
+                    onChange={e => setSettings({ ...settings, whatsapp_bridge_url: e.target.value })}
+                    placeholder="https://your-tunnel-url.ngrok-free.app"
+                    className="input pl-10 font-mono text-xs h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-all shadow-sm" 
+                  />
+                </div>
               </div>
+
+              {/* Cloud connectivity guide */}
+              {typeof window !== "undefined" && window.location.hostname !== "localhost" && (
+                <div className="bg-forest rounded-2xl p-5 border border-white/10 shadow-xl relative overflow-hidden group">
+                  {/* Decorative background blur */}
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-lime/10 rounded-full blur-2xl group-hover:bg-lime/20 transition-all" />
+                  
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-lime/10 flex items-center justify-center border border-lime/20">
+                        <ShieldCheck className="w-5 h-5 text-lime" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Cloud Connectivity Required</h4>
+                        <p className="text-[10px] text-white/40">Bridge the gap between Vercel and your local machine</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <p className="text-xs text-white/60 leading-relaxed">
+                        Since your CRM is live on Vercel, it cannot reach your <code className="text-lime px-1 rounded">localhost</code>. 
+                        You must run a secure tunnel to expose your local bridge safely.
+                      </p>
+
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="bg-black/40 rounded-xl p-3 border border-white/5">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[9px] font-bold text-white/30 tracking-widest uppercase">Stepen 1: Start Tunnel</span>
+                            <span className="text-[9px] font-bold text-lime/40">Recommended</span>
+                          </div>
+                          <code className="text-xs text-lime font-mono block select-all cursor-pointer bg-black/20 p-2 rounded-lg border border-lime/10 hover:border-lime/30 transition-all">
+                            ngrok http 3001
+                          </code>
+                        </div>
+
+                        <div className="bg-black/40 rounded-xl p-3 border border-white/5">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[9px] font-bold text-white/30 tracking-widest uppercase">Step 2: Update URL</span>
+                          </div>
+                          <p className="text-[10px] text-white/40 leading-relaxed">
+                            Copy the <span className="text-white/80">https://...</span> address from Ngrok and paste it into the Bridge URL field above.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-lime animate-pulse" />
+                        <span className="text-[10px] font-bold text-lime/60 uppercase tracking-widest">Secure Tunneling Active</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

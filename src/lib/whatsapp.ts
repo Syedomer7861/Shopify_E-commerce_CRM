@@ -22,7 +22,17 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
     const data = await res.json();
     return { ok: data.ok, error: data.error };
   } catch (err: any) {
-    return { ok: false, error: err.message || "Failed to reach WhatsApp bridge" };
+    const isLocalhost = bridgeUrl.includes("localhost") || bridgeUrl.includes("127.0.0.1");
+    const isProduction = process.env.NEXT_PUBLIC_VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
+    
+    let errorMessage = err.message || "Failed to reach WhatsApp bridge";
+    if (isLocalhost && isProduction) {
+      errorMessage = "Bridge unreachable: Cannot reach 'localhost' from the cloud. Use a secure tunnel (like Ngrok) for production automation.";
+    } else if (err.name === 'AbortError' || err.message?.includes('fetch')) {
+      errorMessage = "Bridge unreachable: Ensure your Ngrok tunnel or local bridge server is running.";
+    }
+
+    return { ok: false, error: errorMessage };
   }
 }
 
