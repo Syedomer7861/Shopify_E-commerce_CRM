@@ -2,15 +2,11 @@
   "crons": [
     {
       "path": "/api/cron/task-generator",
-      "schedule": "0 * * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/api/cron/overdue-marker",
       "schedule": "5 0 * * *"
-    },
-    {
-      "path": "/api/cron/segment-updater",
-      "schedule": "0 2 * * *"
     },
     {
       "path": "/api/cron/segment-updater",
