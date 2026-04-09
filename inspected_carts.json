@@ -1,0 +1,192 @@
+[
+  {
+    "id": "1df21150-9eca-4f2b-bfb6-461d5a2ab096",
+    "customer_id": "89e1863b-ee16-478a-9c4a-bed427256b4b",
+    "email": null,
+    "phone": "6284297136",
+    "cart_token": "69d60d225fe2c3531be225c8",
+    "total_price": 895,
+    "line_items": [
+      {
+        "payload": {
+          "tax": 0,
+          "email": "",
+          "cart_id": "69d60d225fe2c3531be225c8",
+          "currency": "INR",
+          "last_name": "Nikhil",
+          "first_name": "Nikhil",
+          "item_count": 1,
+          "source_name": "fastrr",
+          "total_price": 895,
+          "latest_stage": "PAYMENT_INITIATED",
+          "phone_number": "6284297136",
+          "phone_verified": true,
+          "shipping_price": 0,
+          "total_discount": 0,
+          "billing_address": {
+            "zip": "147301",
+            "city": "Fatehgarh Sahib",
+            "name": "Nikhil Nikhil",
+            "phone": "6284297136",
+            "country": "India",
+            "address1": "72 sec 24 block A dalip nagar",
+            "address2": "Near-gurdwra sahib",
+            "last_name": "Nikhil",
+            "first_name": "Nikhil"
+          },
+          "cart_attributes": {
+            "utm_term": "120239881081480034",
+            "OpusCartId": "ver_1",
+            "utm_medium": "paid",
+            "utm_source": "facebook",
+            "utm_content": "120240808281690034",
+            "ipv4_address": "152.59.83.119",
+            "utm_campaign": "120239881081490034",
+            "landing_page_url": "https://cureforever.in/products/cureforever-mpower?utm_medium=paid&utm_id=120239881081490034&utm_content=120240808281690034&utm_term=120239881081480034&utm_campaign=120239881081490034&fbclid=PAZXh0bgNhZW0BMABhZGlkAasuYNATi3JzcnRjBmFwcF9pZA8xMjQwMjQ1NzQyODc0MTQAAadXOsV9a5s45taJ_tT0kCECjC77pQnSae5P1ENqKpKWF7QzSRL23xi3N_-4EQ_aem_K5WHYUoHqtMNg3rUUDTSAw&utm_source=facebook&campaign_id=120239881081490034&ad_id=120240808281690034",
+            "shopifyCartToken": "hWNAmOGxFfksEN78Uap6bX6q?key=f9946b1cc2be4a37ac2b18560dc504cb"
+          },
+          "shipping_address": {
+            "zip": "147301",
+            "city": "Fatehgarh Sahib",
+            "name": "Nikhil Nikhil",
+            "phone": "6284297136",
+            "country": "India",
+            "address1": "72 sec 24 block A dalip nagar",
+            "address2": "Near-gurdwra sahib",
+            "last_name": "Nikhil",
+            "first_name": "Nikhil"
+          },
+          "shipping_address_hash": "e373263424e9ab021158cef99ad6399c"
+        },
+        "__metadata": true
+      }
+    ],
+    "recovery_status": "pending",
+    "abandoned_at": "2026-04-08T08:09:58.013+00:00",
+    "created_at": "2026-04-08T08:09:23.822477+00:00",
+    "updated_at": "2026-04-08T08:09:23.822477+00:00"
+  },
+  {
+    "id": "2dffa354-6e32-4419-8b0b-e005c2293ba0",
+    "customer_id": "aa90cc0f-e924-4a2c-9e68-91dbfc072e53",
+    "email": null,
+    "phone": "9598413420",
+    "cart_token": "69d60b37aa73b615f6e9b20a",
+    "total_price": 895,
+    "line_items": [
+      {
+        "payload": {
+          "tax": 0,
+          "email": "",
+          "cart_id": "69d60b37aa73b615f6e9b20a",
+          "currency": "INR",
+          "last_name": "",
+          "first_name": "Ashutosh",
+          "item_count": 1,
+          "source_name": "fastrr",
+          "total_price": 895,
+          "latest_stage": "PAYMENT_INITIATED",
+          "phone_number": "9598413420",
+          "phone_verified": true,
+          "shipping_price": 0,
+          "total_discount": 0,
+          "billing_address": {
+            "zip": "221202",
+            "city": "Varanasi",
+            "name": "Ashutosh ",
+            "phone": "9598413420",
+            "country": "India",
+            "address1": "House No 43, Parsadpur , Near Anand janaral store , Dist Varanasi , Uttar",
+            "address2": "Pradesh , 221202",
+            "last_name": "",
+            "first_name": "Ashutosh"
+          },
+          "cart_attributes": {
+            "ipv4_address": "152.56.146.67",
+            "landing_page_url": "https://cureforever.in/products/cureforever-mpower?fbclid=IwZXh0bgNhZW0BMABhZGlkAasuYNATi3JzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR4-nr31a2rCxy5C6v15Xv0gZuNkO7ZQS3eCvy5PebaU-AeghAmotRVrcO5FOA_aem_qKw0BLVxK3Sk2t28xXXgGA&utm_source=facebook&utm_medium=paid&campaign_id=120239881081490034&ad_id=120240808281690034&utm_id=120239881081490034&utm_content=120240808281690034&utm_term=120239881081480034&utm_campaign=120239881081490034",
+            "shopifyCartToken": "hWNAmNRsc8DeV7oMLCQDXVMi?key=c1d408f1461316f3fd8a15b3e1865df8"
+          },
+          "shipping_address": {
+            "zip": "221202",
+            "city": "Varanasi",
+            "name": "Ashutosh ",
+            "phone": "9598413420",
+            "country": "India",
+            "address1": "House No 43, Parsadpur , Near Anand janaral store , Dist Varanasi , Uttar",
+            "address2": "Pradesh , 221202",
+            "last_name": "",
+            "first_name": "Ashutosh"
+          },
+          "shipping_address_hash": "7db1ca64b02cb5abe237b4051f4327d2"
+        },
+        "__metadata": true
+      }
+    ],
+    "recovery_status": "pending",
+    "abandoned_at": "2026-04-08T08:01:47.723+00:00",
+    "created_at": "2026-04-08T08:01:18.372897+00:00",
+    "updated_at": "2026-04-08T08:01:18.372897+00:00"
+  },
+  {
+    "id": "9cf5135a-0f78-4b9a-9f7a-8c38698b8d87",
+    "customer_id": "9871917b-9d7c-47b6-b9e6-a43f37c5cffd",
+    "email": null,
+    "phone": "9404786721",
+    "cart_token": "69d60c155fe2c3531be220af",
+    "total_price": 1295,
+    "line_items": [
+      {
+        "payload": {
+          "tax": 0,
+          "email": "",
+          "cart_id": "69d60c155fe2c3531be220af",
+          "currency": "INR",
+          "last_name": "Nashik",
+          "first_name": "Imran",
+          "item_count": 1,
+          "source_name": "fastrr",
+          "total_price": 1295,
+          "latest_stage": "PAYMENT_INITIATED",
+          "phone_number": "9404786721",
+          "phone_verified": true,
+          "shipping_price": 0,
+          "total_discount": 0,
+          "billing_address": {
+            "zip": "422211",
+            "city": "Nashik",
+            "name": "Imran Nashik",
+            "phone": "9404786721",
+            "country": "India",
+            "address1": "Shanti nagar Near bus stop surgana ct tel surgana dist nashik Maharashtra Shanti",
+            "address2": "nagar surgana",
+            "last_name": "Nashik",
+            "first_name": "Imran"
+          },
+          "cart_attributes": {
+            "OpusCartId": "ver_1",
+            "ipv4_address": "152.59.60.80",
+            "landing_page_url": "https://cureforever.in/products/cuplift-capsules?ad_id=120239614811750037&campaign_id=120236449457190037&fbclid=IwZXh0bgNhZW0BMABhZGlkAastXS8ApVVzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR4cqNYtOAaS6929CmiLCKGqOlvEKUndFKWFQJ3m3x605nTtIRUWfwg_Kajvzw_aem_6URIslnhrL0n9yUP47rd5g&utm_campaign=120236449457190037&utm_content=120239614811750037&utm_id=120236449457190037&utm_medium=paid&utm_source=facebook&utm_term=120239614811690037",
+            "shopifyCartToken": "hWN9a7LTo81mt4m0asiAIt4W?key=d93f790b3a745e6929477c4631a257ae"
+          },
+          "shipping_address": {
+            "zip": "422211",
+            "city": "Nashik",
+            "name": "Imran Nashik",
+            "phone": "9404786721",
+            "country": "India",
+            "address1": "Shanti nagar Near bus stop surgana ct tel surgana dist nashik Maharashtra Shanti",
+            "address2": "nagar surgana",
+            "last_name": "Nashik",
+            "first_name": "Imran"
+          },
+          "shipping_address_hash": "5464988518ab744143236550d25301ed"
+        },
+        "__metadata": true
+      }
+    ],
+    "recovery_status": "pending",
+    "abandoned_at": "2026-04-08T08:05:12.062+00:00",
+    "created_at": "2026-04-08T08:05:03.837723+00:00",
+    "updated_at": "2026-04-08T08:05:03.837723+00:00"
+  }
+]

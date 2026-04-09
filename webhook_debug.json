@@ -1,0 +1,1153 @@
+[
+  {
+    "id": "ef8517ae-86d3-4da5-b28b-185a4a2c1a03",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "items": [
+        {
+          "sku": "CF24",
+          "name": "Mate - Men's Power Capsules | Boost Energy & Stamina",
+          "price": 895,
+          "title": "Mate - Men's Power Capsules | Boost Energy & Stamina",
+          "img_url": "https://cdn.shopify.com/s/files/1/0570/5705/0706/files/MPOWER.webp?v=1768631930",
+          "quantity": 1,
+          "product_id": 7412143751250,
+          "variant_id": 41297377198162,
+          "custom_attributes": {
+            "contentId": "7412143751250"
+          }
+        }
+      ],
+      "cart_id": "69d6210a2e9dd22677f3e79b",
+      "img_url": "https://cdn.shopify.com/s/files/1/0570/5705/0706/files/MPOWER.webp?v=1768631930",
+      "currency": "INR",
+      "sku_list": [
+        "CF24"
+      ],
+      "cart_token": "hWNAmWoTi9Q9RUKrqSgIA0xg?key=7ff044a01d418c3c8eb82e1cd69aedb8",
+      "item_count": 1,
+      "updated_at": "2026-04-08T15:04:02.413",
+      "source_name": "fastrr",
+      "total_price": 895,
+      "checkout_url": "https://cureforever.in/?cart-resume-id=69d6210a2e9dd22677f3e79b&type=report",
+      "latest_stage": "OTP_VERIFIED",
+      "phone_number": "9700541156",
+      "discount_codes": [
+        "null"
+      ],
+      "item_name_list": [
+        "Mate - Men's Power Capsules | Boost Energy & Stamina"
+      ],
+      "shipping_price": 0,
+      "total_discount": 0,
+      "item_price_list": [
+        "895.0"
+      ],
+      "item_title_list": [
+        "Mate - Men's Power Capsules | Boost Energy & Stamina"
+      ],
+      "product_id_list": [
+        "7412143751250"
+      ],
+      "variant_id_list": [
+        "41297377198162"
+      ],
+      "custom_attributes": {
+        "ipv4_address": "106.192.19.66",
+        "landing_page_url": "https://cureforever.in/products/cureforever-mpower?utm_medium=paid&utm_id=120239611525920037&utm_content=120239611525910037&utm_term=120239611525900037&utm_campaign=120239611525920037&fbclid=PAZXh0bgNhZW0BMABhZGlkAastSo2022VzcnRjBmFwcF9pZA81NjcwNjczNDMzNTI0MjcAAadPmcGUx-t2_VJ8e8LHj1t3vuGsuW8hcV6DfX3DPG8k-92re3puKhuGXuO5cQ_aem_OXz_bwxChWlV85mLnj7zxA&utm_source=facebook&campaign_id=120239611525920037&ad_id=120239611525910037",
+        "shopifyCartToken": "hWNAmWoTi9Q9RUKrqSgIA0xg?key=7ff044a01d418c3c8eb82e1cd69aedb8"
+      }
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:36:58.002596+00:00"
+  },
+  {
+    "id": "9f588a7c-fd2a-4959-8624-990c8386b29d",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "cart_id": "69d6210a2e9dd22677f3e79b",
+      "currency": "INR",
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 895,
+      "latest_stage": "PHONE_RECEIVED",
+      "phone_number": "9700541156",
+      "phone_verified": false,
+      "shipping_price": 0,
+      "total_discount": 0,
+      "cart_attributes": {
+        "ipv4_address": "106.192.19.66",
+        "landing_page_url": "https://cureforever.in/products/cureforever-mpower?utm_medium=paid&utm_id=120239611525920037&utm_content=120239611525910037&utm_term=120239611525900037&utm_campaign=120239611525920037&fbclid=PAZXh0bgNhZW0BMABhZGlkAastSo2022VzcnRjBmFwcF9pZA81NjcwNjczNDMzNTI0MjcAAadPmcGUx-t2_VJ8e8LHj1t3vuGsuW8hcV6DfX3DPG8k-92re3puKhuGXuO5cQ_aem_OXz_bwxChWlV85mLnj7zxA&utm_source=facebook&campaign_id=120239611525920037&ad_id=120239611525910037",
+        "shopifyCartToken": "hWNAmWoTi9Q9RUKrqSgIA0xg?key=7ff044a01d418c3c8eb82e1cd69aedb8"
+      }
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:34:37.396037+00:00"
+  },
+  {
+    "id": "50d94981-81f9-46d6-bba7-8218e542147a",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "items": [
+        {
+          "name": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "price": 1295,
+          "title": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "quantity": 1,
+          "product_id": 7476337311826,
+          "variant_id": 42117453512786
+        }
+      ],
+      "cart_id": "69d6210caa73b615f6ea1abc",
+      "currency": "INR",
+      "sku_list": [],
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 1295,
+      "latest_stage": "INIT",
+      "item_name_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "shipping_price": 0,
+      "total_discount": 0,
+      "cart_attributes": {
+        "_y": "f8852731-4a5d-4a0e-96c3-ff3445e1281c",
+        "OpusCartId": "ver_1",
+        "ipv4_address": "152.56.157.192",
+        "landing_page_url": "https://cureforever.in/products/cuplift-capsules?fbclid=IwZXh0bgNhZW0BMABhZGlkAaswJjAAgYJzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR4-g7eAeWNknYgfECfYOPnSdJCfXc3Y5b016rHNmqzZjFRT7eQoh6W90o8QYg_aem_SJnOFZ3cIPuZLaE0fZbFZA&utm_source=facebook&utm_medium=paid&campaign_id=120241240343110130&ad_id=120242135266600130&utm_id=120241240343110130_v2_s03&utm_content=120242135266600130&utm_term=120241240343030130&utm_campaign=120241240343110130",
+        "shopifyCartToken": "hWNAK8f0vLBCEQvyga1H5XVs?key=c3b9874bfe2e34fc0df1c303f33f505b"
+      },
+      "item_price_list": [
+        "1295.0"
+      ],
+      "item_title_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "product_id_list": [
+        "7476337311826"
+      ],
+      "variant_id_list": [
+        "42117453512786"
+      ]
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:34:18.870469+00:00"
+  },
+  {
+    "id": "59b87756-390e-4cba-85a6-2e0743ac8b6e",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "items": [
+        {
+          "name": "Mate - Men's Power Capsules | Boost Energy & Stamina",
+          "price": 895,
+          "title": "Mate - Men's Power Capsules | Boost Energy & Stamina",
+          "quantity": 1,
+          "product_id": 7412143751250,
+          "variant_id": 41297377198162
+        }
+      ],
+      "cart_id": "69d6210a2e9dd22677f3e79b",
+      "currency": "INR",
+      "sku_list": [],
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 895,
+      "latest_stage": "INIT",
+      "item_name_list": [
+        "Mate - Men's Power Capsules | Boost Energy & Stamina"
+      ],
+      "shipping_price": 0,
+      "total_discount": 0,
+      "cart_attributes": {
+        "ipv4_address": "106.192.19.66",
+        "landing_page_url": "https://cureforever.in/products/cureforever-mpower?utm_medium=paid&utm_id=120239611525920037&utm_content=120239611525910037&utm_term=120239611525900037&utm_campaign=120239611525920037&fbclid=PAZXh0bgNhZW0BMABhZGlkAastSo2022VzcnRjBmFwcF9pZA81NjcwNjczNDMzNTI0MjcAAadPmcGUx-t2_VJ8e8LHj1t3vuGsuW8hcV6DfX3DPG8k-92re3puKhuGXuO5cQ_aem_OXz_bwxChWlV85mLnj7zxA&utm_source=facebook&campaign_id=120239611525920037&ad_id=120239611525910037"
+      },
+      "item_price_list": [
+        "895.0"
+      ],
+      "item_title_list": [
+        "Mate - Men's Power Capsules | Boost Energy & Stamina"
+      ],
+      "product_id_list": [
+        "7412143751250"
+      ],
+      "variant_id_list": [
+        "41297377198162"
+      ]
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:34:17.167634+00:00"
+  },
+  {
+    "id": "771bc5f3-ce84-4294-8eaf-898d15e1a28f",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "items": [
+        {
+          "sku": "CF30",
+          "name": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "price": 1295,
+          "title": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "img_url": "https://cdn.shopify.com/s/files/1/0570/5705/0706/files/Cup-lift-mockup1-_1.png?v=1774943378",
+          "quantity": 2,
+          "product_id": 7476337311826,
+          "variant_id": 42117453512786,
+          "custom_attributes": {
+            "contentId": "7476337311826"
+          }
+        }
+      ],
+      "cart_id": "69d61bd9a07835070f102f96",
+      "img_url": "https://cdn.shopify.com/s/files/1/0570/5705/0706/files/Cup-lift-mockup1-_1.png?v=1774943378",
+      "currency": "INR",
+      "sku_list": [
+        "CF30"
+      ],
+      "cart_token": "hWNAmUQKJ16S9NoWZskvUr9Y?key=b342aa284b3e50e4f740020257528b62",
+      "item_count": 1,
+      "updated_at": "2026-04-08T14:41:53.456",
+      "source_name": "fastrr",
+      "total_price": 2390,
+      "checkout_url": "https://cureforever.in/?cart-resume-id=69d61bd9a07835070f102f96&type=report",
+      "latest_stage": "OTP_VERIFIED",
+      "phone_number": "9531558247",
+      "discount_codes": [
+        "CUP2"
+      ],
+      "item_name_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "shipping_price": 0,
+      "total_discount": 200,
+      "item_price_list": [
+        "1295.0"
+      ],
+      "item_title_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "product_id_list": [
+        "7476337311826"
+      ],
+      "variant_id_list": [
+        "42117453512786"
+      ],
+      "custom_attributes": {
+        "OpusCartId": "ver_1",
+        "ipv4_address": "223.181.47.57",
+        "landing_page_url": "https://cureforever.in/products/cuplift-capsules?ad_id=120242020297800130&campaign_id=120236274771350130&fbclid=IwZXh0bgNhZW0BMABhZGlkAaswIN-0RPJzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR43fdupHSQTK45v7DeS242i2EBg4Er8DI6Oazh1WDaeN28yeoyTMXeBSaqzAw_aem_PLYR9_Na14gGcRjVwi_vQg&utm_campaign=120236274771350130&utm_content=120242020297800130&utm_id=120236274771350130_v2_s02&utm_medium=paid&utm_source=facebook&utm_term=120242020297810130",
+        "shopifyCartToken": "hWNAmUQKJ16S9NoWZskvUr9Y?key=b342aa284b3e50e4f740020257528b62"
+      }
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:14:41.956233+00:00"
+  },
+  {
+    "id": "1587ac25-9a72-4617-8982-4b46efd174d4",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "items": [
+        {
+          "name": "Biotin Tablets with Zinc, Selenium & MCT | For Hair, Skin & Nails",
+          "price": 642,
+          "title": "Biotin Tablets with Zinc, Selenium & MCT | For Hair, Skin & Nails",
+          "quantity": 1,
+          "product_id": 7412166950994,
+          "variant_id": 41297463246930
+        }
+      ],
+      "cart_id": "69d61bd55fe2c3531be26b38",
+      "currency": "INR",
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 642,
+      "latest_stage": "ORDER_PLACED",
+      "rtoPrediction": "low",
+      "paymentDetails": {
+        "amount": 577.8,
+        "paymentMode": "UPI",
+        "transactionId": "5322594034",
+        "paymentGateway": "Cashfree"
+      },
+      "shipping_price": 0,
+      "total_discount": 64.2,
+      "billing_address": {
+        "zip": "201010",
+        "city": "Ghaziabad",
+        "name": "Neha Chhablani",
+        "phone": "9871888524",
+        "country": "India",
+        "address1": "1005 Ferrera, Mahagun Mansion 1, Vaibhav Khand, Indirapuram, Ghaziabad, Uttar",
+        "address2": "Pradesh- 201010",
+        "last_name": "Chhablani",
+        "first_name": "Neha"
+      },
+      "cart_attributes": {
+        "utm_term": "120239736168300037",
+        "OpusCartId": "ver_1",
+        "utm_medium": "paid",
+        "utm_source": "facebook",
+        "utm_content": "120239736168290037",
+        "ipv4_address": "49.36.188.179",
+        "utm_campaign": "120239736067720037",
+        "landing_page_url": "https://cureforever.in/products/biotin-tablets?utm_medium=paid&utm_id=120239736067720037&utm_content=120239736168290037&utm_term=120239736168300037&utm_campaign=120239736067720037&fbclid=PAZXh0bgNhZW0BMABhZGlkAastZ2JrIyVzcnRjBmFwcF9pZA81NjcwNjczNDMzNTI0MjcAAaefdQ23vu1Cc9Iej9ncXrrhPbOyWEdpxwHx_XidGm1eF6RycWh2Ici2skCkMA_aem_pqrYVok-cF5yAPA9_6nXkQ&utm_source=facebook&campaign_id=120239736067720037&ad_id=120239736168290037",
+        "shopifyCartToken": "hWNAmUcurocryCCffQ5qOau4?key=2d70b3d28381d19b333b4d716f677036"
+      },
+      "shipping_address": {
+        "zip": "201010",
+        "city": "Ghaziabad",
+        "name": "Neha Chhablani",
+        "phone": "9871888524",
+        "country": "India",
+        "address1": "1005 Ferrera, Mahagun Mansion 1, Vaibhav Khand, Indirapuram, Ghaziabad, Uttar",
+        "address2": "Pradesh- 201010",
+        "last_name": "Chhablani",
+        "first_name": "Neha"
+      }
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:13:04.876883+00:00"
+  },
+  {
+    "id": "0fee263d-9794-4f66-ad07-dd0f34edc45c",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "email": "nehamailme1988@gmail.com",
+      "cart_id": "69d61bd55fe2c3531be26b38",
+      "currency": "INR",
+      "last_name": "Chhablani",
+      "first_name": "Neha",
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 642,
+      "latest_stage": "PAYMENT_INITIATED",
+      "phone_number": "9871888524",
+      "phone_verified": true,
+      "shipping_price": 0,
+      "total_discount": 64.2,
+      "billing_address": {
+        "zip": "201010",
+        "city": "Ghaziabad",
+        "name": "Neha Chhablani",
+        "phone": "9871888524",
+        "country": "India",
+        "address1": "1005 Ferrera, Mahagun Mansion 1, Vaibhav Khand, Indirapuram, Ghaziabad, Uttar",
+        "address2": "Pradesh- 201010",
+        "last_name": "Chhablani",
+        "first_name": "Neha"
+      },
+      "cart_attributes": {
+        "utm_term": "120239736168300037",
+        "OpusCartId": "ver_1",
+        "utm_medium": "paid",
+        "utm_source": "facebook",
+        "utm_content": "120239736168290037",
+        "ipv4_address": "49.36.188.179",
+        "utm_campaign": "120239736067720037",
+        "landing_page_url": "https://cureforever.in/products/biotin-tablets?utm_medium=paid&utm_id=120239736067720037&utm_content=120239736168290037&utm_term=120239736168300037&utm_campaign=120239736067720037&fbclid=PAZXh0bgNhZW0BMABhZGlkAastZ2JrIyVzcnRjBmFwcF9pZA81NjcwNjczNDMzNTI0MjcAAaefdQ23vu1Cc9Iej9ncXrrhPbOyWEdpxwHx_XidGm1eF6RycWh2Ici2skCkMA_aem_pqrYVok-cF5yAPA9_6nXkQ&utm_source=facebook&campaign_id=120239736067720037&ad_id=120239736168290037",
+        "shopifyCartToken": "hWNAmUcurocryCCffQ5qOau4?key=2d70b3d28381d19b333b4d716f677036"
+      },
+      "shipping_address": {
+        "zip": "201010",
+        "city": "Ghaziabad",
+        "name": "Neha Chhablani",
+        "phone": "9871888524",
+        "country": "India",
+        "address1": "1005 Ferrera, Mahagun Mansion 1, Vaibhav Khand, Indirapuram, Ghaziabad, Uttar",
+        "address2": "Pradesh- 201010",
+        "last_name": "Chhablani",
+        "first_name": "Neha"
+      },
+      "shipping_address_hash": "b38e72de471a9760f6c657969df9d321"
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:12:54.580555+00:00"
+  },
+  {
+    "id": "cc07291d-17bd-47b9-8b95-d6f8cb14abc3",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "cart_id": "69d61bd9a07835070f102f96",
+      "currency": "INR",
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 2590,
+      "latest_stage": "PHONE_RECEIVED",
+      "phone_number": "9531558247",
+      "phone_verified": false,
+      "shipping_price": 0,
+      "total_discount": 200,
+      "cart_attributes": {
+        "OpusCartId": "ver_1",
+        "ipv4_address": "223.181.47.57",
+        "landing_page_url": "https://cureforever.in/products/cuplift-capsules?ad_id=120242020297800130&campaign_id=120236274771350130&fbclid=IwZXh0bgNhZW0BMABhZGlkAaswIN-0RPJzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR43fdupHSQTK45v7DeS242i2EBg4Er8DI6Oazh1WDaeN28yeoyTMXeBSaqzAw_aem_PLYR9_Na14gGcRjVwi_vQg&utm_campaign=120236274771350130&utm_content=120242020297800130&utm_id=120236274771350130_v2_s02&utm_medium=paid&utm_source=facebook&utm_term=120242020297810130",
+        "shopifyCartToken": "hWNAmUQKJ16S9NoWZskvUr9Y?key=b342aa284b3e50e4f740020257528b62"
+      }
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:12:18.793523+00:00"
+  },
+  {
+    "id": "f3951535-8f20-4baa-93a1-a50e43da9fca",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "items": [
+        {
+          "name": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "price": 1295,
+          "title": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "quantity": 2,
+          "product_id": 7476337311826,
+          "variant_id": 42117453512786
+        }
+      ],
+      "cart_id": "69d61bd9a07835070f102f96",
+      "currency": "INR",
+      "sku_list": [],
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 2590,
+      "latest_stage": "INIT",
+      "item_name_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "shipping_price": 0,
+      "total_discount": 200,
+      "cart_attributes": {
+        "OpusCartId": "ver_1",
+        "ipv4_address": "223.181.47.57",
+        "landing_page_url": "https://cureforever.in/products/cuplift-capsules?ad_id=120242020297800130&campaign_id=120236274771350130&fbclid=IwZXh0bgNhZW0BMABhZGlkAaswIN-0RPJzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR43fdupHSQTK45v7DeS242i2EBg4Er8DI6Oazh1WDaeN28yeoyTMXeBSaqzAw_aem_PLYR9_Na14gGcRjVwi_vQg&utm_campaign=120236274771350130&utm_content=120242020297800130&utm_id=120236274771350130_v2_s02&utm_medium=paid&utm_source=facebook&utm_term=120242020297810130",
+        "shopifyCartToken": "hWNAmUQKJ16S9NoWZskvUr9Y?key=b342aa284b3e50e4f740020257528b62"
+      },
+      "item_price_list": [
+        "1295.0"
+      ],
+      "item_title_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "product_id_list": [
+        "7476337311826"
+      ],
+      "variant_id_list": [
+        "42117453512786"
+      ]
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:12:08.447798+00:00"
+  },
+  {
+    "id": "fda6a8c9-be9a-497c-bbac-1273086b7d2a",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "items": [
+        {
+          "name": "Biotin Tablets with Zinc, Selenium & MCT | For Hair, Skin & Nails",
+          "price": 642,
+          "title": "Biotin Tablets with Zinc, Selenium & MCT | For Hair, Skin & Nails",
+          "quantity": 1,
+          "product_id": 7412166950994,
+          "variant_id": 41297463246930
+        }
+      ],
+      "cart_id": "69d61bd55fe2c3531be26b38",
+      "currency": "INR",
+      "sku_list": [],
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 642,
+      "latest_stage": "INIT",
+      "phone_number": "9871888524",
+      "item_name_list": [
+        "Biotin Tablets with Zinc, Selenium & MCT | For Hair, Skin & Nails"
+      ],
+      "phone_verified": true,
+      "shipping_price": 0,
+      "total_discount": 0,
+      "cart_attributes": {
+        "utm_term": "120239736168300037",
+        "OpusCartId": "ver_1",
+        "utm_medium": "paid",
+        "utm_source": "facebook",
+        "utm_content": "120239736168290037",
+        "ipv4_address": "49.36.188.179",
+        "utm_campaign": "120239736067720037",
+        "landing_page_url": "https://cureforever.in/products/biotin-tablets?utm_medium=paid&utm_id=120239736067720037&utm_content=120239736168290037&utm_term=120239736168300037&utm_campaign=120239736067720037&fbclid=PAZXh0bgNhZW0BMABhZGlkAastZ2JrIyVzcnRjBmFwcF9pZA81NjcwNjczNDMzNTI0MjcAAaefdQ23vu1Cc9Iej9ncXrrhPbOyWEdpxwHx_XidGm1eF6RycWh2Ici2skCkMA_aem_pqrYVok-cF5yAPA9_6nXkQ&utm_source=facebook&campaign_id=120239736067720037&ad_id=120239736168290037",
+        "shopifyCartToken": "hWNAmUcurocryCCffQ5qOau4?key=2d70b3d28381d19b333b4d716f677036"
+      },
+      "item_price_list": [
+        "642.0"
+      ],
+      "item_title_list": [
+        "Biotin Tablets with Zinc, Selenium & MCT | For Hair, Skin & Nails"
+      ],
+      "product_id_list": [
+        "7412166950994"
+      ],
+      "variant_id_list": [
+        "41297463246930"
+      ]
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:12:04.58697+00:00"
+  },
+  {
+    "id": "4a0e31e3-6453-4f56-9869-6b12dfbd4f90",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "items": [
+        {
+          "name": "Biotin Tablets with Zinc, Selenium & MCT | For Hair, Skin & Nails",
+          "price": 642,
+          "title": "Biotin Tablets with Zinc, Selenium & MCT | For Hair, Skin & Nails",
+          "quantity": 1,
+          "product_id": 7412166950994,
+          "variant_id": 41297463246930
+        }
+      ],
+      "cart_id": "69d61bd55fe2c3531be26b38",
+      "currency": "INR",
+      "sku_list": [],
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 642,
+      "latest_stage": "INIT",
+      "phone_number": "9871888524",
+      "item_name_list": [
+        "Biotin Tablets with Zinc, Selenium & MCT | For Hair, Skin & Nails"
+      ],
+      "phone_verified": true,
+      "shipping_price": 0,
+      "total_discount": 0,
+      "cart_attributes": {
+        "utm_term": "120239736168300037",
+        "OpusCartId": "ver_1",
+        "utm_medium": "paid",
+        "utm_source": "facebook",
+        "utm_content": "120239736168290037",
+        "ipv4_address": "49.36.188.179",
+        "utm_campaign": "120239736067720037",
+        "landing_page_url": "https://cureforever.in/products/biotin-tablets?utm_medium=paid&utm_id=120239736067720037&utm_content=120239736168290037&utm_term=120239736168300037&utm_campaign=120239736067720037&fbclid=PAZXh0bgNhZW0BMABhZGlkAastZ2JrIyVzcnRjBmFwcF9pZA81NjcwNjczNDMzNTI0MjcAAaefdQ23vu1Cc9Iej9ncXrrhPbOyWEdpxwHx_XidGm1eF6RycWh2Ici2skCkMA_aem_pqrYVok-cF5yAPA9_6nXkQ&utm_source=facebook&campaign_id=120239736067720037&ad_id=120239736168290037",
+        "shopifyCartToken": "hWNAmUcurocryCCffQ5qOau4?key=2d70b3d28381d19b333b4d716f677036"
+      },
+      "item_price_list": [
+        "642.0"
+      ],
+      "item_title_list": [
+        "Biotin Tablets with Zinc, Selenium & MCT | For Hair, Skin & Nails"
+      ],
+      "product_id_list": [
+        "7412166950994"
+      ],
+      "variant_id_list": [
+        "41297463246930"
+      ]
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:12:03.01336+00:00"
+  },
+  {
+    "id": "4525fe66-dc1b-4667-a2c0-9cc11cc6fc0e",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "items": [
+        {
+          "name": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "price": 1295,
+          "title": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "quantity": 1,
+          "product_id": 7476337311826,
+          "variant_id": 42117453512786
+        }
+      ],
+      "cart_id": "69d61bb85fe2c3531be26ab7",
+      "currency": "INR",
+      "sku_list": [],
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 1295,
+      "latest_stage": "INIT",
+      "item_name_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "shipping_price": 0,
+      "total_discount": 0,
+      "cart_attributes": {
+        "OpusCartId": "ver_1",
+        "ipv4_address": "223.181.47.57",
+        "landing_page_url": "https://cureforever.in/products/cuplift-capsules?ad_id=120242020297800130&campaign_id=120236274771350130&fbclid=IwZXh0bgNhZW0BMABhZGlkAaswIN-0RPJzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR43fdupHSQTK45v7DeS242i2EBg4Er8DI6Oazh1WDaeN28yeoyTMXeBSaqzAw_aem_PLYR9_Na14gGcRjVwi_vQg&utm_campaign=120236274771350130&utm_content=120242020297800130&utm_id=120236274771350130_v2_s02&utm_medium=paid&utm_source=facebook&utm_term=120242020297810130",
+        "shopifyCartToken": "hWNAmUQKJ16S9NoWZskvUr9Y?key=b342aa284b3e50e4f740020257528b62"
+      },
+      "item_price_list": [
+        "1295.0"
+      ],
+      "item_title_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "product_id_list": [
+        "7476337311826"
+      ],
+      "variant_id_list": [
+        "42117453512786"
+      ]
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:11:47.039051+00:00"
+  },
+  {
+    "id": "10e9eb23-1b36-4daa-b246-361e388db9eb",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "email": "rathnajeevi3@gmail.com",
+      "cart_id": "69d6199ef88d6d68d84dd66d",
+      "currency": "INR",
+      "last_name": "",
+      "first_name": "Rathna",
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 1295,
+      "latest_stage": "PAYMENT_INITIATED",
+      "phone_number": "7558166772",
+      "phone_verified": true,
+      "shipping_price": 0,
+      "total_discount": 0,
+      "billing_address": {
+        "zip": "641607",
+        "city": "Coimbatore",
+        "name": "Rathna ",
+        "phone": "7558166772",
+        "country": "India",
+        "address1": "10/11 Kamchiyama nagar thirpur",
+        "address2": "old bustend",
+        "last_name": "",
+        "first_name": "Rathna"
+      },
+      "cart_attributes": {
+        "ipv4_address": "106.192.165.114",
+        "landing_page_url": "https://cureforever.in/products/cuplift-capsules?fbclid=IwZXh0bgNhZW0BMABhZGlkAaswJjAAgYJzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR6-CB6eayMpMyF-Kjr7RdXJ1yI6kyd69lueQa6Pk4RD5vg_03Fh_d2vJOwI2Q_aem_bgVnSI-AOOwMJ1ICoo6UoQ&utm_source=facebook&utm_medium=paid&campaign_id=120241240343110130&ad_id=120242135266600130&utm_id=120241240343110130_v2_s10_e7572&utm_content=120242135266600130&utm_term=120241240343030130&utm_campaign=120241240343110130",
+        "shopifyCartToken": "hWNAmTfwcGpuzd1ocgXOD4Qm?key=ff93e3b0a86fe1a09a8ac506f0c6a179"
+      },
+      "shipping_address": {
+        "zip": "641607",
+        "city": "Coimbatore",
+        "name": "Rathna ",
+        "phone": "7558166772",
+        "country": "India",
+        "address1": "10/11 Kamchiyama nagar thirpur",
+        "address2": "old bustend",
+        "last_name": "",
+        "first_name": "Rathna"
+      },
+      "shipping_address_hash": "312454de84bf748d696668a2d409d5d9"
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:02:52.555019+00:00"
+  },
+  {
+    "id": "b1317095-5a1c-48ce-9129-6781601dbcc5",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "items": [
+        {
+          "name": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "price": 1295,
+          "title": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "quantity": 1,
+          "product_id": 7476337311826,
+          "variant_id": 42117453512786
+        }
+      ],
+      "cart_id": "69d6199ef88d6d68d84dd66d",
+      "currency": "INR",
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 1295,
+      "latest_stage": "ORDER_PLACED",
+      "rtoPrediction": "low",
+      "shipping_price": 0,
+      "total_discount": 0,
+      "billing_address": {
+        "zip": "641607",
+        "city": "Coimbatore",
+        "name": "Rathna ",
+        "phone": "7558166772",
+        "country": "India",
+        "address1": "10/11 Kamchiyama nagar thirpur",
+        "address2": "old bustend",
+        "last_name": "",
+        "first_name": "Rathna"
+      },
+      "cart_attributes": {
+        "ipv4_address": "106.192.165.114",
+        "landing_page_url": "https://cureforever.in/products/cuplift-capsules?fbclid=IwZXh0bgNhZW0BMABhZGlkAaswJjAAgYJzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR6-CB6eayMpMyF-Kjr7RdXJ1yI6kyd69lueQa6Pk4RD5vg_03Fh_d2vJOwI2Q_aem_bgVnSI-AOOwMJ1ICoo6UoQ&utm_source=facebook&utm_medium=paid&campaign_id=120241240343110130&ad_id=120242135266600130&utm_id=120241240343110130_v2_s10_e7572&utm_content=120242135266600130&utm_term=120241240343030130&utm_campaign=120241240343110130",
+        "shopifyCartToken": "hWNAmTfwcGpuzd1ocgXOD4Qm?key=ff93e3b0a86fe1a09a8ac506f0c6a179"
+      },
+      "shipping_address": {
+        "zip": "641607",
+        "city": "Coimbatore",
+        "name": "Rathna ",
+        "phone": "7558166772",
+        "country": "India",
+        "address1": "10/11 Kamchiyama nagar thirpur",
+        "address2": "old bustend",
+        "last_name": "",
+        "first_name": "Rathna"
+      }
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:02:51.07476+00:00"
+  },
+  {
+    "id": "583e7461-d2ef-46a9-888e-838a33583b82",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "items": [
+        {
+          "name": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "price": 1295,
+          "title": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "quantity": 1,
+          "product_id": 7476337311826,
+          "variant_id": 42117453512786
+        }
+      ],
+      "cart_id": "69d6199ef88d6d68d84dd66d",
+      "currency": "INR",
+      "sku_list": [],
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 1295,
+      "latest_stage": "INIT",
+      "phone_number": "7558166772",
+      "item_name_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "phone_verified": true,
+      "shipping_price": 0,
+      "total_discount": 0,
+      "cart_attributes": {
+        "ipv4_address": "106.192.165.114",
+        "landing_page_url": "https://cureforever.in/products/cuplift-capsules?fbclid=IwZXh0bgNhZW0BMABhZGlkAaswJjAAgYJzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR6-CB6eayMpMyF-Kjr7RdXJ1yI6kyd69lueQa6Pk4RD5vg_03Fh_d2vJOwI2Q_aem_bgVnSI-AOOwMJ1ICoo6UoQ&utm_source=facebook&utm_medium=paid&campaign_id=120241240343110130&ad_id=120242135266600130&utm_id=120241240343110130_v2_s10_e7572&utm_content=120242135266600130&utm_term=120241240343030130&utm_campaign=120241240343110130"
+      },
+      "item_price_list": [
+        "1295.0"
+      ],
+      "item_title_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "product_id_list": [
+        "7476337311826"
+      ],
+      "variant_id_list": [
+        "42117453512786"
+      ]
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:02:42.424482+00:00"
+  },
+  {
+    "id": "05ff8f97-5010-4cc8-9e36-2b38ea9524e7",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "items": [
+        {
+          "name": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "price": 1295,
+          "title": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "quantity": 1,
+          "product_id": 7476337311826,
+          "variant_id": 42117453512786
+        }
+      ],
+      "cart_id": "69d6199ef88d6d68d84dd66d",
+      "currency": "INR",
+      "sku_list": [],
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 1295,
+      "latest_stage": "INIT",
+      "phone_number": "7558166772",
+      "item_name_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "phone_verified": true,
+      "shipping_price": 0,
+      "total_discount": 0,
+      "cart_attributes": {
+        "ipv4_address": "106.192.165.114",
+        "landing_page_url": "https://cureforever.in/products/cuplift-capsules?fbclid=IwZXh0bgNhZW0BMABhZGlkAaswJjAAgYJzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR6-CB6eayMpMyF-Kjr7RdXJ1yI6kyd69lueQa6Pk4RD5vg_03Fh_d2vJOwI2Q_aem_bgVnSI-AOOwMJ1ICoo6UoQ&utm_source=facebook&utm_medium=paid&campaign_id=120241240343110130&ad_id=120242135266600130&utm_id=120241240343110130_v2_s10_e7572&utm_content=120242135266600130&utm_term=120241240343030130&utm_campaign=120241240343110130"
+      },
+      "item_price_list": [
+        "1295.0"
+      ],
+      "item_title_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "product_id_list": [
+        "7476337311826"
+      ],
+      "variant_id_list": [
+        "42117453512786"
+      ]
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T09:02:40.941789+00:00"
+  },
+  {
+    "id": "cade6a40-0872-4e23-970c-8805447418c5",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "items": [
+        {
+          "name": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "price": 1295,
+          "title": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "quantity": 3,
+          "product_id": 7476337311826,
+          "variant_id": 42117453512786
+        }
+      ],
+      "cart_id": "69d61787aa73b615f6e9ed95",
+      "currency": "INR",
+      "sku_list": [],
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 3885,
+      "latest_stage": "INIT",
+      "item_name_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "shipping_price": 0,
+      "total_discount": 362,
+      "cart_attributes": {
+        "ipv4_address": "157.34.7.3",
+        "landing_page_url": "https://cureforever.in/products/cuplift-capsules?fbclid=IwZXh0bgNhZW0BMABhZGlkAaswJjAAgYJzcnRjBmFwcF9pZA8yNzUyNTQ2OTI1OTgyNzkAAR7E-oBqfY0XZbnFttUkKXe-N5VAXylYwHcNfv8tOjeH87CegwuNo3gT9y65TQ_aem_HHzLJb7EffwlaYRf_s9WrQ&utm_source=facebook&utm_medium=paid&campaign_id=120241240343110130&ad_id=120242135266600130&utm_id=120241240343110130_v2_s07_e7593&utm_content=120242135266600130&utm_term=120241240343030130&utm_campaign=120241240343110130"
+      },
+      "item_price_list": [
+        "1295.0"
+      ],
+      "item_title_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "product_id_list": [
+        "7476337311826"
+      ],
+      "variant_id_list": [
+        "42117453512786"
+      ]
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T08:53:46.508638+00:00"
+  },
+  {
+    "id": "5d1776c6-1e08-4b15-a393-bd312992304d",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "email": "magrynissar123@gmail.com",
+      "items": [
+        {
+          "sku": "CF30",
+          "name": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "price": 1295,
+          "title": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "img_url": "https://cdn.shopify.com/s/files/1/0570/5705/0706/files/Cup-lift-mockup1-_1.png?v=1774943378",
+          "quantity": 3,
+          "product_id": 7476337311826,
+          "variant_id": 42117453512786,
+          "custom_attributes": {
+            "contentId": "7476337311826"
+          }
+        }
+      ],
+      "cart_id": "69d615f2aa73b615f6e9e633",
+      "img_url": "https://cdn.shopify.com/s/files/1/0570/5705/0706/files/Cup-lift-mockup1-_1.png?v=1774943378",
+      "currency": "INR",
+      "sku_list": [
+        "CF30"
+      ],
+      "last_name": "Magrry",
+      "cart_token": "hWNAmQfVOjWhB5hEvcxe6NmO?key=a0d0cb97207a061b61b2b5b164c2c97c",
+      "first_name": "Naseer",
+      "item_count": 1,
+      "rtoPredict": "very-high",
+      "updated_at": "2026-04-08T14:16:42.665",
+      "source_name": "fastrr",
+      "total_price": 3170.7,
+      "checkout_url": "https://cureforever.in/?cart-resume-id=69d615f2aa73b615f6e9e633&type=report",
+      "latest_stage": "ORDER_SCREEN",
+      "phone_number": "6005311459",
+      "discount_codes": [
+        "PrepaidDiscount+AppliedDiscount"
+      ],
+      "item_name_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "payment_status": "Pending",
+      "shipping_price": 0,
+      "total_discount": 714.3,
+      "billing_address": {
+        "zip": "193221",
+        "city": "Kupwara",
+        "name": "Naseer Magrry",
+        "email": "magrynissar123@gmail.com",
+        "phone": "6005311459",
+        "state": "Jammu and Kashmir",
+        "line_1": "Keegam.kupwara",
+        "country": "India",
+        "address1": "Keegam.kupwara",
+        "addressID": "69c8683990228af564950a41",
+        "last_name": "Magrry",
+        "first_name": "Naseer",
+        "country_code": "IN"
+      },
+      "item_price_list": [
+        "1295.0"
+      ],
+      "item_title_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "product_id_list": [
+        "7476337311826"
+      ],
+      "rtoRiskTagsList": [
+        "PAST_HISTORY"
+      ],
+      "variant_id_list": [
+        "42117453512786"
+      ],
+      "shipping_address": {
+        "zip": "193221",
+        "city": "Kupwara",
+        "name": "Naseer Magrry",
+        "email": "magrynissar123@gmail.com",
+        "phone": "6005311459",
+        "state": "Jammu and Kashmir",
+        "line_1": "Keegam.kupwara",
+        "country": "India",
+        "address1": "Keegam.kupwara",
+        "addressID": "69c8683990228af564950a41",
+        "last_name": "Magrry",
+        "first_name": "Naseer",
+        "country_code": "IN"
+      },
+      "custom_attributes": {
+        "OpusCartId": "ver_1",
+        "ipv4_address": "157.48.0.46",
+        "landing_page_url": "https://cureforever.in/products/cuplift-capsules?ad_id=120242020297800130&campaign_id=120236274771350130&fbclid=IwZXh0bgNhZW0BMABhZGlkAaswIN-0RPJzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR4W5qVZ89u06LyyF9FpBOHdmOje7OdnlWnB9ZFT5S7eY0Vo4nbnj4CUw35Tuw_aem_ixrCFQ_LHjITUB_E0EMN6g&utm_campaign=120236274771350130&utm_content=120242020297800130&utm_id=120236274771350130_v2_s06_e7576&utm_medium=paid&utm_source=facebook&utm_term=120242020297810130",
+        "shopifyCartToken": "hWNAmQfVOjWhB5hEvcxe6NmO?key=a0d0cb97207a061b61b2b5b164c2c97c"
+      }
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T08:49:00.957851+00:00"
+  },
+  {
+    "id": "b2237f60-7c23-4fe1-b6cf-90adfc5f1689",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "email": "sunilbheel344@gmail.com",
+      "items": [
+        {
+          "sku": "CF30",
+          "name": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "price": 1295,
+          "title": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "img_url": "https://cdn.shopify.com/s/files/1/0570/5705/0706/files/Cup-lift-mockup1-_1.png?v=1774943378",
+          "quantity": 1,
+          "product_id": 7476337311826,
+          "variant_id": 42117453512786,
+          "custom_attributes": {
+            "contentId": "7476337311826"
+          }
+        }
+      ],
+      "cart_id": "69d615cc5fe2c3531be24ebc",
+      "img_url": "https://cdn.shopify.com/s/files/1/0570/5705/0706/files/Cup-lift-mockup1-_1.png?v=1774943378",
+      "currency": "INR",
+      "sku_list": [
+        "CF30"
+      ],
+      "last_name": "Bheel",
+      "cart_token": "hWNAmS0CTxZRXHCKwujbVgyS?key=3a4f212443f36917899eb6be60268d5b",
+      "first_name": "Sunil",
+      "item_count": 1,
+      "rtoPredict": "very-high",
+      "updated_at": "2026-04-08T14:16:04.832",
+      "source_name": "fastrr",
+      "total_price": 1165.5,
+      "checkout_url": "https://cureforever.in/?cart-resume-id=69d615cc5fe2c3531be24ebc&type=report",
+      "latest_stage": "ORDER_SCREEN",
+      "phone_number": "8529978496",
+      "discount_codes": [
+        "PrepaidDiscount"
+      ],
+      "item_name_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "payment_status": "Pending",
+      "shipping_price": 0,
+      "total_discount": 129.5,
+      "billing_address": {
+        "zip": "342027",
+        "city": "Jodhpur",
+        "name": "Sunil Bheel",
+        "email": "sunilbheel344@gmail.com",
+        "phone": "8529978496",
+        "state": "Rajasthan",
+        "line_1": "Jajiwal Kalla",
+        "country": "India",
+        "address1": "Jajiwal Kalla",
+        "addressID": "6955e07d63c1161e753d67b8",
+        "last_name": "Bheel",
+        "first_name": "Sunil",
+        "country_code": "IN"
+      },
+      "item_price_list": [
+        "1295.0"
+      ],
+      "item_title_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "product_id_list": [
+        "7476337311826"
+      ],
+      "rtoRiskTagsList": [
+        "PAST_HISTORY"
+      ],
+      "variant_id_list": [
+        "42117453512786"
+      ],
+      "shipping_address": {
+        "zip": "342027",
+        "city": "Jodhpur",
+        "name": "Sunil Bheel",
+        "email": "sunilbheel344@gmail.com",
+        "phone": "8529978496",
+        "state": "Rajasthan",
+        "line_1": "Jajiwal Kalla",
+        "country": "India",
+        "address1": "Jajiwal Kalla",
+        "addressID": "6955e07d63c1161e753d67b8",
+        "last_name": "Bheel",
+        "first_name": "Sunil",
+        "country_code": "IN"
+      },
+      "custom_attributes": {
+        "OpusCartId": "ver_1",
+        "ipv4_address": "106.219.206.177",
+        "landing_page_url": "https://cureforever.in/products/cuplift-capsules?ad_id=120239615711800037&campaign_id=120236449457190037&fbclid=PAZXh0bgNhZW0BMABhZGlkAastXTFqK0VzcnRjBmFwcF9pZA81NjcwNjczNDMzNTI0MjcAAacesVJh-gXZrqUQrN2IlXMRTXyeOht_HO8obtnxrLGE5rhsih_GogV9htvBcA_aem_a4kybOE3ozjX_YzGjPFDYw&utm_campaign=120236449457190037&utm_content=120239615711800037&utm_id=120236449457190037&utm_medium=paid&utm_source=facebook&utm_term=120239615711830037",
+        "shopifyCartToken": "hWNAmS0CTxZRXHCKwujbVgyS?key=3a4f212443f36917899eb6be60268d5b"
+      }
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T08:48:23.941159+00:00"
+  },
+  {
+    "id": "c8775815-d42b-48af-aa7e-1586c0a698c7",
+    "source": "shiprocket",
+    "topic": "cart_update",
+    "payload": {
+      "tax": 0,
+      "items": [
+        {
+          "name": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "price": 1295,
+          "title": "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves",
+          "quantity": 3,
+          "product_id": 7476337311826,
+          "variant_id": 42117453512786
+        }
+      ],
+      "cart_id": "69d615f2aa73b615f6e9e633",
+      "currency": "INR",
+      "sku_list": [],
+      "item_count": 1,
+      "source_name": "fastrr",
+      "total_price": 3885,
+      "latest_stage": "INIT",
+      "phone_number": "6005311459",
+      "item_name_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "phone_verified": true,
+      "shipping_price": 0,
+      "total_discount": 362,
+      "cart_attributes": {
+        "OpusCartId": "ver_1",
+        "ipv4_address": "157.48.0.46",
+        "landing_page_url": "https://cureforever.in/products/cuplift-capsules?ad_id=120242020297800130&campaign_id=120236274771350130&fbclid=IwZXh0bgNhZW0BMABhZGlkAaswIN-0RPJzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR4W5qVZ89u06LyyF9FpBOHdmOje7OdnlWnB9ZFT5S7eY0Vo4nbnj4CUw35Tuw_aem_ixrCFQ_LHjITUB_E0EMN6g&utm_campaign=120236274771350130&utm_content=120242020297800130&utm_id=120236274771350130_v2_s06_e7576&utm_medium=paid&utm_source=facebook&utm_term=120242020297810130",
+        "shopifyCartToken": "hWNAmQfVOjWhB5hEvcxe6NmO?key=a0d0cb97207a061b61b2b5b164c2c97c"
+      },
+      "item_price_list": [
+        "1295.0"
+      ],
+      "item_title_list": [
+        "Cuplift – The Natural Way to Increase Bust Size and Enhance Your Curves"
+      ],
+      "product_id_list": [
+        "7476337311826"
+      ],
+      "variant_id_list": [
+        "42117453512786"
+      ]
+    },
+    "status": "processed",
+    "error": null,
+    "created_at": "2026-04-08T08:47:04.715608+00:00"
+  }
+]
