@@ -101,8 +101,14 @@ export function getTaskProductName(task: any): string {
     }
   }
 
-  // 3. Last fallback
-  if (task.task_type === "recovery") return "your items";
-  if (task.task_type === "reorder") return "Wellness Refill";
+  // 3. Check for specific detailed keys in the root or meta
+  if (!nameFromItems) {
+    const detailedName = data?.item_details?.[0]?.name || data?.checkout_items?.[0]?.name;
+    if (detailedName) return detailedName;
+  }
+
+  // 4. Last fallback
+  if (task.task_type === "recovery") return "Abandoned Items";
+  if (task.task_type === "reorder") return "Refill Reminder";
   return "—";
 }
