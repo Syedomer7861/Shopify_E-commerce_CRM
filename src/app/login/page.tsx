@@ -57,7 +57,7 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card - Glassmorphism */}
-        <div className="bg-white/[0.03] backdrop-blur-2xl rounded-3xl p-8 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+        <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 border border-white/10 shadow-2xl relative overflow-hidden group">
           {/* Subtle line across the card */}
           <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
           
@@ -108,7 +108,7 @@ export default function LoginPage() {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full h-12 bg-lime text-forest font-bold rounded-xl shadow-[0_0_20px_rgba(203,246,83,0.3)] hover:shadow-[0_0_30px_rgba(203,246,83,0.5)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:translate-y-0 flex items-center justify-center gap-2 group/btn"
+              className="w-full h-12 bg-lime text-forest font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:translate-y-0 flex items-center justify-center gap-2 group/btn"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-forest/20 border-t-forest rounded-full animate-spin" />
@@ -121,7 +121,7 @@ export default function LoginPage() {
           </form>
 
           {/* Decorative Corner Accent */}
-          <div className="absolute bottom-[-10px] right-[-10px] w-12 h-12 bg-lime/10 rounded-full blur-xl group-hover:bg-lime/20 transition-all" />
+          <div className="absolute bottom-[-10px] right-[-10px] w-12 h-12 bg-white/5 rounded-full blur-xl group-hover:bg-white/10 transition-all" />
         </div>
 
         {/* Footer Info */}

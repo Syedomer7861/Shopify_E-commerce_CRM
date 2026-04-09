@@ -22,7 +22,15 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="antialiased">
+      <head>
+        <style>{`
+          :root {
+            --font-display: 'DM Serif Display', serif;
+            --font-sans: 'DM Sans', sans-serif;
+          }
+        `}</style>
+      </head>
+      <body className="antialiased" style={{ fontFamily: 'var(--font-sans)', color: '#0A2514', background: '#f8f7f4' }}>
         {children}
         <Toaster
           position="bottom-right"
