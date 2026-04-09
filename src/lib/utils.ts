@@ -103,7 +103,7 @@ export function getTaskProductName(task: any): string {
 
   // 3. Check for specific detailed keys in the root or meta
   if (!nameFromItems) {
-    const detailedName = data?.item_details?.[0]?.name || data?.checkout_items?.[0]?.name;
+    const detailedName = meta?.item_details?.[0]?.name || meta?.checkout_items?.[0]?.name;
     if (detailedName) return detailedName;
   }
 
