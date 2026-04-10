@@ -29,8 +29,9 @@ export async function POST(req: NextRequest) {
         const cartId = body.cart_id || body.checkout_id;
         const orderId = body.order_id || body.channel_order_id;
 
-        const rawPhone = body.mobile || body.phone || body.customer_phone || 
-                         body.shipping_address?.phone || body.billing_address?.phone || "";
+        const data = body.data || body.payload || body;
+        const rawPhone = data.phone_number || data.mobile || data.phone || data.customer_phone || 
+                         data.shipping_address?.phone || data.billing_address?.phone || "";
         const phone = rawPhone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
         
         if (!phone && !cartId) {

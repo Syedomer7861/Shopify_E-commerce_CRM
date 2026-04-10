@@ -17,44 +17,32 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          });
+          const cookieOptions = { ...options, secure: false, sameSite: 'lax' as const };
+          request.cookies.set({ name, value, ...cookieOptions });
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request: { headers: request.headers },
           });
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          });
+          response.cookies.set({ name, value, ...cookieOptions });
         },
         remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: "",
-            ...options,
-          });
+          const cookieOptions = { ...options, secure: false, sameSite: 'lax' as const };
+          request.cookies.set({ name, value: "", ...cookieOptions });
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request: { headers: request.headers },
           });
-          response.cookies.set({
-            name,
-            value: "",
-            ...options,
-          });
+          response.cookies.set({ name, value: "", ...cookieOptions });
         },
       },
     }
   );
 
   const { data: { user } } = await supabase.auth.getUser();
+
+  // DEBUG: Check session presence on Local IP / Non-localhost
+  if (request.nextUrl.hostname !== "localhost") {
+    const cookieNames = request.cookies.getAll().map(c => c.name).join(", ");
+    console.log(`[AUTH DEBUG] Host: ${request.nextUrl.hostname} | Path: ${request.nextUrl.pathname} | User: ${user ? user.email : "NONE"} | Cookies: [${cookieNames}]`);
+  }
 
   // If user is not logged in and trying to access app pages, redirect to login
   // EXCLUDE: API Webhooks and static assets

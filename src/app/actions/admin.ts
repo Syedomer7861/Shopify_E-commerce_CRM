@@ -50,17 +50,21 @@ export async function createTeamMemberServer({
 
     let userId: string | undefined = createData?.user?.id;
 
-    // 2. If creation fails (most likely duplicate user), try to find the existing user
+    // 2. If creation fails (e.g. user already exists), try to find the existing user's ID
     if (createError) {
-      console.log("DEBUG: Auth creation error, searching for existing user...", createError.message);
-      const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-      if (listError) throw listError;
-      
-      const existingUser = listData.users.find(u => u.email?.toLowerCase() === cleanEmail);
-      if (existingUser) {
-        userId = existingUser.id;
+      if (createError.message.toLowerCase().includes("already registered") || createError.status === 422) {
+        console.log("DEBUG: User already exists in Auth, fetching existing ID...");
+        const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+        if (listError) throw listError;
+        
+        const existingUser = listData.users.find(u => u.email?.toLowerCase() === cleanEmail);
+        if (existingUser) {
+          userId = existingUser.id;
+          console.log("DEBUG: Found existing user ID:", userId);
+        } else {
+          throw createError;
+        }
       } else {
-        // If they really don't exist, throw the original creation error
         throw createError;
       }
     }

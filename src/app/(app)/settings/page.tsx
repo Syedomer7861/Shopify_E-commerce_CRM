@@ -945,30 +945,59 @@ export default function SettingsPage() {
               </div>
 
               <div className="pt-6 mt-6 border-t border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                   <div>
-                      <h4 className="text-sm font-semibold text-gray-700">Manual Sync Controls</h4>
-                      <p className="text-xs text-gray-400 mt-0.5">Force a full sync of all pending logs and tasks</p>
-                   </div>
-                   <button 
-                    onClick={async () => {
-                      setSaving(true);
-                      try {
-                        const res = await fetch("/api/sync/all", { method: "POST" });
-                        const data = await res.json();
-                        if (data.success) {
-                          toast.success(`Sync Complete!\nProcessed: ${data.report.logs.processed} logs\nGenerated: ${data.report.tasks.generated} tasks`);
-                        } else throw new Error(data.error);
-                      } catch (err: any) {
-                        toast.error("Sync Failed: " + err.message);
-                      } finally {
-                        setSaving(false);
-                      }
-                    }}
-                    className="flex items-center justify-center gap-2 py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold transition-all shadow-sm"
-                   >
-                     <RefreshCw className={cn("w-4 h-4", saving && "animate-spin")} /> Run Full System Sync
-                   </button>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                     <div>
+                        <h4 className="text-sm font-semibold text-gray-700">Pull Shiprocket Data (Orders & Customers)</h4>
+                        <p className="text-xs text-gray-400 mt-0.5">Contact Shiprocket API directly to pull ALL historical orders, abandoned carts, and missing identities.</p>
+                     </div>
+                     <button 
+                      onClick={async () => {
+                        setSaving(true);
+                        toast.loading("Pulling from Shiprocket (may take up to 60s)...", { id: "sr-sync" });
+                        try {
+                          const res = await fetch("/api/sync/shiprocket", { method: "POST" });
+                          const data = await res.json();
+                          if (data.success) {
+                            toast.success(`Shiprocket Sync Complete!\n${data.report?.orders_processed || 0} Orders, ${data.report?.customers_updated || 0} Customers synced.`, { id: "sr-sync" });
+                          } else throw new Error(data.error);
+                        } catch (err: any) {
+                          toast.error("Shiprocket Sync Failed: " + err.message, { id: "sr-sync" });
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2 py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-bold transition-all shadow-sm shrink-0"
+                     >
+                       <RefreshCw className={cn("w-4 h-4", saving && "animate-spin")} /> Pull Shiprocket API
+                     </button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between border-t border-gray-50 pt-4">
+                     <div>
+                        <h4 className="text-sm font-semibold text-gray-700">Process Local Webhook Queue</h4>
+                        <p className="text-xs text-gray-400 mt-0.5">Force process any pending webhook logs and generate tasks dynamically.</p>
+                     </div>
+                     <button 
+                      onClick={async () => {
+                        setSaving(true);
+                        try {
+                          const res = await fetch("/api/sync/all", { method: "POST" });
+                          const data = await res.json();
+                          if (data.success) {
+                            toast.success(`Sync Complete!\nProcessed: ${data.report.logs.processed} logs\nGenerated: ${data.report.tasks.generated} tasks`);
+                          } else throw new Error(data.error);
+                        } catch (err: any) {
+                          toast.error("Sync Failed: " + err.message);
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2 py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold transition-all shadow-sm shrink-0"
+                     >
+                       <RefreshCw className={cn("w-4 h-4", saving && "animate-spin")} /> Process Webhook Queue
+                     </button>
+                  </div>
                 </div>
               </div>
             </div>

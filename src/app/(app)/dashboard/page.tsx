@@ -111,11 +111,15 @@ export default function Dashboard() {
     setWaSettings(ws);
 
     // 7. Recent Webhook Logs (The "Pulse")
-    const { data: logsData } = await supabase
-      .from("webhook_logs")
-      .select("id, topic, created_at, payload")
-      .order("created_at", { ascending: false })
-      .limit(5);
+    let logsData = [];
+    try {
+      const res = await fetch("/api/webhooks/recent");
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) logsData = json.logs;
+      }
+    } catch(e) {}
+
 
     setTodayTasks((todayData || []) as any);
     setOverdueTasks((overdueData || []) as any);

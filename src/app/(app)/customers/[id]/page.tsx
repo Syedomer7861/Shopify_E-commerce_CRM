@@ -174,7 +174,7 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "Total Orders", value: customer.total_orders },
+              { label: "Total Orders", value: orders.length || 0 },
               { label: "Total Spent", value: formatCurrency(totalSpent) },
               { label: "RTO Count", value: customer.rto_count },
             ].map(s => (

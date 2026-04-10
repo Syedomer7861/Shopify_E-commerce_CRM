@@ -86,12 +86,36 @@ export async function POST(req: NextRequest) {
       // A1. Upsert Customer
       let customerId: string | null = null;
       if (customerPhone) {
-        // Fetch existing to protect name
-        const { data: existingCust } = await supabase
+        const isMasked = customerPhone.includes("x") || customerPhone.includes("X");
+        
+        // Fetch existing to protect name OR handle unmasking
+        let existingCust: any = null;
+        
+        // Try match by phone first (standard)
+        const { data: byPhone } = await supabase
           .from("customers")
-          .select("name")
+          .select("id, name, phone")
           .eq("phone", customerPhone)
           .maybeSingle();
+        existingCust = byPhone;
+
+        // If not found by phone and we have email, try match by email to catch unmasking
+        if (!existingCust && rawEmail) {
+            const { data: byEmail } = await supabase
+              .from("customers")
+              .select("id, name, phone")
+              .eq("email", rawEmail)
+              .maybeSingle();
+            
+            if (byEmail && !isMasked && (byEmail.phone?.includes("x") || byEmail.phone?.includes("_SR_"))) {
+                console.log(`🔓 Unmasking customer ${byEmail.id} via webhook email match: ${customerPhone}`);
+                existingCust = byEmail;
+                // Update phone now
+                await supabase.from("customers").update({ phone: customerPhone }).eq("id", byEmail.id);
+            } else {
+                existingCust = byEmail;
+            }
+        }
 
       const shipAddr = data.shipping_address || {};
       const billAddr = data.billing_address || {};
@@ -125,9 +149,12 @@ export async function POST(req: NextRequest) {
         if (!custErr && customerData && customerData.length > 0) {
             customerId = customerData[0].id;
         } else {
-            // ABSOLUTE MATCH FALLBACK: Sometimes upsert select fails to return the ID for existing records
-            const { data: existing } = await supabase.from('customers').select('id').eq('phone', customerPhone).maybeSingle();
-            if (existing) customerId = existing.id;
+            // ABSOLUTE MATCH FALLBACK
+            if (existingCust) customerId = existingCust.id;
+            else {
+                const { data: existing } = await supabase.from('customers').select('id').eq('phone', customerPhone).maybeSingle();
+                if (existing) customerId = existing.id;
+            }
         }
       }
 
@@ -225,7 +252,7 @@ export async function POST(req: NextRequest) {
           delivery_status: "pending",
           fulfillment_status: "unfulfilled",
           ordered_at: data.created_at || body.created_at || new Date().toISOString(),
-          source: "shiprocket",
+            source: "shopify",
           line_items: enrichedItems.length > 0 ? enrichedItems : [{ name: "Order Content", qty: 1, price: 0 }]
         }, { onConflict: "shopify_order_id" });
 
@@ -287,19 +314,38 @@ export async function POST(req: NextRequest) {
       const deliveredAt = body.delivered_date ? new Date(body.delivered_date).toISOString() : null;
 
       // Sync Customer
-      const phone = (body.customer_phone || body.mobile || "").toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
+      const phoneCandidates = [body.customer_phone, body.mobile, body.billing_phone, body.shipping_phone].filter(Boolean);
+      const phone = phoneCandidates.map(p => p.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, ""))[0];
       let customerId: string | null = null;
+      
       if (phone) {
-        const { data: customer } = await supabase.from("customers").upsert({
-          name: body.customer_name || body.name || "Shiprocket Customer",
-          phone: phone,
-          email: body.customer_email || body.email || null,
-          address: body.customer_address || body.address || null,
-          city: body.customer_city || body.city || null,
-          state: body.customer_state || body.state || null,
-          zip: body.customer_pincode || body.pincode || null,
-        }, { onConflict: "phone" }).select("id").single();
-        if (customer) customerId = customer.id;
+        const name = body.billing_customer_name || body.shipping_customer_name || body.customer_name || body.name || "Shiprocket Customer";
+        
+        // Find existing to protect names
+        const { data: existing } = await supabase.from("customers").select("id, name").eq("phone", phone).maybeSingle();
+        
+        if (existing) {
+          customerId = existing.id;
+          const updates: any = {};
+          if (name !== "Shiprocket Customer" && (!existing.name || existing.name === "Shiprocket Customer" || existing.name === "Unknown Customer")) {
+            updates.name = name;
+          }
+          if (Object.keys(updates).length > 0) {
+            await supabase.from("customers").update(updates).eq("id", customerId);
+          }
+        } else {
+          // Create new
+          const { data: customer } = await supabase.from("customers").insert({
+            name: name,
+            phone: phone,
+            email: body.customer_email || body.email || body.billing_email || null,
+            address: body.customer_address || body.billing_address || body.address || null,
+            city: body.customer_city || body.billing_city || body.city || null,
+            state: body.customer_state || body.billing_state || body.state || null,
+            zip: body.customer_pincode || body.billing_pincode || body.pincode || null,
+          }).select("id").single();
+          if (customer) customerId = customer.id;
+        }
       }
 
       // Update Order
@@ -322,7 +368,7 @@ export async function POST(req: NextRequest) {
             order_number: identifier.toString(),
             delivery_status: crmStatus,
             fulfillment_status: "fulfilled", // If we have a tracking update, it's likely fulfilled
-            source: "shiprocket",
+            source: "shopify",
             ordered_at: body.created_at || new Date().toISOString(),
             line_items: [{ name: body.order_status || "Shiprocket Order", price: parseFloat(body.total || 0), qty: 1, __metadata: true, payload: body }]
         };
