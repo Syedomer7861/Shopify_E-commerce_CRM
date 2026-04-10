@@ -1,5 +1,8 @@
+/**
+ * WhatsApp messaging via local bridge (wa_server.js)
+ * 100% free — uses whatsapp-web.js under the hood
+ */
 import { createClient } from "./supabase";
-import { sendUltraMsg } from "./whatsapp-ultramsg";
 
 export interface WhatsAppResponse {
   ok: boolean;
@@ -9,22 +12,8 @@ export interface WhatsAppResponse {
 export async function sendWhatsApp(phone: string, message: string, imagePath?: string): Promise<WhatsAppResponse> {
   const supabase = createClient();
   
-  // 1. Get settings
-  const { data: settings } = await supabase.from("settings").select("*").single();
-  const provider = settings?.whatsapp_provider || "local";
-
-  if (provider === "cloud") {
-    const instanceId = settings?.ultramsg_instance_id;
-    const token = settings?.ultramsg_token;
-    
-    if (!instanceId || !token) {
-      return { ok: false, error: "Cloud Instance settings missing. Please check Instance ID and Token." };
-    }
-    
-    return sendUltraMsg(instanceId, token, phone, message, imagePath);
-  }
-
-  // 2. Default to Local Bridge
+  // Get bridge URL from settings
+  const { data: settings } = await supabase.from("settings").select("whatsapp_bridge_url").single();
   const bridgeUrl = settings?.whatsapp_bridge_url || "http://localhost:3001";
 
   try {
@@ -42,9 +31,9 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
     
     let errorMessage = err.message || "Failed to reach WhatsApp bridge";
     if (isLocalhost && isProduction) {
-      errorMessage = "Bridge unreachable: Cannot reach 'localhost' from the cloud. Use the 'Cloud Instance' provider for production automation.";
+      errorMessage = "Bridge unreachable: Cannot reach 'localhost' from the cloud. Use ngrok or host the bridge on a VPS.";
     } else if (err.name === 'AbortError' || err.message?.includes('fetch')) {
-      errorMessage = "Bridge unreachable: Ensure your bridge server or tunnel is running.";
+      errorMessage = "Bridge unreachable: Ensure wa_server.js is running on your PC.";
     }
 
     return { ok: false, error: errorMessage };
@@ -52,7 +41,7 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
 }
 
 export function cleanPhone(phone: string): string {
-  const cleaned = phone.replace(/[^\d+]/g, "");
+  const cleaned = phone.replace(/[^\\d+]/g, "");
   if (!cleaned.startsWith("+")) {
     return "+" + cleaned;
   }

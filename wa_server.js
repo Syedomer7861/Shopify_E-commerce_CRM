@@ -170,6 +170,16 @@ app.get("/status", async (req, res) => {
     });
 });
 
+// Returns QR as JSON data (used by CRM Settings page to render inline)
+app.get("/qr-data", (req, res) => {
+    if (!currentQR) {
+        return res.json({ qr: null, state: clientState, ready: isReady });
+    }
+    // Generate a QR image URL that the frontend can use in an <img> tag
+    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(currentQR)}`;
+    res.json({ qr: qrImageUrl, qrRaw: currentQR, state: clientState, ready: isReady });
+});
+
 app.get("/qr", (req, res) => {
     if (!currentQR) {
         return res.json({ ok: false, error: "No QR available — client may already be authenticated" });

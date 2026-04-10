@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, ShieldCheck, Zap } from "lucide-react";
+import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CheckCircle2, WifiOff } from "lucide-react";
 import { PageHeader, Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -20,9 +20,6 @@ export default function SettingsPage() {
     inactive_threshold_days: 45,
     whatsapp_enabled: false,
     whatsapp_bridge_url: "http://localhost:3001",
-    whatsapp_provider: "local",
-    ultramsg_instance_id: "",
-    ultramsg_token: "",
     whatsapp_review_template: "",
     whatsapp_reorder_template: "",
     whatsapp_recovery_template: "",
@@ -47,27 +44,37 @@ export default function SettingsPage() {
   });
 
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: "customers" | "orders" | "tasks" | "abandoned_carts" | null }>({ open: false, type: null });
-  const [waStatus, setWaStatus] = useState<{ ready?: boolean; state?: string; error?: string }>({ state: "INITIALISING" });
+  const [waStatus, setWaStatus] = useState<{ ready?: boolean; state?: string; error?: string; qr?: string | null }>({ state: "INITIALISING" });
   const [manualWaModal, setManualWaModal] = useState(false);
   const [manualWaTaskId, setManualWaTaskId] = useState("");
   const [manualWaCustomerName, setManualWaCustomerName] = useState("");
   const [manualWaMessage, setManualWaMessage] = useState("");
   const [manualWaFile, setManualWaFile] = useState<File | null>(null);
   const [sendingManualWa, setSendingManualWa] = useState(false);
+  const [qrLoading, setQrLoading] = useState(false);
 
   const supabase = createClient();
 
   const fetchStatus = async () => {
     try {
-      const { data: settings } = await supabase.from("settings").select("*").single();
-      const provider = settings?.whatsapp_provider || "local";
-      
-      const endpoint = provider === "cloud" ? "/api/whatsapp/cloud-status" : "/api/whatsapp/status";
-      const res = await fetch(endpoint);
+      // Fetch connection status
+      const res = await fetch("/api/whatsapp/status");
       const data = await res.json();
-      setWaStatus(data);
+      
+      // Also fetch QR if not ready
+      if (!data.ready) {
+        try {
+          const qrRes = await fetch("/api/whatsapp/qr");
+          const qrData = await qrRes.json();
+          setWaStatus({ ...data, qr: qrData.qr || null });
+        } catch {
+          setWaStatus({ ...data, qr: null });
+        }
+      } else {
+        setWaStatus({ ...data, qr: null });
+      }
     } catch (err) {
-      setWaStatus({ state: "DISCONNECTED" });
+      setWaStatus({ state: "DISCONNECTED", qr: null });
     }
   };
 
@@ -503,154 +510,101 @@ export default function SettingsPage() {
       {/* WHATSAPP */}
       {tab === "notifications" && (
         <div className="space-y-5">
-            <div className="flex items-center gap-4 mb-6 p-1 bg-gray-50 rounded-xl border border-gray-100">
-              <button 
-                onClick={() => setSettings({ ...settings, whatsapp_provider: "local" })}
-                className={cn("flex-1 py-2 px-4 rounded-lg text-xs font-bold transition-all", 
-                  settings.whatsapp_provider === "local" ? "bg-white text-forest shadow-sm" : "text-gray-400 hover:text-gray-600"
-                )}
-              >
-                Local Bridge (Local PC)
-              </button>
-              <button 
-                onClick={() => setSettings({ ...settings, whatsapp_provider: "cloud" })}
-                className={cn("flex-1 py-2 px-4 rounded-lg text-xs font-bold transition-all", 
-                  settings.whatsapp_provider === "cloud" ? "bg-white text-forest shadow-sm" : "text-gray-400 hover:text-gray-600"
-                )}
-              >
-                Cloud Instance (Scan & Go)
-              </button>
-            </div>
-
             <div className={cn("space-y-4 transition-all", !settings.whatsapp_enabled && "opacity-40 pointer-events-none")}>
-              
-              {settings.whatsapp_provider === "local" ? (
-                <>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between px-1">
-                      <label className="text-xs font-bold text-gray-700">WhatsApp Bridge URL</label>
-                      {typeof window !== "undefined" && window.location.hostname !== "localhost" && settings.whatsapp_bridge_url?.includes("localhost") && (
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-rose-50 text-rose-600 rounded-md border border-rose-100 animate-pulse">
-                          <ShieldCheck className="w-3 h-3" />
-                          <span className="text-[10px] font-bold">Cloud-to-Local Warning</span>
-                        </div>
-                      )}
+
+              {/* QR Scanner / Connection Status */}
+              <div className="card overflow-hidden">
+                {waStatus.ready ? (
+                  /* CONNECTED STATE */
+                  <div className="p-6 text-center bg-gradient-to-br from-emerald-50 to-white">
+                    <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-100">
+                      <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                     </div>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-forest transition-colors">
-                        <Database className="w-4 h-4" />
-                      </div>
-                      <input 
-                        type="text" 
-                        value={settings.whatsapp_bridge_url || ""} 
-                        onChange={e => setSettings({ ...settings, whatsapp_bridge_url: e.target.value })}
-                        placeholder="http://localhost:3001"
-                        className="input pl-10 font-mono text-xs h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-all shadow-sm" 
+                    <h3 className="text-lg font-bold text-emerald-800">WhatsApp Connected</h3>
+                    <p className="text-xs text-emerald-600/60 mt-1">Your WhatsApp session is active and ready to send messages.</p>
+                    <div className="flex items-center justify-center gap-2 mt-4">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                      <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Live & Ready</span>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (!confirm("This will disconnect WhatsApp. You will need to scan the QR code again.")) return;
+                        const res = await fetch("/api/whatsapp/restart", { method: "POST" });
+                        const data = await res.json();
+                        if (data.ok) { toast.success("Disconnected. Refresh to see QR."); setTimeout(fetchStatus, 3000); }
+                        else toast.error(data.error || "Failed");
+                      }}
+                      className="mt-4 text-[10px] text-gray-400 hover:text-rose-500 transition-colors underline"
+                    >
+                      Disconnect & Re-Scan
+                    </button>
+                  </div>
+                ) : waStatus.qr ? (
+                  /* QR CODE STATE */
+                  <div className="p-6 text-center bg-gradient-to-br from-gray-50 to-white">
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                      <Smartphone className="w-5 h-5 text-forest" />
+                      <h3 className="text-sm font-bold text-forest">Scan QR Code to Connect</h3>
+                    </div>
+                    <p className="text-[11px] text-gray-500 mb-5">Open WhatsApp on your phone → <b>Linked Devices</b> → <b>Link a Device</b></p>
+                    <div className="inline-block p-3 bg-white rounded-2xl shadow-xl border border-gray-100">
+                      <img
+                        src={waStatus.qr}
+                        alt="WhatsApp QR Code"
+                        className="w-64 h-64 rounded-lg"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                       />
                     </div>
+                    <p className="text-[10px] text-gray-400 mt-4 italic">QR auto-refreshes every 5 seconds. If expired, click Refresh.</p>
+                    <button
+                      onClick={() => { setQrLoading(true); fetchStatus().finally(() => setQrLoading(false)); }}
+                      className="mt-3 flex items-center gap-1.5 mx-auto px-4 py-2 bg-forest text-white rounded-lg text-xs font-bold hover:bg-forest/90 transition-all"
+                    >
+                      <RefreshCw className={cn("w-3.5 h-3.5", qrLoading && "animate-spin")} />
+                      Refresh QR
+                    </button>
                   </div>
-
-                  {/* Cloud connectivity guide */}
-                  {typeof window !== "undefined" && window.location.hostname !== "localhost" && (
-                    <div className="bg-forest rounded-2xl p-5 border border-white/10 shadow-xl relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-lime/10 rounded-full blur-2xl group-hover:bg-lime/20 transition-all" />
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 rounded-xl bg-lime/10 flex items-center justify-center border border-lime/20">
-                            <ShieldCheck className="w-5 h-5 text-lime" />
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-bold text-white">Tunnel Required for Local Bridge</h4>
-                            <p className="text-[10px] text-white/40">Bridge the gap between Vercel and your local machine</p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-4">
-                          <p className="text-xs text-white/60 leading-relaxed">
-                            Since your CRM is live on Vercel, it cannot reach your <code className="text-lime px-1 rounded">localhost</code>. 
-                            Use the **Cloud Instance** option to skip this setup entirely.
-                          </p>
-
-                          <div className="grid grid-cols-1 gap-3">
-                            <div className="bg-black/40 rounded-xl p-3 border border-white/5">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-[9px] font-bold text-white/30 tracking-widest uppercase">Start Ngrok Tunnel</span>
-                              </div>
-                              <code className="text-xs text-lime font-mono block select-all cursor-pointer bg-black/20 p-2 rounded-lg border border-lime/10 hover:border-lime/30 transition-all">
-                                ngrok http 3001
-                              </code>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                ) : (
+                  /* DISCONNECTED STATE */
+                  <div className="p-6 text-center bg-gradient-to-br from-rose-50/30 to-white">
+                    <div className="w-16 h-16 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-4">
+                      <WifiOff className="w-8 h-8 text-rose-400" />
                     </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-gray-700">Instance ID</label>
-                      <input 
-                        type="text" 
-                        value={settings.ultramsg_instance_id || ""} 
-                        onChange={e => setSettings({ ...settings, ultramsg_instance_id: e.target.value })}
-                        placeholder="instance12345"
-                        className="input font-mono text-xs h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-all shadow-sm" 
-                      />
+                    <h3 className="text-sm font-bold text-gray-700">WhatsApp Bridge Not Running</h3>
+                    <p className="text-[11px] text-gray-400 mt-1 max-w-sm mx-auto">
+                      Start the bridge server on your PC to connect WhatsApp.
+                    </p>
+                    <div className="bg-gray-900 rounded-xl p-3 mt-4 max-w-xs mx-auto">
+                      <code className="text-xs text-lime font-mono select-all">node wa_server.js</code>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-gray-700">API Token</label>
-                      <input 
-                        type="password" 
-                        value={settings.ultramsg_token || ""} 
-                        onChange={e => setSettings({ ...settings, ultramsg_token: e.target.value })}
-                        placeholder="••••••••••••"
-                        className="input font-mono text-xs h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-all shadow-sm" 
-                      />
-                    </div>
+                    <button
+                      onClick={() => { fetchStatus(); toast.success("Checking connection..."); }}
+                      className="mt-4 flex items-center gap-1.5 mx-auto px-4 py-2 bg-forest text-white rounded-lg text-xs font-bold hover:bg-forest/90 transition-all"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      Retry Connection
+                    </button>
                   </div>
+                )}
+              </div>
 
-                  <div className="bg-forest rounded-2xl p-5 border border-white/10 shadow-xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-lime/10 rounded-full blur-2xl group-hover:bg-lime/20 transition-all" />
-                    <div className="relative z-10">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-xl bg-lime/10 flex items-center justify-center border border-lime/20">
-                          <Zap className="w-5 h-5 text-lime" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-bold text-white">Scan & Go Cloud Mode</h4>
-                          <p className="text-[10px] text-white/40">Professional automation without a local PC</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 gap-3">
-                          <div className="bg-black/40 rounded-xl p-4 border border-white/5 space-y-4">
-                            <div className="flex items-start gap-3">
-                              <div className="w-5 h-5 rounded-full bg-lime text-forest flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">1</div>
-                              <p className="text-[10px] text-white/60">Create an account at <a href="https://ultramsg.com" target="_blank" className="text-lime underline">ultramsg.com</a></p>
-                            </div>
-                            <div className="flex items-start gap-3">
-                              <div className="w-5 h-5 rounded-full bg-lime text-forest flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">2</div>
-                              <p className="text-[10px] text-white/60">Scan the QR code to connect your WhatsApp session to their cloud server.</p>
-                            </div>
-                            <div className="flex items-start gap-3">
-                              <div className="w-5 h-5 rounded-full bg-lime text-forest flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">3</div>
-                              <p className="text-[10px] text-white/60">Copy your <b>Instance ID</b> and <b>Token</b> into the fields above.</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 pt-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-lime animate-pulse" />
-                          <span className="text-[10px] font-bold text-lime/60 uppercase tracking-widest leading-none">Cloud Native Engine Active</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
+              {/* Bridge URL (Advanced) */}
+              <details className="card">
+                <summary className="px-5 py-3 text-xs font-semibold text-gray-500 cursor-pointer hover:text-forest transition-colors flex items-center gap-2">
+                  <Database className="w-3.5 h-3.5" />
+                  Advanced: Bridge URL
+                </summary>
+                <div className="px-5 pb-4 pt-1">
+                  <input 
+                    type="text" 
+                    value={settings.whatsapp_bridge_url || ""} 
+                    onChange={e => setSettings({ ...settings, whatsapp_bridge_url: e.target.value })}
+                    placeholder="http://localhost:3001"
+                    className="input font-mono text-xs h-10 bg-gray-50/50 border-gray-200 focus:bg-white transition-all" 
+                  />
+                  <p className="text-[10px] text-gray-400 mt-2">Change this if you are using ngrok or hosting the bridge on a VPS.</p>
+                </div>
+              </details>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -674,51 +628,18 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Status Indicator */}
+              {/* Compact Status Bar */}
               <div className="pt-4 border-t border-gray-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={cn("w-2 h-2 rounded-full animate-pulse", 
-                      waStatus.ready ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : 
-                      waStatus.state === "DISCONNECTED" ? "bg-rose-500" : "bg-amber-500")} />
-                    <span className="text-xs font-semibold text-gray-700">
-                      Bridge Status: <span className={cn(
-                        waStatus.ready ? "text-emerald-600" : 
-                        waStatus.state === "DISCONNECTED" ? "text-rose-600" : "text-amber-600"
-                      )}>{waStatus.state?.replace("_", " ") || "UNKNOWN"}</span>
-                    </span>
-                    <button 
-                      onClick={async () => {
-                        const res = await fetch("/api/whatsapp/restart", { method: "POST" });
-                        const data = await res.json();
-                        if (data.ok) {
-                          toast.success("Restarting bridge...");
-                          setTimeout(fetchStatus, 2000);
-                        } else {
-                          toast.error(data.error || "Failed to restart");
-                        }
-                      }}
-                      className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-rose-500"
-                      title="Reset Connection (Restart Bridge)"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                    <button 
-                      onClick={() => {
-                        fetchStatus();
-                        toast.success("Syncing status...");
-                      }}
-                      className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-forest"
-                      title="Sync Status"
-                    >
-                      <RefreshCw className={cn("w-3 h-3", loading && "animate-spin")} />
-                    </button>
-                  </div>
-                  {waStatus.state === "QR_PENDING" && (
-                    <a href="http://localhost:3001/qr" target="_blank" className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-1 rounded hover:bg-emerald-100 transition-colors font-bold uppercase tracking-wider">
-                      Scan QR Code
-                    </a>
-                  )}
+                <div className="flex items-center gap-2">
+                  <div className={cn("w-2 h-2 rounded-full animate-pulse", 
+                    waStatus.ready ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : 
+                    waStatus.state === "DISCONNECTED" ? "bg-rose-500" : "bg-amber-500")} />
+                  <span className="text-xs font-semibold text-gray-700">
+                    Status: <span className={cn(
+                      waStatus.ready ? "text-emerald-600" : 
+                      waStatus.state === "DISCONNECTED" ? "text-rose-600" : "text-amber-600"
+                    )}>{waStatus.ready ? "CONNECTED" : waStatus.state?.replace("_", " ") || "UNKNOWN"}</span>
+                  </span>
                 </div>
               </div>
 
