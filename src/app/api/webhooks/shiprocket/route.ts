@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
           delivery_status: "pending",
           fulfillment_status: "unfulfilled",
           ordered_at: data.created_at || body.created_at || new Date().toISOString(),
-          source: (data.source === "shopify" || body.source === "shopify") ? "shopify" : "shopify", // Force shopify enum
+          source: "shiprocket",
           line_items: enrichedItems.length > 0 ? enrichedItems : [{ name: "Order Content", qty: 1, price: 0 }]
         }, { onConflict: "shopify_order_id" });
 
@@ -322,7 +322,7 @@ export async function POST(req: NextRequest) {
             order_number: identifier.toString(),
             delivery_status: crmStatus,
             fulfillment_status: "fulfilled", // If we have a tracking update, it's likely fulfilled
-            source: "shopify",
+            source: "shiprocket",
             ordered_at: body.created_at || new Date().toISOString(),
             line_items: [{ name: body.order_status || "Shiprocket Order", price: parseFloat(body.total || 0), qty: 1, __metadata: true, payload: body }]
         };

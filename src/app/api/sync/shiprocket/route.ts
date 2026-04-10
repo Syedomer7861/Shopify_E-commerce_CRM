@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
         customer_id: customerId,
         total_price: parseFloat(sr.total || 0),
         ordered_at: parseShiprocketDate(sr.created_at),
-        source: "shopify",
+        source: "shiprocket",
         ...updatePayload
       }, { onConflict: "shopify_order_id" });
 
