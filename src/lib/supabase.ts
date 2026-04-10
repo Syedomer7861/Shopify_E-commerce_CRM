@@ -6,10 +6,9 @@ export const createClient = () => {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       auth: {
-        flowType: 'pkce',
-        detectSessionInUrl: true,
         persistSession: true,
         autoRefreshToken: true,
+        detectSessionInUrl: true,
       },
       cookieOptions: {
         secure: false,
