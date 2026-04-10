@@ -10,7 +10,7 @@ export type TaskStatus = "pending" | "due" | "done" | "rescheduled" | "skipped" 
 
 export type CallOutcome = "done" | "rescheduled" | "no_answer" | "skipped";
 
-export type OrderSource = "shopify" | "excel" | "manual";
+export type OrderSource = "excel" | "manual" | "shiprocket";
 
 export interface Customer {
   id: string;

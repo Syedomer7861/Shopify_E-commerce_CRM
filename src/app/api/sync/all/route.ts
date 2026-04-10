@@ -44,19 +44,31 @@ export async function POST(req: NextRequest) {
           let customerId = null;
           if (phone) {
             const rawEmail = body.email || body.customer_email || body.shipping_address?.email || body.billing_address?.email || null;
+            
             const firstName = body.first_name || body.shipping_address?.first_name || body.billing_address?.first_name || "";
             const lastName = body.last_name || body.shipping_address?.last_name || body.billing_address?.last_name || "";
             const fullName = body.customer_name || body.shipping_address?.name || body.billing_address?.name || 
                              (firstName ? `${firstName} ${lastName}`.trim() : "Shiprocket Customer");
 
+            const shipAddr = body.shipping_address || {};
+            const billAddr = body.billing_address || {};
+
+            const combinedAddress = [
+                body.address,
+                shipAddr.address1,
+                shipAddr.address2,
+                billAddr.address1,
+                billAddr.address2
+            ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(", ");
+
             const { data: customerData } = await supabase.from("customers").upsert({
               name: fullName,
               phone: phone,
               email: rawEmail,
-              city: body.city || body.shipping_address?.city || null,
-              state: body.state || body.shipping_address?.state || null,
-              zip: body.pincode || body.shipping_address?.zip || null,
-              address: body.address || body.shipping_address?.address1 || null,
+              city: body.city || shipAddr.city || billAddr.city || null,
+              state: body.state || shipAddr.state || billAddr.state || null,
+              zip: body.pincode || shipAddr.zip || billAddr.zip || shipAddr.pincode || null,
+              address: combinedAddress || null,
             }, { onConflict: "phone" }).select("id");
             
             if (customerData && customerData.length > 0) customerId = customerData[0].id;
@@ -126,6 +138,31 @@ export async function POST(req: NextRequest) {
                     await supabase.from("abandoned_carts").update({ recovery_status: "recovered" }).eq("cart_token", cartId);
                     report.abandoned.recovered++;
                 }
+
+                // AUTO-RESOLVE RECOVERY TASKS: If this customer had a pending recovery task, mark it as DONE
+                const { data: pendingTasks } = await supabase
+                  .from("tasks")
+                  .select("id")
+                  .eq("customer_id", customerId)
+                  .eq("task_type", "recovery")
+                  .eq("status", "pending");
+
+                if (pendingTasks && pendingTasks.length > 0) {
+                  const taskIds = pendingTasks.map(t => t.id);
+                  await supabase.from("tasks").update({ 
+                    status: "done", 
+                    completed_at: new Date().toISOString() 
+                  } as any).in("id", taskIds);
+                  
+                  // Log the outcome to Call History
+                  await supabase.from("call_logs").insert(taskIds.map(id => ({
+                    task_id: id,
+                    customer_id: customerId,
+                    outcome: "done",
+                    note: `Automatically resolved: Order #${orderId} synced from logs.`,
+                    agent_name: "System Sync"
+                  })));
+                }
              }
           }
 
@@ -191,7 +228,42 @@ export async function POST(req: NextRequest) {
         }
     }
     
-    // 3. TRIGGER AUTO-SENDERS (Automation Fix)
+    // 3. SELF-HEAL: CLOSE TASKS FOR RECOVERED CARTS / ORDERS
+    // This catches tasks that weren't closed during their respective log processing
+    const { data: pendingRecovery } = await supabase
+      .from("tasks")
+      .select("id, customer_id, abandoned_cart_id")
+      .eq("task_type", "recovery")
+      .eq("status", "pending");
+
+    if (pendingRecovery && pendingRecovery.length > 0) {
+      for (const t of pendingRecovery) {
+        // Check if customer has an order after the task was created
+        const { data: order } = await supabase
+          .from("orders")
+          .select("order_number")
+          .eq("customer_id", t.customer_id)
+          .limit(1)
+          .maybeSingle();
+
+        if (order) {
+           await supabase.from("tasks").update({ 
+              status: "done", 
+              completed_at: new Date().toISOString() 
+           } as any).eq("id", t.id);
+           
+           await supabase.from("call_logs").insert({
+             task_id: t.id,
+             customer_id: t.customer_id,
+             outcome: "done",
+             note: `Healed: Task resolved because order #${order.order_number} was found.`,
+             agent_name: "Repair Sync"
+           });
+        }
+      }
+    }
+    
+    // 4. TRIGGER AUTO-SENDERS (Automation Fix)
     const baseUrl = req.nextUrl.origin;
     const waResults = { recovery: 0, reorder: 0, review: 0 };
     

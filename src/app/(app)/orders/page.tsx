@@ -103,21 +103,6 @@ export default function OrdersPage() {
     }
   }
 
-  async function handleShopifySync() {
-    setSyncing(true);
-    try {
-      const res = await fetch("/api/sync/shopify", { method: "POST" });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(`Shopify Sync Complete! Pulled ${data.report.orders_processed} orders with full data.`);
-      } else throw new Error(data.error);
-    } catch (err: any) {
-      toast.error("Shopify Sync Failed: " + err.message);
-    } finally {
-      await fetchOrders();
-      setSyncing(false);
-    }
-  }
 
   async function handleGlobalSync() {
     setSyncing(true);
@@ -165,17 +150,6 @@ export default function OrdersPage() {
       <PageHeader title="Orders" subtitle={`${orders.length} matching orders`} 
         actions={
           <div className="flex items-center gap-2">
-            <button 
-              onClick={handleShopifySync} 
-              disabled={syncing}
-              className={cn(
-                "bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-1.5 py-1.5 px-3 font-bold text-xs transition-all shadow-sm",
-                syncing && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              <RefreshCw className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
-              Sync Shopify
-            </button>
 
             <button 
               onClick={handleShiprocketSync} 

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { ArrowLeft, Phone, Mail, ShoppingBag, PhoneCall, CheckSquare, FileText, AlertTriangle, RefreshCw, ToggleLeft, ToggleRight, MapPin, Home, Info } from "lucide-react";
 import Link from "next/link";
 import { Avatar, SegmentBadge, DeliveryBadge, TaskTypeBadge, TaskStatusBadge, Modal } from "@/components/ui";
@@ -8,7 +8,9 @@ import { cn, formatDate, formatDateTime, timeAgo, formatCurrency } from "@/lib/u
 import toast from "react-hot-toast";
 import type { Customer, Order, Task, CallLog } from "@/types";
 
-export default function CustomerProfile({ params }: { params: { id: string } }) {
+export default function CustomerProfile({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = use(paramsPromise);
+  const id = params.id;
   const [loading, setLoading] = useState(true);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -22,7 +24,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
 
   useEffect(() => {
     fetchCustomerData();
-  }, [params.id]);
+  }, [id]);
 
   async function fetchCustomerData() {
     setLoading(true);
@@ -31,7 +33,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
     const { data: custData } = await supabase
       .from("customers")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
 
     if (!custData) {
@@ -43,21 +45,21 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
     const { data: ordersData } = await supabase
       .from("orders")
       .select("*")
-      .eq("customer_id", params.id)
+      .eq("customer_id", id)
       .order("ordered_at", { ascending: false });
 
     // 3. Fetch Tasks
     const { data: tasksData } = await supabase
       .from("tasks")
       .select("*, order:orders(*), abandoned_cart:abandoned_carts(*)")
-      .eq("customer_id", params.id)
+      .eq("customer_id", id)
       .order("due_date", { ascending: false });
 
     // 4. Fetch Calls
     const { data: callsData } = await supabase
       .from("call_logs")
       .select("*")
-      .eq("customer_id", params.id)
+      .eq("customer_id", id)
       .order("called_at", { ascending: false });
 
     setCustomer(custData as any);
@@ -72,7 +74,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
     const { error } = await supabase
       .from("customers")
       .update({ notes } as any)
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (error) return toast.error("Failed to save note");
     toast.success("Note saved");
@@ -82,7 +84,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
     const { error } = await supabase
       .from("customers")
       .update({ rto_flag: false, rto_count: 0 } as any)
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (error) return toast.error("Failed to clear RTO flag");
     
@@ -153,7 +155,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                     const { error } = await supabase
                       .from("customers")
                       .update({ whatsapp_reminders_enabled: newValue } as any)
-                      .eq("id", params.id);
+                      .eq("id", id);
                     if (error) return toast.error("Failed to update reminder settings");
                     setCustomer(prev => prev ? { ...prev, whatsapp_reminders_enabled: newValue } as any : null);
                     toast.success(newValue ? "Enabled WhatsApp" : "Disabled WhatsApp");

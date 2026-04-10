@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, ShieldCheck } from "lucide-react";
+import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, ShieldCheck, Zap } from "lucide-react";
 import { PageHeader, Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
-type Tab = "general" | "notifications" | "overrides" | "shiprocket" | "shopify" | "database";
+type Tab = "general" | "notifications" | "overrides" | "shiprocket" | "database";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -58,6 +58,7 @@ export default function SettingsPage() {
   const supabase = createClient();
 
   const fetchStatus = async () => {
+    try {
       const { data: settings } = await supabase.from("settings").select("*").single();
       const provider = settings?.whatsapp_provider || "local";
       
@@ -448,7 +449,6 @@ export default function SettingsPage() {
           { key: "notifications", label: "WhatsApp", icon: Bell },
           { key: "overrides", label: "Product Overrides", icon: Package },
           { key: "shiprocket", label: "Shiprocket", icon: Package },
-          { key: "shopify", label: "Shopify Store", icon: Package },
           { key: "database", label: "Danger Zone", icon: Database },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key as Tab)}
@@ -928,19 +928,18 @@ export default function SettingsPage() {
                             </div>
                           );
                         })}
-                     </div>
-                   </div>
-                </div>
+                      </div>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="flex justify-end mt-8 pt-8 border-t border-gray-100">
+                <button className="btn-primary" onClick={handleSave} disabled={saving}>
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {saving ? "Saving..." : "Save Changes"}
+                </button>
               </div>
             </div>
-          </div>
-
-          <div className="flex justify-end">
-            <button className="btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {saving ? "Saving..." : "Save Changes"}
-            </button>
-          </div>
         </div>
       )}
 
@@ -1155,72 +1154,6 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* SHOPIFY */}
-      {tab === "shopify" && (
-        <div className="space-y-5 animate-in slide-in-from-left-2 duration-300">
-          <div className="card p-5">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
-                <Package className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700">Shopify Configuration</h3>
-                <p className="text-xs text-gray-400 mt-0.5">Connect your Shopify store to get unmasked customer data and full product details.</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-medium text-gray-600 block mb-1">Shopify Store Domain</label>
-                <input 
-                  type="text" 
-                  value={settings.shopify_store_domain || ""} 
-                  onChange={e => setSettings({ ...settings, shopify_store_domain: e.target.value })}
-                  placeholder="your-store.myshopify.com"
-                  className="input font-mono text-xs" 
-                />
-                <p className="text-[10px] text-gray-400 mt-1">Found in your Shopify URL</p>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-gray-600 block mb-1">Admin API Access Token (Optional)</label>
-                <div className="relative">
-                  <input 
-                    type="password" 
-                    value={settings.shopify_api_key || ""} 
-                    onChange={e => setSettings({ ...settings, shopify_api_key: e.target.value })}
-                    placeholder="shpat_xxxxxxxxxxxxxxxxxxxxxxxx"
-                    className="input font-mono text-xs pr-10" 
-                  />
-                </div>
-                <p className="text-[10px] text-gray-400 mt-1">Required for manual syncs and repairing past orders.</p>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-gray-600 block mb-1">Webhook Signing Secret</label>
-                <div className="relative">
-                  <input 
-                    type="password" 
-                    value={settings.shopify_webhook_secret || ""} 
-                    onChange={e => setSettings({ ...settings, shopify_webhook_secret: e.target.value })}
-                    placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                    className="input font-mono text-xs pr-10" 
-                  />
-                  <ShieldCheck className="w-4 h-4 text-gray-400 absolute right-3 top-2.5" />
-                </div>
-                <p className="text-[10px] text-gray-400 mt-1">Found at the bottom of Shopify Admin {" > "} Settings {" > "} Notifications</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end">
-            <button className="btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {saving ? "Saving..." : "Save Shopify Credentials"}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* DANGER ZONE */}
       {tab === "database" && (
