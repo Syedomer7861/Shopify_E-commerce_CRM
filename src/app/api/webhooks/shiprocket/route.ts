@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
   let body: any;
   
   try {
+    console.log("🚀 SHIPROCKET WEBHOOK CALLED");
     body = await req.json();
     console.log("📦 Incoming Shiprocket Webhook:", JSON.stringify(body, null, 2));
 
@@ -266,10 +267,11 @@ export async function POST(req: NextRequest) {
             customer_id: customerId, 
             total: cartData.total_price 
           });
-        }
       }
-
-        // A3. Reconciled Order Persist (Prevents duplicates between sources)
+    }
+      
+      // A3. Reconciled Order Persist (Prevents duplicates between sources)
+      if (orderId) {
         const orderIdentifier = orderId.toString();
 
         const { data: existingOrder } = await supabase
@@ -343,6 +345,13 @@ export async function POST(req: NextRequest) {
             // A5. Refresh Health Score (Feature 17)
             await supabase.rpc('refresh_customer_health_scores');
         }
+
+        // 4. Trigger Workflow (NEW)
+        await WorkflowEngine.trigger("order_placed", { 
+          order_id: orderId, 
+          customer_id: customerId, 
+          total: data.total_price 
+        });
       }
 
       // Update Log Success
@@ -352,13 +361,6 @@ export async function POST(req: NextRequest) {
               topic: orderId ? "order_placed" : "cart_update" 
           }).eq("id", logEntry.id);
       }
-
-      // 4. Trigger Workflow (NEW)
-      await WorkflowEngine.trigger("order_placed", { 
-        order_id: orderId, 
-        customer_id: customerId, 
-        total: data.total_price 
-      });
 
       return NextResponse.json({ success: true, processed: orderId || cartId });
     }
@@ -576,7 +578,7 @@ export async function POST(req: NextRequest) {
       }
 
       if (logEntry) {
-          await supabase.from("webhook_logs").update({ status: "processed", topic: "tracking_update" }).eq("id", logEntry.id);
+        await supabase.from("webhook_logs").update({ status: "processed", topic: "tracking_update" }).eq("id", logEntry.id);
       }
 
       return NextResponse.json({ success: true, type: "tracking", id: identifier });
@@ -587,7 +589,6 @@ export async function POST(req: NextRequest) {
       await supabase.from("webhook_logs").update({ status: "processed", topic: "unhandled_format" }).eq("id", logEntry.id);
     }
     return NextResponse.json({ success: true, message: "Unhandled format logged" });
-
 
   } catch (err: any) {
     console.error("❌ Shiprocket Webhook Error:", err);

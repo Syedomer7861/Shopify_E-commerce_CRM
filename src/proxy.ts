@@ -8,7 +8,15 @@ function hasValidSystemSecret(request: NextRequest) {
   return suppliedSecret === cronSecret;
 }
 
+function hasValidSyncSecret(request: NextRequest) {
+  const syncSecret = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!syncSecret) return false;
+  const suppliedSecret = request.headers.get("x-sync-secret");
+  return suppliedSecret === syncSecret;
+}
+
 export default async function proxy(request: NextRequest) {
+  console.log("PROXY: Request Path:", request.nextUrl.pathname);
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -50,7 +58,8 @@ export default async function proxy(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/api/cron");
   const isPublicPath = request.nextUrl.pathname.startsWith("/login") || 
                        request.nextUrl.pathname.startsWith("/api/webhooks");
-  const isAuthInternal = isProtectedSystemRoute && hasValidSystemSecret(request);
+  const isAuthInternal = isProtectedSystemRoute && (hasValidSystemSecret(request) || hasValidSyncSecret(request));
+  console.log("PROXY: Protected:", isProtectedSystemRoute, "AuthInternal:", isAuthInternal);
 
   if (!user && !isPublicPath && !isAuthInternal) {
     return NextResponse.redirect(new URL("/login", request.url));

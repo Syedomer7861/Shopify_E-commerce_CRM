@@ -69,148 +69,152 @@ export default function Dashboard() {
     if (!silent) setLoading(true);
     setLastChecked(new Date());
     
-    // 0. Fetch Profile Info
-    const { data: { user } } = await supabase.auth.getUser();
-    let prof: any = null;
-    if (user) {
-      const { data: profData } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-      prof = profData;
-      setProfile(prof);
-
-      if (prof?.role === "admin") {
-        const { data: agentsData } = await supabase.from("profiles").select("id, name").eq("role", "agent").eq("is_active", true);
-        if (agentsData) setAgents(agentsData);
-      }
-    }
-
-    const today = toDbDateString(new Date());
-    
-    // 1. Fetch Today's Tasks
-    const { data: todayData, count: todayCount } = await supabase
-      .from("tasks")
-      .select("*, customer:customers(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email)", { count: "exact" })
-      .eq("due_date", today)
-      .in("status", ["pending", "due"])
-      .order("priority_score", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(50);
-    
-    // 2. Fetch Overdue Tasks
-    const { data: overdueData, count: overdueCount } = await supabase
-      .from("tasks")
-      .select("*, customer:customers(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email)", { count: "exact" })
-      .lt("due_date", today)
-      .not("status", "in", '("done","skipped","cancelled")')
-      .order("priority_score", { ascending: false })
-      .order("due_date", { ascending: true })
-      .limit(50);
-
-    // 3. Fetch Upcoming Tasks (next 3 days)
-    const threeDaysOut = new Date();
-    threeDaysOut.setDate(threeDaysOut.getDate() + 3);
-    const { data: upcomingData, count: upcomingCount } = await supabase
-      .from("tasks")
-      .select("*, customer:customers(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email)", { count: "exact" })
-      .gt("due_date", today)
-      .lte("due_date", toDbDateString(threeDaysOut))
-      .eq("status", "pending")
-      .order("priority_score", { ascending: false })
-      .order("due_date", { ascending: true })
-      .limit(50);
-
-    // 4. Recent Activity
-    const { data: activityData } = await supabase
-      .from("call_logs")
-      .select("*, customer:customers(*)")
-      .order("called_at", { ascending: false })
-      .limit(5);
-
-    // 5. Done This Week count
-    const startOfWeek = new Date();
-    startOfWeek.setDate(startOfWeek.getDate() - 7);
-    const startOfWeekISO = startOfWeek.toISOString();
-    let queryDone = supabase
-      .from("tasks")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "done")
-      .gte("updated_at", startOfWeekISO);
-    
-    if (prof?.role === "agent") queryDone = queryDone.eq("assigned_to", prof.id);
-    const { count: doneCount } = await queryDone;
-    
-    // 6. WhatsApp Settings
-    const { data: ws } = await supabase.from("settings").select("*").eq("id", "00000000-0000-0000-0000-000000000000").maybeSingle();
-    setWaSettings(ws);
-
-    // 7. Recent Webhook Logs (The "Pulse")
-    let logsData = [];
     try {
-      const res = await fetch("/api/webhooks/recent");
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success) logsData = json.logs;
+      // 0. Fetch Profile Info
+      const { data: { user } } = await supabase.auth.getUser();
+      let prof: any = null;
+      if (user) {
+        const { data: profData } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+        prof = profData;
+        setProfile(prof);
+
+        if (prof?.role === "admin") {
+          const { data: agentsData } = await supabase.from("profiles").select("id, name").eq("role", "agent").eq("is_active", true);
+          if (agentsData) setAgents(agentsData);
+        }
       }
-    } catch(e) {}
 
-
-    setTodayTasks((todayData || []) as any);
-    setOverdueTasks((overdueData || []) as any);
-    setUpcomingTasks((upcomingData || []) as any);
-    setRecentActivity((activityData || []) as any);
-    setWebhookLogs((logsData || []) as any);
-    setCounts({
-      today: todayCount || 0,
-      overdue: overdueCount || 0,
-      upcoming: upcomingCount || 0,
-      doneThisWeek: doneCount || 0
-    });
-    // 7.5 Exact Escalation Counts (High Fidelity)
-    const dayMs = 86400000;
-    const nowTs = Date.now();
-    
-    const medDate = toDbDateString(new Date(nowTs - 1 * dayMs));
-    const highDate = toDbDateString(new Date(nowTs - 3 * dayMs));
-    const critDate = toDbDateString(new Date(nowTs - 7 * dayMs));
-
-    const [
-      { count: medCount },
-      { count: highCount },
-      { count: critCount },
-      { count: issueCount },
-      { count: shipCount }
-    ] = await Promise.all([
-      supabase.from("tasks").select("id", { count: "exact", head: true }).lte("due_date", medDate).not("status", "in", '("done","skipped","cancelled")'),
-      supabase.from("tasks").select("id", { count: "exact", head: true }).lte("due_date", highDate).not("status", "in", '("done","skipped","cancelled")'),
-      supabase.from("tasks").select("id", { count: "exact", head: true }).lte("due_date", critDate).not("status", "in", '("done","skipped","cancelled")'),
-      supabase.from("tasks").select("id", { count: "exact", head: true }).eq("task_type", "issue_resolution").not("status", "in", '("done","skipped","cancelled")'),
-      supabase.from("tasks").select("id", { count: "exact", head: true }).eq("task_type", "transit_update").not("status", "in", '("done","skipped","cancelled")'),
-    ]);
-
-    setEscalations({
-      medium: medCount || 0,
-      high: highCount || 0,
-      critical: critCount || 0,
-      issues: issueCount || 0,
-      shipping: shipCount || 0,
-    });
-    // 8. Fetch Agent Productivity (NEW)
-    try {
-      const res = await fetch(`/api/dashboard/agent${user ? `?agentId=${user.id}` : ""}`);
-      if (res.ok) {
-        const json = await res.json();
-        setAgentMetrics(json.metrics?.[0] || null);
-        setTrendData(json.trends || []);
-      }
+      const today = toDbDateString(new Date());
       
-      // Also fetch all agents if admin for leaderboard
-      const allRes = await fetch(`/api/dashboard/agent`);
-      if (allRes.ok) {
-        const allJson = await allRes.json();
-        setAllAgentsMetrics(allJson.metrics || []);
-      }
-    } catch (e) {}
+      // 1. Fetch Today's Tasks
+      const { data: todayData, count: todayCount } = await supabase
+        .from("tasks")
+        .select("*, customer:customers(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email)", { count: "exact" })
+        .eq("due_date", today)
+        .in("status", ["pending", "due"])
+        .order("priority_score", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(50);
+      
+      // 2. Fetch Overdue Tasks
+      const { data: overdueData, count: overdueCount } = await supabase
+        .from("tasks")
+        .select("*, customer:customers(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email)", { count: "exact" })
+        .lt("due_date", today)
+        .not("status", "in", '("done","skipped","cancelled")')
+        .order("priority_score", { ascending: false })
+        .order("due_date", { ascending: true })
+        .limit(50);
 
-    setLoading(false);
+      // 3. Fetch Upcoming Tasks (next 3 days)
+      const threeDaysOut = new Date();
+      threeDaysOut.setDate(threeDaysOut.getDate() + 3);
+      const { data: upcomingData, count: upcomingCount } = await supabase
+        .from("tasks")
+        .select("*, customer:customers(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email)", { count: "exact" })
+        .gt("due_date", today)
+        .lte("due_date", toDbDateString(threeDaysOut))
+        .eq("status", "pending")
+        .order("priority_score", { ascending: false })
+        .order("due_date", { ascending: true })
+        .limit(50);
+
+      // 4. Recent Activity
+      const { data: activityData } = await supabase
+        .from("call_logs")
+        .select("*, customer:customers(*)")
+        .order("called_at", { ascending: false })
+        .limit(5);
+
+      // 5. Done This Week count
+      const startOfWeek = new Date();
+      startOfWeek.setDate(startOfWeek.getDate() - 7);
+      const startOfWeekISO = startOfWeek.toISOString();
+      let queryDone = supabase
+        .from("tasks")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "done")
+        .gte("updated_at", startOfWeekISO);
+      
+      if (prof?.role === "agent") queryDone = queryDone.eq("assigned_to", prof.id);
+      const { count: doneCount } = await queryDone;
+      
+      // 6. WhatsApp Settings
+      const { data: ws } = await supabase.from("settings").select("*").eq("id", "00000000-0000-0000-0000-000000000000").maybeSingle();
+      setWaSettings(ws);
+
+      // 7. Recent Webhook Logs (The "Pulse")
+      let logsData = [];
+      try {
+        const res = await fetch("/api/webhooks/recent");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) logsData = json.logs;
+        }
+      } catch(e) {}
+
+
+      setTodayTasks((todayData || []) as any);
+      setOverdueTasks((overdueData || []) as any);
+      setUpcomingTasks((upcomingData || []) as any);
+      setRecentActivity((activityData || []) as any);
+      setWebhookLogs((logsData || []) as any);
+      setCounts({
+        today: todayCount || 0,
+        overdue: overdueCount || 0,
+        upcoming: upcomingCount || 0,
+        doneThisWeek: doneCount || 0
+      });
+      // 7.5 Exact Escalation Counts (High Fidelity)
+      const dayMs = 86400000;
+      const nowTs = Date.now();
+      
+      const medDate = toDbDateString(new Date(nowTs - 1 * dayMs));
+      const highDate = toDbDateString(new Date(nowTs - 3 * dayMs));
+      const critDate = toDbDateString(new Date(nowTs - 7 * dayMs));
+
+      const [
+        { count: medCount },
+        { count: highCount },
+        { count: critCount },
+        { count: issueCount },
+        { count: shipCount }
+      ] = await Promise.all([
+        supabase.from("tasks").select("id", { count: "exact", head: true }).lte("due_date", medDate).not("status", "in", '("done","skipped","cancelled")'),
+        supabase.from("tasks").select("id", { count: "exact", head: true }).lte("due_date", highDate).not("status", "in", '("done","skipped","cancelled")'),
+        supabase.from("tasks").select("id", { count: "exact", head: true }).lte("due_date", critDate).not("status", "in", '("done","skipped","cancelled")'),
+        supabase.from("tasks").select("id", { count: "exact", head: true }).eq("task_type", "issue_resolution").not("status", "in", '("done","skipped","cancelled")'),
+        supabase.from("tasks").select("id", { count: "exact", head: true }).eq("task_type", "transit_update").not("status", "in", '("done","skipped","cancelled")'),
+      ]);
+
+      setEscalations({
+        medium: medCount || 0,
+        high: highCount || 0,
+        critical: critCount || 0,
+        issues: issueCount || 0,
+        shipping: shipCount || 0,
+      });
+      // 8. Fetch Agent Productivity (NEW)
+      try {
+        const res = await fetch(`/api/dashboard/agent${user ? `?agentId=${user.id}` : ""}`);
+        if (res.ok) {
+          const json = await res.json();
+          setAgentMetrics(json.metrics?.[0] || null);
+          setTrendData(json.trends || []);
+        }
+        
+        // Also fetch all agents if admin for leaderboard
+        const allRes = await fetch(`/api/dashboard/agent`);
+        if (allRes.ok) {
+          const allJson = await allRes.json();
+          setAllAgentsMetrics(allJson.metrics || []);
+        }
+      } catch (e) {}
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleGlobalSync(silent = false) {
@@ -589,13 +593,17 @@ export default function Dashboard() {
                     <div key={log.id} className="px-3 py-2.5 flex items-center justify-between gap-3 group">
                       <div className="flex items-center gap-2 overflow-hidden">
                         <div className={cn("w-1.5 h-1.5 rounded-full", 
-                          log.topic === "order_placed" ? "bg-[#2D1E6F]" : "bg-[#2D1E6F]"
+                          log.topic === "order_placed" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : 
+                          log.topic === "abandoned_cart" ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" :
+                          log.topic === "shipment_delivered" ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" :
+                          log.topic === "shipment_out_for_delivery" ? "bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.5)]" :
+                          "bg-[#2D1E6F]"
                         )} />
                         <div className="min-w-0">
-                          <div className="text-[11px] font-bold text-[#2D1E6F] truncate uppercase">
-                            {log.topic.replace('_', ' ')}
+                          <div className="text-[11px] font-bold text-[#2D1E6F] truncate uppercase tracking-tighter">
+                            {log.topic.replace(/_/g, ' ')}
                           </div>
-                          <div className="text-[10px] text-gray-500 truncate">
+                          <div className="text-[10px] text-gray-500 truncate font-medium">
                             {name} {cartId && `(${cartId.slice(0, 8)})`}
                           </div>
                         </div>
