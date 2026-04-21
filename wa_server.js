@@ -121,6 +121,26 @@ function initClient() {
         console.log("[WA] Client ready — accepting send requests ✅");
     });
 
+    waClient.on("message", async (msg) => {
+        console.log(`[WA] Incoming message from ${msg.from}: ${msg.body.substring(0, 20)}...`);
+        try {
+            // Forward to CRM Webhook
+            const crmUrl = process.env.CRM_WEBHOOK_URL || "http://localhost:3000/api/webhooks/whatsapp";
+            await fetch(crmUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    from: msg.from,
+                    body: msg.body,
+                    timestamp: msg.timestamp,
+                    type: msg.type
+                })
+            });
+        } catch (e) {
+            console.error("[WA] Failed to forward message to CRM:", e.message);
+        }
+    });
+
     waClient.on("auth_failure", (msg) => {
         isReady     = false;
         clientState = "AUTH_FAILED";

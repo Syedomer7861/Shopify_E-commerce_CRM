@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getSystemSettings } from "@/lib/server-settings";
+import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 
 function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -19,15 +21,11 @@ export async function POST(req: NextRequest) {
   if (!orders?.length) return NextResponse.json({ generated: 0, checked: 0 });
 
   // Fetch global settings
-  const { data: settings } = await supabase
-    .from("settings")
-    .select("*")
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const settings = await getSystemSettings(supabase);
 
   let generated = 0;
   let skipped = 0;
+  let issueTasks = 0;
 
   for (const order of orders) {
     // 1. Double check: Does this order already have standard tasks?
@@ -82,11 +80,24 @@ export async function POST(req: NextRequest) {
       { task_type: "final_followup", offset: override?.final_offset_days    ?? settings?.final_offset_days    ?? 30 },
     ];
 
+    const assignedTo = await assignTaskOwner(supabase);
     const newTasks = taskTemplates.map(t => ({
       order_id: order.id,
       customer_id: order.customer_id,
+      assigned_to: assignedTo,
       task_type: t.task_type,
       due_date: addDays(deliveredDate, t.offset),
+      priority_score: calculateTaskPriority({
+        taskType: t.task_type as any,
+        dueDate: addDays(deliveredDate, t.offset),
+        totalOrders: customer?.rto_flag ? 0 : undefined,
+        isPriorityOverride: override?.is_priority || false,
+      }),
+      note: override?.usage_notes ? `COURSE NOTE: ${override.usage_notes}` : undefined,
+      metadata: {
+        course_duration: override?.course_duration_days || 30,
+        upsell_logic: override?.upsell_product_name || null
+      },
       status: "pending",
     }));
 
@@ -98,9 +109,63 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const staleCutoff = new Date();
+  staleCutoff.setDate(staleCutoff.getDate() - 7);
+  const staleDate = staleCutoff.toISOString();
+
+  const { data: issueOrders } = await supabase
+    .from("orders")
+    .select("id, customer_id, total_price, delivery_status, ordered_at")
+    .in("delivery_status", ["rto", "failed", "in_transit"]);
+
+  for (const order of issueOrders || []) {
+    const requiresIssueTask =
+      order.delivery_status === "rto" ||
+      order.delivery_status === "failed" ||
+      (order.delivery_status === "in_transit" && order.ordered_at <= staleDate);
+
+    if (!requiresIssueTask) continue;
+
+    const { count: existingIssue } = await supabase
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("order_id", order.id)
+      .eq("task_type", "issue_resolution")
+      .not("status", "in", '("done","cancelled")');
+
+    if ((existingIssue || 0) > 0) continue;
+
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("total_orders, rto_flag")
+      .eq("id", order.customer_id)
+      .maybeSingle();
+
+    const assignedTo = await assignTaskOwner(supabase);
+    const dueDate = new Date().toISOString().split("T")[0];
+
+    const { error: issueErr } = await supabase.from("tasks").insert({
+      order_id: order.id,
+      customer_id: order.customer_id,
+      assigned_to: assignedTo,
+      task_type: "issue_resolution",
+      due_date: dueDate,
+      priority_score: calculateTaskPriority({
+        taskType: "issue_resolution",
+        totalPrice: Number(order.total_price) || 0,
+        totalOrders: customer?.total_orders || 0,
+        rtoFlag: customer?.rto_flag || order.delivery_status === "rto",
+      }),
+      status: "pending",
+    });
+
+    if (!issueErr) issueTasks++;
+  }
+
   return NextResponse.json({ 
     generated, 
     checked: orders.length, 
-    skipped 
+    skipped,
+    issueTasks
   });
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 
 function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -39,8 +40,15 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase.from("tasks").insert({
     order_id: body.order_id,
     customer_id: body.customer_id,
+    assigned_to: body.assigned_to || await assignTaskOwner(supabase),
     task_type: body.task_type,
     due_date: body.due_date,
+    priority_score: calculateTaskPriority({
+      taskType: body.task_type,
+      totalPrice: body.total_price || 0,
+      totalOrders: body.total_orders || 0,
+      rtoFlag: body.rto_flag || false,
+    }),
     status: "pending",
   }).select().single();
 

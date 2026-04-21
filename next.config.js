@@ -1,9 +1,13 @@
 /** @type {import('next').NextConfig} */
+const serverActionAllowedOrigins = process.env.SERVER_ACTION_ALLOWED_ORIGINS
+  ? process.env.SERVER_ACTION_ALLOWED_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean)
+  : ["localhost:3000", "127.0.0.1:3000"];
+
 const nextConfig = {
   experimental: {
-    serverActions: { allowedOrigins: ["*"] }
+    serverActions: { allowedOrigins: serverActionAllowedOrigins }
   },
-  allowedDevOrigins: ['192.168.0.116', '192.168.0.121', 'localhost:3000'],
+  allowedDevOrigins: ['192.168.0.131', 'localhost:3000'],
   images: {
   remotePatterns: [
     { protocol: 'https', hostname: 'example.com' }

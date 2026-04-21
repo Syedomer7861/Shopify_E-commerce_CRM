@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getSystemSettings } from "@/lib/server-settings";
 
 function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -7,61 +8,96 @@ function getSupabase() {
 
 export async function POST(req: NextRequest) {
   const supabase = getSupabase();
-  const yesterday = new Date(Date.now() - 86400000).toISOString();
-
-  const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
+  const now = new Date();
+  const yesterday = new Date(now.getTime() - 86400000).toISOString();
+  const todayDate = now.toISOString().split("T")[0];
 
   // 1. Get Settings
-  const { data: settings } = await supabase
-    .from("settings")
-    .select("whatsapp_admin_phone, whatsapp_bridge_url, whatsapp_send_time")
-    .eq("id", SETTINGS_ID)
-    .single();
-
+  const settings = await getSystemSettings(supabase);
   if (!settings?.whatsapp_admin_phone) return NextResponse.json({ error: "No admin phone set" });
 
   // Time-based blackout check (Only for Admin Digest)
   const force = req.nextUrl.searchParams.get("force") === "true";
   if (settings.whatsapp_send_time && !force) {
-    const now = new Date();
     const currentFormattedTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
     if (currentFormattedTime < settings.whatsapp_send_time.substring(0, 5)) {
       return NextResponse.json({ skipped: true, reason: `Admin digest scheduled for ${settings.whatsapp_send_time}. Current: ${currentFormattedTime}` });
     }
   }
 
-  // 2. Fetch Stats
-  const { data: orders } = await supabase.from("orders").select("total_price").gte("ordered_at", yesterday);
-  const { data: calls } = await supabase.from("call_logs").select("outcome").gte("called_at", yesterday);
-  const { data: pending } = await supabase.from("tasks").select("id").eq("status", "pending");
+  // 2. Fetch Strategic Stats
+  // 💰 FINANCE & ATTRIBUTION
+  const { data: orders } = await supabase.from("orders").select("total_price, attributed_instance_id").gte("ordered_at", yesterday);
+  const totalRevenue = (orders || []).reduce((s, o) => s + (Number(o.total_price) || 0), 0);
+  const waRevenue = (orders || []).filter(o => o.attributed_instance_id).reduce((s, o) => s + (Number(o.total_price) || 0), 0);
+  const orderCount = orders?.length || 0;
 
-  const revenue = (orders || []).reduce((s, o) => s + (Number(o.total_price) || 0), 0);
-  const callCount = calls?.length || 0;
-  const successCount = calls?.filter(c => c.outcome === "done").length || 0;
+  // 🏥 DATA HEALTH (SENTINEL)
+  // Proxy: Customers updated in last 24h who no longer have masked phones
+  const { count: healedCount } = await supabase
+    .from("customers")
+    .select("id", { count: 'exact', head: true })
+    .gte("updated_at", yesterday)
+    .not("phone", "ilike", "%x%")
+    .not("phone", "ilike", "%_SR_%");
 
-  // 2.2 Today's Tasks Summary (New)
-  const today = new Date().toISOString().split("T")[0];
+  // 📞 TEAM PERFORMANCE
+  const { data: leaderboard } = await supabase
+    .from("v_agent_performance")
+    .select("name, total_calls, tasks_resolved")
+    .order("total_calls", { ascending: false })
+    .limit(3);
+
+  // ⌛ TASK PIPELINE
+  const { count: pendingTotal } = await supabase.from("tasks").select("id", { count: 'exact', head: true }).eq("status", "pending");
   const { data: todayTasks } = await supabase
     .from("tasks")
     .select("task_type, customer:customers(name)")
-    .eq("due_date", today)
+    .eq("due_date", todayDate)
     .eq("status", "pending");
+  
+  const reorderTasksCount = (todayTasks || []).filter(t => t.task_type === 'reorder').length;
 
-  const taskList = (todayTasks || []).slice(0, 10).map((t: any) => `• ${t.customer.name} (${t.task_type})`).join("\n");
-  const taskCount = todayTasks?.length || 0;
+  // 🏥 SYSTEM CHECK
+  const bridgeUrl = settings.whatsapp_bridge_url || "http://localhost:3001";
+  let bridgeStatus = "OFFLINE ❌";
+  try {
+    const bRes = await fetch(`${bridgeUrl}/status`);
+    if (bRes.ok) bridgeStatus = "ONLINE ✅";
+  } catch (e) {}
 
-  const message = `📊 *Daily Digest – CureForever*\n\n` +
-    `📦 *Orders*: ${orders?.length || 0}\n` +
-    `💰 *Revenue*: ₹${revenue.toLocaleString()}\n` +
-    `📞 *Calls Made*: ${callCount}\n` +
-    `✅ *Successful*: ${successCount}\n` +
-    `⌛ *Total Pending*: ${pending?.length || 0}\n\n` +
-    `📅 *Tasks for Today (${taskCount})*:\n${taskList || "No tasks scheduled for today."}\n` +
-    `${taskCount > 10 ? "_...and " + (taskCount - 10) + " more._\n" : ""}\n` +
-    `Have a productive day! 💊`;
+  // 3. Build Premium Message
+  const taskList = (todayTasks || []).slice(0, 5).map((t: any) => `• ${t.customer?.name || "Customer"} (${t.task_type})`).join("\n");
 
-  // 3. Send via Bridge
-  const bridgeUrl = settings.whatsapp_bridge_url || "http://localhost:3000";
+  const message = 
+    `📊 *CUREFOREVER INTELLIGENCE REPORT*\n` +
+    `📅 _Period: Last 24 Hours_\n` +
+    `──────────────────\n\n` +
+    
+    `💰 *FINANCE & GROWTH*\n` +
+    `• New Orders: *${orderCount}* 📦\n` +
+    `• Total Revenue: *₹${totalRevenue.toLocaleString()}*\n` +
+    `• WA Recovered: *₹${waRevenue.toLocaleString()}* (Direct ROI) 📈\n\n` +
+    
+    `🏥 *SYSTEM & DATA HEALTH*\n` +
+    `• Sentinel Healed: *${healedCount || 0} Records* ✨\n` +
+    `• WhatsApp Bridge: *${bridgeStatus}*\n\n` +
+    
+    `🏆 *TEAM LEADERBOARD*\n` +
+    (leaderboard?.map((a, i) => `${i+1}. ${a.name}: ${a.total_calls} Calls | ${a.tasks_resolved} Res`).join("\n") || "_No activity logged_") + "\n\n" +
+    
+    `📅 *TODAY'S PRIORITY PIPELINE*\n` +
+    `• Total Waiting: *${pendingTotal || 0}*\n` +
+    `• Active Courses: *${reorderTasksCount} Reorders* 💊\n\n` +
+    
+    `🔥 *TOP 5 TASKS TODAY*:\n` +
+    (taskList || "_No pending priority tasks_") + "\n" +
+    (todayTasks && todayTasks.length > 5 ? `_...and ${todayTasks.length - 5} more priority items._\n` : "") +
+    
+    `\n──────────────────\n` +
+    `*Stay Focused. Stay Productive.* 🚀`;
+
+  // 4. Send via Bridge
   try {
     const res = await fetch(`${bridgeUrl}/send`, {
       method: "POST",
@@ -70,17 +106,13 @@ export async function POST(req: NextRequest) {
     });
 
     const result = await res.json();
-    
-    if (!res.ok || !result.ok) {
-      throw new Error(result.error || `Bridge returned ${res.status}`);
-    }
+    if (!res.ok || !result.ok) throw new Error(result.error);
 
-    return NextResponse.json({ sent: true, revenue, calls: callCount });
+    return NextResponse.json({ sent: true, totalRevenue, waRevenue });
   } catch (err: any) {
-    console.error("Digest send error:", err.message);
     return NextResponse.json({ 
       sent: false, 
-      error: err.message.includes("503") ? "WhatsApp Bridge not authenticated (QR Pending)" : err.message 
+      error: err.message 
     }, { status: 500 });
   }
 }

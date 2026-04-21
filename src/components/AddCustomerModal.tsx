@@ -3,6 +3,7 @@ import { useState } from "react";
 import { UserPlus, Phone, Mail, FileText, Loader2, ShoppingBag, DollarSign, Calendar } from "lucide-react";
 import { Modal } from "./ui";
 import { createClient } from "@/lib/supabase";
+import { logAuditEvent } from "@/lib/audit";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
@@ -83,9 +84,22 @@ export function AddCustomerModal({ open, onClose, onSuccess }: AddCustomerModalP
         if (orderError) {
           toast.error(`Order failed: ${orderError.message}`);
         } else {
+          await logAuditEvent({
+            entityType: "customer",
+            entityId: customerData.id,
+            action: "create_with_order",
+            summary: `Created customer ${formData.name} with an initial manual order`,
+            metadata: { productName: formData.productName, productPrice: formData.productPrice },
+          });
           toast.success("Customer & Order added successfully");
         }
       } else {
+        await logAuditEvent({
+          entityType: "customer",
+          entityId: customerData.id,
+          action: "create",
+          summary: `Created customer ${formData.name}`,
+        });
         toast.success("Customer added successfully");
       }
 

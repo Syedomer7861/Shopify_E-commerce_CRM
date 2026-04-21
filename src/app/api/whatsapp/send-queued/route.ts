@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getSystemSettings } from "@/lib/server-settings";
+import { logServerAuditEvent } from "@/lib/audit";
 
 function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 }
-
-const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 
 export async function POST(req: NextRequest) {
   const { taskId, customMessage, mediaData, mimetype, filename } = await req.json();
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     
     if (tErr || !task) throw tErr || new Error("Task not found");
 
-    const { data: settings } = await supabase.from("settings").select("*").eq("id", SETTINGS_ID).single();
+    const settings = await getSystemSettings(supabase);
     if (!settings?.whatsapp_bridge_url) throw new Error("WhatsApp bridge not configured");
 
     const customer = task.customer;
@@ -48,6 +48,9 @@ export async function POST(req: NextRequest) {
     } else if (task.task_type === "final_followup") {
       template = settings.whatsapp_final_template || "Hi {{name}}, just checking in one last time regarding your {{product}} journey. We're here if you need anything! 🙏";
       productStr = order?.line_items?.[0]?.name || "your previous order";
+    } else if (task.task_type === "issue_resolution") {
+      template = "Hi {{name}}, we noticed an issue with your recent order for {{product}}. Our team is reviewing it and will help resolve it quickly.";
+      productStr = order?.line_items?.[0]?.name || "your recent order";
     }
 
     // 3. Process Placeholders or use Custom Message
@@ -85,7 +88,17 @@ export async function POST(req: NextRequest) {
       customer_id: customer.id,
       outcome: "whatsapp",
       note: `System (Manual Send Now): "${message}"`,
-      agent_name: "Agent Overide"
+      agent_name: "Agent Override",
+      disposition: "follow_up_later",
+      follow_up_action: "Manual WhatsApp sent"
+    });
+
+    await logServerAuditEvent({
+      entityType: "task",
+      entityId: taskId,
+      action: "manual_whatsapp",
+      summary: `Manual WhatsApp sent for ${task.task_type} task`,
+      metadata: { customerId: customer.id, hasAttachment: Boolean(mediaData) },
     });
 
     return NextResponse.json({ ok: true, message: "Manual trigger successful" });

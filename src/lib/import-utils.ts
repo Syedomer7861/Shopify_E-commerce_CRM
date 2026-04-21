@@ -181,7 +181,7 @@ export async function processAbandonedImport(rows: AbandonedRow[]) {
           customer_id: cartData.customer_id,
           abandoned_cart_id: cartData.id,
           task_type: "recovery",
-          due_date: dueDate.toISOString(),
+          due_date: dueDate.toISOString().split("T")[0],
           status: "pending"
         }, { onConflict: "abandoned_cart_id, task_type" });
 
@@ -217,7 +217,7 @@ export async function processImport(rows: ImportRow[]) {
       let customerId: string;
       const { data: existingCustomer } = await supabase
         .from("customers")
-        .select("id, total_orders")
+        .select("id, total_orders, custom_meta")
         .eq("phone", phone)
         .single();
 

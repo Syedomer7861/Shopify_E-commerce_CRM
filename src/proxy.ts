@@ -1,7 +1,12 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-console.log(">>> PROXY EXECUTING <<<");
+function hasValidSystemSecret(request: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return false;
+  const suppliedSecret = request.headers.get("x-cron-secret");
+  return suppliedSecret === cronSecret;
+}
 
 export default async function proxy(request: NextRequest) {
   let response = NextResponse.next({
@@ -40,20 +45,14 @@ export default async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // DEBUG: Check session presence on Local IP / Non-localhost
-  if (request.nextUrl.hostname !== "localhost") {
-    const cookieNames = request.cookies.getAll().map(c => c.name).join(", ");
-    console.log(`[AUTH DEBUG] Host: ${request.nextUrl.hostname} | Path: ${request.nextUrl.pathname} | User: ${user ? user.email : "NONE"} | Cookies: [${cookieNames}]`);
-  }
-
-  // If user is not logged in and trying to access app pages, redirect to login
-  // EXCLUDE: API Webhooks and static assets
+  const isProtectedSystemRoute =
+    request.nextUrl.pathname.startsWith("/api/sync") ||
+    request.nextUrl.pathname.startsWith("/api/cron");
   const isPublicPath = request.nextUrl.pathname.startsWith("/login") || 
-                       request.nextUrl.pathname.startsWith("/api/webhooks") ||
-                       request.nextUrl.pathname.startsWith("/api/sync") ||
-                       request.nextUrl.pathname.startsWith("/api/cron");
+                       request.nextUrl.pathname.startsWith("/api/webhooks");
+  const isAuthInternal = isProtectedSystemRoute && hasValidSystemSecret(request);
 
-  if (!user && !isPublicPath) {
+  if (!user && !isPublicPath && !isAuthInternal) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

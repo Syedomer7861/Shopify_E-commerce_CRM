@@ -3,17 +3,15 @@ import { useEffect, useState } from "react";
 import { Shield, User, Loader2, Mail, Trash2, Edit2, UserPlus, CheckCircle2, XCircle } from "lucide-react";
 import { PageHeader, Avatar, EmptyState, Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import type { Profile, UserPermissions } from "@/types";
+import { AccessDenied } from "@/components/ui";
+import { DEFAULT_PERMISSIONS, hasPermission } from "@/lib/permissions";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { logAuditEvent } from "@/lib/audit";
 
-import { createTeamMemberServer } from "@/app/actions/admin";
-
-const DEFAULT_PERMISSIONS: UserPermissions = {
-  view_analytics: false,
-  can_import: false,
-  can_delete: false,
-  manage_team: false,
-};
+import { createTeamMemberServer, updateTeamMemberPasswordServer } from "@/app/actions/admin";
 
 export default function TeamPage() {
   const [loading, setLoading] = useState(true);
@@ -25,6 +23,7 @@ export default function TeamPage() {
 
   // New user state
   const [newUser, setNewUser] = useState({ email: "", password: "", name: "", role: "agent" as "agent" | "admin" });
+  const { profile: currentProfile, loading: profileLoading } = useCurrentProfile();
 
   const supabase = createClient();
 
@@ -69,6 +68,12 @@ export default function TeamPage() {
     if (!res.success) {
       toast.error(res.error || "Failed to create user");
     } else {
+      await logAuditEvent({
+        entityType: "profile",
+        entityId: newUser.email,
+        action: "create",
+        summary: `Created team member ${newUser.email} with role ${newUser.role}`,
+      });
       toast.success("Team member created successfully!");
       fetchProfiles();
       setAddModal(false);
@@ -84,6 +89,12 @@ export default function TeamPage() {
     if (error) {
       toast.error(error.message);
     } else {
+      await logAuditEvent({
+        entityType: "profile",
+        entityId: id,
+        action: "delete",
+        summary: "Removed team member profile",
+      });
       toast.success("Member removed");
       fetchProfiles();
     }
@@ -101,6 +112,13 @@ export default function TeamPage() {
     if (error) {
       toast.error(error.message);
     } else {
+      await logAuditEvent({
+        entityType: "profile",
+        entityId: selectedProfile.id,
+        action: "update",
+        summary: `Updated profile settings for ${selectedProfile.email}`,
+        metadata: updates as any,
+      });
       toast.success("Settings updated");
       fetchProfiles();
       // Update selected profile in modal too
@@ -115,6 +133,37 @@ export default function TeamPage() {
     const updated = { ...current, [key]: !current[key] };
     updateProfile({ permissions: updated });
   };
+
+  const [newUpdatePassword, setNewUpdatePassword] = useState("");
+
+  async function handleUpdatePassword() {
+    if (!selectedProfile) return;
+    if (newUpdatePassword.length < 6) return toast.error("Password must be at least 6 characters");
+    
+    setIsUpdating(true);
+    const res = await updateTeamMemberPasswordServer(selectedProfile.id, newUpdatePassword);
+    if (!res.success) {
+      toast.error(res.error || "Failed to update password");
+    } else {
+      await logAuditEvent({
+        entityType: "profile",
+        entityId: selectedProfile.id,
+        action: "update_password",
+        summary: `Admin explicitly reset password for ${selectedProfile.email}`,
+      });
+      toast.success("Password overwritten successfully");
+      setNewUpdatePassword("");
+    }
+    setIsUpdating(false);
+  }
+
+  if (profileLoading) {
+    return <div className="py-12 text-center text-gray-400">Loading permissions...</div>;
+  }
+
+  if (!hasPermission(currentProfile, "manage_team")) {
+    return <AccessDenied title="Team Management Locked" desc="Only admins or users with team-management access can manage accounts." />;
+  }
 
   return (
     <div className="animate-fade-in">
@@ -139,12 +188,36 @@ export default function TeamPage() {
             <EmptyState icon={<User className="w-5 h-5" />} title="No profiles found" desc="Invite team members to get started." />
           </div>
         ) : (
-          profiles.map(p => (
-            <div key={p.id} className={`card p-4 hover:shadow-md transition-all group border-l-4 ${p.is_active ? 'border-l-transparent hover:border-l-forest' : 'border-l-gray-200 opacity-60'}`}>
+          profiles.map(p => {
+            const lastSeen = (p as any).last_seen_at;
+            const isOnline = lastSeen && (Date.now() - new Date(lastSeen).getTime()) < 5 * 60 * 1000;
+            const isRecent = lastSeen && (Date.now() - new Date(lastSeen).getTime()) < 60 * 60 * 1000;
+            
+            function getPresenceLabel() {
+              if (!p.is_active) return "Disabled";
+              if (!lastSeen) return "Never logged in";
+              const diff = Date.now() - new Date(lastSeen).getTime();
+              const mins = Math.floor(diff / 60000);
+              if (mins < 2) return "Online now";
+              if (mins < 60) return `Last seen ${mins}m ago`;
+              const hrs = Math.floor(mins / 60);
+              if (hrs < 24) return `Last seen ${hrs}h ago`;
+              const days = Math.floor(hrs / 24);
+              return `Last seen ${days}d ago`;
+            }
+            
+            const presenceLabel = getPresenceLabel();
+            const dotColor = !p.is_active ? "bg-gray-400" : isOnline ? "bg-blue-500" : isRecent ? "bg-amber-400" : "bg-rose-400";
+            
+            return (
+            <div key={p.id} className={`card p-4 hover:shadow-md transition-all group border-l-4 ${p.is_active ? 'border-l-transparent hover:border-l-[#2D1E6F]' : 'border-l-gray-200 opacity-60'}`}>
                <div className="flex items-center justify-between mb-3">
-                <Avatar name={p.name || p.email} size="md" />
+                <div className="relative">
+                  <Avatar name={p.name || p.email} size="md" />
+                  <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white", dotColor, isOnline && "animate-pulse")} />
+                </div>
                 <div className="flex items-center gap-2">
-                  <div className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${p.role === 'admin' ? 'bg-forest text-lime' : 'bg-gray-100 text-gray-500'}`}>
+                  <div className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${p.role === 'admin' ? 'bg-[#2D1E6F] text-white' : 'bg-gray-100 text-gray-500'}`}>
                     {p.role}
                   </div>
                   <button onClick={() => handleRemoveMember(p.id)} className="p-1.5 text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
@@ -153,24 +226,33 @@ export default function TeamPage() {
                 </div>
               </div>
               <div className="mb-4">
-                <div className="text-sm font-semibold text-forest truncate flex items-center gap-2">
+                <div className="text-sm font-semibold text-[#2D1E6F] truncate flex items-center gap-2">
                   {p.name || "Pending Signup"}
                   {!p.is_active && <XCircle className="w-3 h-3 text-rose-500" />}
                 </div>
                 <div className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
                   <Mail className="w-3 h-3" /> {p.email}
                 </div>
+                <div className={cn(
+                  "text-[10px] font-bold mt-1.5 flex items-center gap-1.5",
+                  isOnline ? "text-blue-600" : isRecent ? "text-amber-600" : "text-gray-400"
+                )}>
+                  <div className={cn("w-1.5 h-1.5 rounded-full", dotColor)} />
+                  {presenceLabel}
+                </div>
               </div>
               <div className="flex items-center gap-2 pt-3 border-t border-gray-50">
                 <button 
-                  onClick={() => { setSelectedProfile(p); setEditModal(true); }}
+                  onClick={() => { setSelectedProfile(p); setNewUpdatePassword(""); setEditModal(true); }}
                   className="flex-1 btn-secondary py-1.5 text-xs gap-1.5"
                 >
                   <Edit2 className="w-3 h-3" /> Edit Permissions
                 </button>
               </div>
             </div>
-          ))
+            );
+          })
+
         )}
       </div>
 
@@ -217,7 +299,7 @@ export default function TeamPage() {
              <div className="flex items-center gap-3">
                <Avatar name={selectedProfile?.name || selectedProfile?.email || ""} size="sm" />
                <div>
-                  <div className="text-xs font-bold text-forest">{selectedProfile?.name || "Pending User"}</div>
+                  <div className="text-xs font-bold text-[#2D1E6F]">{selectedProfile?.name || "Pending User"}</div>
                   <div className="text-[10px] text-gray-400">{selectedProfile?.email}</div>
                </div>
              </div>
@@ -226,7 +308,7 @@ export default function TeamPage() {
                 <button 
                   onClick={() => updateProfile({ is_active: !selectedProfile?.is_active })}
                   disabled={isUpdating}
-                  className={`w-8 h-4 rounded-full relative transition-colors ${selectedProfile?.is_active ? 'bg-forest' : 'bg-gray-200'}`}
+                  className={`w-8 h-4 rounded-full relative transition-colors ${selectedProfile?.is_active ? 'bg-[#2D1E6F]' : 'bg-gray-200'}`}
                 >
                   <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${selectedProfile?.is_active ? 'left-4.5' : 'left-0.5'}`} />
                 </button>
@@ -238,16 +320,16 @@ export default function TeamPage() {
             <div className="grid grid-cols-2 gap-2">
                <button 
                  onClick={() => updateProfile({ role: "agent" })}
-                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'agent' ? 'border-forest bg-forest/5' : 'border-gray-100 hover:border-gray-200'}`}
+                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'agent' ? 'border-[#2D1E6F] bg-[#2D1E6F]/5' : 'border-gray-100 hover:border-gray-200'}`}
                >
-                 <div className={`text-xs font-bold ${selectedProfile?.role === 'agent' ? 'text-forest' : 'text-gray-600'}`}>Agent</div>
+                 <div className={`text-xs font-bold ${selectedProfile?.role === 'agent' ? 'text-[#2D1E6F]' : 'text-gray-600'}`}>Agent</div>
                  <div className="text-[9px] text-gray-400 mt-0.5">Restricted rights</div>
                </button>
                <button 
                  onClick={() => updateProfile({ role: "admin" })}
-                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'admin' ? 'border-forest bg-forest/5' : 'border-gray-100 hover:border-gray-200'}`}
+                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'admin' ? 'border-[#2D1E6F] bg-[#2D1E6F]/5' : 'border-gray-100 hover:border-gray-200'}`}
                >
-                 <div className={`text-xs font-bold ${selectedProfile?.role === 'admin' ? 'text-forest' : 'text-gray-600'}`}>Admin</div>
+                 <div className={`text-xs font-bold ${selectedProfile?.role === 'admin' ? 'text-[#2D1E6F]' : 'text-gray-600'}`}>Admin</div>
                  <div className="text-[9px] text-gray-400 mt-0.5">Full access</div>
                </button>
             </div>
@@ -264,15 +346,15 @@ export default function TeamPage() {
                 ].map((perm) => {
                   const has = selectedProfile?.role === "admin" || (selectedProfile?.permissions as any)?.[perm.key];
                   return (
-                    <div key={perm.key} className={`flex items-center justify-between p-3 rounded-lg border ${has ? 'border-forest/20 bg-forest/5' : 'border-gray-100'}`}>
+                    <div key={perm.key} className={`flex items-center justify-between p-3 rounded-lg border ${has ? 'border-[#2D1E6F]/20 bg-[#2D1E6F]/5' : 'border-gray-100'}`}>
                       <div className="flex items-center gap-3">
-                        <perm.icon className={`w-3.5 h-3.5 ${has ? 'text-forest' : 'text-gray-300'}`} />
-                        <span className={`text-xs font-medium ${has ? 'text-forest' : 'text-gray-500'}`}>{perm.label}</span>
+                        <perm.icon className={`w-3.5 h-3.5 ${has ? 'text-[#2D1E6F]' : 'text-gray-300'}`} />
+                        <span className={`text-xs font-medium ${has ? 'text-[#2D1E6F]' : 'text-gray-500'}`}>{perm.label}</span>
                       </div>
                       <button 
                         onClick={() => togglePermission(perm.key as any)}
                         disabled={selectedProfile?.role === "admin" || isUpdating}
-                        className={`w-5 h-5 rounded flex items-center justify-center transition-all ${has ? 'bg-forest text-white' : 'border-2 border-gray-100'}`}
+                        className={`w-5 h-5 rounded flex items-center justify-center transition-all ${has ? 'bg-[#2D1E6F] text-white' : 'border-2 border-gray-100'}`}
                       >
                         {has && <CheckCircle2 className="w-3 h-3" />}
                       </button>
@@ -283,6 +365,29 @@ export default function TeamPage() {
              {selectedProfile?.role === "admin" && (
                <p className="text-[9px] text-gray-400 italic text-center">Administrators have all permissions by default.</p>
              )}
+          </div>
+          
+          <div className="space-y-3 pt-3 border-t border-gray-100">
+             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Security & Access</label>
+             <div className="flex items-center gap-2">
+                <input 
+                  type="text" 
+                  placeholder="Type new password to override..." 
+                  className="input flex-1 text-xs py-2" 
+                  value={newUpdatePassword}
+                  onChange={e => setNewUpdatePassword(e.target.value)}
+                />
+                <button 
+                  onClick={handleUpdatePassword} 
+                  disabled={isUpdating || newUpdatePassword.length < 6} 
+                  className="btn-secondary whitespace-nowrap bg-gray-900 border-gray-900 text-white hover:bg-[#2D1E6F] hover:border-[#2D1E6F] hover:text-white"
+                >
+                  {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Set Password"}
+                </button>
+             </div>
+             <div className="text-[9px] text-gray-400 leading-tight">
+               For security, existing passwords cannot be viewed. Setting a new password will immediately overwrite their current login credentials.
+             </div>
           </div>
         </div>
       </Modal>

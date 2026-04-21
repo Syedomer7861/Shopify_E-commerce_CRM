@@ -1,24 +1,31 @@
 "use client";
 import { useState, useEffect, use } from "react";
-import { ArrowLeft, Phone, Mail, ShoppingBag, PhoneCall, CheckSquare, FileText, AlertTriangle, RefreshCw, ToggleLeft, ToggleRight, MapPin, Home, Info } from "lucide-react";
+import { ArrowLeft, Phone, Mail, ShoppingBag, PhoneCall, CheckSquare, FileText, AlertTriangle, RefreshCw, ToggleLeft, ToggleRight, MapPin, Home, Info, Smartphone } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Avatar, SegmentBadge, DeliveryBadge, TaskTypeBadge, TaskStatusBadge, Modal } from "@/components/ui";
+import ShiprocketOrderView from "@/components/ShiprocketOrderView";
 import { createClient } from "@/lib/supabase";
 import { cn, formatDate, formatDateTime, timeAgo, formatCurrency } from "@/lib/utils";
 import toast from "react-hot-toast";
-import type { Customer, Order, Task, CallLog } from "@/types";
+import type { Customer, Order, Task, CallLog, AuditLog } from "@/types";
+import { logAuditEvent } from "@/lib/audit";
 
 export default function CustomerProfile({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = use(paramsPromise);
   const id = params.id;
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [tasks, setTasks] = useState<(Task & { order: Order })[]>([]);
   const [calls, setCalls] = useState<CallLog[]>([]);
-  const [tab, setTab] = useState<"orders" | "calls" | "tasks" | "notes">("orders");
+  const [audits, setAudits] = useState<AuditLog[]>([]);
+  const [tab, setTab] = useState<"timeline" | "orders" | "calls" | "tasks" | "notes">("timeline");
   const [notes, setNotes] = useState("");
   const [clearRtoModal, setClearRtoModal] = useState(false);
+  const [unmasking, setUnmasking] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -62,10 +69,17 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
       .eq("customer_id", id)
       .order("called_at", { ascending: false });
 
+    const { data: auditData } = await supabase
+      .from("audit_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200);
+
     setCustomer(custData as any);
     setOrders((ordersData || []) as any);
     setTasks((tasksData || []) as any);
     setCalls((callsData || []) as any);
+    setAudits(((auditData || []).filter((audit: any) => audit.entity_id === id || audit.metadata?.customerId === id)) as any);
     setNotes(custData.notes || "");
     setLoading(false);
   }
@@ -77,6 +91,12 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
       .eq("id", id);
 
     if (error) return toast.error("Failed to save note");
+    await logAuditEvent({
+      entityType: "customer",
+      entityId: id,
+      action: "note_update",
+      summary: `Updated notes for ${customer?.name}`,
+    });
     toast.success("Note saved");
   }
 
@@ -90,13 +110,52 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
     
     setCustomer(prev => prev ? { ...prev, rto_flag: false, rto_count: 0 } : null);
     setClearRtoModal(false);
+    await logAuditEvent({
+      entityType: "customer",
+      entityId: id,
+      action: "clear_rto",
+      summary: `Cleared RTO flag for ${customer?.name || "customer"}`,
+    });
     toast.success("RTO flag cleared");
+  }
+
+  async function handleUnmask() {
+    setUnmasking(true);
+    const tid = toast.loading("Attempting Shopify Bypass & Recovery...", { id: "single-unmask" });
+    try {
+      // 1. Trigger the unmasking logic (passing a flag to process this specific customer)
+      // Note: We use the batch API but it will intelligently handle this ID if we add support, 
+      // or we can just run a targeted logic here. Simple way: call a focused endpoint.
+      const res = await fetch("/api/sync/unmask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: id })
+      });
+      
+      const data = await res.json();
+      if (data.success && data.unmaskedCount > 0) {
+        toast.success("Contact Unmasked Successfully!", { id: "single-unmask" });
+        
+        // 🚀 SMART REDIRECT: If unmasking resulted in a merge, go to the new "Golden Record" ID
+        if (data.redirectId && data.redirectId !== id) {
+            router.push(`/customers/${data.redirectId}`);
+        } else {
+            await fetchCustomerData(); // Regular refresh
+        }
+      } else {
+        toast.error("Could not recover unmasked details yet. Check Shopify settings.", { id: "single-unmask" });
+      }
+    } catch (err: any) {
+      toast.error("Unmasking failed: " + err.message, { id: "single-unmask" });
+    } finally {
+      setUnmasking(false);
+    }
   }
 
   if (loading || !customer) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
-        <RefreshCw className="w-8 h-8 text-forest animate-spin" />
+        <RefreshCw className="w-8 h-8 text-[#2D1E6F] animate-spin" />
       </div>
     );
   }
@@ -104,15 +163,47 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
   const totalSpent = orders.reduce((s, o) => s + (Number(o.total_price) || 0), 0);
 
   const tabs = [
+    { key: "timeline", label: "Timeline", icon: Info, count: orders.length + calls.length + tasks.length + audits.length },
     { key: "orders", label: "Orders", icon: ShoppingBag, count: orders.length },
     { key: "calls", label: "Call Logs", icon: PhoneCall, count: calls.length },
     { key: "tasks", label: "Tasks", icon: CheckSquare, count: tasks.length },
     { key: "notes", label: "Notes", icon: FileText },
   ] as const;
 
+  const timeline = [
+    ...orders.map((order) => ({
+      id: `order-${order.id}`,
+      type: "order",
+      at: order.ordered_at,
+      title: `Order ${order.order_number || order.id}`,
+      detail: `${order.line_items.map(l => l.name || l.title || "Product").join(", ")} · ${formatCurrency(Number(order.total_price) || 0)}`,
+    })),
+    ...tasks.map((task) => ({
+      id: `task-${task.id}`,
+      type: "task",
+      at: task.created_at,
+      title: `${task.task_type.replace("_", " ")} task created`,
+      detail: `Due ${formatDate(task.due_date)} · ${task.status}`,
+    })),
+    ...calls.map((call) => ({
+      id: `call-${call.id}`,
+      type: "call",
+      at: call.called_at,
+      title: `Call outcome: ${call.outcome.replace("_", " ")}`,
+      detail: [call.disposition?.replace(/_/g, " "), call.follow_up_action, call.note].filter(Boolean).join(" · "),
+    })),
+    ...audits.map((audit) => ({
+      id: `audit-${audit.id}`,
+      type: "audit",
+      at: audit.created_at,
+      title: audit.summary,
+      detail: `${audit.action}${audit.actor_email ? ` · ${audit.actor_email}` : ""}`,
+    })),
+  ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
   return (
     <div className="animate-fade-in">
-      <Link href="/customers" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-forest mb-4 transition-colors">
+      <Link href="/customers" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#2D1E6F] mb-4 transition-colors">
         <ArrowLeft className="w-4 h-4" /> Back to Customers
       </Link>
 
@@ -122,7 +213,7 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
           <Avatar name={customer.name} size="lg" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-display text-forest">{customer.name}</h1>
+              <h1 className="text-xl font-display text-[#2D1E6F]">{customer.name}</h1>
               <SegmentBadge segment={customer.segment} rto={customer.rto_flag} />
               {customer.rto_flag && (
                 <button onClick={() => setClearRtoModal(true)} className="text-xs text-orange-600 hover:text-orange-800 underline">
@@ -132,9 +223,24 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
             </div>
             <div className="flex items-center gap-4 mt-2 flex-wrap">
               <div className="flex flex-col gap-1">
-                <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline">
-                  <Phone className="w-3.5 h-3.5" /> {customer.phone}
-                </a>
+                <div className="flex items-center gap-2">
+                  <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline">
+                    <Phone className="w-3.5 h-3.5" /> {customer.phone}
+                  </a>
+                  {(customer.phone.includes("x") || customer.phone.includes("X") || customer.phone.includes("_SR_")) && (
+                    <button 
+                      onClick={handleUnmask}
+                      disabled={unmasking}
+                      className={cn(
+                        "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-black uppercase transition-all",
+                        unmasking ? "bg-gray-100 text-gray-400" : "bg-[#2D1E6F]/10 text-[#2D1E6F] hover:bg-[#2D1E6F] hover:text-white"
+                      )}
+                    >
+                      {unmasking ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : <Smartphone className="w-2.5 h-2.5" />}
+                      Heal Contact
+                    </button>
+                  )}
+                </div>
                 {customer.alt_phone && (
                   <a href={`tel:${customer.alt_phone}`} className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:underline">
                     <Phone className="w-3 h-3" /> {customer.alt_phone} (Alt)
@@ -147,7 +253,7 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
                 </a>
               )}
               {/* WhatsApp Toggle */}
-              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100">
+              <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
                 <span className="text-[10px] font-bold uppercase tracking-wider">WhatsApp Reminders</span>
                 <button 
                   onClick={async () => {
@@ -158,12 +264,18 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
                       .eq("id", id);
                     if (error) return toast.error("Failed to update reminder settings");
                     setCustomer(prev => prev ? { ...prev, whatsapp_reminders_enabled: newValue } as any : null);
+                    await logAuditEvent({
+                      entityType: "customer",
+                      entityId: id,
+                      action: "whatsapp_toggle",
+                      summary: `${newValue ? "Enabled" : "Disabled"} WhatsApp reminders for ${customer.name}`,
+                    });
                     toast.success(newValue ? "Enabled WhatsApp" : "Disabled WhatsApp");
                   }}
                   className="transition-colors"
                 >
                   {(customer as any).whatsapp_reminders_enabled === true ? (
-                    <ToggleRight className="w-5 h-5 text-emerald-600" />
+                    <ToggleRight className="w-5 h-5 text-blue-600" />
                   ) : (
                     <ToggleLeft className="w-5 h-5 text-gray-400" />
                   )}
@@ -179,7 +291,7 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
               { label: "RTO Count", value: customer.rto_count },
             ].map(s => (
               <div key={s.label} className="text-center bg-gray-50 rounded-lg px-4 py-3">
-                <div className="text-lg font-bold text-forest">{s.value}</div>
+                <div className="text-lg font-bold text-[#2D1E6F]">{s.value}</div>
                 <div className="text-[11px] text-gray-400">{s.label}</div>
               </div>
             ))}
@@ -317,13 +429,13 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key as any)}
             className={cn("flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap",
-              tab === t.key ? "border-forest text-forest" : "border-transparent text-gray-500 hover:text-gray-700"
+              tab === t.key ? "border-[#2D1E6F] text-[#2D1E6F]" : "border-transparent text-gray-500 hover:text-gray-700"
             )}>
             <t.icon className="w-3.5 h-3.5" />
             {t.label}
             {"count" in t && t.count > 0 && (
               <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                tab === t.key ? "bg-forest text-lime" : "bg-gray-100 text-gray-500"
+                tab === t.key ? "bg-[#2D1E6F] text-white" : "bg-gray-100 text-gray-500"
               )}>{t.count}</span>
             )}
           </button>
@@ -331,18 +443,47 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
       </div>
 
       {/* Tab content */}
+      {tab === "timeline" && (
+        <div className="card divide-y divide-gray-50">
+          {timeline.length === 0 && <div className="p-8 text-center text-gray-400 text-sm">No activity yet</div>}
+          {timeline.map(item => (
+            <div key={item.id} className="p-4 flex items-start gap-3">
+              <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0",
+                item.type === "order" ? "bg-blue-500" :
+                item.type === "task" ? "bg-amber-500" :
+                item.type === "call" ? "bg-blue-500" : "bg-violet-500"
+              )} />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-medium text-[#2D1E6F]">{item.title}</span>
+                  <span className="text-xs text-gray-400">{formatDateTime(item.at)}</span>
+                </div>
+                {item.detail && <div className="text-xs text-gray-600 mt-1">{item.detail}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {tab === "orders" && (
         <div className="space-y-3">
           {orders.length === 0 && <div className="card p-8 text-center text-gray-400 text-sm">No orders yet</div>}
           {orders.map(o => (
-            <div key={o.id} className="card p-4">
+            <div 
+              key={o.id} 
+              onClick={() => {
+                const oid = [o.shopify_order_id, o.order_number, o.id].find(id => id && String(id).trim().length > 0);
+                if (oid) setSelectedOrderId(String(oid));
+              }}
+              className="card p-4 cursor-pointer hover:shadow-md hover:border-r hover:border-r-gray-100 transition-all hover:scale-[1.002] active:scale-[0.998]"
+            >
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-forest">{o.order_number}</span>
+                    <span className="font-semibold text-sm text-[#2D1E6F]">{o.order_number}</span>
                     <DeliveryBadge status={o.delivery_status} />
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">{o.line_items.map(l => `${l.name || l.title || "Unknown Product"} × ${l.qty || l.quantity || 1}`).join(", ")}</div>
+                  <div className="text-xs text-gray-500 mt-1">{o.line_items.filter((i: any) => !i.__metadata).map((l: any) => `${l.name || l.title || "Unknown Product"} × ${l.qty || l.quantity || 1}`).join(", ")}</div>
                   <div className="text-[11px] text-gray-400 mt-0.5">
                     Ordered {formatDate(o.ordered_at)}
                     {o.delivered_at && ` · Delivered ${formatDate(o.delivered_at)}`}
@@ -350,7 +491,7 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-forest">{formatCurrency(Number(o.total_price) || 0)}</div>
+                  <div className="font-bold text-[#2D1E6F]">{formatCurrency(Number(o.total_price) || 0)}</div>
                   <div className="text-[11px] text-gray-400 uppercase">{o.source}</div>
                 </div>
               </div>
@@ -365,19 +506,24 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
           {calls.map(cl => (
             <div key={cl.id} className="p-4 flex items-start gap-3">
               <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0",
-                cl.outcome === "done" ? "bg-emerald-500" : cl.outcome === "no_answer" ? "bg-amber-500" : "bg-rose-500"
+                cl.outcome === "done" ? "bg-blue-500" : cl.outcome === "no_answer" ? "bg-amber-500" : "bg-rose-500"
               )} />
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-forest capitalize">{cl.outcome.replace("_", " ")}</span>
+                  <span className="text-sm font-medium text-[#2D1E6F] capitalize">{cl.outcome.replace("_", " ")}</span>
                   <span className="text-xs text-gray-400">{formatDate(cl.called_at)}</span>
                 </div>
                 {cl.note && <div className="text-xs text-gray-600 mt-1 italic">"{cl.note}"</div>}
+                {(cl.disposition || cl.follow_up_action) && (
+                  <div className="text-[11px] text-gray-500 mt-1">
+                    {[cl.disposition?.replace(/_/g, " "), cl.follow_up_action].filter(Boolean).join(" · ")}
+                  </div>
+                )}
                 {cl.agent_name && (
                   <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1.5">
                     <span>by {cl.agent_name}</span>
                     {cl.agent_name.includes("System") && (
-                      <span className="text-[9px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-100 font-bold uppercase leading-none">Automated</span>
+                      <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100 font-bold uppercase leading-none">Automated</span>
                     )}
                   </div>
                 )}
@@ -422,6 +568,18 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
         </>}
       >
         <p className="text-sm text-gray-600">Are you sure you want to clear the RTO flag for <strong>{customer.name}</strong>? Future orders will generate follow-up tasks normally.</p>
+      </Modal>
+
+      {/* Order Detail Modal */}
+      <Modal 
+        open={!!selectedOrderId} 
+        onClose={() => setSelectedOrderId(null)} 
+        title={`Order Details — ${customer.name}`}
+        maxWidth="max-w-6xl"
+      >
+        <div className="bg-gray-50 -m-5 rounded-lg overflow-hidden min-h-[60vh]">
+          {selectedOrderId && <ShiprocketOrderView orderId={selectedOrderId} />}
+        </div>
       </Modal>
     </div>
   );

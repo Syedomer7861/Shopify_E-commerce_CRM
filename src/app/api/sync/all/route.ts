@@ -1,36 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { TaskType } from "@/types";
+import { getSystemSettings } from "@/lib/server-settings";
+import { assignTaskOwner, calculateTaskPriority, reassignOfflineAgentTasks } from "@/lib/task-engine";
+import { syncShopifyData } from "@/lib/sync-logic";
 
 function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 }
 
+function mapShiprocketStatus(status: string | number | null | undefined) {
+  const s = String(status || "").toLowerCase();
+  if (s.includes("delivered") || s === "7" || s === "10") return "delivered";
+  if (s.includes("shipped") || s === "6" || s === "12" || s.includes("transit") || s.includes("undelivered")) return "in_transit";
+  if (s.includes("out for delivery") || s === "13") return "out_for_delivery";
+  if (s.includes("rto") || s === "9") return "rto";
+  if (s.includes("canceled") || s === "8" || s.includes("cancel") || s.includes("failed")) return "failed";
+  return "pending";
+}
+
+import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
+
 export async function POST(req: NextRequest) {
+  const { stream, send, close } = createSyncStream();
+  const streaming = req.nextUrl.searchParams.get("stream") === "true";
+
   const supabase = getSupabase();
   const report = {
     logs: { processed: 0, failed: 0, skipped: 0 },
     tasks: { generated: 0, checked: 0 },
     abandoned: { created: 0, recovered: 0 }
   };
+  const waResults = { recovery: 0, reorder: 0, review: 0 };
 
-  try {
-    // 1. PROCESS SHIPROCKET LOGS
+  const runSync = async () => {
+    try {
+      send({ progress: 2, message: "Priority 1: Syncing Direct Store Data (Shopify)..." });
+      const shopifyReport = await syncShopifyData(supabase, send);
+      console.log("Shopify Priority Sync Report:", shopifyReport);
+
+      send({ progress: 15, message: "Priority 2: Processing Shiprocket Webhook Queue..." });
+      // 1. PROCESS SHIPROCKET LOGS
     const { data: logs } = await supabase
       .from("webhook_logs")
       .select("*")
-      .eq("source", "shiprocket")
+      .in("source", ["shiprocket", "shiprocket_checkout"])
       .eq("status", "received")
       .order("created_at", { ascending: true });
 
     if (logs && logs.length > 0) {
       for (const log of logs) {
         const body = log.payload;
-        const cartId = body.cart_id || body.checkout_id;
-        const orderId = body.order_id || body.channel_order_id;
-
         const data = body.data || body.payload || body;
-        const rawPhone = data.phone_number || data.mobile || data.phone || data.customer_phone || 
+        const cartId = data.cart_id || data.checkout_id || data.cart_token;
+        const orderId = data.order_id || data.channel_order_id || data.shiprocket_order_id || data.checkout_order_id;
+
+        const rawPhone = data.phone_number || data.mobile || data.phone || data.customer_phone || data.customer_contact ||
                          data.shipping_address?.phone || data.billing_address?.phone || "";
         const phone = rawPhone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
         
@@ -62,20 +87,35 @@ export async function POST(req: NextRequest) {
                 billAddr.address2
             ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(", ");
 
-            const { data: customerData } = await supabase.from("customers").upsert({
-              name: fullName,
-              phone: phone,
-              email: rawEmail,
-              city: body.city || shipAddr.city || billAddr.city || null,
-              state: body.state || shipAddr.state || billAddr.state || null,
-              zip: body.pincode || shipAddr.zip || billAddr.zip || shipAddr.pincode || null,
-              address: combinedAddress || null,
-            }, { onConflict: "phone" }).select("id");
+            // 1. Check for existing customer to prevent overwriting unmasked data with masked data
+            const { data: existing } = await supabase.from('customers').select('id, phone').eq('phone', phone).maybeSingle();
             
-            if (customerData && customerData.length > 0) customerId = customerData[0].id;
-            else {
-               const { data: existing } = await supabase.from('customers').select('id').eq('phone', phone).maybeSingle();
-               if (existing) customerId = existing.id;
+            if (existing) {
+              customerId = existing.id;
+              // If incoming data is masked but we already have unmasked data, skip customer upsert details
+              // but we still need the customerId for the order.
+            } else {
+              const firstName = body.first_name || body.shipping_address?.first_name || body.billing_address?.first_name || "";
+              const lastName = body.last_name || body.shipping_address?.last_name || body.billing_address?.last_name || "";
+              const fullName = body.customer_name || body.shipping_address?.name || body.billing_address?.name || 
+                               (firstName ? `${firstName} ${lastName}`.trim() : "Shiprocket Customer");
+
+              const shipAddr = body.shipping_address || {};
+              const billAddr = body.billing_address || {};
+              const combinedAddress = [body.address, shipAddr.address1, shipAddr.address2, billAddr.address1, billAddr.address2]
+                .filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(", ");
+
+              const { data: customerData } = await supabase.from("customers").upsert({
+                name: fullName,
+                phone: phone,
+                email: rawEmail,
+                city: body.city || shipAddr.city || billAddr.city || null,
+                state: body.state || shipAddr.state || billAddr.state || null,
+                zip: body.pincode || shipAddr.zip || billAddr.zip || shipAddr.pincode || null,
+                address: combinedAddress || null,
+              }, { onConflict: "phone" }).select("id");
+              
+              if (customerData && customerData.length > 0) customerId = customerData[0].id;
             }
           }
 
@@ -108,8 +148,13 @@ export async function POST(req: NextRequest) {
                 await supabase.from("tasks").upsert({
                   customer_id: customerId,
                   abandoned_cart_id: cartData.id,
+                  assigned_to: await assignTaskOwner(supabase),
                   task_type: "recovery" as any,
                   due_date: dueDate.toISOString().split("T")[0],
+                  priority_score: calculateTaskPriority({
+                    taskType: "recovery",
+                    totalOrders: 0,
+                  }),
                   status: "pending"
                 }, { onConflict: "abandoned_cart_id, task_type" });
                 report.abandoned.created++;
@@ -123,14 +168,29 @@ export async function POST(req: NextRequest) {
                 { __metadata: true, payload: body }
              ];
 
+             const crmStatus = mapShiprocketStatus(body.status);
+
+             // Authority Check: Don't let older logs or Shopify data overwrite newer Shiprocket status
+             const { data: existingOrder } = await supabase
+               .from("orders")
+               .select("delivery_status, source")
+               .eq("shopify_order_id", orderId.toString())
+               .maybeSingle();
+
+             const statusToSave = (existingOrder && existingOrder.source === "shiprocket" && existingOrder.delivery_status !== "pending" && crmStatus === "pending")
+               ? existingOrder.delivery_status 
+               : crmStatus;
+
              const { error: orderErr } = await supabase.from("orders").upsert({
                 customer_id: customerId,
                 shopify_order_id: orderId.toString(),
                 order_number: orderId.toString(),
                 total_price: parseFloat(body.total_price || body.cart_value || 0),
-                delivery_status: body.status || "pending",
+                delivery_status: statusToSave,
                 ordered_at: body.created_at || log.created_at,
-                source: body.source || "shiprocket",
+                source: "shiprocket",
+                fulfillment_status: statusToSave === "delivered" ? "fulfilled" : "unfulfilled",
+                delivered_at: statusToSave === "delivered" ? (body.delivered_date || new Date().toISOString()) : null,
                 line_items: enrichedItems
              }, { onConflict: "shopify_order_id" });
 
@@ -180,13 +240,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    send({ progress: 30, message: "Validating task generation rules..." });
     // 2. TRIGGER TASK GENERATOR LOGIC
-    const { data: settings } = await supabase.from("settings").select("*").limit(1).maybeSingle();
+    const settings = await getSystemSettings(supabase);
     const { data: orders } = await supabase
       .from("orders")
-      .select("id, customer_id, delivered_at, line_items, delivery_status")
-      .in("delivery_status", ["delivered", "Delivered"])
-      .not("delivered_at", "is", null);
+      .select("id, customer_id, delivered_at, ordered_at, line_items, delivery_status")
+      .in("delivery_status", ["delivered", "Delivered"]);
 
     if (orders) {
         report.tasks.checked = orders.length;
@@ -201,7 +261,10 @@ export async function POST(req: NextRequest) {
            const { data: customer } = await supabase.from("customers").select("rto_flag").eq("id", order.customer_id).single();
            if (customer?.rto_flag) continue;
 
-           const deliveredDate = new Date(order.delivered_at);
+           // FALLBACK LOGIC: If delivered_at is missing but status is delivered, 
+           // use ordered_at or created_at as the anchor so the task isn't skipped.
+           const anchorDate = order.delivered_at || order.ordered_at || new Date().toISOString();
+           const deliveredDate = new Date(anchorDate);
            if (isNaN(deliveredDate.getTime()) || deliveredDate.getFullYear() < 2020) continue;
 
            const addDays = (d: Date, n: number) => {
@@ -219,16 +282,116 @@ export async function POST(req: NextRequest) {
            const newTasks = taskTemplates.map(t => ({
              order_id: order.id,
              customer_id: order.customer_id,
+             assigned_to: null,
              task_type: t.task_type as TaskType,
              due_date: addDays(deliveredDate, t.offset),
+             priority_score: calculateTaskPriority({
+               taskType: t.task_type as TaskType,
+               totalOrders: customer?.rto_flag ? 0 : undefined,
+             }),
              status: "pending",
            }));
+
+           const assignedTo = await assignTaskOwner(supabase);
+           newTasks.forEach((task) => {
+             task.assigned_to = assignedTo;
+           });
 
            const { error: insertErr } = await supabase.from("tasks").insert(newTasks);
            if (!insertErr) report.tasks.generated += 3;
         }
     }
+
+    const { data: issueOrders } = await supabase
+      .from("orders")
+      .select("id, customer_id, total_price, delivery_status, ordered_at")
+      .in("delivery_status", ["rto", "failed", "in_transit"]);
+
+    const staleCutoff = new Date();
+    staleCutoff.setDate(staleCutoff.getDate() - 1);
+
+    if (issueOrders) {
+      for (const order of issueOrders) {
+        const staleTransit = order.delivery_status === "in_transit" && new Date(order.ordered_at) <= staleCutoff;
+        // --- 1. Issue Resolution Generation ---
+        if (order.delivery_status === "rto" || order.delivery_status === "failed" || staleTransit) {
+          const { count } = await supabase
+            .from("tasks")
+            .select("id", { count: "exact", head: true })
+            .eq("order_id", order.id)
+            .eq("task_type", "issue_resolution")
+            .not("status", "in", '("done","cancelled")');
+
+          if ((count || 0) === 0) {
+            const { data: customer } = await supabase
+              .from("customers")
+              .select("total_orders, rto_flag")
+              .eq("id", order.customer_id)
+              .maybeSingle();
+
+            const assignedTo = await assignTaskOwner(supabase);
+            await supabase.from("tasks").insert({
+              order_id: order.id,
+              customer_id: order.customer_id,
+              assigned_to: assignedTo,
+              task_type: "issue_resolution",
+              due_date: new Date().toISOString().split("T")[0],
+              priority_score: calculateTaskPriority({
+                taskType: "issue_resolution",
+                totalPrice: Number(order.total_price) || 0,
+                totalOrders: customer?.total_orders || 0,
+                rtoFlag: customer?.rto_flag || order.delivery_status === "rto",
+              }),
+              status: "pending",
+            });
+          }
+
+          if (order.delivery_status !== "delivered") {
+            await supabase
+              .from("tasks")
+              .update({ status: "cancelled" } as any)
+              .eq("order_id", order.id)
+              .in("task_type", ["review", "reorder", "final_followup"])
+              .not("status", "in", '("done","cancelled","skipped")');
+          }
+        }
+
+        // --- 2. Proactive Transit Update Generation ---
+        if (order.delivery_status === "in_transit" && !staleTransit) {
+          const { count } = await supabase
+            .from("tasks")
+            .select("id", { count: "exact", head: true })
+            .eq("order_id", order.id)
+            .eq("task_type", "transit_update");
+
+          if ((count || 0) === 0) {
+            const { data: customer } = await supabase
+              .from("customers")
+              .select("total_orders, rto_flag")
+              .eq("id", order.customer_id)
+              .maybeSingle();
+
+            const assignedTo = await assignTaskOwner(supabase);
+            await supabase.from("tasks").insert({
+              order_id: order.id,
+              customer_id: order.customer_id,
+              assigned_to: assignedTo,
+              task_type: "transit_update" as any,
+              due_date: new Date().toISOString().split("T")[0],
+              priority_score: calculateTaskPriority({
+                taskType: "transit_update" as any,
+                totalPrice: Number(order.total_price) || 0,
+                totalOrders: customer?.total_orders || 0,
+                rtoFlag: customer?.rto_flag || false,
+              }),
+              status: "pending",
+            });
+          }
+        }
+      }
+    }
     
+    send({ progress: 60, message: "Running system self-healing checks..." });
     // 3. SELF-HEAL: CLOSE TASKS FOR RECOVERED CARTS / ORDERS
     // This catches tasks that weren't closed during their respective log processing
     const { data: pendingRecovery } = await supabase
@@ -242,38 +405,84 @@ export async function POST(req: NextRequest) {
         // Check if customer has an order after the task was created
         const { data: order } = await supabase
           .from("orders")
-          .select("order_number")
+          .select("order_number, ordered_at")
           .eq("customer_id", t.customer_id)
           .limit(1)
           .maybeSingle();
 
         if (order) {
-           await supabase.from("tasks").update({ 
-              status: "done", 
-              completed_at: new Date().toISOString() 
-           } as any).eq("id", t.id);
+           // TIME-AWARE HEALING: Only close if order was placed AFTER abandonment
+           const { data: cartObj } = await supabase.from("abandoned_carts").select("abandoned_at").eq("id", t.abandoned_cart_id).maybeSingle();
            
-           await supabase.from("call_logs").insert({
-             task_id: t.id,
-             customer_id: t.customer_id,
-             outcome: "done",
-             note: `Healed: Task resolved because order #${order.order_number} was found.`,
-             agent_name: "Repair Sync"
-           });
+           if (cartObj && new Date(order.ordered_at) > new Date(cartObj.abandoned_at)) {
+             await supabase.from("tasks").update({ 
+                status: "done", 
+                completed_at: new Date().toISOString() 
+             } as any).eq("id", t.id);
+             
+             await supabase.from("call_logs").insert({
+               task_id: t.id,
+               customer_id: t.customer_id,
+               outcome: "done",
+               note: `Healed: Task resolved because new order #${order.order_number} was found.`,
+               agent_name: "Repair Sync"
+             });
+           }
         }
       }
     }
     
+    // 3.5 SELF-HEAL: CLOSE OBSOLETE TRANSIT/ISSUE TASKS
+    // If an order has been successfully delivered, it should immediately close out
+    // any pending investigations or transit updates related to its shipping journey.
+    const { data: obsoleteTasks } = await supabase
+      .from("tasks")
+      .select("id, customer_id, order_id, orders!inner(delivery_status)")
+      .in("task_type", ["transit_update", "issue_resolution"])
+      .not("status", "in", '("done","cancelled","skipped")');
+
+    const idsToCancel = (obsoleteTasks || [])
+      .filter((task: any) => {
+        const order = Array.isArray(task.orders) ? task.orders[0] : task.orders;
+        return order?.delivery_status === "delivered";
+      })
+      .map((task: any) => task.id);
+
+    if (idsToCancel.length > 0) {
+           await supabase
+             .from("tasks")
+             .update({ status: "cancelled" } as any)
+             .in("id", idsToCancel);
+             
+           // ADDING AUDIT LOGS FOR THE GLOBAL SYNC HEAL
+          for (const t of (obsoleteTasks || []).filter((ot: any) => idsToCancel.includes(ot.id))) {
+              await supabase.from("call_logs").insert({
+                 task_id: t.id,
+                 customer_id: (t as any).customer_id || (t as any).customer?.id, // Depends on join depth
+                 outcome: "done",
+                 note: `Self-Healed: Order verified as Delivered via Global Sync.`,
+                 agent_name: "System Sync",
+                 called_at: new Date().toISOString()
+              });
+           }
+             
+           console.log(`[Auto-Heal] Cancelled ${idsToCancel.length} obsolete transit tasks for delivered orders.`);
+       }
+    
+    send({ progress: 80, message: "Triggering automated reminders..." });
     // 4. TRIGGER AUTO-SENDERS (Automation Fix)
     const baseUrl = req.nextUrl.origin;
-    const waResults = { recovery: 0, reorder: 0, review: 0 };
+    // waResults already declared in outer scope
+    const internalHeaders: HeadersInit = process.env.CRON_SECRET
+      ? { "x-cron-secret": process.env.CRON_SECRET }
+      : {};
     
     try {
       // Trigger them in parallel
       const [recRes, reoRes, revRes] = await Promise.all([
-        fetch(`${baseUrl}/api/cron/recovery-reminder`).then(r => r.json()).catch(() => ({ sent: 0 })),
-        fetch(`${baseUrl}/api/cron/reorder-reminder`).then(r => r.json()).catch(() => ({ sent: 0 })),
-        fetch(`${baseUrl}/api/cron/review-reminder`).then(r => r.json()).catch(() => ({ sent: 0 }))
+        fetch(`${baseUrl}/api/cron/recovery-reminder`, { headers: internalHeaders }).then(r => r.json()).catch(() => ({ sent: 0 })),
+        fetch(`${baseUrl}/api/cron/reorder-reminder`, { headers: internalHeaders }).then(r => r.json()).catch(() => ({ sent: 0 })),
+        fetch(`${baseUrl}/api/cron/review-reminder`, { headers: internalHeaders }).then(r => r.json()).catch(() => ({ sent: 0 }))
       ]);
       
       waResults.recovery = recRes.sent || 0;
@@ -283,6 +492,83 @@ export async function POST(req: NextRequest) {
       console.error("Auto-sender trigger failed:", waErr);
     }
 
+    send({ progress: 90, message: "Updating customer segmentation..." });
+    // 4.5 RECALCULATE CUSTOMER STATS (total_orders, segment, last_order_date)
+    try {
+      const { data: allOrders } = await supabase
+        .from("orders")
+        .select("customer_id, ordered_at, delivery_status");
+
+      if (allOrders) {
+        const ordersByCustomer: Record<string, any[]> = {};
+        allOrders.forEach(o => {
+          if (!ordersByCustomer[o.customer_id]) ordersByCustomer[o.customer_id] = [];
+          ordersByCustomer[o.customer_id].push(o);
+        });
+
+        const INACTIVE_DAYS = 45;
+        const inactiveThreshold = new Date();
+        inactiveThreshold.setDate(inactiveThreshold.getDate() - INACTIVE_DAYS);
+
+        for (const [custId, orders] of Object.entries(ordersByCustomer)) {
+          const totalOrders = orders.length;
+          const sorted = orders.sort((a, b) => new Date(b.ordered_at).getTime() - new Date(a.ordered_at).getTime());
+          const lastOrderDate = sorted[0]?.ordered_at || null;
+          const rtoCount = orders.filter(o => o.delivery_status === "rto" || o.delivery_status === "failed").length;
+          const rtoFlag = rtoCount >= 2;
+
+          let segment = "one_time";
+          if (totalOrders >= 2) segment = "repeat";
+          else if (lastOrderDate && new Date(lastOrderDate) < inactiveThreshold) segment = "inactive";
+          if (rtoFlag) segment = "risky";
+
+          await supabase.from("customers").update({
+            total_orders: totalOrders,
+            last_order_date: lastOrderDate,
+            segment,
+            rto_flag: rtoFlag,
+            rto_count: rtoCount,
+          }).eq("id", custId);
+        }
+      }
+    } catch (e) {
+      console.error("Customer stats recalc failed:", e);
+    }
+
+    // 5. SYSTEM PULSE
+    await supabase.from("webhook_logs").insert({
+      source: "shiprocket",
+      topic: "system_sync",
+      status: "processed",
+      payload: { 
+        summary: "Full System Sync Completed", 
+        customer_name: "GLOBAL CRM REFRESH",
+        report: report 
+      }
+    });
+
+    // 6. AUTO REASSIGNMENT SWEEP (OFFLINE AGENTS)
+    const reassignedCount = await reassignOfflineAgentTasks(supabase);
+    if (reassignedCount > 0) {
+      console.log(`[Auto-Reassign] Shifted ${reassignedCount} tasks from offline agents to active agents.`);
+      (report as any).tasks_reassigned = reassignedCount;
+    }
+
+    send({ progress: 100, message: "Sync Complete!", ...report });
+    close();
+
+  } catch (err: any) {
+    console.error("Super Sync Error:", err);
+    send({ error: err.message });
+    close();
+  }
+};
+
+  if (streaming) {
+    runSync();
+    return new NextResponse(stream, { headers: syncHeaders });
+  } else {
+    await runSync();
     return NextResponse.json({ 
       success: true, 
       report: { 
@@ -290,9 +576,5 @@ export async function POST(req: NextRequest) {
         whatsapp: waResults 
       } 
     });
-
-  } catch (err: any) {
-    console.error("Super Sync Error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

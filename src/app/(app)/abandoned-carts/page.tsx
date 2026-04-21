@@ -41,6 +41,22 @@ export default function AbandonedCartsPage() {
         query = query.eq("recovery_status", statusFilter);
       }
 
+      if (search) {
+        // Step 1: Find matching customer IDs for carts
+        const { data: matchingCustomers } = await supabase
+          .from("customers")
+          .select("id")
+          .or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
+
+        const customerIds = (matchingCustomers || []).map(c => c.id);
+
+        let orFilter = `phone.ilike.%${search}%,cart_token.ilike.%${search}%`;
+        if (customerIds.length > 0) {
+          orFilter += `,customer_id.in.(${customerIds.join(",")})`;
+        }
+        query = query.or(orFilter);
+      }
+
       const { data, error } = await query;
       if (error) throw error;
       setCarts(data || []);
@@ -94,12 +110,12 @@ export default function AbandonedCartsPage() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="card p-5 border-l-4 border-l-amber-400">
+        <div className="card p-5 border-l-4 border-l-[#2D1E6F]">
           <div className="flex items-center gap-3 mb-2 text-gray-500">
             <Clock className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Pending Recovery</span>
           </div>
-          <div className="text-2xl font-display text-forest font-bold">{stats.pendingCount}</div>
+          <div className="text-2xl font-display text-[#2D1E6F] font-bold">{stats.pendingCount}</div>
           <div className="text-[10px] text-gray-400 mt-1">Carts waiting for follow-up</div>
         </div>
         <div className="card p-5 border-l-4 border-l-rose-400">
@@ -110,12 +126,12 @@ export default function AbandonedCartsPage() {
           <div className="text-2xl font-display text-rose-600 font-bold">₹{stats.totalValue.toLocaleString()}</div>
           <div className="text-[10px] text-gray-400 mt-1">Total value of all abandoned items</div>
         </div>
-        <div className="card p-5 border-l-4 border-l-emerald-400">
+        <div className="card p-5 border-l-4 border-l-[#2D1E6F]">
           <div className="flex items-center gap-3 mb-2 text-gray-500">
             <CheckCircle2 className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Recovered Revenue</span>
           </div>
-          <div className="text-2xl font-display text-emerald-600 font-bold">₹{stats.recoveredValue.toLocaleString()}</div>
+          <div className="text-2xl font-display text-[#2D1E6F] font-bold">₹{stats.recoveredValue.toLocaleString()}</div>
           <div className="text-[10px] text-gray-400 mt-1">Orders secured after follow-up</div>
         </div>
       </div>
@@ -138,7 +154,7 @@ export default function AbandonedCartsPage() {
               key={f}
               onClick={() => setStatusFilter(f)}
               className={cn("px-4 h-10 text-xs font-semibold rounded-xl transition-all capitalize",
-                statusFilter === f ? "bg-forest text-lime shadow-sm" : "bg-white text-gray-500 border border-gray-100 hover:bg-gray-50"
+                statusFilter === f ? "bg-[#2D1E6F] text-white shadow-sm" : "bg-white text-gray-500 border border-gray-100 hover:bg-gray-50"
               )}
             >
               {f}
@@ -168,7 +184,7 @@ export default function AbandonedCartsPage() {
               ) : filteredCarts.map(cart => (
                 <tr key={cart.id} className="hover:bg-gray-50/30 transition-colors group">
                   <td className="py-4 px-6">
-                    <div className="font-semibold text-forest uppercase tracking-tight">{cart.customer?.name || "Anonymous"}</div>
+                    <div className="font-semibold text-[#2D1E6F] uppercase tracking-tight">{cart.customer?.name || "Anonymous"}</div>
                     <div className="text-xs text-gray-500 font-mono">{cart.phone}</div>
                   </td>
                   <td className="py-4 px-6">
@@ -184,9 +200,9 @@ export default function AbandonedCartsPage() {
                     {format(new Date(cart.abandoned_at), "MMM dd, hh:mm a")}
                   </td>
                   <td className="py-4 px-6">
-                    <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                      cart.recovery_status === "recovered" ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"
-                    )}>
+                     <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                       cart.recovery_status === "recovered" ? "bg-blue-100 text-blue-600" : "bg-amber-100 text-amber-600"
+                     )}>
                       {cart.recovery_status}
                     </span>
                   </td>

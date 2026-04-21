@@ -20,45 +20,57 @@ export function timeAgo(dateStr: string) {
 }
 
 export function initials(name: string) {
-  return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+  if (!name) return "U";
+  return name.split(" ").map(w => w[0] || "").join("").toUpperCase().slice(0, 2);
 }
 
 export function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
 }
 
+export function toDbDateString(date: Date | string) {
+  try {
+    return format(typeof date === "string" ? parseISO(date) : date, "yyyy-MM-dd");
+  } catch {
+    return typeof date === "string" ? date : format(new Date(), "yyyy-MM-dd");
+  }
+}
+
 export const SEGMENT_CONFIG: Record<CustomerSegment, { label: string; color: string; bg: string; dot: string }> = {
-  repeat:   { label: "Repeat",   color: "text-emerald-700",  bg: "bg-emerald-50 border-emerald-200",   dot: "bg-emerald-500" },
-  one_time: { label: "One-time", color: "text-amber-700",    bg: "bg-amber-50 border-amber-200",       dot: "bg-amber-500" },
-  inactive: { label: "Inactive", color: "text-rose-700",     bg: "bg-rose-50 border-rose-200",         dot: "bg-rose-500" },
-  risky:    { label: "Risky",    color: "text-orange-700",   bg: "bg-orange-50 border-orange-200",     dot: "bg-orange-500" },
+  repeat:   { label: "Repeat",   color: "text-blue-700",  bg: "bg-blue-50 border-blue-100",   dot: "bg-blue-500" },
+  one_time: { label: "One-time", color: "text-blue-700",     bg: "bg-blue-50 border-blue-100",         dot: "bg-blue-500" },
+  inactive: { label: "Inactive", color: "text-gray-600",     bg: "bg-gray-50 border-gray-200",         dot: "bg-gray-400" },
+  risky:    { label: "Risky",    color: "text-amber-700",    bg: "bg-amber-50 border-amber-200",       dot: "bg-amber-500" },
 };
 
 export const DELIVERY_CONFIG: Record<DeliveryStatus, { label: string; color: string; bg: string }> = {
-  pending:          { label: "Pending",          color: "text-slate-600",   bg: "bg-slate-100" },
+  pending:          { label: "Pending",          color: "text-gray-600",   bg: "bg-gray-100" },
   in_transit:       { label: "In Transit",       color: "text-blue-700",    bg: "bg-blue-50" },
-  out_for_delivery: { label: "Out for Delivery", color: "text-violet-700",  bg: "bg-violet-50" },
-  delivered:        { label: "Delivered",        color: "text-emerald-700", bg: "bg-emerald-50" },
+  out_for_delivery: { label: "Out for Delivery", color: "text-indigo-700",  bg: "bg-indigo-50" },
+  delivered:        { label: "Delivered",        color: "text-blue-700", bg: "bg-blue-50" },
   rto:              { label: "RTO",              color: "text-rose-700",    bg: "bg-rose-50" },
   failed:           { label: "Failed",           color: "text-red-700",     bg: "bg-red-50" },
 };
 
 export const TASK_TYPE_CONFIG: Record<TaskType, { label: string; color: string; bg: string; accent: string }> = {
-  review:        { label: "Review Call",    color: "text-blue-700",   bg: "bg-blue-50",   accent: "border-l-blue-500" },
-  reorder:       { label: "Reorder Call",   color: "text-lime-700",   bg: "bg-lime-50",   accent: "border-l-lime-500" },
-  final_followup:{ label: "Final Follow-up",color: "text-violet-700", bg: "bg-violet-50", accent: "border-l-violet-500" },
-  recovery:      { label: "Recovery Call",   color: "text-purple-700", bg: "bg-purple-50", accent: "border-l-purple-500" },
+  review:        { label: "Review Call",    color: "text-[#2D1E6F]",   bg: "bg-[#2D1E6F]/5",   accent: "border-l-[#2D1E6F]" },
+  reorder:       { label: "Reorder Call",   color: "text-[#2D1E6F]",   bg: "bg-[#2D1E6F]/5",   accent: "border-l-[#2D1E6F]" },
+  final_followup:{ label: "Final Follow-up",color: "text-gray-700",    bg: "bg-gray-50",       accent: "border-l-gray-400" },
+  recovery:      { label: "Recovery Call",   color: "text-[#2D1E6F]",   bg: "bg-[#2D1E6F]/5",   accent: "border-l-[#2D1E6F]" },
+  issue_resolution:{ label: "Issue Resolution", color: "text-rose-700", bg: "bg-rose-50",     accent: "border-l-rose-500" },
+  transit_update: { label: "Transit Inform", color: "text-blue-700",    bg: "bg-blue-50",       accent: "border-l-blue-500" },
 };
 
 export const TASK_STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; bg: string }> = {
-  pending:     { label: "Pending",     color: "text-slate-600",   bg: "bg-slate-100" },
+  pending:     { label: "Pending",     color: "text-gray-500",   bg: "bg-gray-50" },
   due:         { label: "Due Today",   color: "text-amber-700",   bg: "bg-amber-50" },
-  done:        { label: "Done",        color: "text-emerald-700", bg: "bg-emerald-50" },
-  rescheduled: { label: "Rescheduled", color: "text-blue-700",    bg: "bg-blue-50" },
-  skipped:     { label: "Skipped",     color: "text-slate-500",   bg: "bg-slate-50" },
-  cancelled:   { label: "Cancelled",   color: "text-rose-700",    bg: "bg-rose-50" },
+  done:        { label: "Done",        color: "text-blue-700", bg: "bg-blue-50" },
+  rescheduled: { label: "Rescheduled", color: "text-[#2D1E6F]",    bg: "bg-[#2D1E6F]/5" },
+  skipped:     { label: "Skipped",     color: "text-gray-400",    bg: "bg-gray-50" },
+  cancelled:   { label: "Cancelled",   color: "text-gray-400",    bg: "bg-gray-50" },
   overdue:     { label: "Overdue",     color: "text-rose-700",    bg: "bg-rose-50" },
 };
+
 
 export function getTaskProductName(task: any): string {
   const customerMeta = task.customer?.custom_meta;
@@ -109,6 +121,14 @@ export function getTaskProductName(task: any): string {
 
   // 4. Last fallback
   if (task.task_type === "recovery") return "Abandoned Items";
+  if (task.task_type === "transit_update") return "Shipping Update";
+  if (task.task_type === "issue_resolution") return "Delivery Issue";
   if (task.task_type === "reorder") return "Refill Reminder";
   return "—";
+}
+
+export function isPhoneMasked(phone: string): boolean {
+  if (!phone) return true;
+  const p = phone.toString().toLowerCase();
+  return p.includes("x") || p.includes("_sr_") || p.length < 7;
 }

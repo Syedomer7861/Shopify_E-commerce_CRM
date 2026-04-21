@@ -36,22 +36,22 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden">
       {/* Decorative Blur Backgrounds */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-forest/40 rounded-full blur-[120px] animate-pulse-slow" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-lime/20 rounded-full blur-[120px] animate-pulse-slow" />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#2D1E6F]/40 rounded-full blur-[120px] animate-pulse-slow" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-400/20 rounded-full blur-[120px] animate-pulse-slow" />
       
       <div className="w-full max-w-[420px] relative z-10 animate-slide-up">
         {/* Logo Section */}
         <div className="text-center mb-10">
           <div className="group relative w-20 h-20 mx-auto mb-6">
-            <div className="absolute inset-0 bg-lime/30 rounded-3xl blur-xl group-hover:bg-lime/50 transition-all duration-500 animate-pulse" />
-            <div className="relative w-full h-full bg-forest rounded-3xl flex items-center justify-center border border-white/10 shadow-2xl transition-transform hover:scale-110 duration-300">
-              <Zap className="w-10 h-10 text-lime" strokeWidth={2.5} />
+            <div className="absolute inset-0 bg-blue-400/30 rounded-3xl blur-xl group-hover:bg-blue-400/50 transition-all duration-500 animate-pulse" />
+            <div className="relative w-full h-full bg-[#2D1E6F] rounded-3xl flex items-center justify-center border border-white/10 shadow-2xl transition-transform hover:scale-110 duration-300">
+              <Zap className="w-10 h-10 text-white" strokeWidth={2.5} />
             </div>
           </div>
           <h1 className="text-4xl font-display text-white tracking-tight mb-2">CureForever</h1>
           <div className="flex items-center justify-center gap-2">
             <div className="h-px w-8 bg-gradient-to-r from-transparent to-white/20" />
-            <span className="text-lime/60 text-[10px] font-bold uppercase tracking-[0.2em]">Partner Portal</span>
+            <span className="text-blue-200/60 text-[10px] font-bold uppercase tracking-[0.2em]">CRM</span>
             <div className="h-px w-8 bg-gradient-to-l from-transparent to-white/20" />
           </div>
         </div>
@@ -72,7 +72,7 @@ export default function LoginPage() {
               <div className="relative">
                 <input 
                   type="email" 
-                  className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-lime/30 focus:border-lime/30 transition-all text-sm" 
+                  className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400/30 transition-all text-sm" 
                   placeholder="admin@cureforever.in"
                   value={email} 
                   onChange={e => setEmail(e.target.value)} 
@@ -84,12 +84,12 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
                 <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Password</label>
-                <button type="button" className="text-[10px] font-bold text-lime/40 hover:text-lime transition-colors">Forgot?</button>
+                <button type="button" className="text-[10px] font-bold text-blue-200/40 hover:text-blue-200 transition-colors">Forgot?</button>
               </div>
               <div className="relative">
                 <input 
                   type={show ? "text" : "password"} 
-                  className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 pr-12 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-lime/30 focus:border-lime/30 transition-all text-sm" 
+                  className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 pr-12 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400/30 transition-all text-sm" 
                   placeholder="••••••••"
                   value={password} 
                   onChange={e => setPassword(e.target.value)} 
@@ -108,10 +108,10 @@ export default function LoginPage() {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full h-12 bg-lime text-forest font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:translate-y-0 flex items-center justify-center gap-2 group/btn"
+              className="w-full h-12 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:translate-y-0 flex items-center justify-center gap-2 group/btn"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-forest/20 border-t-forest rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
                   <span>Initialize Dashboard</span>
@@ -127,13 +127,12 @@ export default function LoginPage() {
         {/* Footer Info */}
         <div className="mt-12 flex flex-col items-center gap-4">
           <div className="flex items-center gap-6">
-            <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">v4.0.2 Stable</span>
+            <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">V_01 Stable</span>
             <div className="w-1 h-1 rounded-full bg-white/10" />
             <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Cloud Sync Active</span>
           </div>
           <p className="text-[10px] text-white/10 text-center leading-relaxed">
-            Secure biometric-encrypted access enabled. Unauthorized attempts are logged.<br/>
-            &copy; 2026 CureForever Healthcare Systems
+            &copy; 2026 CureForever
           </p>
         </div>
       </div>

@@ -17,7 +17,25 @@ export async function GET(req: NextRequest) {
 
   if (segment) query = query.eq("segment", segment);
   if (rto === "true") query = query.eq("rto_flag", true);
-  if (search) query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`);
+  if (search) {
+    // Basic search on common fields
+    query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%,shopify_customer_id.ilike.%${search}%`);
+    
+    // 2. Check if search might be an Order ID
+    const { data: orderCustomers } = await supabase.from("orders").select("customer_id").or(`order_number.ilike.%${search}%,shopify_order_id.ilike.%${search}%`);
+    
+    // 3. Check if search might be a Cart Token
+    const { data: cartCustomers } = await supabase.from("abandoned_carts").select("customer_id").ilike("cart_token", `%${search}%`);
+
+    const customerIds = [
+      ...(orderCustomers || []).map(oc => oc.customer_id),
+      ...(cartCustomers || []).map(cc => cc.customer_id)
+    ].filter(Boolean);
+
+    if (customerIds.length > 0) {
+      query = query.or(`id.in.(${customerIds.map(id => `"${id}"`).join(",")}),name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`);
+    }
+  }
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -13,6 +13,15 @@ CREATE TABLE customers (
   name                VARCHAR(255) NOT NULL,
   phone               VARCHAR(20)  NOT NULL UNIQUE,  -- E.164: +91XXXXXXXXXX
   email               VARCHAR(255),
+  alt_phone           VARCHAR(20),
+  address             TEXT,
+  city                VARCHAR(100),
+  state               VARCHAR(100),
+  zip                 VARCHAR(20),
+  country             VARCHAR(100),
+  custom_meta         JSONB        NOT NULL DEFAULT '{}',
+  whatsapp_reminders_enabled BOOLEAN NOT NULL DEFAULT true,
+  last_wa_inbound_at   TIMESTAMPTZ,
   segment             VARCHAR(20)  NOT NULL DEFAULT 'one_time'
                       CHECK (segment IN ('repeat','one_time','inactive','risky')),
   rto_flag            BOOLEAN      NOT NULL DEFAULT false,
@@ -40,7 +49,7 @@ CREATE TABLE orders (
   ordered_at          TIMESTAMPTZ  NOT NULL,
   delivered_at        TIMESTAMPTZ,
   source              VARCHAR(20)  NOT NULL DEFAULT 'shopify'
-                      CHECK (source IN ('shopify','excel','manual')),
+                      CHECK (source IN ('shopify','shiprocket','excel','manual')),
   created_at          TIMESTAMPTZ  NOT NULL DEFAULT now(),
   updated_at          TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
@@ -49,13 +58,17 @@ CREATE TABLE orders (
 CREATE TABLE tasks (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id          UUID         REFERENCES orders(id) ON DELETE CASCADE,
-  abandoned_cart_id UUID         REFERENCES abandoned_carts(id) ON DELETE CASCADE,
+  abandoned_cart_id UUID,
   customer_id       UUID         NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  assigned_to       UUID         REFERENCES profiles(id) ON DELETE SET NULL,
   task_type         VARCHAR(30)  NOT NULL
-                    CHECK (task_type IN ('review','reorder','final_followup','recovery')),
+                    CHECK (task_type IN ('review','reorder','final_followup','recovery','issue_resolution','transit_update')),
   due_date          DATE         NOT NULL,
+  call_attempt_count INTEGER      NOT NULL DEFAULT 0,
+  next_attempt_at   TIMESTAMPTZ,
+  priority_score    INTEGER      NOT NULL DEFAULT 0,
   status            VARCHAR(20)  NOT NULL DEFAULT 'pending'
-                    CHECK (status IN ('pending','due','done','rescheduled','skipped','cancelled')),
+                    CHECK (status IN ('pending','due','done','rescheduled','skipped','cancelled','overdue')),
   completed_at      TIMESTAMPTZ,
   rescheduled_to    DATE,
   created_at        TIMESTAMPTZ  NOT NULL DEFAULT now()
@@ -68,9 +81,24 @@ CREATE TABLE call_logs (
   customer_id  UUID         NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   outcome      VARCHAR(30)  NOT NULL
                CHECK (outcome IN ('done','rescheduled','no_answer','skipped','whatsapp')),
+  disposition  VARCHAR(30)
+               CHECK (disposition IN ('interested','callback_requested','purchased','support_needed','not_interested','wrong_number','follow_up_later')),
+  follow_up_action VARCHAR(100),
   note         TEXT,
   called_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
   agent_name   VARCHAR(100)
+);
+
+CREATE TABLE audit_logs (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_id     UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  actor_email  VARCHAR(255),
+  entity_type  VARCHAR(50) NOT NULL,
+  entity_id    VARCHAR(100),
+  action       VARCHAR(50) NOT NULL,
+  summary      TEXT NOT NULL,
+  metadata     JSONB NOT NULL DEFAULT '{}',
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- ── settings (single row, use upsert) ──────────────────────
@@ -84,8 +112,10 @@ CREATE TABLE settings (
   whatsapp_phone_id       VARCHAR(100),
   whatsapp_token          TEXT,          -- store encrypted
   shopify_store_domain    VARCHAR(255),
+  shopify_client_id       VARCHAR(255),
   shopify_api_key         TEXT,          -- store encrypted
   shopify_api_secret      TEXT,          -- store encrypted
+  shopify_token_expires_at TIMESTAMPTZ,
   shopify_webhook_secret  TEXT,          -- store encrypted
   shiprocket_email        VARCHAR(255),
   shiprocket_password     TEXT,          -- store encrypted
@@ -106,6 +136,7 @@ CREATE TABLE product_overrides (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shopify_product_id  VARCHAR(50)  NOT NULL UNIQUE,
   product_name        VARCHAR(255) NOT NULL,
+  course_duration_days INTEGER      DEFAULT 30,
   review_offset_days  INTEGER,       -- NULL = use global default
   reorder_offset_days INTEGER,
   final_offset_days   INTEGER,
@@ -119,7 +150,7 @@ CREATE TABLE webhook_logs (
   topic      VARCHAR(100),
   payload    JSONB,
   status     VARCHAR(20) NOT NULL DEFAULT 'received'
-             CHECK (status IN ('received','processed','failed')),
+             CHECK (status IN ('received','processed','failed','skipped')),
   error      TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -135,6 +166,8 @@ CREATE INDEX idx_customers_phone           ON customers (phone);
 CREATE INDEX idx_customers_segment         ON customers (segment);
 CREATE INDEX idx_call_logs_customer        ON call_logs (customer_id);
 CREATE INDEX idx_call_logs_task            ON call_logs (task_id);
+CREATE INDEX idx_audit_logs_entity         ON audit_logs (entity_type, entity_id, created_at DESC);
+CREATE INDEX idx_audit_logs_created_at     ON audit_logs (created_at DESC);
 
 -- ── updated_at triggers ────────────────────────────────────
 CREATE OR REPLACE FUNCTION update_updated_at()
@@ -162,6 +195,10 @@ CREATE TABLE abandoned_carts (
   updated_at      TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 
+ALTER TABLE tasks
+  ADD CONSTRAINT tasks_abandoned_cart_id_fkey
+  FOREIGN KEY (abandoned_cart_id) REFERENCES abandoned_carts(id) ON DELETE CASCADE;
+
 CREATE TRIGGER abandoned_carts_updated_at BEFORE UPDATE ON abandoned_carts FOR EACH ROW EXECUTE FUNCTION update_updated_at();
  
 -- ── Row Level Security ─────────────────────────────────────
@@ -173,6 +210,7 @@ ALTER TABLE call_logs        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_overrides ENABLE ROW LEVEL SECURITY;
 ALTER TABLE webhook_logs     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs       ENABLE ROW LEVEL SECURITY;
 
 -- Policy: authenticated users can read/write all rows
 -- (single-agent v1 — tighten per user in multi-agent v2)
@@ -183,12 +221,13 @@ CREATE POLICY "auth_all" ON tasks            FOR ALL TO authenticated USING (tru
 CREATE POLICY "auth_all" ON call_logs        FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "auth_all" ON settings         FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "auth_all" ON product_overrides FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "auth_all" ON audit_logs       FOR ALL TO authenticated USING (true) WITH CHECK (true);
 -- Webhook logs: service role only (webhooks don't have JWT)
 CREATE POLICY "service_all" ON webhook_logs  FOR ALL TO service_role USING (true);
 
 -- ── Initial settings row ───────────────────────────────────
-INSERT INTO settings (review_offset_days, reorder_offset_days, final_offset_days, inactive_threshold_days)
-VALUES (5, 20, 30, 45)
+INSERT INTO settings (id, review_offset_days, reorder_offset_days, final_offset_days, inactive_threshold_days)
+VALUES ('00000000-0000-0000-0000-000000000000', 5, 20, 30, 45)
 ON CONFLICT DO NOTHING;
 
 -- ── Useful views ───────────────────────────────────────────
@@ -237,6 +276,8 @@ CREATE TABLE profiles (
   email      VARCHAR(255),
   name       VARCHAR(255),
   role       VARCHAR(20) NOT NULL DEFAULT 'agent' CHECK (role IN ('admin','agent')),
+  permissions JSONB NOT NULL DEFAULT '{"view_analytics": false, "can_import": false, "can_delete": false, "manage_team": false}'::jsonb,
+  is_active  BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

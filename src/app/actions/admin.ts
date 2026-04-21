@@ -1,13 +1,7 @@
 "use server";
 import { createClient } from "@supabase/supabase-js";
 import type { UserPermissions } from "@/types";
-
-const DEFAULT_PERMISSIONS: UserPermissions = {
-  view_analytics: false,
-  can_import: false,
-  can_delete: false,
-  manage_team: false,
-};
+import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
 
 /**
  * Creates a new team member with Email & Password.
@@ -97,5 +91,34 @@ export async function createTeamMemberServer({
   } catch (error: any) {
     console.error("DEBUG: Admin Final Error:", error);
     return { success: false, error: error.message || "Failed to fully sync user account" };
+  }
+}
+
+/**
+ * Updates a team member's password.
+ * This runs on the server using the SUPABASE_SERVICE_ROLE_KEY.
+ */
+export async function updateTeamMemberPasswordServer(userId: string, newPassword: string) {
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        }
+    }
+  );
+
+  try {
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      password: newPassword
+    });
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error("DEBUG: Update Password Error:", error);
+    return { success: false, error: error.message || "Failed to update password" };
   }
 }

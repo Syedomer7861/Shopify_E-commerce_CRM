@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getTaskProductName } from "@/lib/utils";
+import { getSystemSettings } from "@/lib/server-settings";
 
 function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -17,19 +18,14 @@ export async function POST(req: NextRequest) {
 async function processRequest(req: NextRequest) {
   const supabase = getSupabase();
   const today = new Date().toISOString().split("T")[0];
-  const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 
   try {
     // 1. Get Settings
-    const { data: settings } = await supabase
-      .from("settings")
-      .select("*")
-      .eq("id", SETTINGS_ID)
-      .single();
+    const settings = await getSystemSettings(supabase);
     
-    if (!settings?.whatsapp_enabled || !settings?.whatsapp_bridge_url) {
-      console.log("⏭️ Reorder Cron Skipped: WhatsApp disabled or Bridge URL missing.");
-      return NextResponse.json({ skipped: true, reason: "WhatsApp disabled in settings" });
+    if (!settings?.whatsapp_enabled || !settings?.whatsapp_bridge_url || !settings?.wa_auto_reorder) {
+      console.log("⏭️ Reorder Cron Skipped: WhatsApp or Auto-Reorder disabled.");
+      return NextResponse.json({ skipped: true, reason: "WhatsApp or Auto-Reorder disabled in settings" });
     }
 
     // 2. Find "reorder" tasks due today

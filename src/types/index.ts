@@ -4,13 +4,21 @@ export type DeliveryStatus = "pending" | "in_transit" | "out_for_delivery" | "de
 
 export type FulfillmentStatus = "unfulfilled" | "partial" | "fulfilled";
 
-export type TaskType = "review" | "reorder" | "final_followup" | "recovery";
+export type TaskType = "review" | "reorder" | "final_followup" | "recovery" | "issue_resolution" | "transit_update";
 
 export type TaskStatus = "pending" | "due" | "done" | "rescheduled" | "skipped" | "cancelled" | "overdue";
 
-export type CallOutcome = "done" | "rescheduled" | "no_answer" | "skipped";
+export type CallOutcome = "done" | "rescheduled" | "no_answer" | "skipped" | "whatsapp";
+export type CallDisposition =
+  | "interested"
+  | "callback_requested"
+  | "purchased"
+  | "support_needed"
+  | "not_interested"
+  | "wrong_number"
+  | "follow_up_later";
 
-export type OrderSource = "excel" | "manual" | "shiprocket";
+export type OrderSource = "excel" | "manual" | "shiprocket" | "shopify";
 
 export interface Customer {
   id: string;
@@ -31,6 +39,7 @@ export interface Customer {
   total_orders: number;
   last_order_date?: string;
   notes?: string;
+  last_wa_inbound_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -87,9 +96,13 @@ export interface Task {
   order_id?: string;
   abandoned_cart_id?: string;
   customer_id: string;
+  assigned_to?: string;
   task_type: TaskType;
   due_date: string;
+  priority_score?: number;
   status: TaskStatus;
+  call_attempt_count: number;
+  next_attempt_at?: string;
   completed_at?: string;
   rescheduled_to?: string;
   created_at: string;
@@ -103,11 +116,25 @@ export interface CallLog {
   task_id: string;
   customer_id: string;
   outcome: CallOutcome;
+  disposition?: CallDisposition;
+  follow_up_action?: string;
   note?: string;
   called_at: string;
   agent_name?: string;
   customer?: Customer;
   task?: Task;
+}
+
+export interface AuditLog {
+  id: string;
+  actor_id?: string;
+  actor_email?: string;
+  entity_type: string;
+  entity_id?: string;
+  action: string;
+  summary: string;
+  metadata?: Record<string, any>;
+  created_at: string;
 }
 
 export interface Settings {
@@ -128,6 +155,7 @@ export interface ProductOverride {
   id: string;
   shopify_product_id: string;
   product_name: string;
+  course_duration_days?: number;
   review_offset_days?: number;
   reorder_offset_days?: number;
   final_offset_days?: number;
@@ -145,9 +173,10 @@ export interface Profile {
   id: string;
   email: string;
   name?: string;
-  role: "admin" | "agent" | "superadmin";
+  role: "admin" | "agent";
   permissions: UserPermissions;
   is_active: boolean;
+  status?: "online" | "break" | "offline";
   created_at: string;
 }
 

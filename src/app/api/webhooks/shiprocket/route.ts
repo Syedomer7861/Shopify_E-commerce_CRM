@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { DeliveryStatus, TaskType } from "@/types";
+import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
+import { WorkflowEngine } from "@/lib/workflow-engine";
+import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
+import { notifyAdmin } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +17,23 @@ function getSupabase() {
 
 function mapShiprocketStatus(status: string | number): DeliveryStatus {
   const s = String(status).toLowerCase();
-  if (s.includes("delivered") || s === "7" || s === "10") return "delivered";
-  if (s.includes("shipped") || s === "6" || s === "12" || s.includes("transit")) return "in_transit";
-  if (s.includes("out for delivery") || s === "13") return "out_for_delivery";
   if (s.includes("rto") || s === "9") return "rto";
-  if (s.includes("canceled") || s === "8") return "failed";
+  if (s.includes("delivered") || s === "7" || s === "10") return "delivered";
+  if (s.includes("shipped") || s === "6" || s === "12" || s.includes("transit") || s.includes("undelivered")) return "in_transit";
+  if (s.includes("out for delivery") || s === "13") return "out_for_delivery";
+  if (s.includes("canceled") || s === "8" || s.includes("failed")) return "failed";
   return "pending";
+}
+
+function getTriggerByStatus(status: string): any {
+  switch (status) {
+    case "delivered": return "order_delivered";
+    case "rto": return "order_rto";
+    case "in_transit": return "order_in_transit";
+    case "out_for_delivery": return "out_for_delivery";
+    case "failed": return "delivery_attempt_failed";
+    default: return null;
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -49,13 +64,14 @@ export async function POST(req: NextRequest) {
     // Shiprocket sometimes wraps the body in a 'data' or 'payload' property
     const data = body.data || body.payload || body;
     
-    const cartId = data.cart_id || data.checkout_id || data.cart_token;
-    const stage = data.latest_stage?.toLowerCase() || data.stage?.toLowerCase() || (cartId ? "checkout" : "unknown");
+    const cartId = data.cart_id || data.checkout_id || data.cart_token || data.token;
+    const rawStage = data.latest_stage || data.stage || data.checkout_stage || data.event || "";
+    const stage = String(rawStage).toLowerCase();
     
     let orderId = data.order_id || data.channel_order_id || data.shiprocket_order_id || data.checkout_order_id || data.order_number || data.id;
     
     // FASTTR FIX: If stage is order_placed, treat as order even if orderId is missing
-    if (!orderId && stage === "order_placed") {
+    if (!orderId && (stage === "order_placed" || stage === "completed")) {
       orderId = cartId;
     }
 
@@ -65,9 +81,14 @@ export async function POST(req: NextRequest) {
       console.log("🛒 Processing Store Event:", { cartId, orderId, stage });
       
       // 🕵️ EXTRA ROBUST PHONE/EMAIL/NAME DETECTION
-      const rawPhone = data.mobile || data.phone || data.customer_phone || data.phone_number ||
+      const rawPhone = data.mobile || data.phone || data.customer_phone || data.phone_number || data.customer_contact ||
                        data.shipping_address?.phone || data.billing_address?.phone || "";
-      const customerPhone = rawPhone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
+      let customerPhone = rawPhone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
+      
+      // If it looks like it was prefixed with 91 and is longer than 10 digits
+      if (customerPhone.length > 10 && customerPhone.startsWith("91")) {
+          customerPhone = customerPhone.slice(customerPhone.length - 10);
+      }
       
       const rawEmail = data.email || data.customer_email || 
                        data.shipping_address?.email || data.billing_address?.email || null;
@@ -83,11 +104,30 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Missing identity identifiers" }, { status: 400 });
       }
 
-      // A1. Upsert Customer
+      // A1. Upsert Customer (Robust Identity Handling)
       let customerId: string | null = null;
-      if (customerPhone) {
-        const isMasked = customerPhone.includes("x") || customerPhone.includes("X");
+      
+      // IDENTITY RESOLUTION: Use Phone or Fallback to Guest ID
+      const identityPhone = customerPhone || (cartId ? `GUEST-${cartId}` : null);
+      
+      if (identityPhone) {
+        const isMasked = identityPhone.includes("x") || identityPhone.includes("X") || identityPhone.includes("_SR_");
         
+        // 🕵️ AUTOMATIC UNMASKING ON ARRIVAL (Sentinel Guard)
+        if (isMasked && !identityPhone.startsWith("GUEST-")) {
+            const resolved = await resolveUnmaskedPhone(
+                supabase,
+                "", // ID not known yet
+                rawEmail,
+                orderId || cartId || null,
+                data
+            );
+            if (resolved && !resolved.includes("x") && !resolved.includes("_SR_")) {
+                console.log(`🔓 Sentinel Unmasked on Arrival: ${resolved}`);
+                customerPhone = resolved;
+            }
+        }
+
         // Fetch existing to protect name OR handle unmasking
         let existingCust: any = null;
         
@@ -95,71 +135,54 @@ export async function POST(req: NextRequest) {
         const { data: byPhone } = await supabase
           .from("customers")
           .select("id, name, phone")
-          .eq("phone", customerPhone)
+          .eq("phone", identityPhone)
           .maybeSingle();
         existingCust = byPhone;
 
-        // If not found by phone and we have email, try match by email to catch unmasking
-        if (!existingCust && rawEmail) {
-            const { data: byEmail } = await supabase
-              .from("customers")
-              .select("id, name, phone")
-              .eq("email", rawEmail)
-              .maybeSingle();
-            
-            if (byEmail && !isMasked && (byEmail.phone?.includes("x") || byEmail.phone?.includes("_SR_"))) {
-                console.log(`🔓 Unmasking customer ${byEmail.id} via webhook email match: ${customerPhone}`);
-                existingCust = byEmail;
-                // Update phone now
-                await supabase.from("customers").update({ phone: customerPhone }).eq("id", byEmail.id);
-            } else {
-                existingCust = byEmail;
-            }
-        }
+        const shipAddr = data.shipping_address || {};
+        const billAddr = data.billing_address || {};
 
-      const shipAddr = data.shipping_address || {};
-      const billAddr = data.billing_address || {};
+        const nameToSave = (fullName === "Shiprocket Customer" || !fullName) && 
+                           (existingCust?.name && existingCust.name !== "Shiprocket Customer")
+                           ? existingCust.name 
+                           : fullName || "Checkout Guest";
 
-      const nameToSave = (fullName === "Shiprocket Customer" || !fullName) && 
-                         (existingCust?.name && existingCust.name !== "Shiprocket Customer")
-                         ? existingCust.name 
-                         : fullName;
+        const combinedAddress = [
+          data.address,
+          shipAddr.address1,
+          shipAddr.address2,
+          billAddr.address1,
+          billAddr.address2
+        ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(", ");
 
-      const combinedAddress = [
-        data.address,
-        shipAddr.address1,
-        shipAddr.address2,
-        billAddr.address1,
-        billAddr.address2
-      ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(", ");
-
-      const { data: customerData, error: custErr } = await supabase
-        .from("customers")
-        .upsert({
-          name: nameToSave,
-          phone: customerPhone,
-          email: rawEmail,
-          city: data.city || shipAddr.city || billAddr.city || null,
-          state: data.state || shipAddr.state || billAddr.state || null,
-          zip: data.pincode || shipAddr.zip || billAddr.zip || shipAddr.pincode || null,
-          address: combinedAddress || null,
-        }, { onConflict: "phone" })
-        .select("id");
-        
+        const { data: customerData, error: custErr } = await supabase
+          .from("customers")
+          .upsert({
+            name: nameToSave,
+            phone: identityPhone,
+            email: rawEmail,
+            city: data.city || shipAddr.city || billAddr.city || null,
+            state: data.state || shipAddr.state || billAddr.state || null,
+            zip: data.pincode || shipAddr.zip || billAddr.zip || shipAddr.pincode || null,
+            address: combinedAddress || null,
+          }, { onConflict: "phone" })
+          .select("id");
+          
         if (!custErr && customerData && customerData.length > 0) {
             customerId = customerData[0].id;
-        } else {
-            // ABSOLUTE MATCH FALLBACK
-            if (existingCust) customerId = existingCust.id;
-            else {
-                const { data: existing } = await supabase.from('customers').select('id').eq('phone', customerPhone).maybeSingle();
-                if (existing) customerId = existing.id;
-            }
+        } else if (existingCust) {
+            customerId = existingCust.id;
         }
       }
 
       // A2. Handle as Abandoned Cart (Only if NOT order_placed and no real order ID)
-      if (cartId && !orderId && stage !== "order_placed") {
+      const isAbandonedStage = stage.includes("abandoned") || 
+                               stage.includes("cart_update") || 
+                               stage.includes("checkout") || 
+                               stage.includes("partial") ||
+                               stage === "cart_created";
+
+      if (cartId && !orderId && isAbandonedStage) {
         const enrichedItems = [
           ...(productList || []),
           { __metadata: true, payload: body }
@@ -175,9 +198,10 @@ export async function POST(req: NextRequest) {
             total_price: parseFloat(data.total_price || data.cart_value || data.cart_amount || body.total_price || body.cart_value || 0),
             line_items: enrichedItems,
             recovery_status: "pending",
-            abandoned_at: new Date().toISOString()
+            abandoned_at: new Date().toISOString(),
+            source: "shiprocket_checkout"
           }, { onConflict: "cart_token" })
-          .select("id, abandoned_at");
+          .select("id, abandoned_at, total_price");
 
         if (!cartErr && cartDataArr && cartDataArr.length > 0 && customerId) {
           const cartData = cartDataArr[0];
@@ -228,33 +252,49 @@ export async function POST(req: NextRequest) {
             await supabase.from("tasks").upsert({
               customer_id: customerId,
               abandoned_cart_id: cartData.id,
+              assigned_to: await assignTaskOwner(supabase),
               task_type: "recovery" as TaskType,
               due_date: dueDateStr,
+              priority_score: calculateTaskPriority({ taskType: "recovery" }),
               status: "pending"
             }, { onConflict: "abandoned_cart_id, task_type" });
           }
+
+          // Trigger Workflow: Abandoned Cart
+          await WorkflowEngine.trigger("cart_abandoned", { 
+            cart_id: cartData.id, 
+            customer_id: customerId, 
+            total: cartData.total_price 
+          });
         }
       }
 
-      // A3. Handle as Confirmed Order
-      if (orderId && customerId) {
-        console.log(`📦 Attempting to save order: ${orderId} for customer: ${customerId}`);
-        const enrichedItems = [
-          ...(productList || []),
-          { __metadata: true, payload: body }
-        ];
+        // A3. Reconciled Order Persist (Prevents duplicates between sources)
+        const orderIdentifier = orderId.toString();
 
-        const { error: orderErr } = await supabase.from("orders").upsert({
+        const { data: existingOrder } = await supabase
+          .from("orders")
+          .select("id, source, delivery_status")
+          .or(`shopify_order_id.eq.${orderIdentifier},order_number.eq.${orderIdentifier}`)
+          .maybeSingle();
+
+        const upsertData: any = {
           customer_id: customerId,
-          shopify_order_id: orderId.toString(),
-          order_number: orderId.toString(),
+          shopify_order_id: orderIdentifier,
+          order_number: orderIdentifier,
           total_price: parseFloat(data.total_price || data.cart_value || data.cart_amount || body.total_price || body.cart_value || 0),
-          delivery_status: "pending",
+          delivery_status: (existingOrder && existingOrder.delivery_status !== "pending") ? existingOrder.delivery_status : "pending",
           fulfillment_status: "unfulfilled",
           ordered_at: data.created_at || body.created_at || new Date().toISOString(),
-            source: "shopify",
+          source: existingOrder?.source || "shopify",
           line_items: enrichedItems.length > 0 ? enrichedItems : [{ name: "Order Content", qty: 1, price: 0 }]
-        }, { onConflict: "shopify_order_id" });
+        };
+
+        if (existingOrder) {
+          upsertData.id = existingOrder.id;
+        }
+
+        const { error: orderErr } = await supabase.from("orders").upsert(upsertData);
 
         if (orderErr) {
             console.error("❌ Failed to persist order:", orderId, orderErr);
@@ -293,6 +333,15 @@ export async function POST(req: NextRequest) {
               
               console.log(`✅ Auto-resolved ${pendingTasks.length} recovery tasks for customer.`);
             }
+
+            // A4. High-Value Order Sentinel (Feature 19)
+            const orderTotal = parseFloat(data.total_price || data.cart_value || 0);
+            if (orderTotal >= 5000) {
+                await notifyAdmin(`🚀 HIGH-VALUE ORDER! Customer ${fullName} just placed order #${orderId} for ${orderTotal} INR.`, "alert");
+            }
+
+            // A5. Refresh Health Score (Feature 17)
+            await supabase.rpc('refresh_customer_health_scores');
         }
       }
 
@@ -304,6 +353,13 @@ export async function POST(req: NextRequest) {
           }).eq("id", logEntry.id);
       }
 
+      // 4. Trigger Workflow (NEW)
+      await WorkflowEngine.trigger("order_placed", { 
+        order_id: orderId, 
+        customer_id: customerId, 
+        total: data.total_price 
+      });
+
       return NextResponse.json({ success: true, processed: orderId || cartId });
     }
 
@@ -313,16 +369,42 @@ export async function POST(req: NextRequest) {
       const crmStatus = mapShiprocketStatus(body.status || "");
       const deliveredAt = body.delivered_date ? new Date(body.delivered_date).toISOString() : null;
 
+      const identifierStr = identifier?.toString();
+
+      // --- IDEMPOTENCY CHECK ---
+      const { data: existingOrd } = await supabase.from("orders").select("id, delivery_status").eq("shopify_order_id", identifierStr).maybeSingle();
+      if (existingOrd && existingOrd.delivery_status === crmStatus) {
+         console.log(`⚡ Idempotency hit: Order ${identifierStr} is already ${crmStatus}. Skipping duplicate webhook.`);
+         return NextResponse.json({ success: true, message: "Idempotency hit, status already matches" });
+      }
+
       // Sync Customer
       const phoneCandidates = [body.customer_phone, body.mobile, body.billing_phone, body.shipping_phone].filter(Boolean);
-      const phone = phoneCandidates.map(p => p.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, ""))[0];
+      let phone = phoneCandidates.map(p => p.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, ""))[0];
       let customerId: string | null = null;
       
       if (phone) {
+        const isMasked = phone.includes("x") || phone.includes("X");
         const name = body.billing_customer_name || body.shipping_customer_name || body.customer_name || body.name || "Shiprocket Customer";
         
+        // 🕵️ UNMASKING: If masked, try to resolve via history/logs/carts
+        if (isMasked) {
+          const identifierStr = identifier?.toString();
+          const resolved = await resolveUnmaskedPhone(
+            supabase,
+            "", // customerId not yet known
+            body.customer_email || body.email || null,
+            identifierStr,
+            body
+          );
+          if (resolved && !resolved.includes("x")) {
+             console.log(`🔓 Unmasked customer via Tracking Webhook: ${resolved}`);
+             phone = resolved;
+          }
+        }
+
         // Find existing to protect names
-        const { data: existing } = await supabase.from("customers").select("id, name").eq("phone", phone).maybeSingle();
+        const { data: existing } = await supabase.from("customers").select("id, name, phone").eq("phone", phone).maybeSingle();
         
         if (existing) {
           customerId = existing.id;
@@ -348,18 +430,133 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Update Order
-      const { data: orders } = await supabase.from("orders")
-          .select("id, line_items")
+        const { data: orders } = await supabase.from("orders")
+          .select("id, line_items, shopify_order_id, order_number, customer_id")
           .or(`shopify_order_id.eq.${identifier},order_number.eq.${identifier}`)
           .limit(1);
 
       if (orders && orders.length > 0) {
+        const orderId = orders[0].id;
+        const currentCustomerId = orders[0].customer_id;
+        
         const updateData: any = { delivery_status: crmStatus, tracking_number: body.awb || undefined };
         if (crmStatus === "delivered") {
           updateData.delivered_at = deliveredAt || new Date().toISOString();
         }
-        await supabase.from("orders").update(updateData).eq("id", orders[0].id);
+        await supabase.from("orders").update(updateData).eq("id", orderId);
+
+        const trigger = getTriggerByStatus(crmStatus);
+        if (trigger) {
+          await WorkflowEngine.trigger(trigger, { 
+            order_id: orderId, 
+            customer_id: currentCustomerId || customerId 
+          });
+        }
+
+        // 3. Status-Specific Processing
+        if (crmStatus === "delivered") {
+          // SELF-HEALING: Cancel any pending issue/transit tasks for this order
+          const { data: staleTasks } = await supabase
+            .from("tasks")
+            .select("id, customer_id")
+            .eq("order_id", orderId)
+            .in("task_type", ["issue_resolution", "transit_update"])
+            .not("status", "in", '("done","cancelled")');
+          
+          if (staleTasks && staleTasks.length > 0) {
+            await supabase.from("tasks").update({ status: "cancelled" }).in("id", staleTasks.map(t => t.id));
+          }
+        } else {
+          // SELF-HEALING: If status is NOT delivered, cancel any PREMATURE review tasks
+          const { data: prematureTasks } = await supabase
+            .from("tasks")
+            .select("id")
+            .eq("order_id", orderId)
+            .in("task_type", ["review", "reorder", "final_followup"])
+            .not("status", "in", '("done","cancelled","skipped")');
+          
+          if (prematureTasks && prematureTasks.length > 0) {
+            console.log(`[Self-Heal] Cancelling ${prematureTasks.length} premature review tasks for order ${orderId} (Status: ${crmStatus})`);
+            await supabase.from("tasks").update({ 
+               status: "cancelled",
+               metadata: { cancellation_reason: `Status changed to ${crmStatus}` } as any
+            }).in("id", prematureTasks.map(t => t.id));
+
+            // Log the self-healing action for audit
+            await supabase.from("audit_logs").insert({
+              entity_type: "task",
+              entity_id: orderId,
+              action: "self_healing_cancellation",
+              summary: `Cancelled ${prematureTasks.length} premature review tasks due to status update to ${crmStatus}`,
+              metadata: { order_id: orderId, status: crmStatus, tasks_cancelled: prematureTasks.length }
+            });
+          }
+        }
+
+        if (crmStatus === "rto") {
+          // RTO Recovery is handled by WorkflowEngine.trigger("order_rto")
+        } else if (crmStatus === "in_transit") {
+          // Proactive Transit Inform Task
+          const { count } = await supabase
+            .from("tasks")
+            .select("id", { count: "exact", head: true })
+            .eq("order_id", orderId)
+            .eq("task_type", "transit_update");
+
+          if ((count || 0) === 0) {
+            await supabase.from("tasks").insert({
+              order_id: orderId,
+              customer_id: currentCustomerId || customerId,
+              assigned_to: await assignTaskOwner(supabase),
+              task_type: "transit_update",
+              due_date: new Date().toISOString().split("T")[0],
+              priority_score: calculateTaskPriority({
+                taskType: "transit_update",
+                totalPrice: Number(body.total || 0),
+              }),
+              status: "pending",
+            });
+          }
+        }
+
+        if (crmStatus === "rto" || crmStatus === "failed") {
+          const assignedTo = await assignTaskOwner(supabase);
+          const { count } = await supabase
+            .from("tasks")
+            .select("id", { count: "exact", head: true })
+            .eq("order_id", orders[0].id)
+            .eq("task_type", "issue_resolution")
+            .not("status", "in", '("done","cancelled")');
+
+          if ((count || 0) === 0) {
+            const { data: customer } = await supabase
+              .from("customers")
+              .select("total_orders, rto_flag")
+              .eq("id", customerId)
+              .maybeSingle();
+
+            await supabase.from("tasks").insert({
+              order_id: orders[0].id,
+              customer_id: customerId,
+              assigned_to: assignedTo,
+              task_type: "issue_resolution",
+              due_date: new Date().toISOString().split("T")[0],
+              priority_score: calculateTaskPriority({
+                taskType: "issue_resolution",
+                rtoFlag: crmStatus === "rto" || customer?.rto_flag,
+                totalOrders: customer?.total_orders || 0,
+              }),
+              status: "pending",
+            });
+          }
+
+          await supabase
+            .from("tasks")
+            .update({ status: "cancelled" })
+            .eq("order_id", orders[0].id)
+            .in("task_type", ["review", "reorder", "final_followup"])
+            .not("status", "in", '("done","cancelled","skipped")');
+        }
       } else if (customerId) {
         // If the order doesn't exist yet (Direct Order), we insert it
         const updateData: any = {
@@ -368,7 +565,7 @@ export async function POST(req: NextRequest) {
             order_number: identifier.toString(),
             delivery_status: crmStatus,
             fulfillment_status: "fulfilled", // If we have a tracking update, it's likely fulfilled
-            source: "shopify",
+            source: "shiprocket",
             ordered_at: body.created_at || new Date().toISOString(),
             line_items: [{ name: body.order_status || "Shiprocket Order", price: parseFloat(body.total || 0), qty: 1, __metadata: true, payload: body }]
         };

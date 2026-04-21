@@ -38,16 +38,6 @@ export const ORDERS: Order[] = [
 ];
 
 export const TASKS: Task[] = [
-  { id: "t1", order_id: "o4", customer_id: "c1", task_type: "review", due_date: fmt(today), status: "due", created_at: fmt(subDays(today, 5)) },
-  { id: "t2", order_id: "o8", customer_id: "c2", task_type: "reorder", due_date: fmt(today), status: "due", created_at: fmt(subDays(today, 20)) },
-  { id: "t3", order_id: "o2", customer_id: "c3", task_type: "review", due_date: fmt(today), status: "due", created_at: fmt(subDays(today, 5)) },
-  { id: "t4", order_id: "o11", customer_id: "c4", task_type: "reorder", due_date: fmt(today), status: "due", created_at: fmt(subDays(today, 21)) },
-  { id: "t5", order_id: "o12", customer_id: "c5", task_type: "final_followup", due_date: fmt(today), status: "due", created_at: fmt(subDays(today, 30)) },
-  { id: "t6", order_id: "o1", customer_id: "c6", task_type: "review", due_date: fmt(today), status: "due", created_at: fmt(subDays(today, 5)) },
-  { id: "t7", order_id: "o7", customer_id: "c7", task_type: "reorder", due_date: fmt(today), status: "due", created_at: fmt(subDays(today, 19)) },
-  { id: "t8", order_id: "o8", customer_id: "c2", task_type: "review", due_date: fmt(subDays(today, 5)), status: "overdue", created_at: fmt(subDays(today, 20)) },
-  { id: "t9", order_id: "o11", customer_id: "c4", task_type: "review", due_date: fmt(subDays(today, 3)), status: "overdue", created_at: fmt(subDays(today, 21)) },
-  { id: "t10", order_id: "o12", customer_id: "c5", task_type: "reorder", due_date: fmt(subDays(today, 10)), status: "overdue", created_at: fmt(subDays(today, 30)) },
   { id: "t11", order_id: "o6", customer_id: "c11", task_type: "review", due_date: fmt(addDays(today, 1)), status: "pending", created_at: fmt(subDays(today, 6)) },
   { id: "t12", order_id: "o4", customer_id: "c1", task_type: "reorder", due_date: fmt(addDays(today, 15)), status: "pending", created_at: fmt(subDays(today, 5)) },
   { id: "t13", order_id: "o6", customer_id: "c11", task_type: "reorder", due_date: fmt(addDays(today, 2)), status: "pending", created_at: fmt(subDays(today, 6)) },

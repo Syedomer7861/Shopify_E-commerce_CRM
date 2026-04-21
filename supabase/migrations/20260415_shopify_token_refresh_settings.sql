@@ -1,0 +1,3 @@
+ALTER TABLE settings
+ADD COLUMN IF NOT EXISTS shopify_client_id VARCHAR(255),
+ADD COLUMN IF NOT EXISTS shopify_token_expires_at TIMESTAMPTZ;

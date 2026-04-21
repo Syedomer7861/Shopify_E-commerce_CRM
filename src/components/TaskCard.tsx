@@ -1,20 +1,25 @@
 "use client";
 import { useState } from "react";
-import { Phone, CheckCircle, Clock, SkipForward, MessageSquare, Calendar, Send, Paperclip, X, Globe } from "lucide-react";
+import { Phone, CheckCircle, Clock, SkipForward, MessageSquare, Calendar, Send, Paperclip, X, Globe, Search } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { Avatar, TaskTypeBadge, TaskStatusBadge, Modal } from "./ui";
+import ShiprocketOrderView from "./ShiprocketOrderView";
 import { createClient } from "@/lib/supabase";
 import { formatDate, TASK_TYPE_CONFIG, cn, getTaskProductName } from "@/lib/utils";
 import type { Task, Customer, Order, AbandonedCart } from "@/types";
+import { logAuditEvent } from "@/lib/audit";
 interface TaskCardProps {
   task: Task & { customer: Customer; order?: Order; abandoned_cart?: AbandonedCart };
-  onComplete?: (id: string, outcome: string, note: string) => void;
+  onComplete?: (id: string, outcome: string, note: string, disposition?: string, followUpAction?: string) => void;
   onReschedule?: (id: string, date: string, reason: string) => void;
   onSkip?: (id: string) => void;
   onWhatsApp?: () => void;
   whatsappSettings?: any;
   compact?: boolean;
+  isAdmin?: boolean;
+  agents?: { id: string; name: string }[];
+  onReassign?: (taskId: string, newOwnerId: string) => void;
 }
 
 const DEFAULT_TEMPLATES: Record<string, string> = {
@@ -22,20 +27,26 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
   reorder: "Hi {{name}}! It's been a while since your last {{product}} order. Time for a refill? 💊 Use code REFILL10 for 10% off!",
   final_followup: "Hi {{name}}, just checking in one last time regarding your {{product}} journey. We're here if you need anything! 🙏",
   recovery: "Hi {{name}} 👋, we noticed you left some items in your cart! 🛒 Can we help you complete your purchase? Use code RECOVER5 for 5% off! 🌿",
+  issue_resolution: "Hi {{name}}, we noticed an issue with your recent order for {{product}}. Our team is reviewing it and will help resolve it quickly.",
+  transit_update: "Hi {{name}} 👋, we see your order for {{product}} is currently in transit! 🚚 You can track it here: https://cureforever.shiprocket.co/tracking . We'll update you once it's out for delivery! 🌿",
 };
 
-export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWhatsApp, whatsappSettings, compact }: TaskCardProps) {
+export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWhatsApp, whatsappSettings, compact, isAdmin, agents, onReassign }: TaskCardProps) {
   const [doneModal, setDoneModal] = useState(false);
   const [rescheduleModal, setRescheduleModal] = useState(false);
   const [waModal, setWaModal] = useState(false);
   const [outcome, setOutcome] = useState("done");
   const [note, setNote] = useState("");
+  const [disposition, setDisposition] = useState("interested");
+  const [followUpAction, setFollowUpAction] = useState("");
   const [newDate, setNewDate] = useState("");
   const [reason, setReason] = useState("");
   const [waMessage, setWaMessage] = useState("");
   const [waFile, setWaFile] = useState<File | null>(null);
   const [sendingWa, setSendingWa] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
+  const [sendWaInLog, setSendWaInLog] = useState(false);
+  const [logWaMessage, setLogWaMessage] = useState("");
 
   const cfg = TASK_TYPE_CONFIG[task.task_type];
   const isDone = task.status === "done" || task.status === "cancelled";
@@ -122,10 +133,32 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   const trafficSource = utmSource ? `${utmSource} / ${utmMedium || "direct"}` : null;
 
 
-  function handleDone() {
-    onComplete?.(task.id, outcome, note);
+  async function handleDone() {
+    if (sendWaInLog && logWaMessage) {
+        setSendingWa(true);
+        try {
+            const res = await fetch("/api/whatsapp/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    phone: task.customer.phone,
+                    message: logWaMessage
+                }),
+            });
+            const data = await res.json();
+            if (data.ok) toast.success("Follow-up WhatsApp sent!");
+        } catch (err) {
+            console.error("Failed to send WhatsApp from log:", err);
+        } finally {
+            setSendingWa(false);
+        }
+    }
+
+    onComplete?.(task.id, outcome, note, disposition, followUpAction);
     setDoneModal(false);
-    setNote(""); setOutcome("done");
+    // Reset - Use 'done' as default which is verified allowed
+    setNote(""); setOutcome("done"); setDisposition("connected_interested"); setFollowUpAction("");
+    setSendWaInLog(false); setLogWaMessage("");
   }
 
   function handleReschedule() {
@@ -179,6 +212,8 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           task_id: task.id,
           customer_id: task.customer_id,
           outcome: "whatsapp",
+          disposition: "follow_up_later",
+          follow_up_action: "Manual WhatsApp sent",
           note: logNote,
           agent_name: user?.email || "Agent"
         });
@@ -187,11 +222,24 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           console.error("Failed to log WhatsApp sent:", logErr);
           toast.error("WhatsApp sent, but history log failed. Check DB constraints.");
         } else {
-          onWhatsApp?.();
-        }
+          setWaFile(null); // Clear file after send
 
-        setWaModal(false);
-        setWaFile(null); // Clear file after send
+          // 4. Log to Agent Activity (NEW)
+          if (user?.id) {
+            await supabase.from("agent_activity_logs").insert({
+              agent_id: user.id,
+            activity_type: "whatsapp",
+            reference_id: task.id,
+            metadata: {
+              task_type: task.task_type,
+              customer_name: task.customer.name,
+              message_len: waMessage.length
+            }
+            });
+          }
+
+          setWaModal(false);
+        }
       } else {
         toast.error(data.error || "Failed to send");
       }
@@ -231,22 +279,39 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                 <Link 
                   href={`/customers/${task.customer_id}`} 
                   onClick={(e) => e.stopPropagation()} 
-                  className="font-bold text-forest text-sm group-hover/card:text-blue-600 transition-colors flex items-center gap-2 hover:underline"
+                  className="font-bold text-[#2D1E6F] text-sm group-hover/card:text-[#2D1E6F]/80 transition-colors flex items-center gap-2 hover:underline"
                 >
                   {task.customer.name}
-                  {isDone && <span className="badge bg-emerald-50 text-emerald-600 text-[10px]">DONE</span>}
+                  {isDone && <span className="badge bg-blue-50 text-blue-600 text-[10px]">DONE</span>}
                 </Link>
                 <div 
                   onClick={(e) => e.stopPropagation()} 
                   className="inline-block"
                 >
-                  <a href={`tel:${task.customer.phone}`} className="text-[11px] text-gray-500 hover:text-blue-600 flex items-center gap-1 mt-0.5">
+                  <a href={`tel:${task.customer.phone}`} className="text-[11px] text-gray-500 hover:text-[#2D1E6F] flex items-center gap-1 mt-0.5">
                     <Phone className="w-2.5 h-2.5" /> {task.customer.phone}
                   </a>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {isOverdue ? <span className="badge bg-rose-50 border-rose-200 text-rose-700">Overdue</span> : <TaskTypeBadge type={task.task_type} />}
+                {typeof task.priority_score === "number" && task.priority_score > 0 && (
+                  <span className="badge bg-gray-50 border-gray-200 text-gray-700">Priority {task.priority_score}</span>
+                )}
+                {(task as any).assigned_profile?.name && !isAdmin && (
+                  <span className="badge bg-sky-50 border-sky-200 text-sky-700">Owner {(task as any).assigned_profile.name}</span>
+                )}
+                {isAdmin && agents && agents.length > 0 && (
+                  <select 
+                    value={task.assigned_to || ""} 
+                    onChange={(e) => { e.stopPropagation(); onReassign?.(task.id, e.target.value); }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="badge bg-sky-50 border-sky-200 text-sky-700 cursor-pointer outline-none hover:bg-sky-100 font-medium"
+                  >
+                    <option value="" disabled>Unassigned</option>
+                    {agents.map(a => <option key={a.id} value={a.id}>Owner {a.name}</option>)}
+                  </select>
+                )}
                 {daysSince !== null && (
                   <span className="badge bg-gray-50 border-gray-200 text-gray-500">{daysSince}d since delivery</span>
                 )}
@@ -263,201 +328,250 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
               <span className="flex-shrink-0 whitespace-nowrap">Due: {formatDate(task.due_date)}</span>
               {task.order?.delivered_at && (
                 <>
-                  <span className="mx-1.5 flex-shrink-0 text-emerald-400">·</span>
-                  <span className="flex-shrink-0 whitespace-nowrap text-emerald-600 font-bold">Delivered: {formatDate(task.order.delivered_at)}</span>
+                  <span className="mx-1.5 flex-shrink-0 text-blue-400">·</span>
+                  <span className="flex-shrink-0 whitespace-nowrap text-blue-600 font-bold">Delivered: {formatDate(task.order.delivered_at)}</span>
                 </>
               )}
             </div>
 
             {!isDone && !compact && (
               <div className="flex items-center gap-2 mt-3 flex-wrap" onClick={(e) => e.stopPropagation()}>
-                <button onClick={() => setDoneModal(true)} className="btn-primary text-[10px] py-1 px-3 h-8">
+                <button onClick={() => setDoneModal(true)} className="btn-primary text-[10px] py-1 px-4 h-8 rounded-lg">
                   <CheckCircle className="w-3 h-3" /> Log Call
                 </button>
-                <button onClick={openWa} className="btn-secondary text-[10px] py-1 px-3 h-8 text-emerald-600 border-emerald-100 hover:bg-emerald-50">
+                <button onClick={openWa} className="btn-secondary text-[10px] py-1 px-4 h-8 text-[#2D1E6F] border-[#2D1E6F]/20 hover:bg-[#2D1E6F]/5">
                   <Send className="w-3 h-3" /> WhatsApp
                 </button>
-                <button onClick={() => setRescheduleModal(true)} className="btn-secondary text-[10px] py-1 px-3 h-8">
+                <button onClick={() => setRescheduleModal(true)} className="btn-secondary text-[10px] py-1 px-4 h-8">
                   <Calendar className="w-3 h-3" /> Reschedule
                 </button>
               </div>
             )}
-          </div>
         </div>
       </div>
+    </div>
 
-      {/* Details Modal */}
-      <Modal open={showDetail} onClose={() => setShowDetail(false)} title={`Task Details — ${task.customer.name}`} maxWidth="max-w-3xl">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          {/* Customer Column */}
-          <div className="md:col-span-2 space-y-6">
-            <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
-              <Avatar name={task.customer.name} size="lg" />
+    <Modal 
+        open={showDetail} 
+        onClose={() => setShowDetail(false)} 
+        title={task.order ? `Order Details — ${task.customer.name}` : `Abandoned Cart — ${task.customer.name}`} 
+        maxWidth="max-w-6xl"
+        footer={(
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-3">
+              <Avatar name={task.customer.name} size="sm" />
               <div>
-                <Link href={`/customers/${task.customer_id}`} className="font-bold text-forest hover:underline hover:text-blue-600 transition-colors">
-                  {task.customer.name}
-                </Link>
-                <div className="text-xs text-gray-500 flex items-center gap-1">
-                  <span className={cn("w-2 h-2 rounded-full", isOverdue ? "bg-rose-500" : "bg-emerald-500")} />
-                  {TASK_TYPE_CONFIG[task.task_type].label}
-                </div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Assigned Agent</div>
+                <div className="text-xs font-bold text-[#2D1E6F]">{(task as any).assigned_profile?.name || "Unassigned"}</div>
               </div>
             </div>
-            
-            {trafficSource && (
-              <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100/50">
-                <div className="text-[10px] text-blue-400 uppercase font-bold tracking-wider mb-1 flex items-center gap-1">
-                  <Globe className="w-3 h-3" /> Traffic Source
-                </div>
-                <div className="text-xs font-semibold text-blue-700 capitalize">
-                  {trafficSource}
-                  {utmCampaign && <span className="text-[10px] text-blue-400 font-normal ml-2 truncate">({utmCampaign})</span>}
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-4 px-1">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
-                  <Phone className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Phone Number</div>
-                  <a href={`tel:${task.customer.phone}`} className="text-sm font-semibold hover:text-blue-600 transition-colors">{task.customer.phone}</a>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 flex-shrink-0">
-                  <MessageSquare className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Email Address</div>
-                  {task.customer.email ? (
-                    <a href={`mailto:${task.customer.email}`} className="text-sm font-semibold truncate max-w-[180px] block hover:text-emerald-600 transition-colors">
-                      {task.customer.email}
-                    </a>
-                  ) : (
-                    <div className="text-sm font-semibold text-gray-400 italic">No email provided</div>
-                  )}
-                </div>
-              </div>
-
-              {task.customer.address && (
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 flex-shrink-0 mt-0.5">
-                    <Calendar className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Shipping Address</div>
-                    <div className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-                      {task.customer.address}
-                      {(task.customer.city || task.customer.state || task.customer.zip) && (
-                        <div className="mt-1 pb-1 text-[11px] font-medium text-gray-500 border-t border-gray-100 pt-1">
-                          {[task.customer.city, task.customer.state, task.customer.zip].filter(Boolean).join(", ")}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
+            <div className="flex items-center gap-2">
+              <button onClick={() => { setShowDetail(false); setDoneModal(true); }} className="btn-primary text-xs py-2 px-8">
+                Log Call Outcome
+              </button>
+              <button onClick={() => { setShowDetail(false); openWa(); }} className="btn-secondary text-xs py-2 px-8 text-[#2D1E6F] border-[#2D1E6F]/20 hover:bg-[#2D1E6F]/5">
+                WhatsApp
+              </button>
+              <button onClick={() => setShowDetail(false)} className="btn-secondary text-xs py-2 px-6 text-gray-500">
+                Close
+              </button>
             </div>
           </div>
-
-          {/* Transaction Column */}
-          <div className="md:col-span-3 space-y-5">
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
-              <div className="px-4 py-2.5 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
-                <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">
-                  {task.order ? "Order Details" : "Abandoned Cart"}
-                </h4>
-                <div className="text-[10px] font-mono text-gray-400 uppercase leading-none">
-                  ID: {task.order?.order_number || task.abandoned_cart?.cart_token?.slice(0, 10)}
-                </div>
-              </div>
-              <div className="p-4">
-                {/* Date Row */}
-                <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-50">
-                  <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
-                    {task.order ? "Order Date" : "Abandoned At"}
-                  </div>
-                  <div className="text-xs font-semibold text-gray-700">
-                    {formatDate(task.order?.ordered_at || task.abandoned_cart?.abandoned_at || new Date().toISOString())}
-                  </div>
-                </div>
-
-                {task.order?.delivered_at && (
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-50">
-                    <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-tight">
-                      Delivered Date
+        )}
+      >
+        <div className="flex flex-col">
+          {(() => {
+            const orderObj = Array.isArray(task.order) ? task.order[0] : task.order;
+            const abandonedObj = Array.isArray(task.abandoned_cart) ? task.abandoned_cart[0] : task.abandoned_cart;
+            
+            if (orderObj) {
+              const oId = [orderObj.shopify_order_id, orderObj.order_number, orderObj.id]
+                .find(id => id && String(id).trim().length > 0);
+              
+              if (!oId) {
+                return (
+                  <div className="flex flex-col items-center justify-center p-12 text-center">
+                    <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center text-amber-500 mb-4">
+                      <Search className="w-8 h-8" />
                     </div>
-                    <div className="text-xs font-bold text-emerald-600">
-                      {formatDate(task.order.delivered_at)}
+                    <h3 className="text-lg font-bold text-gray-900">Incomplete Order Data</h3>
+                    <p className="text-gray-500 max-w-xs mt-2">
+                      This order record is present in the CRM but is missing the necessary IDs to fetch details from Shiprocket.
+                    </p>
+                  </div>
+                );
+              }
+              
+              return (
+                <div className="bg-gray-50 -m-5 -mt-4 rounded-xl overflow-hidden min-h-[60vh]">
+                  <ShiprocketOrderView orderId={String(oId)} />
+                </div>
+              );
+            }
+            
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                {/* Customer Column */}
+              <div className="md:col-span-2 space-y-6">
+                <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <Avatar name={task.customer.name} size="lg" />
+                  <div>
+                    <Link href={`/customers/${task.customer_id}`} className="font-bold text-[#2D1E6F] hover:underline hover:text-[#2D1E6F]/80 transition-colors">
+                      {task.customer.name}
+                    </Link>
+                    <div className="text-xs text-gray-500 flex items-center gap-1">
+                      <span className={cn("w-2 h-2 rounded-full", isOverdue ? "bg-rose-500" : "bg-[#2D1E6F]")} />
+                      {TASK_TYPE_CONFIG[task.task_type].label}
+                    </div>
+                  </div>
+                </div>
+                
+                {trafficSource && (
+                  <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100/50">
+                    <div className="text-[10px] text-blue-400 uppercase font-bold tracking-wider mb-1 flex items-center gap-1">
+                      <Globe className="w-3 h-3" /> Traffic Source
+                    </div>
+                    <div className="text-xs font-semibold text-blue-700 capitalize">
+                      {trafficSource}
+                      {utmCampaign && <span className="text-[10px] text-blue-400 font-normal ml-2 truncate">({utmCampaign})</span>}
                     </div>
                   </div>
                 )}
 
-                <div className="space-y-4">
-                  {items.map((item: any, idx: number) => (
-                    <div key={idx} className="flex items-center gap-3 justify-between pb-3 last:pb-0 border-b border-gray-50 last:border-0">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-semibold text-gray-800 line-clamp-1">{item.name || item.title}</div>
-                        <div className="text-[10px] text-gray-400 mt-0.5">
-                          {item.variant || item.productVariant || "Default Variant"}
+                <div className="space-y-4 px-1">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Phone Number</div>
+                      <a href={`tel:${task.customer.phone}`} className="text-sm font-semibold hover:text-blue-600 transition-colors">{task.customer.phone}</a>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+                      <MessageSquare className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Email Address</div>
+                      {task.customer.email ? (
+                        <a href={`mailto:${task.customer.email}`} className="text-sm font-semibold truncate max-w-[180px] block hover:text-blue-600 transition-colors">
+                          {task.customer.email}
+                        </a>
+                      ) : (
+                        <div className="text-sm font-semibold text-gray-400 italic">No email provided</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {task.customer.address && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 flex-shrink-0 mt-0.5">
+                        <Calendar className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Shipping Address</div>
+                        <div className="text-xs text-gray-600 mt-0.5 leading-relaxed">
+                          {task.customer.address}
+                          {(task.customer.city || task.customer.state || task.customer.zip) && (
+                            <div className="mt-1 pb-1 text-[11px] font-medium text-gray-500 border-t border-gray-100 pt-1">
+                              {[task.customer.city, task.customer.state, task.customer.zip].filter(Boolean).join(", ")}
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-xs font-bold text-forest">₹{item.price || item.productPrice || item.amount}</div>
-                        <div className="text-[10px] text-gray-400">Qty: {item.quantity || item.qty || item.productQuantity || 1}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Transaction Column */}
+              <div className="md:col-span-3 space-y-5">
+                <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+                  <div className="px-4 py-2.5 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
+                    <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">
+                      Abandoned Cart
+                    </h4>
+                    <div className="text-[10px] font-mono text-gray-400 uppercase leading-none">
+                      ID: {task.abandoned_cart?.cart_token?.slice(0, 10)}
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    {/* Date Row */}
+                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-50">
+                      <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
+                        Abandoned At
+                      </div>
+                      <div className="text-xs font-semibold text-gray-700">
+                        {formatDate(task.abandoned_cart?.abandoned_at || new Date().toISOString())}
                       </div>
                     </div>
-                  ))}
+
+                    <div className="space-y-4">
+                      {items.map((item: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-3 justify-between pb-3 last:pb-0 border-b border-gray-50 last:border-0">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-semibold text-gray-800 line-clamp-1">{item.name || item.title}</div>
+                            <div className="text-[10px] text-gray-400 mt-0.5">
+                              {item.variant || item.productVariant || "Default Variant"}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs font-bold text-[#2D1E6F]">₹{item.price || item.productPrice || item.amount}</div>
+                            <div className="text-[10px] text-gray-400 font-medium">Qty: {item.quantity || item.qty || item.productQuantity || 1}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-5 pt-4 border-t border-gray-100 space-y-2">
+                      <div className="flex justify-between text-xs text-gray-500 px-1">
+                        <span>Subtotal</span>
+                        <span>₹{subtotal}</span>
+                      </div>
+                      {discountAmount > 0 && (
+                        <div className="flex justify-between text-xs text-rose-500 px-1 font-medium italic">
+                          <span>Discount Applied</span>
+                          <span>-₹{discountAmount}</span>
+                        </div>
+                      )}
+                      {shippingCharges > 0 && (
+                        <div className="flex justify-between text-xs text-gray-500 px-1">
+                          <span>Shipping</span>
+                          <span>₹{shippingCharges}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm font-bold text-[#2D1E6F] px-1 pt-1">
+                        <span>Total Amount</span>
+                        <span className="text-[#2D1E6F] underline decoration-[#2D1E6F]/20 decoration-2 underline-offset-4">₹{totalAmount}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="mt-5 pt-4 border-t border-gray-100 space-y-2">
-                  <div className="flex justify-between text-xs text-gray-500 px-1">
-                    <span>Subtotal</span>
-                    <span>₹{subtotal}</span>
-                  </div>
-                  {discountAmount > 0 && (
-                    <div className="flex justify-between text-xs text-rose-500 px-1 font-medium italic">
-                      <span>Discount Applied</span>
-                      <span>-₹{discountAmount}</span>
-                    </div>
-                  )}
-                  {shippingCharges > 0 && (
-                    <div className="flex justify-between text-xs text-gray-500 px-1">
-                      <span>Shipping</span>
-                      <span>₹{shippingCharges}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-sm font-bold text-forest px-1 pt-1">
-                    <span>Total Amount</span>
-                    <span className="text-forest underline decoration-lime decoration-2 underline-offset-4">₹{totalAmount}</span>
-                  </div>
+                {task.task_type === "recovery" && (task.abandoned_cart as any)?.custom_meta?.ABANDONLINK && (
+                  <a 
+                    href={(task.abandoned_cart as any).custom_meta.ABANDONLINK} 
+                    target="_blank" 
+                    className="btn-secondary w-full justify-center bg-blue-50 border-blue-100 text-blue-700 font-bold hover:bg-blue-100"
+                  >
+                    Open Abandoned Cart 🛒
+                  </a>
+                )}
+                
+                <div className="flex items-center gap-2 pt-2">
+                  <button onClick={() => { setShowDetail(false); setDoneModal(true); }} className="btn-primary flex-1 justify-center py-3">
+                    Log Call Outcome
+                  </button>
+                  <button onClick={() => { setShowDetail(false); openWa(); }} className="btn-secondary flex-1 justify-center py-3 text-[#2D1E6F]">
+                    WhatsApp
+                  </button>
                 </div>
               </div>
             </div>
-
-            {task.task_type === "recovery" && (task.abandoned_cart as any)?.custom_meta?.ABANDONLINK && (
-               <a 
-                href={(task.abandoned_cart as any).custom_meta.ABANDONLINK} 
-                target="_blank" 
-                className="btn-secondary w-full justify-center bg-blue-50 border-blue-100 text-blue-700 font-bold hover:bg-blue-100"
-              >
-                 Open Abandoned Cart 🛒
-               </a>
-            )}
-            
-            <div className="flex items-center gap-2 pt-2">
-               <button onClick={() => { setShowDetail(false); setDoneModal(true); }} className="btn-primary flex-1 justify-center py-2.5">
-                 Log Call Outcome
-               </button>
-               <button onClick={() => { setShowDetail(false); openWa(); }} className="btn-secondary flex-1 justify-center py-2.5 text-emerald-600">
-                 WhatsApp
-               </button>
-            </div>
-          </div>
+          );
+        })()}
         </div>
       </Modal>
 
@@ -471,7 +585,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         </>}
       >
         <div className="space-y-4">
-          <div className="text-[11px] text-gray-400">Sending to: <a href={`tel:${task.customer.phone}`} className="font-bold text-gray-700 hover:text-emerald-600 transition-colors">{task.customer.phone}</a></div>
+          <div className="text-[11px] text-gray-400">Sending to: <a href={`tel:${task.customer.phone}`} className="font-bold text-gray-700 hover:text-blue-600 transition-colors">{task.customer.phone}</a></div>
           
           {/* Quick Presets */}
           <div className="flex flex-wrap gap-2">
@@ -489,10 +603,10 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                 <button 
                   key={key} 
                   className={cn(
-                    "text-[10px] px-2 py-1 rounded bg-gray-50 border border-gray-200 text-gray-500 uppercase font-bold tracking-wider hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all",
+                    "text-[10px] px-2 py-1 rounded bg-gray-50 border border-gray-200 text-gray-500 uppercase font-bold tracking-wider hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all",
                     // Highlight current task type by default
-                    task.task_type === key && "bg-lime-50 border-lime-200 text-lime-700",
-                    waMessage === tpl.replace("{{name}}", task.customer.name || "there").replace("{{product}}", product) && "bg-emerald-600 text-white border-emerald-600"
+                    task.task_type === key && "bg-blue-50 border-blue-200 text-blue-700",
+                    waMessage === tpl.replace("{{name}}", task.customer.name || "there").replace("{{product}}", product) && "bg-[#2D1E6F] text-white border-[#2D1E6F]"
                   )} 
                   onClick={() => {
                     let msg = tpl.replace("{{name}}", task.customer.name || "there").replace("{{product}}", product);
@@ -513,7 +627,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           
           {/* File Attachment */}
           <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 px-3 py-2 rounded bg-gray-50 border border-dashed border-gray-300 text-gray-500 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50/50 cursor-pointer transition-all">
+            <label className="flex items-center gap-2 px-3 py-2 rounded bg-gray-50 border border-dashed border-gray-300 text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/50 cursor-pointer transition-all">
               <Paperclip className="w-3.5 h-3.5" />
               <span className="text-xs font-medium">{waFile ? "Change File" : "Attach File (Media/PDF)"}</span>
               <input 
@@ -524,11 +638,11 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
             </label>
             
             {waFile && (
-              <div className="flex items-center gap-2 px-2 py-1.5 rounded bg-emerald-50 border border-emerald-100 text-emerald-700">
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded bg-blue-50 border border-blue-100 text-blue-700">
                 <span className="text-[10px] font-bold truncate max-w-[150px]">{waFile.name}</span>
                 <button 
                   onClick={() => setWaFile(null)}
-                  className="p-0.5 hover:bg-emerald-100 rounded-full transition-colors"
+                  className="p-0.5 hover:bg-blue-100 rounded-full transition-colors"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -538,25 +652,209 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         </div>
       </Modal>
 
-      {/* Mark Done Modal */}
       <Modal open={doneModal} onClose={() => setDoneModal(false)} title={`Log Call — ${task.customer.name}`}
         footer={<>
           <button className="btn-secondary" onClick={() => setDoneModal(false)}>Cancel</button>
-          <button className="btn-primary" onClick={handleDone}>Save</button>
+          <button className="btn-primary" onClick={handleDone} disabled={sendingWa}>
+             {sendingWa ? "Logging & Sending..." : "Save Outcome"}
+          </button>
         </>}
       >
-        <div className="space-y-3">
+        <div className="space-y-4">
+          {/* QUICK ACTIONS GALLERY */}
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">Outcome</label>
-            <select className="select" value={outcome} onChange={e => setOutcome(e.target.value)}>
-              <option value="done">{task.task_type === "recovery" ? "Recovery Successful / Completed" : "Completed"}</option>
-              <option value="no_answer">No Answer</option>
-              <option value="rescheduled">Will Call Back</option>
-            </select>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">⚡ Quick Actions</label>
+            <div className="flex flex-wrap gap-2">
+              <button 
+                type="button"
+                onClick={() => {
+                  setOutcome("no_answer");
+                  setDisposition("no_answer_logged");
+                  setNote("Called 3 times, no response. Toggled WhatsApp follow-up.");
+                  setSendWaInLog(true);
+                  if (!logWaMessage) {
+                    const tpl = DEFAULT_TEMPLATES[task.task_type as keyof typeof DEFAULT_TEMPLATES] || "";
+                    setLogWaMessage(tpl.replace("{{name}}", task.customer.name).replace("{{product}}", product));
+                  }
+                }}
+                className="px-2.5 py-1.5 rounded bg-orange-50 border border-orange-100 text-[10px] font-bold text-orange-700 hover:bg-orange-600 hover:text-white transition-all flex items-center gap-1.5"
+              >
+                📞 No Answer + WA
+              </button>
+              <button 
+                type="button"
+                onClick={() => {
+                  setOutcome("rescheduled");
+                  setDisposition("busy_call_later");
+                  setNote("Customer was busy, requested a callback later.");
+                }}
+                className="px-2.5 py-1.5 rounded bg-blue-50 border border-blue-100 text-[10px] font-bold text-blue-700 hover:bg-blue-600 hover:text-white transition-all flex items-center gap-1.5"
+              >
+                ⏳ Busy / Call Later
+              </button>
+              <button 
+                type="button"
+                onClick={() => {
+                  setOutcome("done");
+                  setDisposition("connected_bought");
+                  setNote("Customer confirmed they have already purchased. Workflow complete.");
+                }}
+                className="px-2.5 py-1.5 rounded bg-blue-50 border border-blue-100 text-[10px] font-bold text-blue-700 hover:bg-[#2D1E6F] hover:text-white transition-all flex items-center gap-1.5"
+              >
+                ✅ Already Bought
+              </button>
+              <button 
+                type="button"
+                onClick={() => {
+                  setOutcome("no_answer");
+                  setDisposition("wrong_number");
+                  setNote("The number is invalid or wrong. Flagged for verification.");
+                }}
+                className="px-2.5 py-1.5 rounded bg-rose-50 border border-rose-100 text-[10px] font-bold text-rose-700 hover:bg-rose-600 hover:text-white transition-all flex items-center gap-1.5"
+              >
+                ❌ Wrong Number
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Outcome</label>
+              <select className="select py-1 text-xs font-semibold" value={outcome} onChange={e => setOutcome(e.target.value)}>
+                <option value="done" className="text-blue-600 font-bold">✔ Successful / Resolved</option>
+                <option value="no_answer" className="text-orange-600">⚠ No Answer / Unreachable</option>
+                <option value="rescheduled" className="text-blue-600">📅 Will Call Back / Rescheduled</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Disposition</label>
+              <select className="select py-1 text-xs" value={disposition} onChange={e => setDisposition(e.target.value)}>
+                <optgroup label="Success/Connected">
+                  <option value="connected_interested">Interested / Hot Lead</option>
+                  <option value="connected_bought">Purchased / Already Bought</option>
+                  <option value="connected_support">Support Needed / Query</option>
+                  <option value="callback_requested">Callback Requested</option>
+                  <option value="busy_call_later">Busy - Call Later</option>
+                </optgroup>
+                <optgroup label="Rejections / Flags">
+                  <option value="not_interested">Not Interested / Reject</option>
+                  <option value="fake_order">Fake Order / Fraud / Junk</option>
+                  <option value="rto_requested">RTO Requested by Customer</option>
+                  <option value="wrong_number">Wrong Number / Invalid</option>
+                  <option value="invalid_lead">Spam / Invalid Lead</option>
+                  <option value="language_barrier">Language Barrier</option>
+                </optgroup>
+              </select>
+            </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">Notes</label>
-            <textarea className="input resize-none h-24" placeholder="Enter call notes..." value={note} onChange={e => setNote(e.target.value)} />
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Internal Note / Agent Comments</label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {(function() {
+                const type = task.task_type;
+                let presets = [
+                  { label: "Refill Done", text: "Customer confirmed they have already purchased the refill from the website. No further follow-up needed for this cycle." },
+                  { label: "No Answer", text: "Multiple call attempts made but the customer did not answer. No response on WhatsApp either. Will follow up later." },
+                  { label: "Wrong Number", text: "The number provided in the record is incorrect or belongs to someone else. Requesting data team to verify." }
+                ];
+
+                if (type === 'review') {
+                  presets = [
+                    { label: "Great Results", text: "Customer is very happy with the results. Reported improved energy and wellness. Highly satisfied." },
+                    { label: "Slow Progress", text: "Customer reports no visible change yet. Advised that natural supplements take time. Asked for patience." },
+                    { label: "Inconsistent", text: "Customer admitted to forgetting doses. Re-educated on daily routine importance." },
+                    { label: "Quality Conc.", text: "Customer had questions regarding packaging/texture. Provided technical clarity." },
+                    { label: "Review Given", text: "Customer has promised to leave a 5-star review via the link shared." },
+                  ];
+                } else if (type === 'reorder') {
+                  presets = [
+                    { label: "Discount Req", text: "Customer requested a discount code. Provided a loyalty coupon; they promised to buy soon." },
+                    { label: "Stock Issue", text: "Customer has enough stock for now. Will reorder after 15 days." },
+                    { label: "Price Issue", text: "Customer finds it expensive. Explained premium quality and sourcing. They will think about it." },
+                    { label: "Will buy later", text: "Customer is interested but out of town. Requested callback in 1 week." },
+                    { label: "Trust Issue", text: "Customer hesitant about long-term use. Provided safety certifications and dosage guide." },
+                  ];
+                } else if (type === 'recovery') {
+                  presets = [
+                    { label: "Recovered", text: "Successfully converted the cart into an order during the call." },
+                    { label: "Payment Fail", text: "Customer tried to buy but payment failed. Guided on alternative methods/COD." },
+                    { label: "High Shipping", text: "Customer cancelled due to shipping charges. Offered a shipping waiver coupon." },
+                    { label: "Ingredients", text: "Customer hesitant about ingredients. Explained the formulation in detail. Convinced." },
+                  ];
+                } else if (type === 'issue_resolution') {
+                  presets = [
+                    { label: "Damaged", text: "Customer reported damaged packaging. Initiated replacement request via Logistics." },
+                    { label: "Missing Item", text: "Received parcel but items are missing. Verifying with warehouse footage." },
+                    { label: "Wrong Item", text: "Customer received a different product. Initiated return-exchange process." },
+                    { label: "Refusal", text: "Customer refused delivery at doorstep. Trying to convince for re-attempt." },
+                  ];
+                } else if (type === 'transit_update') {
+                  presets = [
+                    { label: "Address Change", text: "Customer requested delivery to a new address. Updated Shiprocket and Warehouse." },
+                    { label: "Delayed Logi", text: "Order stuck at hub. Raised escalation with Shiprocket support." },
+                    { label: "Call for Deliv", text: "Requested rider to call customer before arriving. Instruction added to AWB." },
+                  ];
+                }
+
+                return presets.map(p => (
+                  <button 
+                    key={p.label}
+                    type="button"
+                    onClick={() => setNote(p.text)}
+                    className="px-2 py-1 rounded bg-gray-50 border border-gray-100 text-[10px] font-bold text-gray-500 hover:bg-[#2D1E6F] hover:text-white hover:border-[#2D1E6F] transition-all"
+                  >
+                    {p.label}
+                  </button>
+                ));
+              })()}
+            </div>
+            <textarea className="input resize-none h-20 text-xs" placeholder="Add detailed call notes for future reference..." value={note} onChange={e => setNote(e.target.value)} />
+          </div>
+
+          <div className="pt-2 border-t border-gray-50">
+             <label className="flex items-center gap-2 cursor-pointer group mb-2">
+                <input 
+                  type="checkbox" 
+                  className="rounded border-gray-300 text-[#2D1E6F] focus:ring-[#2D1E6F] cursor-pointer"
+                  checked={sendWaInLog}
+                  onChange={e => {
+                    setSendWaInLog(e.target.checked);
+                    if (e.target.checked && !logWaMessage) {
+                        const tpl = DEFAULT_TEMPLATES[task.task_type as keyof typeof DEFAULT_TEMPLATES] || "";
+                        setLogWaMessage(tpl.replace("{{name}}", task.customer.name).replace("{{product}}", product));
+                    }
+                  }}
+                />
+                <span className="text-xs font-bold text-gray-600 group-hover:text-[#2D1E6F] transition-colors">Follow up via WhatsApp?</span>
+             </label>
+             
+             {sendWaInLog && (
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                   <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                      {Object.keys(DEFAULT_TEMPLATES).map(key => (
+                         <button 
+                            key={key}
+                            onClick={() => {
+                                const tpl = DEFAULT_TEMPLATES[key as keyof typeof DEFAULT_TEMPLATES] || "";
+                                setLogWaMessage(tpl.replace("{{name}}", task.customer.name).replace("{{product}}", product));
+                            }}
+                            className={cn(
+                                "whitespace-nowrap px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter transition-all",
+                                logWaMessage.includes(key.replace("_", " ")) ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                            )}
+                         >
+                            {key.replace("_", " ")}
+                         </button>
+                      ))}
+                   </div>
+                   <textarea 
+                     className="input resize-none h-24 text-xs bg-blue-50/20 border-blue-100" 
+                     placeholder="Type follow-up message..." 
+                     value={logWaMessage} 
+                     onChange={e => setLogWaMessage(e.target.value)} 
+                   />
+                </div>
+             )}
           </div>
         </div>
       </Modal>
