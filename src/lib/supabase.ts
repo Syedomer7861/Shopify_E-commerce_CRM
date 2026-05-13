@@ -49,19 +49,65 @@ export const createClient = () => {
   return client;
 }
 
-// 2. For Server-Side (API Routes, Actions, Server Libs) - Uses SERVICE ROLE KEY, Bypasses RLS
+// 2. For Server-Side (API Routes, Actions, CRONs) - Hybrid Client
 export const createServerClient = () => {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // If we're on the client side, return the browser client
+  if (typeof window !== 'undefined') return createClient();
 
-  if (!serviceKey) {
-    if (typeof window !== 'undefined') {
-      // In the browser, we shouldn't have the service key. 
-      // If this is called, we log a warning and return the standard client.
-      console.warn("createServerClient called on client side. Using anon client instead.");
-      return createClient();
-    }
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing. Check your server environment variables.");
+  try {
+    // Try to get cookies (this only works in Request contexts like API routes or Server Actions)
+    const { cookies } = require('next/headers');
+    const cookieStore = cookies();
+
+    return createBrowserClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            try {
+              cookieStore.set({ name, value, ...options })
+            } catch (error) {
+              // This can be ignored if you have middleware refreshing sessions
+            }
+          },
+          remove(name: string, options: any) {
+            try {
+              cookieStore.set({ name, value: '', ...options })
+            } catch (error) {
+              // This can be ignored if you have middleware refreshing sessions
+            }
+          },
+        },
+      }
+    )
+  } catch (error) {
+    // If cookies() fails, we are in a CRON job or background task.
+    // Fallback to the Admin/Service Role client to allow the task to run.
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing for background task.");
+
+    return createSupabaseClient(
+      supabaseUrl,
+      serviceKey,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false
+        }
+      }
+    );
   }
+}
+
+// 3. Explicit Admin Client for when you DEFINITELY need service role
+export const createAdminClient = () => {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing.");
 
   return createSupabaseClient(
     supabaseUrl,
