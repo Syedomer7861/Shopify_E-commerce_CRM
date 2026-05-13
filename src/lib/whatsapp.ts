@@ -55,7 +55,40 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
      .select("whatsapp_bridge_url, whatsapp_token, whatsapp_phone_id")
      .single();
      
-  // 1. Official Meta Cloud API (Primary Route)
+  // 1. Legacy wa_server.js Local Bridge (Primary Route if configured)
+  const bridgeUrl = settings?.whatsapp_bridge_url;
+  if (bridgeUrl) {
+    try {
+      const res = await fetch(`${bridgeUrl}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, message, imagePath }),
+      });
+
+      const data = await res.json();
+      if (data.ok) {
+         await saveMessageToHistory({
+           phone,
+           body: message,
+           type: "text",
+           direction: "outbound",
+           metadata: { gateway: "local_bridge" }
+         });
+         return { ok: true };
+      }
+      // If bridge failed but Meta credentials exist, we can fall through to Meta
+      if (!settings?.whatsapp_token || !settings?.whatsapp_phone_id) {
+        return { ok: false, error: data.error || "Bridge failed and no Meta fallback" };
+      }
+    } catch (err: any) {
+      console.error("Bridge failed, checking for Meta fallback:", err.message);
+      if (!settings?.whatsapp_token || !settings?.whatsapp_phone_id) {
+        return { ok: false, error: err.message || "Failed to reach WhatsApp bridge" };
+      }
+    }
+  }
+
+  // 2. Official Meta Cloud API (Secondary Route)
   if (settings?.whatsapp_token && settings?.whatsapp_phone_id) {
     try {
       const payload = {
@@ -95,29 +128,7 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
     }
   }
 
-  // 2. Legacy wa_server.js Local Bridge (Fallback Route)
-  const bridgeUrl = settings?.whatsapp_bridge_url || "http://localhost:3001";
-  try {
-    const res = await fetch(`${bridgeUrl}/send`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, message, imagePath }),
-    });
-
-    const data = await res.json();
-    if (data.ok) {
-       await saveMessageToHistory({
-         phone,
-         body: message,
-         type: "text",
-         direction: "outbound",
-         metadata: { gateway: "local_bridge" }
-       });
-    }
-    return { ok: data.ok, error: data.error };
-  } catch (err: any) {
-    return { ok: false, error: err.message || "Failed to reach WhatsApp bridge" };
-  }
+  return { ok: false, error: "No WhatsApp messaging gateway configured (Bridge or Meta)" };
 }
 
 export async function sendMetaTemplate(
