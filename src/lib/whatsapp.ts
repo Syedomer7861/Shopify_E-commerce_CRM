@@ -1,7 +1,7 @@
 /**
  * WhatsApp messaging via Meta Cloud API (Primary) and Local Bridge (Fallback)
  */
-import { createClient } from "./supabase";
+import { createServerClient } from "./supabase";
 
 export interface WhatsAppResponse {
   ok: boolean;
@@ -27,7 +27,7 @@ async function saveMessageToHistory({
   metaId?: string;
   metadata?: any;
 }) {
-  const supabase = createClient();
+  const supabase = createServerClient();
   
   // Clean phone for lookup
   const cleanedPhone = phone.replace(/[^0-9]/g, "").replace(/^91/, "");
@@ -49,7 +49,7 @@ async function saveMessageToHistory({
 }
 
 export async function sendWhatsApp(phone: string, message: string, imagePath?: string): Promise<WhatsAppResponse> {
-  const supabase = createClient();
+  const supabase = createServerClient();
   
   const { data: settings } = await supabase.from("settings")
      .select("whatsapp_bridge_url, whatsapp_token, whatsapp_phone_id")
@@ -136,7 +136,7 @@ export async function sendMetaTemplate(
   templateName: string, 
   data: Record<string, any>
 ): Promise<WhatsAppResponse> {
-  const supabase = createClient();
+  const supabase = createServerClient();
   
   // 1. Resolve Template Mapping from DB
   const { data: template } = await supabase
