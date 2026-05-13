@@ -42,9 +42,19 @@ const io = new Server(server, {
   }
 });
 
+// ── Supabase Clients ──────────────────────────────────────────────────────────
+// 1. Admin client for database operations
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { persistSession: false } }
+);
+
+// 2. Auth-only client for verifying user tokens (uses ANON key to avoid session conflicts)
+const authClient = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  { auth: { persistSession: false } }
 );
 
 // ── Auth Middleware ──────────────────────────────────────────────────────────
@@ -53,12 +63,13 @@ io.use(async (socket, next) => {
     const token = socket.handshake.auth.token;
     if (!token) return next(new Error("Unauthorized: No token provided"));
 
-    // Verify token with Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    // Verify token with the dedicated Auth client
+    const { data: { user }, error } = await authClient.auth.getUser(token);
     
     if (error || !user) {
-      console.error("[Chat] Auth error:", error?.message);
-      return next(new Error("Unauthorized: Invalid token"));
+      console.error("[Chat] Auth error:", error?.message || "Invalid or expired token");
+      console.debug(`[Chat] Attempted token length: ${token?.length}, prefix: ${token?.substring(0, 10)}...`);
+      return next(new Error("Unauthorized: Authentication failed"));
     }
 
     // Fetch profile to get role and name
