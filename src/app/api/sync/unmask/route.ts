@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings, getShiprocketToken } from "@/lib/server-settings";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 
@@ -61,17 +61,24 @@ function extractPhone(sr: any): string | null {
 
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
 
+import fs from 'fs';
+import path from 'path';
+
 export async function POST(req: NextRequest) {
   const { stream, send, close } = createSyncStream();
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
+  const logPath = path.join(process.cwd(), 'unmask_audit.log');
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const supabase = createServerClient();
 
   const runSync = async () => {
+    const log = (msg: string) => {
+        const time = new Date().toISOString();
+        fs.appendFileSync(logPath, `[${time}] ${msg}\n`);
+    };
+    
     try {
+      log("--- Sync Started ---");
       send({ progress: 2, message: "Initializing unmasking engine..." });
       
       const settings = await getSystemSettings(supabase);
@@ -128,16 +135,29 @@ export async function POST(req: NextRequest) {
             .limit(1)
             .maybeSingle();
 
+          let shopifyOrderId = order?.shopify_order_id;
+          if (!shopifyOrderId && cust.phone?.includes("_SR_")) {
+              shopifyOrderId = cust.phone.split("_SR_")[1];
+          }
+
+          log(`Processing ${cust.name} (${cust.phone})`);
+          log(`  Shopify Order ID: ${shopifyOrderId}`);
+
           // 🕵️ Step 1: Try Local Multi-Source Resolution
-          let phone = await resolveUnmaskedPhone(supabase, cust.id, cust.email || null, order?.shopify_order_id || null, null, token);
+          let phone = await resolveUnmaskedPhone(supabase, cust.id, cust.email || null, shopifyOrderId || null, null, token);
+          
+          if (phone && !phone.includes("x")) {
+              log(`  ✅ Step 1 SUCCESS: ${phone}`);
+          }
 
           // 🕵️ Step 2: If still masked, try Shiprocket API order detail endpoint
-          if ((!phone || phone.includes("x") || phone.includes("X")) && order?.shopify_order_id && token) {
+          if ((!phone || phone.includes("x") || phone.includes("X")) && shopifyOrderId && token) {
+            log(`  Trying Shiprocket for ${shopifyOrderId}...`);
             try {
               await new Promise(r => setTimeout(r, 400)); // Slight rate limiting
               
               let srInternalId = null;
-              const searchRes = await shiprocketFetch(`${SHIPROCKET_BASE_URL}/orders?search=${order.shopify_order_id}`, token).catch(() => null);
+              const searchRes = await shiprocketFetch(`${SHIPROCKET_BASE_URL}/orders?search=${shopifyOrderId}`, token).catch(() => null);
 
               if (searchRes && searchRes.data && searchRes.data.length > 0) {
                 srInternalId = searchRes.data[0].id;
@@ -150,6 +170,7 @@ export async function POST(req: NextRequest) {
                   const apiPhone = extractPhone(d);
                   if (apiPhone && !apiPhone.includes("x") && apiPhone.length >= 10) {
                     phone = apiPhone;
+                    log(`  ✅ Step 2 SUCCESS: ${phone}`);
                   }
                   // Also update name if it's still generic
                   const name = [d.billing_customer_name, d.billing_last_name].filter(Boolean).join(" ").trim()
@@ -159,34 +180,47 @@ export async function POST(req: NextRequest) {
                     await supabase.from("customers").update({ name }).eq("id", cust.id);
                   }
                 }
+              } else {
+                log(`  ❌ Shiprocket Miss for ${shopifyOrderId}`);
               }
-            } catch {}
+            } catch (e: any) {
+                log(`  ❌ Step 2 Error: ${e.message}`);
+            }
           }
 
           if (phone && !phone.includes("x") && !phone.includes("X")) {
             const { data: existing } = await supabase.from("customers").select("id, name").eq("phone", phone).neq("id", cust.id).maybeSingle();
 
             if (existing) {
+                log(`  Merging into existing: ${existing.name} (${existing.id})`);
                 await Promise.all([
                   supabase.from("orders").update({ customer_id: existing.id }).eq("customer_id", cust.id),
                   supabase.from("tasks").update({ customer_id: existing.id }).eq("customer_id", cust.id),
                   supabase.from("abandoned_carts").update({ customer_id: existing.id }).eq("customer_id", cust.id),
                   supabase.from("call_logs").update({ customer_id: existing.id }).eq("customer_id", cust.id),
                 ]);
-                await supabase.from("customers").delete().eq("id", cust.id);
+                const delRes = await supabase.from("customers").delete().eq("id", cust.id);
+                if (delRes.error) log(`  ❌ Delete failed: ${delRes.error.message}`);
+                else log(`  ✅ Merge successful`);
                 mergedCount++;
             } else {
-                await supabase.from("customers").update({ phone }).eq("id", cust.id);
+                log(`  Updating customer phone...`);
+                const { error: updateError } = await supabase.from("customers").update({ phone }).eq("id", cust.id);
+                if (updateError) log(`  ❌ Update failed: ${updateError.message}`);
+                else log(`  ✅ Update successful`);
             }
             unmaskedCount++;
           } else {
+            log(`  ❌ FAILED to unmask`);
             failedCount++;
           }
-        } catch (e) {
+        } catch (e: any) {
+          log(`  Critical Loop Error: ${e.message}`);
           failedCount++;
         }
       }
 
+      log(`Summary: Unmasked=${unmaskedCount}, Merged=${mergedCount}, Failed=${failedCount}`);
       send({ 
         progress: 100, 
         message: `Tool Complete! Recovered: ${unmaskedCount}`, 
@@ -195,6 +229,7 @@ export async function POST(req: NextRequest) {
       });
       close();
     } catch (err: any) {
+      log(`FATAL ERROR: ${err.message}`);
       send({ error: err.message });
       close();
     }

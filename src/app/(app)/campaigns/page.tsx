@@ -1,13 +1,18 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Megaphone, Plus, Search, Play, Pause, BarChart3, Users, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
-import { PageHeader, Modal, StatCard } from "@/components/ui";
+import { PageHeader, Modal, StatCard, Pagination } from "@/components/ui";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import { AccessDenied } from "@/components/ui";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { isAdmin } from "@/lib/permissions";
 
 const SEGMENTS = ["repeat", "one_time", "inactive", "risky", "all"];
 
 export default function CampaignManager() {
+  const { profile, loading: profileLoading } = useCurrentProfile();
+  const [currentPage, setCurrentPage] = useState(1);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +23,7 @@ export default function CampaignManager() {
     target_segment: "all",
     scheduled_at: ""
   });
+  const ITEMS_PER_PAGE = 10;
 
   const fetchData = async () => {
     setLoading(true);
@@ -40,6 +46,26 @@ export default function CampaignManager() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  if (profileLoading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh] text-[#5f5f5d]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-[#1c1c1c]/20 border-t-[#1c1c1c] rounded-full animate-spin" />
+          <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Verifying Clearance...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin(profile)) {
+    return (
+      <AccessDenied 
+        title="Marketing Hub Restricted" 
+        desc="Only administrators can orchestrate bulk WhatsApp campaigns and manage marketing segments." 
+      />
+    );
+  }
 
   const handleCreate = async () => {
     if (!formData.name || !formData.template_id) return toast.error("Name and Template are required");
@@ -70,6 +96,11 @@ export default function CampaignManager() {
     }
   };
 
+  const paginatedCampaigns = campaigns.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="animate-fade-in">
       <PageHeader 
@@ -83,10 +114,10 @@ export default function CampaignManager() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Active Campaigns" value={campaigns.filter(c => c.status === "running").length} sub="Currently sending" accent="text-blue-600" />
-        <StatCard label="Completed" value={campaigns.filter(c => c.status === "completed").length} sub="Lifetime total" accent="text-blue-500" />
-        <StatCard label="Total Messages" value={campaigns.reduce((s, c) => s + (c.delivered_count || 0), 0)} sub="Across all campaigns" accent="text-[#2D1E6F]" />
-        <StatCard label="Avg. Open Rate" value="84%" sub="High engagement" accent="text-purple-600" />
+        <StatCard label="Active Campaigns" value={campaigns.filter(c => c.status === "running").length} sub="Currently sending" accent="text-[#1c1c1c]" />
+        <StatCard label="Completed" value={campaigns.filter(c => c.status === "completed").length} sub="Lifetime total" accent="text-[#5f5f5d]" />
+        <StatCard label="Total Messages" value={campaigns.reduce((s, c) => s + (c.delivered_count || 0), 0)} sub="Across all campaigns" accent="text-[#1c1c1c]" />
+        <StatCard label="Avg. Open Rate" value="84%" sub="High engagement" accent="text-[#1c1c1c]" />
       </div>
 
       <div className="card overflow-hidden">
@@ -102,10 +133,10 @@ export default function CampaignManager() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {campaigns.map(c => (
+            {paginatedCampaigns.map(c => (
               <tr key={c.id} className="hover:bg-gray-50/50 transition-colors group">
                 <td className="px-6 py-4">
-                  <div className="text-sm font-bold text-[#2D1E6F]">{c.name}</div>
+                  <div className="text-sm font-bold text-[#1c1c1c]">{c.name}</div>
                   <div className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
                     <Clock className="w-2.5 h-2.5" /> Created {new Date(c.created_at).toLocaleDateString()}
                   </div>
@@ -123,12 +154,12 @@ export default function CampaignManager() {
                 <td className="px-6 py-4">
                   <div className="w-32">
                     <div className="flex justify-between text-[9px] font-bold mb-1">
-                      <span className="text-gray-400">{c.delivered_count} / {c.total_recipients || "?"}</span>
-                      <span className="text-blue-600">{c.total_recipients ? Math.round((c.delivered_count / c.total_recipients) * 100) : 0}%</span>
+                      <span className="text-[#5f5f5d]">{c.delivered_count} / {c.total_recipients || "?"}</span>
+                      <span className="text-[#1c1c1c]">{c.total_recipients ? Math.round((c.delivered_count / c.total_recipients) * 100) : 0}%</span>
                     </div>
-                    <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                    <div className="w-full bg-[#eceae4] h-1.5 rounded-full overflow-hidden">
                       <div 
-                        className={cn("h-full transition-all duration-1000", c.status === "completed" ? "bg-blue-600" : "bg-blue-400")}
+                        className={cn("h-full transition-all duration-1000", c.status === "completed" ? "bg-[#1c1c1c]" : "bg-[#1c1c1c]/40")}
                         style={{ width: `${c.total_recipients ? (c.delivered_count / c.total_recipients) * 100 : 0}%` }}
                       />
                     </div>
@@ -137,17 +168,17 @@ export default function CampaignManager() {
                 <td className="px-6 py-4">
                   <div className={cn(
                     "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border",
-                    c.status === "running" ? "bg-blue-50 border-blue-100 text-blue-600" :
-                    c.status === "completed" ? "bg-blue-50 border-blue-100 text-blue-600" :
-                    "bg-gray-50 border-gray-200 text-gray-500"
+                    c.status === "running" ? "bg-[#f7f4ed] border-[#1c1c1c]/20 text-[#1c1c1c]" :
+                    c.status === "completed" ? "bg-[#eceae4] border-[#eceae4] text-[#1c1c1c]" :
+                    "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]"
                   )}>
-                    {c.status === "running" && <div className="w-1 h-1 rounded-full bg-blue-500 animate-ping" />}
+                    {c.status === "running" && <div className="w-1 h-1 rounded-full bg-[#1c1c1c] animate-ping" />}
                     {c.status}
                   </div>
                 </td>
                 <td className="px-6 py-4 text-right">
                   {c.status === "draft" && (
-                     <button onClick={() => handleRun(c.id)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors shadow-sm border border-blue-200">
+                     <button onClick={() => handleRun(c.id)} className="p-2 bg-[#1c1c1c]/5 text-[#1c1c1c] rounded-lg hover:bg-[#1c1c1c]/10 transition-colors shadow-sm border border-[#1c1c1c]/10">
                         <Play className="w-3.5 h-3.5 fill-current" />
                      </button>
                   )}
@@ -164,7 +195,7 @@ export default function CampaignManager() {
             ))}
           </tbody>
         </table>
-        {campaigns.length === 0 && (
+        {campaigns.length === 0 && !loading && (
           <div className="py-20 text-center flex flex-col items-center justify-center gap-4">
              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
                <Megaphone className="w-8 h-8 text-gray-200" />
@@ -173,6 +204,16 @@ export default function CampaignManager() {
                <p className="text-sm font-bold text-gray-400">No campaigns launched yet</p>
                <p className="text-xs text-gray-300 mt-1">Start by creating your first WhatsApp broadcast</p>
              </div>
+          </div>
+        )}
+        {campaigns.length > ITEMS_PER_PAGE && (
+          <div className="px-6 border-t border-gray-100">
+            <Pagination 
+              current={currentPage} 
+              total={campaigns.length} 
+              pageSize={ITEMS_PER_PAGE} 
+              onChange={setCurrentPage} 
+            />
           </div>
         )}
       </div>

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 import { getTaskProductName } from "@/lib/utils";
 import { getSystemSettings } from "@/lib/server-settings";
+import { sendGmail } from "@/lib/gmail";
+import { personaliseTemplate, getTemplateVariables } from "@/lib/whatsapp";
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  return createServerClient();
 }
 
 export async function GET(req: NextRequest) {
@@ -17,19 +19,22 @@ export async function POST(req: NextRequest) {
 
 async function processRequest() {
   const supabase = getSupabase();
-  const today = new Date().toISOString().split("T")[0];
 
   try {
     // 1. Get Settings
     const settings = await getSystemSettings(supabase);
     
-    if (!settings?.whatsapp_enabled || !settings?.whatsapp_bridge_url) {
-      console.log("⏭️ Recovery Cron Skipped: WhatsApp disabled or Bridge URL missing in Settings.");
-      return NextResponse.json({ skipped: true, reason: "WhatsApp disabled in settings" });
+    if (!settings) {
+      return NextResponse.json({ error: "Settings not found" }, { status: 404 });
     }
 
-    // --- RECOVERY SPECIFIC: REAL-TIME (No blackout time) ---
-    // We ignore the global whatsapp_send_time for recovery to hit the customer in 15 mins.
+    const waEnabled = settings.whatsapp_enabled && settings.whatsapp_bridge_url && settings.wa_auto_cart_abandoned;
+    const emailEnabled = settings.gmail_refresh_token && settings.email_auto_cart_abandoned;
+
+    if (!waEnabled && !emailEnabled) {
+      console.log("⏭️ Recovery Cron Skipped: Both WhatsApp and Email recovery automations disabled.");
+      return NextResponse.json({ skipped: true, reason: "Automations disabled in settings" });
+    }
 
     const delayHours = settings.recovery_delay_hours || 24;
     const thresholdDate = new Date(Date.now() - (delayHours * 60 * 60 * 1000)).toISOString();
@@ -47,12 +52,16 @@ async function processRequest() {
           id,
           name,
           phone,
+          email,
           whatsapp_reminders_enabled,
           custom_meta
         ),
         abandoned_cart:abandoned_carts (
+          id,
           cart_token,
-          line_items
+          line_items,
+          total_price,
+          custom_meta
         )
       `)
       .eq("task_type", "recovery")
@@ -62,61 +71,67 @@ async function processRequest() {
     if (error) throw error;
     if (!tasks?.length) return NextResponse.json({ sent: 0, reason: "No recovery tasks ready yet" });
 
-    let sentCount = 0;
-    const bridgeUrl = settings.whatsapp_bridge_url;
+    let waSentCount = 0;
+    let emailSentCount = 0;
 
     for (const task of tasks) {
       const customer = task.customer as any;
       const abandonedCart = task.abandoned_cart as any;
+      const variables = getTemplateVariables(customer, null, abandonedCart);
+      let taskActioned = false;
 
-      // Skip if customer disabled reminders
-      if (customer.whatsapp_reminders_enabled === false) continue;
+      // --- 1. WhatsApp Automation ---
+      if (waEnabled && customer.whatsapp_reminders_enabled !== false) {
+        const productName = getTaskProductName(task);
+        const template = settings.whatsapp_recovery_template || `Hi {{name}}! 👋\n\nWe noticed you left *{{product}}* in your cart. We've saved it for you! \n\nClick here to complete your order and start your wellness journey: {{abandon_link}}\n\n_Use code WELCOME10 for 10% off!_ 🌿`;
+        const message = personaliseTemplate(template, variables);
 
-      const productName = getTaskProductName(task);
-      const cart = (Array.isArray(task.abandoned_cart) ? task.abandoned_cart[0] : task.abandoned_cart) as any;
-      const metaItem = (cart?.line_items as any[])?.find((i: any) => i.__metadata);
-      const meta = metaItem?.payload || customer.custom_meta;
-      const abandonLink = meta?.ABANDONLINK || cart?.custom_meta?.ABANDONLINK || "https://cureforever.in/cart";
-      // ----------------------------------------------
-
-      const template = settings.whatsapp_recovery_template || `Hi {{name}}! 👋\n\nWe noticed you left *{{product}}* in your cart. We've saved it for you! \n\nClick here to complete your order and start your wellness journey: {{abandon_link}}\n\n_Use code WELCOME10 for 10% off!_ 🌿`;
-      const message = template
-        .replace(/{{name}}/g, customer.name || "there")
-        .replace(/{{product}}/g, productName)
-        .replace(/{{abandon_link}}/g, abandonLink);
-
-      try {
-        const res = await fetch(`${bridgeUrl}/send`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: customer.phone, message }),
-        });
-        
-        const result = await res.json();
-        
-        if (res.ok && result.ok) {
-          sentCount++;
-          
-          await supabase.from("tasks").update({ 
-            status: "done", 
-            completed_at: new Date().toISOString() 
-          }).eq("id", task.id);
-
-          // Log the automated Recovery message
-          await supabase.from("call_logs").insert({
-            task_id: task.id,
-            customer_id: customer.id,
-            outcome: "done",
-            note: `System (Recovery): "${message}"`,
-            agent_name: "CureForever System"
+        try {
+          const res = await fetch(`${settings.whatsapp_bridge_url}/send`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone: customer.phone, message }),
           });
-        }
-      } catch (err) {
-        console.error(`Error sending Recovery WhatsApp to ${customer.phone}:`, err);
+          const result = await res.json();
+          if (res.ok && result.ok) {
+            waSentCount++;
+            taskActioned = true;
+          }
+        } catch (err) { console.error(`WA Error:`, err); }
+      }
+
+      // --- 2. Email Automation ---
+      if (emailEnabled && customer.email) {
+        const subjectTemplate = settings.email_cart_abandoned_subject || "Still interested in your items? 🛒";
+        const bodyTemplate = settings.email_cart_abandoned_template || "Hi {{name}} 👋, we noticed you left some items in your cart! 🛒 Don't miss out on your {{product}}. To help you complete your order, here's a special 10% discount! Use code HEALTH10 at checkout. 💊\n\nFinish here: {{abandon_link}}";
+        
+        const subject = personaliseTemplate(subjectTemplate, variables);
+        const body = personaliseTemplate(bodyTemplate, variables);
+
+        try {
+          await sendGmail({ to: customer.email, subject, body });
+          emailSentCount++;
+          taskActioned = true;
+        } catch (err) { console.error(`Email Error:`, err); }
+      }
+
+      if (taskActioned) {
+        await supabase.from("tasks").update({ 
+          status: "done", 
+          completed_at: new Date().toISOString() 
+        }).eq("id", task.id);
+
+        await supabase.from("call_logs").insert({
+          task_id: task.id,
+          customer_id: customer.id,
+          outcome: "done",
+          note: `System (Recovery): Sent via ${waSentCount > 0 ? "WhatsApp" : ""} ${emailSentCount > 0 ? "Email" : ""}`,
+          agent_name: "CureForever System"
+        });
       }
     }
 
-    return NextResponse.json({ sent: sentCount, total: tasks.length });
+    return NextResponse.json({ wa_sent: waSentCount, email_sent: emailSentCount, total: tasks.length });
   } catch (err: any) {
     console.error("Recovery reminder error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });

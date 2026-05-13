@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   Search, 
   RefreshCw, 
@@ -16,9 +16,10 @@ import {
   ChevronRight,
   CheckSquare
 } from "lucide-react";
-import { PageHeader, EmptyState, TaskTypeBadge } from "@/components/ui";
+import { PageHeader, EmptyState, TaskTypeBadge, Pagination } from "@/components/ui";
 import TaskCard from "@/components/TaskCard";
 import { createClient } from "@/lib/supabase";
+import { sendAdminNotification } from "@/lib/notifications";
 import { cn, toDbDateString } from "@/lib/utils";
 import type { Task, Customer, Order, TaskType, TaskStatus } from "@/types";
 import toast from "react-hot-toast";
@@ -29,6 +30,7 @@ const TYPES: { label: string; value: string }[] = [
   { label: "Recovery", value: "recovery" },
   { label: "Review", value: "review" },
   { label: "Reorder", value: "reorder" },
+  { label: "Flagged", value: "flagged" },
   { label: "Final Follow-up", value: "final_followup" },
   { label: "Issue Resolution", value: "issue_resolution" },
   { label: "Transit Inform", value: "transit_update" },
@@ -40,6 +42,7 @@ const STATUSES: { label: string; value: string }[] = [
   { label: "Pending", value: "pending" },
   { label: "Done", value: "done" },
   { label: "Rescheduled", value: "rescheduled" },
+  { label: "Flagged", value: "flagged" },
 ];
 
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
@@ -50,7 +53,8 @@ export default function TasksPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
-  const [counts, setCounts] = useState({ due: 0, overdue: 0, pending: 0, done: 0 });
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [counts, setCounts] = useState({ due: 0, overdue: 0, pending: 0, done: 0, flagged: 0 });
   const [waSettings, setWaSettings] = useState<any>(null);
   const [syncing, setSyncing] = useState(false);
   const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
@@ -62,15 +66,22 @@ export default function TasksPage() {
   const [agentFilter, setAgentFilter] = useState("all");
   const PAGE_SIZE = 50;
   const { profile, loading: profileLoading } = useCurrentProfile();
+  const requestIdRef = useRef(0);
+
 
   const supabase = createClient();
 
   useEffect(() => {
-    // Read URL parameters on mount to support incoming links from Dashboard KPI cards
+    // Read URL parameters on mount to support incoming links from Dashboard KPI cards or Chat threads
     const params = new URLSearchParams(window.location.search);
     const initialStatus = params.get("status");
     const initialType = params.get("type");
+    const initialId = params.get("id");
     
+    if (initialId) {
+      setSearch(initialId);
+      return;
+    }
     if (initialStatus && STATUSES.some(s => s.value === initialStatus)) {
       setStatusFilter(initialStatus);
       return; 
@@ -84,67 +95,115 @@ export default function TasksPage() {
   useEffect(() => {
     if (profileLoading) return; // Wait for the security profile to establish identity before fetching tasks
     
-    if (profile?.role === "admin") {
-      supabase.from("profiles").select("id, name").eq("role", "agent").eq("is_active", true).then(({ data }) => {
-        if (data) setAgents(data);
-      });
+    if (profile?.role === "admin" || profile?.role === "manager") {
+      supabase.from("profiles")
+        .select("id, name")
+        .eq("role", "agent") // Strictly Agents for assignment
+        .eq("is_active", true)
+        .then(({ data }) => {
+          if (data) setAgents(data);
+        });
     }
 
+    let refreshTimeout: NodeJS.Timeout;
+    const debouncedRefresh = () => {
+      // Sentinel: Prevent jarring refreshes if agent is currently typing or has a modal open
+      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+                           document.activeElement?.tagName === 'TEXTAREA' ||
+                           document.querySelector('[role="dialog"]'); // Modal check
+      
+      if (isInteracting) return;
+
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => fetchTasks(true), 3000);
+    };
+
     fetchTasks();
+    const pollInterval = setInterval(() => debouncedRefresh(), 60000);
+
+    // ── Supabase real-time: refresh on any task mutation ──
     const channel = supabase
-      .channel('tasks-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => fetchTasks())
+      .channel("tasks-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "tasks" }, debouncedRefresh)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tasks" }, debouncedRefresh)
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "tasks" }, debouncedRefresh)
       .subscribe();
 
     return () => {
+      if (typeof pollInterval !== "undefined") clearInterval(pollInterval);
+      clearTimeout(refreshTimeout);
       supabase.removeChannel(channel);
     };
-  }, [typeFilter, statusFilter, search, profileLoading, page, dueStart, dueEnd, agentFilter]);
+  }, [typeFilter, statusFilter, debouncedSearch, profileLoading, page, dueStart, dueEnd, agentFilter]);
 
-  // Reset page when filters change
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400); // 400ms debounce
+    return () => clearTimeout(handler);
+  }, [search]);
+
   useEffect(() => {
     setPage(1);
-  }, [typeFilter, statusFilter, search, dueStart, dueEnd, agentFilter]);
+  }, [typeFilter, statusFilter, debouncedSearch, dueStart, dueEnd, agentFilter]);
 
-  async function fetchTasks() {
+  // Helper to apply specialization filters
+  const applyAgentFilters = (query: any, prof: any) => {
+    if (prof?.role !== 'agent') return query;
+    
+    const segs = prof.assigned_segments || [];
+    const types = prof.assigned_task_types || [];
+    
+    // Strict Logic: Agent MUST match specialization to see ANY task
+    // AND it must be either assigned to them or unassigned
+    let filteredQuery = query.or(`assigned_to.eq.${prof.id},assigned_to.is.null`);
+
+    if (segs.length > 0) {
+      filteredQuery = filteredQuery.filter('customer.segment', 'in', `(${segs.join(",")})`);
+    }
+    if (types.length > 0) {
+      filteredQuery = filteredQuery.in('task_type', types);
+    }
+    
+    return filteredQuery;
+  };
+
+  async function fetchTasks(silent = false) {
+    const requestId = ++requestIdRef.current;
     if (!profile) return; // Security boundary: must have a profile
     
-    setLoading(true);
+    if (!silent) setLoading(true);
     const today = toDbDateString(new Date());
     let matchingCustomerIds: string[] | null = null;
     let matchingOrderIds: string[] | null = null;
     let matchingCartIds: string[] | null = null;
 
-    if (search) {
-      const cleanSearch = search.trim().replace(/^#/, "");
+    if (debouncedSearch) {
+      const cleanSearch = debouncedSearch.trim().replace(/^#/, "");
       const isPhone = /^\d{7,15}$/.test(cleanSearch.replace(/\s/g, ""));
 
-      // 1. Search Customers
-      const { data: matchingCustomers } = await supabase.from("customers")
-        .select("id")
-        .or(`name.ilike.%${cleanSearch}%,phone.ilike.%${cleanSearch}%,shopify_customer_id.ilike.%${cleanSearch}%,email.ilike.%${cleanSearch}%`)
-        .limit(50);
-      matchingCustomerIds = (matchingCustomers || []).map((c) => c.id);
+      // Parallelize lookups for massive performance gains
+      const [customersRes, ordersRes, cartsRes] = await Promise.all([
+        supabase.from("customers")
+          .select("id")
+          .or(`name.ilike.%${cleanSearch}%,phone.ilike.%${cleanSearch}%,shopify_customer_id.ilike.%${cleanSearch}%,email.ilike.%${cleanSearch}%`)
+          .limit(100),
+        supabase.from("orders")
+          .select("id")
+          .or(`order_number.ilike.%${cleanSearch}%,shopify_order_id.ilike.%${cleanSearch}%,tracking_number.ilike.%${cleanSearch}%`),
+        supabase.from("abandoned_carts")
+          .select("id")
+          .or(`cart_token.ilike.%${cleanSearch}%,phone.ilike.%${cleanSearch}%`)
+      ]);
 
-      // 2. Search Orders
-      const { data: matchingOrders } = await supabase
-        .from("orders")
-        .select("id")
-        .or(`order_number.ilike.%${cleanSearch}%,shopify_order_id.ilike.%${cleanSearch}%,tracking_number.ilike.%${cleanSearch}%`);
-      matchingOrderIds = (matchingOrders || []).map((o) => o.id);
+      matchingCustomerIds = (customersRes.data || []).map((c) => c.id);
+      matchingOrderIds = (ordersRes.data || []).map((o) => o.id);
+      matchingCartIds = (cartsRes.data || []).map((c) => c.id);
 
-      // 3. Search Abandoned Carts
-      const { data: matchingCarts } = await supabase
-        .from("abandoned_carts")
-        .select("id")
-        .or(`cart_token.ilike.%${cleanSearch}%,phone.ilike.%${cleanSearch}%`);
-      matchingCartIds = (matchingCarts || []).map((c) => c.id);
-
-      if ((!matchingCustomerIds || matchingCustomerIds.length === 0) && 
-          (!matchingOrderIds || matchingOrderIds.length === 0) && 
-          (!matchingCartIds || matchingCartIds.length === 0)) {
+      if (matchingCustomerIds.length === 0 && matchingOrderIds.length === 0 && matchingCartIds.length === 0) {
         setTasks([]);
-        setCounts({ due: 0, overdue: 0, pending: 0, done: 0 });
+        setCounts({ due: 0, overdue: 0, pending: 0, done: 0, flagged: 0 });
         setLoading(false);
         return;
       }
@@ -153,14 +212,19 @@ export default function TasksPage() {
     // Core Tasks Query
     let query = supabase
       .from("tasks")
-      .select("*, customer:customers!inner(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email)");
+      .select("*, customer:customers!inner(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email)", { count: "exact" });
 
-    if (search) {
-      const cleanSearch = search.trim().replace(/^#/, "");
+    if (debouncedSearch) {
+      const cleanSearch = debouncedSearch.trim().replace(/^#/, "");
       let orStrings = [];
       if (matchingCustomerIds && matchingCustomerIds.length > 0) orStrings.push(`customer_id.in.(${matchingCustomerIds.join(",")})`);
       if (matchingOrderIds && matchingOrderIds.length > 0) orStrings.push(`order_id.in.(${matchingOrderIds.join(",")})`);
       if (matchingCartIds && matchingCartIds.length > 0) orStrings.push(`abandoned_cart_id.in.(${matchingCartIds.join(",")})`);
+      
+      // Support direct Task ID search (UUID)
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanSearch)) {
+        orStrings.push(`id.eq.${cleanSearch}`);
+      }
       
       if (orStrings.length > 0) {
         query = query.or(orStrings.join(","));
@@ -169,14 +233,18 @@ export default function TasksPage() {
 
     // Core Filters
     if (profile.role === "agent") {
-      query = query.eq("assigned_to", profile.id);
+      query = applyAgentFilters(query, profile);
     }
 
-    if (typeFilter !== "all") {
+    if (typeFilter === "flagged") {
+      query = query.eq("manager_action", "rejected");
+    } else if (typeFilter !== "all") {
       query = query.eq("task_type", typeFilter);
     }
 
-    if (agentFilter !== "all") {
+    if (agentFilter === "unassigned") {
+      query = query.is("assigned_to", null);
+    } else if (agentFilter !== "all") {
       query = query.eq("assigned_to", agentFilter);
     }
 
@@ -195,13 +263,13 @@ export default function TasksPage() {
       query = query.lt("due_date", today).neq("status", "done");
     } else if (statusFilter === "pending") {
       query = query.gt("due_date", today).neq("status", "done");
+    } else if (statusFilter === "flagged") {
+      query = query.eq("manager_action", "rejected");
     } else if (statusFilter !== "all") {
       query = query.eq("status", statusFilter);
     }
 
-    if (matchingCustomerIds && matchingCustomerIds.length > 0) {
-      query = query.in("customer_id", matchingCustomerIds);
-    }
+    // Redundant filter removed to fix OR logic with search term
 
     const { data: tasksData, count: totalMatching } = await query
       .order("priority_score", { ascending: false })
@@ -212,9 +280,21 @@ export default function TasksPage() {
 
     // Accurate Stats Engine
     const statsQuery = (status: string) => {
-      let q = supabase.from("tasks").select("*", { count: "exact", head: true });
-      if (profile.role === "agent") q = q.eq("assigned_to", profile.id);
+      let q = supabase.from("tasks").select("*, customer:customers!inner(id, segment)", { count: "exact", head: true });
+      if (profile.role === "agent") q = applyAgentFilters(q, profile);
       
+      // Apply search filters to stats if active
+      if (debouncedSearch) {
+        let orStrings = [];
+        if (matchingCustomerIds && matchingCustomerIds.length > 0) orStrings.push(`customer_id.in.(${matchingCustomerIds.join(",")})`);
+        if (matchingOrderIds && matchingOrderIds.length > 0) orStrings.push(`order_id.in.(${matchingOrderIds.join(",")})`);
+        if (matchingCartIds && matchingCartIds.length > 0) orStrings.push(`abandoned_cart_id.in.(${matchingCartIds.join(",")})`);
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(debouncedSearch.trim().replace(/^#/, ""))) {
+          orStrings.push(`id.eq.${debouncedSearch.trim().replace(/^#/, "")}`);
+        }
+        if (orStrings.length > 0) q = q.or(orStrings.join(","));
+      }
+
       if (status === "done") return q.eq("status", "done");
       if (status === "overdue") return q.lt("due_date", today).neq("status", "done");
       if (status === "due") return q.eq("due_date", today).neq("status", "done");
@@ -222,18 +302,31 @@ export default function TasksPage() {
       return q;
     };
 
-    const [dueRes, overdueRes, pendingRes, doneRes] = await Promise.all([
+    const [dueRes, overdueRes, pendingRes, doneRes, flaggedRes] = await Promise.all([
       statsQuery("due"),
       statsQuery("overdue"),
       statsQuery("pending"),
-      statsQuery("done")
+      statsQuery("done"),
+      (() => {
+          let q = supabase.from("tasks").select("id", { count: "exact", head: true }).eq("manager_action", "rejected");
+          if (profile.role === "agent") q = applyAgentFilters(q, profile);
+          if (debouncedSearch) {
+              let orStrings = [];
+              if (matchingCustomerIds && matchingCustomerIds.length > 0) orStrings.push(`customer_id.in.(${matchingCustomerIds.join(",")})`);
+              if (matchingOrderIds && matchingOrderIds.length > 0) orStrings.push(`order_id.in.(${matchingOrderIds.join(",")})`);
+              if (matchingCartIds && matchingCartIds.length > 0) orStrings.push(`abandoned_cart_id.in.(${matchingCartIds.join(",")})`);
+              if (orStrings.length > 0) q = q.or(orStrings.join(","));
+          }
+          return q;
+      })()
     ]);
 
     const c = { 
       due: dueRes.count || 0, 
       overdue: overdueRes.count || 0, 
       pending: pendingRes.count || 0, 
-      done: doneRes.count || 0 
+      done: doneRes.count || 0,
+      flagged: flaggedRes.count || 0
     };
 
     const { data: ws } = await supabase.from("settings").select("*").eq("id", "00000000-0000-0000-0000-000000000000").maybeSingle();
@@ -263,6 +356,7 @@ export default function TasksPage() {
       return true;
     });
 
+    if (requestId !== requestIdRef.current) return; // Stale request protection
     setTasks(healedTasks);
     setCounts(c);
     setLoading(false);
@@ -270,8 +364,17 @@ export default function TasksPage() {
 
   async function handleReassign(id: string, newOwnerId: string) {
     if (!newOwnerId) return;
+    if (profile?.role !== "admin" && profile?.role !== "manager") {
+      return toast.error("Unauthorized: Only Admins/Managers can assign tasks.");
+    }
+    // Optimistic UI Update
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, assigned_to: newOwnerId } : t));
+
     const { error } = await supabase.from("tasks").update({ assigned_to: newOwnerId } as any).eq("id", id);
-    if (error) return toast.error("Failed to reassign task");
+    if (error) {
+      fetchTasks(true); // Revert on error
+      return toast.error("Failed to reassign task");
+    }
     
     // Optionally log audit event
     await logAuditEvent({
@@ -283,25 +386,35 @@ export default function TasksPage() {
     });
     
     toast.success("Task formally reassigned!");
-    fetchTasks();
+    fetchTasks(true);
   }
 
   async function handleComplete(id: string, outcome: string, note: string, disposition?: string, followUpAction?: string) {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return toast.error("User session not found. Please log in again.");
     
-    setLoading(true);
-    const { error: taskErr } = await supabase.from("tasks").update({ 
-      status: "done", 
-      completed_at: new Date().toISOString() 
-    } as any).eq("id", id);
-    
-    if (taskErr) {
-      setLoading(false);
-      return toast.error("Failed to update task");
+    // 1. Call the Centralized API for Task Completion (Guarantees Audit & Sheet Sync)
+    try {
+      const res = await fetch(`/api/tasks/${id}/complete`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          outcome, 
+          note, 
+          agent_name: user.email,
+          agent_email: user.email 
+        })
+      });
+      if (!res.ok) throw new Error("API failed");
+    } catch (err) {
+      console.error("Tasks API sync failed:", err);
+      // Fallback
+      await supabase.from("tasks").update({ status: "done", completed_at: new Date().toISOString() }).eq("id", id);
     }
 
     const task = tasks.find(t => t.id === id);
+    const customerName = task?.customer?.name || "Customer";
     if (task) {
       await supabase.from("call_logs").insert({
         task_id: id,
@@ -318,7 +431,28 @@ export default function TasksPage() {
       if (task.task_type === "recovery" && outcome === "done" && task.abandoned_cart_id) {
           await supabase.from("abandoned_carts").update({ recovery_status: "recovered" }).eq("id", task.abandoned_cart_id);
       }
+
+      // Log to Agent Activity for Live Pulse (Synced)
+      if (user) {
+        const { logActivity } = await import("@/lib/activity-logger");
+        logActivity({
+          agent_id: user.id,
+          activity_type: "task_completed",
+          description: `Completed ${task?.task_type || "task"} for ${customerName}`,
+          metadata: {
+              agent_email: user.email,
+              task_id: id,
+              task_type: task.task_type,
+              customer_name: customerName,
+              outcome: outcome,
+              note: note, // Added note for Task_Resolutions sheet
+              order_id: task.order_id,
+              cart_id: task.abandoned_cart_id
+          }
+        });
+      }
     }
+    
     await logAuditEvent({
       entityType: "task",
       entityId: id,
@@ -326,14 +460,31 @@ export default function TasksPage() {
       summary: `Completed ${task?.task_type || "task"}`,
       metadata: { outcome, disposition, followUpAction },
     });
-    toast.success("Call logged");
-    fetchTasks();
+
+    // 4. Notify Admin (NEW)
+    const orderId = task?.order?.order_number || task?.order?.shopify_order_id || "N/A";
+    const cartId = task?.abandoned_cart?.cart_token || "N/A";
+    
+    await sendAdminNotification(
+        `✅ *Task Finished*\nAgent: ${profile?.email}\nTask: ${task?.task_type.toUpperCase()}\nCustomer: ${customerName}\nOrder: #${orderId}\nCart: #${cartId}`, 
+        "info"
+    );
+
+    toast.success("Call logged & sent to Manager for Audit");
+    fetchTasks(true);
   }
 
   async function handleReschedule(id: string, date: string, reason: string) {
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("tasks").update({ status: "rescheduled", due_date: date, rescheduled_to: date } as any).eq("id", id);
-    if (error) return toast.error("Failed to reschedule");
+    try {
+      const res = await fetch(`/api/tasks/${id}/reschedule`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ new_date: date, reason })
+      });
+      if (!res.ok) throw new Error("API failed");
+    } catch (err) {
+      await supabase.from("tasks").update({ status: "rescheduled", due_date: date, rescheduled_to: date } as any).eq("id", id);
+    }
 
     const task = tasks.find(t => t.id === id);
     if (task) {
@@ -344,9 +495,28 @@ export default function TasksPage() {
         disposition: "callback_requested",
         follow_up_action: reason || "Rescheduled",
         note: `Rescheduled to ${date}${reason ? `: ${reason}` : ""}`,
-        agent_name: user?.email || "Agent",
+        agent_name: profile?.email || "Agent",
         called_at: new Date().toISOString()
       });
+
+      // Log to Agent Activity for Live Pulse (Synced)
+      if (profile?.id) {
+        const { logActivity } = await import("@/lib/activity-logger");
+        logActivity({
+          agent_id: profile.id,
+          activity_type: "task_rescheduled",
+          description: `Rescheduled ${task?.task_type || "task"} to ${date}`,
+          metadata: {
+              agent_email: profile.email,
+              task_id: id,
+              task_type: task.task_type,
+              customer_name: task.customer?.name,
+              new_date: date,
+              order_id: task.order_id,
+              cart_id: task.abandoned_cart_id
+          }
+        });
+      }
     }
 
     await logAuditEvent({
@@ -357,13 +527,20 @@ export default function TasksPage() {
       metadata: { reason },
     });
     toast.success("Task rescheduled");
-    fetchTasks();
+    fetchTasks(true);
   }
 
   async function handleSkip(id: string) {
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("tasks").update({ status: "skipped" } as any).eq("id", id);
-    if (error) return toast.error("Failed to skip");
+    try {
+      const res = await fetch(`/api/tasks/${id}/skip`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
+      if (!res.ok) throw new Error("API failed");
+    } catch (err) {
+      await supabase.from("tasks").update({ status: "skipped" } as any).eq("id", id);
+    }
 
     const task = tasks.find(t => t.id === id);
     if (task) {
@@ -374,9 +551,27 @@ export default function TasksPage() {
         disposition: "follow_up_later",
         follow_up_action: "Skipped",
         note: "Task skipped",
-        agent_name: user?.email || "Agent",
+        agent_name: profile?.email || "Agent",
         called_at: new Date().toISOString()
       });
+
+      // Log to Agent Activity for Live Pulse (Synced)
+      if (profile?.id) {
+        const { logActivity } = await import("@/lib/activity-logger");
+        logActivity({
+          agent_id: profile.id,
+          activity_type: "task_skipped",
+          description: `Skipped ${task?.task_type || "task"} for ${task.customer?.name}`,
+          metadata: {
+              agent_email: profile.email,
+              task_id: id,
+              task_type: task.task_type,
+              customer_name: task.customer?.name,
+              order_id: task.order_id,
+              cart_id: task.abandoned_cart_id
+          }
+        });
+      }
     }
     await logAuditEvent({
       entityType: "task",
@@ -385,10 +580,12 @@ export default function TasksPage() {
       summary: "Skipped task",
     });
     toast.success("Task skipped");
-    fetchTasks();
+    fetchTasks(true);
   }
 
   async function handleGlobalSync() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     setSyncing(true);
     try {
       const res = await fetch("/api/sync/all", { method: "POST" });
@@ -403,6 +600,20 @@ export default function TasksPage() {
       } else {
         toast.error(data.error || "Sync failed");
       }
+      
+      // Log this administrative action (Synced)
+      if (user) {
+        const { logActivity } = await import("@/lib/activity-logger");
+        logActivity({
+          agent_id: user.id,
+          activity_type: "manual_sync",
+          description: `Triggered global system sync: ${data.report?.logs?.processed || 0} logs processed.`,
+          metadata: {
+            agent_email: user.email,
+            sync_report: data.report
+          }
+        });
+      }
     } catch (err) {
       toast.error("Failed to sync system");
     } finally {
@@ -413,12 +624,12 @@ export default function TasksPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="All Tasks" subtitle={`${tasks.length} tasks matching filters`} 
+      <PageHeader title="All Tasks" subtitle={`${totalCount} tasks matching filters`} 
         actions={
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setShowFilters(!showFilters)}
-              className={cn("btn-secondary flex items-center gap-1.5 py-1.5 px-3", showFilters && "bg-[#2D1E6F]/10 border-[#2D1E6F] text-[#2D1E6F]")}
+              className={cn("btn-secondary flex items-center gap-1.5 py-1.5 px-3", showFilters && "bg-[#1c1c1c]/10 border-[#1c1c1c] text-[#1c1c1c]")}
             >
               <Filter className="w-3.5 h-3.5" />
               {showFilters ? "Hide Filters" : "Filters"}
@@ -441,7 +652,7 @@ export default function TasksPage() {
 
       {/* Advanced Filter Panel */}
       {showFilters && (
-        <div className="card p-4 mb-5 border-[#2D1E6F]/10 animate-slide-down bg-white shadow-lg overflow-visible z-10">
+        <div className="card p-4 mb-5 border-[#1c1c1c]/10 animate-slide-down bg-white shadow-lg overflow-visible z-10">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Due Date From</label>
@@ -451,11 +662,12 @@ export default function TasksPage() {
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Due Date To</label>
               <input type="date" className="input text-xs" value={dueEnd} onChange={e => setDueEnd(e.target.value)} />
             </div>
-            {profile?.role === "admin" && (
+            {(profile?.role === "admin" || profile?.role === "manager") && (
               <div>
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Assigned To</label>
                 <select className="select text-xs" value={agentFilter} onChange={e => setAgentFilter(e.target.value)}>
                   <option value="all">All Agents</option>
+                  <option value="unassigned">Unassigned Only</option>
                   {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
               </div>
@@ -499,11 +711,21 @@ export default function TasksPage() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1">
-            {TYPES.map(t => (
-              <button key={t.value} onClick={() => setTypeFilter(t.value)}
-                className={cn("px-3 py-1.5 rounded-md text-xs font-medium transition-all",
-                  typeFilter === t.value ? "bg-[#2D1E6F] text-white shadow-sm" : "text-gray-500 hover:text-gray-700"
-                )}>
+            {/* Specialized Types Only for Agents */}
+            {TYPES.filter(t => {
+              if (profile?.role === 'admin' || t.value === 'all' || t.value === 'flagged') return true;
+              return profile?.assigned_task_types?.includes(t.value as any);
+            }).map((t) => (
+              <button
+                key={t.value}
+                onClick={() => setTypeFilter(t.value)}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all",
+                  typeFilter === t.value
+                    ? "bg-[#1c1c1c] text-white shadow-md shadow-black/10 scale-105"
+                    : "bg-white text-gray-500 hover:bg-gray-50 border border-transparent"
+                )}
+              >
                 {t.label}
               </button>
             ))}
@@ -519,8 +741,9 @@ export default function TasksPage() {
         {[
           { label: "Due Today", count: counts.due, color: "bg-amber-50 text-amber-700 border-amber-200" },
           { label: "Overdue", count: counts.overdue, color: "bg-rose-50 text-rose-700 border-rose-200" },
-          { label: "Pending", count: counts.pending, color: "bg-blue-50 text-blue-700 border-blue-200" },
-          { label: "Done", count: counts.done, color: "bg-blue-50 text-blue-700 border-blue-200" },
+          { label: "Pending", count: counts.pending, color: "bg-[#eceae4] text-[#1c1c1c] border-[#eceae4]" },
+          { label: "Flagged", count: (counts as any).flagged || 0, color: "bg-rose-50 text-rose-600 border-rose-100" },
+          { label: "Done", count: counts.done, color: "bg-[#eceae4] text-[#1c1c1c] border-[#eceae4]" },
         ].map(s => (
           <div key={s.label} className={cn("px-3 py-1.5 rounded-lg border text-xs font-medium", s.color)}>
             {s.label}: <strong>{s.count}</strong>
@@ -540,9 +763,9 @@ export default function TasksPage() {
               onComplete={handleComplete}
               onReschedule={handleReschedule}
               onSkip={handleSkip}
-              onWhatsApp={() => fetchTasks()}
+              onWhatsApp={() => fetchTasks(true)}
               whatsappSettings={waSettings}
-              isAdmin={profile?.role === "admin"}
+              isAdmin={profile?.role === "admin" || profile?.role === "manager"}
               agents={agents}
               onReassign={handleReassign}
             />
@@ -550,50 +773,12 @@ export default function TasksPage() {
         )}
       </div>
 
-      {/* Pagination Controls */}
-      {totalCount > PAGE_SIZE && (
-        <div className="flex items-center justify-between mt-8 pb-4">
-          <p className="text-xs text-gray-500">
-            Showing <strong>{(page - 1) * PAGE_SIZE + 1}</strong> to <strong>{Math.min(page * PAGE_SIZE, totalCount)}</strong> of <strong>{totalCount}</strong> tasks
-          </p>
-          <div className="flex items-center gap-1">
-            <button 
-              onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
-              disabled={page === 1}
-              className="btn-secondary px-3 py-1.5 disabled:opacity-50 text-xs"
-            >
-              Previous
-            </button>
-            <div className="flex items-center gap-1 mx-2">
-              {[...Array(Math.min(5, Math.ceil(totalCount / PAGE_SIZE)))].map((_, i) => {
-                const pageNum = i + 1;
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => { setPage(pageNum); window.scrollTo(0, 0); }}
-                    className={cn(
-                      "w-8 h-8 rounded-md text-xs font-medium transition-all",
-                      page === pageNum ? "bg-[#2D1E6F] text-white shadow-sm" : "hover:bg-gray-100 text-gray-600"
-                    )}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-              {Math.ceil(totalCount / PAGE_SIZE) > 5 && (
-                 <span className="text-gray-400 text-xs px-1">...</span>
-              )}
-            </div>
-            <button 
-              onClick={() => { setPage(p => Math.min(Math.ceil(totalCount / PAGE_SIZE), p + 1)); window.scrollTo(0, 0); }}
-              disabled={page >= Math.ceil(totalCount / PAGE_SIZE)}
-              className="btn-secondary px-3 py-1.5 disabled:opacity-50 text-xs"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination 
+        current={page} 
+        total={totalCount} 
+        pageSize={PAGE_SIZE} 
+        onChange={(p) => { setPage(p); window.scrollTo(0, 0); }} 
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -10,7 +10,7 @@ export async function GET() {
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     
     // Use service role to bypass RLS for dashboard feed
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createServerClient();
 
     const { data: logsData, error } = await supabase
       .from("webhook_logs")

@@ -12,12 +12,39 @@
  */
 
 const express       = require("express");
+const helmet        = require("helmet");
+const rateLimit     = require("express-rate-limit");
+const { z }         = require("zod");
 const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 const qrcode        = require("qrcode-terminal");
+require("dotenv").config({ path: ".env.local" });
 
 const app  = express();
 const PORT = 3001;
+
+// 1. Security Headers
+app.use(helmet());
+
+// 2. Rate Limiting (Prevent API abuse)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: "Too many requests from this IP, please try again after 15 minutes"
+});
+app.use("/send", limiter);
+
 app.use(express.json());
+
+// 3. Input Validation Schemas
+const SendMessageSchema = z.object({
+  phone: z.string().min(10).max(20),
+  message: z.string().min(1),
+  buttons: z.array(z.object({ text: z.string(), id: z.string() })).optional(),
+  imagePath: z.string().optional(),
+  mediaData: z.string().optional(),
+  mimetype: z.string().optional(),
+  filename: z.string().optional()
+});
 
 let waClient   = null;
 let isReady    = false;
@@ -32,7 +59,7 @@ let processing = false;
 async function processQueue() {
     if (processing || msgQueue.length === 0) return;
     processing = true;
-    const { phone, message, imagePath, mediaData, mimetype, filename, resolve } = msgQueue.shift();
+    const { phone, message, buttons, imagePath, mediaData, mimetype, filename, resolve } = msgQueue.shift();
     try {
         // 1. Clean and Format Number
         let cleaned = phone.replace(/[^\d]/g, "");
@@ -45,7 +72,6 @@ async function processQueue() {
         console.log(`[WA] Formatting chatId for: ${cleaned}`);
         
         // 2. Get Official WID (WhatsApp ID)
-        // This is the most reliable way to send to non-contacts
         const numberDetails = await waClient.getNumberId(cleaned);
         
         if (!numberDetails || !numberDetails._serialized) {
@@ -55,6 +81,13 @@ async function processQueue() {
         const chatId = numberDetails._serialized;
 
         // 3. Send Message
+        let content = message;
+        if (buttons && buttons.length > 0) {
+            // Support for buttons
+            const waButtons = buttons.map(b => ({ body: b.text, id: b.id }));
+            content = new Buttons(message, waButtons, "", "");
+        }
+
         if (mediaData && mimetype) {
             console.log(`[WA] Sending media to ${chatId}...`);
             const media = new MessageMedia(mimetype, mediaData, filename || "file");
@@ -63,7 +96,7 @@ async function processQueue() {
             const media = MessageMedia.fromFilePath(imagePath);
             await waClient.sendMessage(chatId, media, { caption: message });
         } else {
-            await waClient.sendMessage(chatId, message);
+            await waClient.sendMessage(chatId, content);
         }
         
         console.log(`[WA] Message sent to ${chatId} ✅`);
@@ -73,7 +106,7 @@ async function processQueue() {
         resolve({ ok: false, error: e.message });
     }
     processing = false;
-    setTimeout(processQueue, 200); // Slightly more delay to avoid rate limiting
+    setTimeout(processQueue, 200); 
 }
 
 
@@ -122,19 +155,24 @@ function initClient() {
     });
 
     waClient.on("message", async (msg) => {
-        console.log(`[WA] Incoming message from ${msg.from}: ${msg.body.substring(0, 20)}...`);
+        console.log(`[WA] Incoming ${msg.type} from ${msg.from}: ${msg.body.substring(0, 20)}...`);
         try {
             // Forward to CRM Webhook
             const crmUrl = process.env.CRM_WEBHOOK_URL || "http://localhost:3000/api/webhooks/whatsapp";
+            
+            const payload = {
+                from: msg.from,
+                body: msg.body,
+                timestamp: msg.timestamp,
+                type: msg.type,
+                selectedButtonId: msg.selectedButtonId || null,
+                selectedRowId: msg.selectedRowId || null
+            };
+
             await fetch(crmUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    from: msg.from,
-                    body: msg.body,
-                    timestamp: msg.timestamp,
-                    type: msg.type
-                })
+                body: JSON.stringify(payload)
             });
         } catch (e) {
             console.error("[WA] Failed to forward message to CRM:", e.message);
@@ -232,25 +270,31 @@ app.get("/qr", (req, res) => {
 });
 
 app.post("/send", async (req, res) => {
-    const { phone, message, imagePath, mediaData, mimetype, filename } = req.body;
+    try {
+        // Validate Input
+        const validated = SendMessageSchema.parse(req.body);
+        const { phone, message, buttons, imagePath, mediaData, mimetype, filename } = validated;
 
-    if (!phone || !message) {
-        return res.status(400).json({ ok: false, error: "phone and message are required" });
+        if (!isReady) {
+            return res.status(503).json({ ok: false, error: `WhatsApp not ready — state: ${clientState}` });
+        }
+
+        // Clean phone number
+        let cleaned = phone.replace(/[^\d+]/g, "").replace(/^'/, "");
+        if (!cleaned.startsWith("+")) cleaned = "+" + cleaned;
+
+        const result = await new Promise((resolve) => {
+            msgQueue.push({ phone: cleaned, message, buttons, imagePath, mediaData, mimetype, filename, resolve });
+            processQueue();
+        });
+
+        res.json(result);
+    } catch (e) {
+        if (e instanceof z.ZodError) {
+            return res.status(400).json({ ok: false, error: "Validation failed", details: e.errors });
+        }
+        res.status(500).json({ ok: false, error: e.message });
     }
-    if (!isReady) {
-        return res.status(503).json({ ok: false, error: `WhatsApp not ready — state: ${clientState}` });
-    }
-
-    // Clean phone number
-    let cleaned = phone.replace(/[^\d+]/g, "").replace(/^'/, "");
-    if (!cleaned.startsWith("+")) cleaned = "+" + cleaned;
-
-    const result = await new Promise((resolve) => {
-        msgQueue.push({ phone: cleaned, message, imagePath, mediaData, mimetype, filename, resolve });
-        processQueue();
-    });
-
-    res.json(result);
 });
 
 
@@ -292,3 +336,48 @@ app.listen(PORT, "0.0.0.0", () => {
     console.log(`${"=".repeat(50)}\n`);
     initClient();
 });
+
+// ── Backup Daemon (Daily at 3 AM) ──────────────────────────────────────────────
+const BACKUP_SECRET = process.env.BACKUP_SECRET || "cureforever_sync_secret_2026";
+const BACKUP_URL = (process.env.CRM_URL || "http://127.0.0.1:3000") + "/api/backup?secret=" + BACKUP_SECRET;
+
+async function runBackup() {
+    console.log("[BACKUP] Triggering Scheduled Daily Backup...");
+    try {
+        const res = await fetch(BACKUP_URL);
+        const text = await res.text();
+        
+        try {
+            const data = JSON.parse(text);
+            if (data.success) {
+                console.log("[BACKUP] Backup successful! ✅ (Files uploaded to Google Drive)");
+            } else {
+                console.error("[BACKUP] Backup failed:", data.error);
+            }
+        } catch (parseErr) {
+            console.error("[BACKUP] Response was not JSON. (Is Next.js server running on port 3000?)");
+            console.error("[BACKUP] Response start:", text.substring(0, 100));
+        }
+    } catch (e) {
+        console.error("[BACKUP] Backup request failed:", e.message);
+    }
+}
+
+// Check every hour to see if it's 3 AM
+let lastBackupDate = "";
+setInterval(() => {
+    const now = new Date();
+    const hour = now.getHours();
+    const dateStr = now.toISOString().split("T")[0];
+
+    if (hour === 3 && lastBackupDate !== dateStr) {
+        lastBackupDate = dateStr;
+        runBackup();
+    }
+}, 3600000); // Check once an hour
+
+// Run a one-time backup after 30 seconds on startup for verification
+setTimeout(() => {
+    console.log("[BACKUP] Running startup backup verification...");
+    runBackup();
+}, 30000);

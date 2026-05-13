@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0A2514",
+  themeColor: "#f7f4ed",
   width: "device-width",
   initialScale: 1,
 };
@@ -28,15 +28,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <style>{`
-          :root {
-            --font-display: 'DM Serif Display', serif;
-            --font-sans: 'DM Sans', sans-serif;
-          }
-        `}</style>
-      </head>
-      <body suppressHydrationWarning className="antialiased" style={{ fontFamily: 'var(--font-sans)', color: '#0A2514', background: '#f8f7f4' }}>
+      <body suppressHydrationWarning className="antialiased" style={{ background: '#f7f4ed' }}>
         <PHProvider>
           <Suspense fallback={null}>
             <PostHogPageView />
@@ -47,12 +39,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           position="bottom-right"
           toastOptions={{
             style: { 
-              background: "#0A2514", 
-              color: "#CBF653", 
+              background: "#1c1c1c", 
+              color: "#fcfbf8", 
               fontSize: "13px", 
-              borderRadius: "10px", 
+              borderRadius: "6px", 
               padding: "10px 14px",
-              boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" 
+              boxShadow: "rgba(0,0,0,0.1) 0px 4px 12px" 
             },
             duration: 3000,
           }}
@@ -61,4 +53,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-

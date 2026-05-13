@@ -57,7 +57,9 @@ export default async function proxy(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/api/sync") ||
     request.nextUrl.pathname.startsWith("/api/cron");
   const isPublicPath = request.nextUrl.pathname.startsWith("/login") || 
-                       request.nextUrl.pathname.startsWith("/api/webhooks");
+                       request.nextUrl.pathname.startsWith("/api/webhooks") ||
+                       request.nextUrl.pathname.startsWith("/api/backup") ||
+                       request.nextUrl.pathname.startsWith("/api/activity-logs");
   const isAuthInternal = isProtectedSystemRoute && (hasValidSystemSecret(request) || hasValidSyncSecret(request));
   console.log("PROXY: Protected:", isProtectedSystemRoute, "AuthInternal:", isAuthInternal);
 

@@ -1,14 +1,17 @@
 "use client";
 import { useState } from "react";
-import { Phone, CheckCircle, Clock, SkipForward, MessageSquare, Calendar, Send, Paperclip, X, Globe, Search } from "lucide-react";
+import { Phone, CheckCircle, Clock, SkipForward, MessageSquare, Calendar, Send, Paperclip, X, Globe, Search, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { Avatar, TaskTypeBadge, TaskStatusBadge, Modal } from "./ui";
 import ShiprocketOrderView from "./ShiprocketOrderView";
 import { createClient } from "@/lib/supabase";
-import { formatDate, TASK_TYPE_CONFIG, cn, getTaskProductName } from "@/lib/utils";
+import { formatDate, TASK_TYPE_CONFIG, cn, getTaskProductName, initials, timeAgo } from "@/lib/utils";
 import type { Task, Customer, Order, AbandonedCart } from "@/types";
 import { logAuditEvent } from "@/lib/audit";
+import { useChat } from "@/context/ChatContext";
+import { useRouter } from "next/navigation";
+import RTOClaimGenerator from "./RTOClaimGenerator";
 interface TaskCardProps {
   task: Task & { customer: Customer; order?: Order; abandoned_cart?: AbandonedCart };
   onComplete?: (id: string, outcome: string, note: string, disposition?: string, followUpAction?: string) => void;
@@ -23,18 +26,26 @@ interface TaskCardProps {
 }
 
 const DEFAULT_TEMPLATES: Record<string, string> = {
+  cod_verify: "Hi {{name}} 👋, thanks for ordering {{product}} from CureForever! Just a quick check to confirm your COD order before we ship it out. Should we go ahead? ✅",
+  prepaid_confirm: "Hi {{name}} 👋, thank you for choosing CureForever! We’ve received your prepaid order for {{product}}. Our team is preparing it for dispatch. 🌿",
+  dispatched: "Great news {{name}}! Your {{product}} has been dispatched 🚚. You can track it here: https://cureforever.shiprocket.co/tracking . It should reach you soon! 🌿",
+  out_for_delivery: "Hi {{name}}, your CureForever order for {{product}} is out for delivery today! 📦 Keep your phone handy; our delivery partner will call you shortly. 🌿",
+  failed_attempt: "Hi {{name}}, we tried to deliver your order today but couldn't reach you. 📦 We will try again tomorrow. Please let us know if you need to update anything! 🙏",
   review: "Hi {{name}} 👋, thank you for ordering {{product}}! How was your experience? We'd love to hear your feedback. 🌿\n\nPlease leave us a review here: https://search.google.com/local/writereview?placeid=ChIJv5_GsCGRyzsR2_y1wjbi3Ck",
   reorder: "Hi {{name}}! It's been a while since your last {{product}} order. Time for a refill? 💊 Use code REFILL10 for 10% off!",
-  final_followup: "Hi {{name}}, just checking in one last time regarding your {{product}} journey. We're here if you need anything! 🙏",
-  recovery: "Hi {{name}} 👋, we noticed you left some items in your cart! 🛒 Can we help you complete your purchase? Use code RECOVER5 for 5% off! 🌿",
+  recovery: "Hi {{name}} 👋, we noticed you left some items in your cart! 🛒 Can we help you complete your purchase? Use code SAVE5 for 5% off! {{abandon_link}} 🌿",
   issue_resolution: "Hi {{name}}, we noticed an issue with your recent order for {{product}}. Our team is reviewing it and will help resolve it quickly.",
   transit_update: "Hi {{name}} 👋, we see your order for {{product}} is currently in transit! 🚚 You can track it here: https://cureforever.shiprocket.co/tracking . We'll update you once it's out for delivery! 🌿",
+  ndr_resolution: "Hi {{name}} 👋, we see a delivery issue for {{product}}. 📦 Could you please share an alternate number or confirm your address landmark? This will help us ensure successful delivery! 🌿",
+  loyalty_gift: "Hi {{name}}! 🎁 As a valued CureForever customer, we've added a special surprise to your next order of {{product}}. Just use code LOYALTY at checkout! 🌿",
 };
 
 export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWhatsApp, whatsappSettings, compact, isAdmin, agents, onReassign }: TaskCardProps) {
+  const supabase = createClient();
   const [doneModal, setDoneModal] = useState(false);
   const [rescheduleModal, setRescheduleModal] = useState(false);
   const [waModal, setWaModal] = useState(false);
+  const [emailModal, setEmailModal] = useState(false);
   const [outcome, setOutcome] = useState("done");
   const [note, setNote] = useState("");
   const [disposition, setDisposition] = useState("interested");
@@ -44,20 +55,27 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   const [waMessage, setWaMessage] = useState("");
   const [waFile, setWaFile] = useState<File | null>(null);
   const [sendingWa, setSendingWa] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [emailFile, setEmailFile] = useState<File | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [sendWaInLog, setSendWaInLog] = useState(false);
   const [logWaMessage, setLogWaMessage] = useState("");
+
+  const abandonedCart = (Array.isArray(task.abandoned_cart) ? task.abandoned_cart[0] : task.abandoned_cart) as AbandonedCart | undefined;
+  const order = (Array.isArray(task.order) ? task.order[0] : task.order) as Order | undefined;
 
   const cfg = TASK_TYPE_CONFIG[task.task_type];
   const isDone = task.status === "done" || task.status === "cancelled";
   const isOverdue = task.status === "overdue";
   
-  const product = getTaskProductName(task);
+  const product = getTaskProductName({ ...task, abandoned_cart: abandonedCart, order: order });
   
   // Handle line items for the details modal
-  const rawItems = task.order?.line_items || task.abandoned_cart?.line_items || [];
+  const rawItems = order?.line_items || abandonedCart?.line_items || [];
   const metaItem = rawItems.find((i: any) => i.__metadata);
-  const meta = metaItem?.payload || (task.abandoned_cart as any)?.custom_meta || (task.order as any)?.custom_meta;
+  const meta = metaItem?.payload || (abandonedCart as any)?.custom_meta || (order as any)?.custom_meta;
   
   let items = Array.isArray(rawItems) ? rawItems.filter((i: any) => !i.__metadata) : [];
   
@@ -65,20 +83,20 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   if (items.length === 0 && product && product !== "your items" && product !== "—" && product !== "Wellness Refill") {
     items = [{
       name: product,
-      price: task.order?.total_price || task.abandoned_cart?.total_price || 0,
+      price: order?.total_price || abandonedCart?.total_price || 0,
       quantity: 1,
       variant: "Default Variant"
     }];
   }
   
-  const daysSince = task.order?.delivered_at
-    ? Math.round((Date.now() - new Date(task.order.delivered_at).getTime()) / 86400000)
+  const daysSince = order?.delivered_at
+    ? Math.round((Date.now() - new Date(order.delivered_at).getTime()) / 86400000)
     : null;
 
-  const totalAmount = task.order?.total_price || task.abandoned_cart?.total_price || 0;
+  const totalAmount = order?.total_price || abandonedCart?.total_price || 0;
   
   // Calculate subtotal from items with robust property mapping
-  let subtotal = task.order?.subtotal || task.abandoned_cart?.subtotal || 
+  let subtotal = order?.subtotal || abandonedCart?.subtotal || 
     items.reduce((s: number, i: any) => {
       const price = Number(i.price || i.productPrice || i.amount || 0);
       const qty = Number(i.quantity || i.qty || i.productQuantity || 1);
@@ -88,8 +106,8 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   // If subtotal is STILL 0 but we have a total, assume subtotal = total (for simple checkout payloads)
   if (subtotal === 0 && totalAmount > 0) subtotal = totalAmount;
 
-  let discountAmount = task.order?.total_discounts || 
-    task.abandoned_cart?.total_discounts ||
+  let discountAmount = order?.total_discounts || 
+    abandonedCart?.total_discounts ||
     Number(meta?.total_discount || 0) ||
     Number(meta?.DISCOUNTAMOUNT || 0) || 
     Number(meta?.prepaidDiscount || 0) || 
@@ -97,7 +115,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     Number(task.customer?.custom_meta?.prepaidDiscount || 0) ||
     Number(task.customer?.custom_meta?.discount || 0);
 
-  let shippingCharges = task.order?.shipping_charges || 
+  let shippingCharges = order?.shipping_charges || 
     Number(meta?.SHIPPINGCHARGES || 0) || 
     Number(meta?.shipping_charges || 0) ||
     Number(meta?.shipping_cost || 0) ||
@@ -118,7 +136,12 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     if (meta?.custom_attributes?.[key]) return meta.custom_attributes[key];
     
     // 2. Check URL params
-    const url = String(meta?.landing_page_url || meta?.cart_attributes?.landing_page_url || "");
+    const url = String(
+      meta?.landing_page_url || 
+      meta?.cart_attributes?.landing_page_url || 
+      meta?.custom_attributes?.landing_page_url || 
+      ""
+    );
     if (url.includes("?")) {
       const search = url.split("?")[1];
       const params = new URLSearchParams(search);
@@ -130,10 +153,70 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   const utmSource = getUtm("utm_source");
   const utmMedium = getUtm("utm_medium");
   const utmCampaign = getUtm("utm_campaign");
-  const trafficSource = utmSource ? `${utmSource} / ${utmMedium || "direct"}` : null;
+  const trafficSource = utmSource ? `${utmSource} / ${utmMedium || "direct"}${utmCampaign ? ` (${utmCampaign})` : ""}` : null;
+
+  // Extraction for Action Links
+  const metadataItemForLink = (abandonedCart?.line_items as any[])?.find(i => i.__metadata);
+  const rawMeta = metadataItemForLink?.payload || (abandonedCart as any)?.custom_meta;
+  
+  // 🚀 HIGH PRIORITY: Check if landing_page_url is actually a recovery link (Fastrr behavior)
+  const landingUrl = String(rawMeta?.landing_page_url || rawMeta?.cart_attributes?.landing_page_url || "");
+  let checkoutUrl = (landingUrl.includes("cart-resume-id") && landingUrl.includes("guest-abandon-payload")) 
+    ? landingUrl 
+    : ((abandonedCart as any)?.custom_meta?.ABANDONLINK || metadataItemForLink?.payload?.checkout_url);
+  
+  // 🔗 FALLBACK: Construct link if missing or incomplete
+  if (abandonedCart?.cart_token) {
+    const token = abandonedCart.cart_token;
+    const isFastrr = token.length > 20;
+    
+    if (!checkoutUrl || (isFastrr && !checkoutUrl.includes("guest-abandon-payload"))) {
+      if (isFastrr) {
+        // Construct Fastrr Link with pre-fill payload
+        const customer = task.customer;
+        const firstName = customer.name?.split(" ")[0] || "";
+        const lastName = customer.name?.split(" ").slice(1).join(" ") || "";
+        
+        const prefillData = {
+          prefill_address: JSON.stringify({
+            pincode: customer.zip || "",
+            firstName: firstName,
+            lastName: lastName,
+            phone: customer.phone || "",
+            line1: customer.address || "",
+            line2: "",
+            city: customer.city || "",
+            state: customer.state || "",
+            country: "India",
+            email: customer.email || ""
+          }),
+          items: (abandonedCart?.line_items as any[])?.filter(i => !i.__metadata).map(i => ({
+            variant_id: String(i.variant_id),
+            quantity: i.quantity
+          })),
+          token: token,
+          email: customer.email || "",
+          phone: customer.phone || "",
+          firstName: firstName,
+          lastName: lastName
+        };
+        const encodedPayload = btoa(unescape(encodeURIComponent(JSON.stringify(prefillData))));
+        // Add JWT header prefix to match Shiprocket format
+        const jwtPayload = `eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.${encodedPayload}`;
+        checkoutUrl = `https://cureforever.in/?cart-resume-id=${token}&type=report&guest-abandon-payload=${jwtPayload}`;
+      } else if (!checkoutUrl) {
+        // Shopify Format fallback
+        checkoutUrl = `https://cureforever.in/cart/${token}`;
+      }
+    }
+  }
+
 
 
   async function handleDone() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    
     if (sendWaInLog && logWaMessage) {
         setSendingWa(true);
         try {
@@ -154,6 +237,34 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         }
     }
 
+    // [ADMIN NOTIFY] Task Completion
+    const { sendAdminNotification } = await import("@/lib/notifications");
+    const agentName = (task as any).assigned_profile?.name || "Agent";
+    const detailString = task.order ? `Order: ${task.order.order_number}` : task.abandoned_cart ? `Cart: ${task.abandoned_cart.cart_token?.slice(-8)}` : "";
+    
+    await sendAdminNotification(
+      `✅ *Task Completed*\n*Agent:* ${agentName}\n*Customer:* ${task.customer.name}\n*Type:* ${TASK_TYPE_CONFIG[task.task_type].label}\n*Outcome:* ${outcome.replace(/_/g, ' ').toUpperCase()}\n${detailString}`,
+      "info",
+      "task_completion"
+    );
+
+    if (user?.id) {
+        const { logActivity } = await import("@/lib/activity-logger");
+        logActivity({
+            agent_id: user.id,
+            activity_type: "task_completion",
+            description: `Completed ${task.task_type.replace("_", " ")} for ${task.customer.name}`,
+            metadata: {
+                task_id: task.id,
+                task_type: task.task_type,
+                customer_name: task.customer.name,
+                outcome: outcome,
+                order_id: task.order_id,
+                cart_id: task.abandoned_cart_id
+            }
+        });
+    }
+
     onComplete?.(task.id, outcome, note, disposition, followUpAction);
     setDoneModal(false);
     // Reset - Use 'done' as default which is verified allowed
@@ -161,8 +272,73 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     setSendWaInLog(false); setLogWaMessage("");
   }
 
+  const { setActiveChannel } = useChat();
+  const router = useRouter();
+
+  async function handleTaskChat() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) return toast.error("Please login to chat");
+
+      // 1. Check if task channel exists
+      let { data: channel } = await supabase
+        .from('channels')
+        .select('*')
+        .eq('type', 'task')
+        .eq('metadata->task_id', task.id)
+        .maybeSingle();
+
+      if (!channel) {
+        // 2. Create task channel
+        const { data: newChannel, error: createError } = await supabase
+          .from('channels')
+          .insert({
+            name: `Task: ${task.customer.name}`,
+            type: 'task',
+            created_by: user.id,
+            metadata: { 
+              task_id: task.id,
+              task_title: product,
+              customer_name: task.customer.name
+            }
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        channel = newChannel;
+
+        // 3. Add members (current user)
+        await supabase.from('channel_members').insert({
+          channel_id: channel.id,
+          user_id: user.id,
+          role: 'admin'
+        });
+      }
+
+      // 4. Navigate and set active
+      setActiveChannel(channel);
+      router.push('/chat');
+    } catch (err: any) {
+      console.error("Task chat error:", err.message);
+      toast.error("Failed to start task chat");
+    }
+  }
+
   function handleReschedule() {
     if (!newDate) return toast.error("Please pick a date");
+    
+    // [ADMIN NOTIFY] Reschedule
+    import("@/lib/notifications").then(({ sendAdminNotification }) => {
+      const agentName = (task as any).assigned_profile?.name || "Agent";
+      sendAdminNotification(
+        `📅 *Task Rescheduled*\n*Agent:* ${agentName}\n*Customer:* ${task.customer.name}\n*New Date:* ${newDate}\n*Reason:* ${reason || "Not specified"}`,
+        "info",
+        "task_reschedule"
+      );
+    });
+
     onReschedule?.(task.id, newDate, reason);
     setRescheduleModal(false);
     setNewDate(""); setReason("");
@@ -204,8 +380,8 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         toast.success("WhatsApp sent!");
         
         // 3. Log to History
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
         const logNote = waFile ? `WhatsApp: "${waMessage}" (File: ${waFile.name})` : `WhatsApp: "${waMessage}"`;
         
         const { error: logErr } = await supabase.from("call_logs").insert({
@@ -226,17 +402,30 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
           // 4. Log to Agent Activity (NEW)
           if (user?.id) {
-            await supabase.from("agent_activity_logs").insert({
+            const { logActivity } = await import("@/lib/activity-logger");
+            logActivity({
               agent_id: user.id,
-            activity_type: "whatsapp",
-            reference_id: task.id,
-            metadata: {
-              task_type: task.task_type,
-              customer_name: task.customer.name,
-              message_len: waMessage.length
-            }
+              activity_type: "whatsapp",
+              description: `Sent WhatsApp to ${task.customer.name}: ${waMessage.slice(0, 50)}...`,
+              metadata: {
+                task_id: task.id,
+                task_type: task.task_type,
+                customer_name: task.customer.name,
+                message_len: waMessage.length,
+                order_id: task.order_id,
+                cart_id: task.abandoned_cart_id
+              }
             });
           }
+
+          // [ADMIN NOTIFY] WhatsApp Sent
+          const { sendAdminNotification } = await import("@/lib/notifications");
+          const agentName = (task as any).assigned_profile?.name || user?.email || "Agent";
+          await sendAdminNotification(
+            `💬 *WhatsApp Sent*\n*Agent:* ${agentName}\n*Customer:* ${task.customer.name}\n*Message:* ${waMessage.slice(0, 100)}${waMessage.length > 100 ? "..." : ""}`,
+            "info",
+            "whatsapp_send"
+          );
 
           setWaModal(false);
         }
@@ -250,13 +439,107 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     }
   }
 
+
+  async function handleSendEmail() {
+    if (!task.customer.email) return toast.error("Customer has no email address");
+    setSendingEmail(true);
+    try {
+      let attachments: any[] = [];
+      if (emailFile) {
+        const reader = new FileReader();
+        const base64Promise = new Promise((resolve) => {
+          reader.onload = () => {
+            const base64String = (reader.result as string).split(',')[1];
+            resolve(base64String);
+          };
+          reader.readAsDataURL(emailFile);
+        });
+        const base64Content = await base64Promise;
+        attachments.push({
+          filename: emailFile.name,
+          content: base64Content,
+          contentType: emailFile.type || "application/octet-stream"
+        });
+      }
+
+      const res = await fetch("/api/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: task.customer.email,
+          subject: emailSubject,
+          message: emailMessage,
+          attachments
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success("Email sent!");
+        setEmailModal(false);
+        setEmailFile(null);
+
+        // Log to Activity
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
+        if (user?.id) {
+          const { logActivity } = await import("@/lib/activity-logger");
+          logActivity({
+            agent_id: user.id,
+            activity_type: "email_sent",
+            description: `Sent Email to ${task.customer.name}: ${emailSubject}`,
+            metadata: {
+              task_id: task.id,
+              customer_name: task.customer.name,
+              subject: emailSubject,
+              has_attachment: !!emailFile
+            }
+          });
+        }
+      } else {
+        toast.error(data.error || "Failed to send Email");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Email API Error");
+    } finally {
+      setSendingEmail(false);
+    }
+  }
+
   function openWa() {
-    const template = DEFAULT_TEMPLATES[task.task_type as keyof typeof DEFAULT_TEMPLATES] || "";
-    const personalised = template
-      .replace("{{name}}", task.customer.name)
+    let type = task.task_type;
+    // Smart default based on order payment status
+    if (type === "recovery" && !checkoutUrl) type = "recovery"; // keep as is
+    else if (task.order?.payment_status === "pending" || task.order?.payment_status === "unpaid") type = "cod_verify";
+    
+    const template = DEFAULT_TEMPLATES[type as keyof typeof DEFAULT_TEMPLATES] || DEFAULT_TEMPLATES[task.task_type as keyof typeof DEFAULT_TEMPLATES] || "";
+    let msg = template
+      .replace("{{name}}", task.customer.name || "there")
       .replace("{{product}}", product);
-    setWaMessage(personalised);
+    
+    if (msg.includes("{{abandon_link}}")) {
+      const abandonLink = checkoutUrl || "https://cureforever.in/cart";
+      msg = msg.replace("{{abandon_link}}", abandonLink);
+    }
+    
+    setWaMessage(msg);
     setWaModal(true);
+  }
+
+
+  function openEmail() {
+    const template = DEFAULT_TEMPLATES[task.task_type as keyof typeof DEFAULT_TEMPLATES] || "";
+    let msg = template
+      .replace("{{name}}", task.customer.name || "there")
+      .replace("{{product}}", product);
+    
+    if (msg.includes("{{abandon_link}}")) {
+      const abandonLink = checkoutUrl || "https://cureforever.in/cart";
+      msg = msg.replace("{{abandon_link}}", abandonLink);
+    }
+    
+    setEmailSubject(`${TASK_TYPE_CONFIG[task.task_type].label} - CureForever`);
+    setEmailMessage(msg);
+    setEmailModal(true);
   }
 
   return (
@@ -279,7 +562,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                 <Link 
                   href={`/customers/${task.customer_id}`} 
                   onClick={(e) => e.stopPropagation()} 
-                  className="font-bold text-[#2D1E6F] text-sm group-hover/card:text-[#2D1E6F]/80 transition-colors flex items-center gap-2 hover:underline"
+                  className="font-bold text-[#1c1c1c] text-sm group-hover/card:text-[#1c1c1c]/80 transition-colors flex items-center gap-2 hover:underline"
                 >
                   {task.customer.name}
                   {isDone && <span className="badge bg-blue-50 text-blue-600 text-[10px]">DONE</span>}
@@ -288,7 +571,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   onClick={(e) => e.stopPropagation()} 
                   className="inline-block"
                 >
-                  <a href={`tel:${task.customer.phone}`} className="text-[11px] text-gray-500 hover:text-[#2D1E6F] flex items-center gap-1 mt-0.5">
+                  <a href={`tel:${task.customer.phone}`} className="text-[11px] text-gray-500 hover:text-[#1c1c1c] flex items-center gap-1 mt-0.5">
                     <Phone className="w-2.5 h-2.5" /> {task.customer.phone}
                   </a>
                 </div>
@@ -319,8 +602,14 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
             </div>
 
             <div className="mt-2 text-xs text-gray-400 font-medium flex items-center min-w-0">
-              <span className="text-gray-600 flex-shrink-0">
-                {task.order?.order_number || task.abandoned_cart?.cart_token?.slice(0, 8) || "—"}
+              <span className="text-gray-600 flex-shrink-0 flex items-center gap-1">
+                {task.order ? (
+                  <>Order: {task.order.order_number || task.order.shopify_order_id?.slice(-8)}</>
+                ) : task.abandoned_cart ? (
+                  <>Cart: {task.abandoned_cart.cart_token?.slice(-12) || task.abandoned_cart.id.slice(0, 8)}</>
+                ) : (
+                  "—"
+                )}
               </span> 
               <span className="mx-1.5 flex-shrink-0">·</span> 
               <span className="truncate flex-1 min-w-0" title={product}>{product}</span> 
@@ -339,8 +628,11 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                 <button onClick={() => setDoneModal(true)} className="btn-primary text-[10px] py-1 px-4 h-8 rounded-lg">
                   <CheckCircle className="w-3 h-3" /> Log Call
                 </button>
-                <button onClick={openWa} className="btn-secondary text-[10px] py-1 px-4 h-8 text-[#2D1E6F] border-[#2D1E6F]/20 hover:bg-[#2D1E6F]/5">
+                <button onClick={openWa} className="btn-secondary text-[10px] py-1 px-4 h-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5">
                   <Send className="w-3 h-3" /> WhatsApp
+                </button>
+                <button onClick={openEmail} className="btn-secondary text-[10px] py-1 px-4 h-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5">
+                  <MessageSquare className="w-3 h-3" /> Email
                 </button>
                 <button onClick={() => setRescheduleModal(true)} className="btn-secondary text-[10px] py-1 px-4 h-8">
                   <Calendar className="w-3 h-3" /> Reschedule
@@ -354,23 +646,40 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     <Modal 
         open={showDetail} 
         onClose={() => setShowDetail(false)} 
-        title={task.order ? `Order Details — ${task.customer.name}` : `Abandoned Cart — ${task.customer.name}`} 
+        title={(
+          <span>
+            {task.order ? 'Order Details' : 'Abandoned Cart'} — {task.customer.name} (
+            <a href={`tel:${task.customer.phone}`} className="text-blue-600 hover:underline">{task.customer.phone}</a>
+            {task.customer.email ? (
+              <> / <a href={`mailto:${task.customer.email}`} className="text-blue-600 hover:underline">{task.customer.email}</a></>
+            ) : null}
+            )
+          </span>
+        )} 
         maxWidth="max-w-6xl"
         footer={(
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
-              <Avatar name={task.customer.name} size="sm" />
+              <div className="w-8 h-8 rounded-full bg-[#1c1c1c]/10 flex items-center justify-center text-[#1c1c1c] text-[10px] font-bold">
+                {initials((task as any).assigned_profile?.name || "U")}
+              </div>
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Assigned Agent</div>
-                <div className="text-xs font-bold text-[#2D1E6F]">{(task as any).assigned_profile?.name || "Unassigned"}</div>
+                <div className="text-xs font-bold text-[#1c1c1c]">{(task as any).assigned_profile?.name || "Unassigned"}</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button onClick={() => { setShowDetail(false); handleTaskChat(); }} className="btn-secondary text-xs py-2 px-6 flex items-center gap-2 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5">
+                <MessageSquare className="w-3 h-3" /> Chat with Team
+              </button>
               <button onClick={() => { setShowDetail(false); setDoneModal(true); }} className="btn-primary text-xs py-2 px-8">
                 Log Call Outcome
               </button>
-              <button onClick={() => { setShowDetail(false); openWa(); }} className="btn-secondary text-xs py-2 px-8 text-[#2D1E6F] border-[#2D1E6F]/20 hover:bg-[#2D1E6F]/5">
+              <button onClick={() => { setShowDetail(false); openWa(); }} className="btn-secondary text-xs py-2 px-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5">
                 WhatsApp
+              </button>
+              <button onClick={() => { setShowDetail(false); openEmail(); }} className="btn-secondary text-xs py-2 px-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5">
+                Email
               </button>
               <button onClick={() => setShowDetail(false)} className="btn-secondary text-xs py-2 px-6 text-gray-500">
                 Close
@@ -416,11 +725,11 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                 <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
                   <Avatar name={task.customer.name} size="lg" />
                   <div>
-                    <Link href={`/customers/${task.customer_id}`} className="font-bold text-[#2D1E6F] hover:underline hover:text-[#2D1E6F]/80 transition-colors">
+                    <Link href={`/customers/${task.customer_id}`} className="font-bold text-[#1c1c1c] hover:underline hover:text-[#1c1c1c]/80 transition-colors">
                       {task.customer.name}
                     </Link>
                     <div className="text-xs text-gray-500 flex items-center gap-1">
-                      <span className={cn("w-2 h-2 rounded-full", isOverdue ? "bg-rose-500" : "bg-[#2D1E6F]")} />
+                      <span className={cn("w-2 h-2 rounded-full", isOverdue ? "bg-rose-500" : "bg-[#1c1c1c]")} />
                       {TASK_TYPE_CONFIG[task.task_type].label}
                     </div>
                   </div>
@@ -433,7 +742,28 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                     </div>
                     <div className="text-xs font-semibold text-blue-700 capitalize">
                       {trafficSource}
-                      {utmCampaign && <span className="text-[10px] text-blue-400 font-normal ml-2 truncate">({utmCampaign})</span>}
+                    </div>
+                  </div>
+                )}
+
+                {meta?.rtoPredict && (
+                  <div className={cn(
+                    "p-3 rounded-xl border flex flex-col gap-1",
+                    meta.rtoPredict.toLowerCase() === 'high' 
+                      ? "bg-rose-50 border-rose-100 text-rose-700" 
+                      : "bg-emerald-50 border-emerald-100 text-emerald-700"
+                  )}>
+                    <div className={cn(
+                      "text-[10px] uppercase font-bold tracking-wider flex items-center gap-1",
+                      meta.rtoPredict.toLowerCase() === 'high' ? "text-rose-400" : "text-emerald-400"
+                    )}>
+                      <CheckCircle className="w-3 h-3" /> RTO Risk Level
+                    </div>
+                    <div className="text-sm font-bold flex items-center gap-2">
+                      {meta.rtoPredict.toUpperCase()}
+                      {meta.rtoPredict.toLowerCase() === 'high' && (
+                        <span className="text-[10px] bg-rose-100 px-1.5 py-0.5 rounded-full">CAUTION</span>
+                      )}
                     </div>
                   </div>
                 )}
@@ -446,6 +776,26 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                     <div>
                       <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Phone Number</div>
                       <a href={`tel:${task.customer.phone}`} className="text-sm font-semibold hover:text-blue-600 transition-colors">{task.customer.phone}</a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+                      <Search className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">
+                        {task.order ? "Shopify Order ID" : "Fastrr Cart ID"}
+                      </div>
+                      <div className="text-sm font-mono font-bold text-gray-700">
+                        {checkoutUrl ? (
+                          <a href={checkoutUrl} target="_blank" className="hover:text-blue-600 underline decoration-blue-200 hover:decoration-blue-400 transition-all">
+                            {order?.shopify_order_id || order?.order_number || abandonedCart?.cart_token || "—"}
+                          </a>
+                        ) : (
+                          order?.shopify_order_id || order?.order_number || abandonedCart?.cart_token || "—"
+                        )}
+                      </div>
                     </div>
                   </div>
                   
@@ -504,7 +854,10 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                         Abandoned At
                       </div>
                       <div className="text-xs font-semibold text-gray-700">
-                        {formatDate(task.abandoned_cart?.abandoned_at || new Date().toISOString())}
+                        {formatDate(abandonedCart?.abandoned_at || task.created_at)} 
+                        <span className="text-gray-400 font-normal ml-1">
+                          ({timeAgo(abandonedCart?.abandoned_at || task.created_at)})
+                        </span>
                       </div>
                     </div>
 
@@ -518,7 +871,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-xs font-bold text-[#2D1E6F]">₹{item.price || item.productPrice || item.amount}</div>
+                            <div className="text-xs font-bold text-[#1c1c1c]">₹{item.price || item.productPrice || item.amount}</div>
                             <div className="text-[10px] text-gray-400 font-medium">Qty: {item.quantity || item.qty || item.productQuantity || 1}</div>
                           </div>
                         </div>
@@ -542,17 +895,17 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                           <span>₹{shippingCharges}</span>
                         </div>
                       )}
-                      <div className="flex justify-between text-sm font-bold text-[#2D1E6F] px-1 pt-1">
+                      <div className="flex justify-between text-sm font-bold text-[#1c1c1c] px-1 pt-1">
                         <span>Total Amount</span>
-                        <span className="text-[#2D1E6F] underline decoration-[#2D1E6F]/20 decoration-2 underline-offset-4">₹{totalAmount}</span>
+                        <span className="text-[#1c1c1c] underline decoration-[#1c1c1c]/20 decoration-2 underline-offset-4">₹{totalAmount}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {task.task_type === "recovery" && (task.abandoned_cart as any)?.custom_meta?.ABANDONLINK && (
+                {checkoutUrl && (
                   <a 
-                    href={(task.abandoned_cart as any).custom_meta.ABANDONLINK} 
+                    href={checkoutUrl} 
                     target="_blank" 
                     className="btn-secondary w-full justify-center bg-blue-50 border-blue-100 text-blue-700 font-bold hover:bg-blue-100"
                   >
@@ -560,14 +913,23 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   </a>
                 )}
                 
-                <div className="flex items-center gap-2 pt-2">
-                  <button onClick={() => { setShowDetail(false); setDoneModal(true); }} className="btn-primary flex-1 justify-center py-3">
-                    Log Call Outcome
-                  </button>
-                  <button onClick={() => { setShowDetail(false); openWa(); }} className="btn-secondary flex-1 justify-center py-3 text-[#2D1E6F]">
-                    WhatsApp
-                  </button>
-                </div>
+                {task.manager_action === 'rejected' && (
+                  <div className="bg-rose-50 border border-rose-100 p-4 rounded-xl mt-4 animate-pulse-slow">
+                    <div className="flex items-center gap-2 text-rose-700 font-black text-[10px] uppercase tracking-widest mb-1">
+                      <AlertCircle className="w-3.5 h-3.5" /> Flagged for Revision
+                    </div>
+                    <p className="text-xs font-bold text-rose-900 leading-relaxed italic">
+                      &ldquo;{task.manager_note || "Manager requested a revision of this task resolution."}&rdquo;
+                    </p>
+                  </div>
+                )}
+                
+
+                {order?.delivery_status === 'rto' && (
+                  <div className="mt-4">
+                    <RTOClaimGenerator order={order} customer={task.customer} />
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -606,12 +968,12 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                     "text-[10px] px-2 py-1 rounded bg-gray-50 border border-gray-200 text-gray-500 uppercase font-bold tracking-wider hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all",
                     // Highlight current task type by default
                     task.task_type === key && "bg-blue-50 border-blue-200 text-blue-700",
-                    waMessage === tpl.replace("{{name}}", task.customer.name || "there").replace("{{product}}", product) && "bg-[#2D1E6F] text-white border-[#2D1E6F]"
+                    waMessage === tpl.replace("{{name}}", task.customer.name || "there").replace("{{product}}", product) && "bg-[#1c1c1c] text-white border-[#1c1c1c]"
                   )} 
                   onClick={() => {
                     let msg = tpl.replace("{{name}}", task.customer.name || "there").replace("{{product}}", product);
-                    if (key === "recovery") {
-                      const abandonLink = meta?.ABANDONLINK || task.customer.custom_meta?.ABANDONLINK || "https://cureforever.in/cart";
+                    if (msg.includes("{{abandon_link}}")) {
+                      const abandonLink = checkoutUrl || meta?.ABANDONLINK || task.customer.custom_meta?.ABANDONLINK || "https://cureforever.in/cart";
                       msg = msg.replace("{{abandon_link}}", abandonLink);
                     }
                     setWaMessage(msg);
@@ -642,6 +1004,91 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                 <span className="text-[10px] font-bold truncate max-w-[150px]">{waFile.name}</span>
                 <button 
                   onClick={() => setWaFile(null)}
+                  className="p-0.5 hover:bg-blue-100 rounded-full transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+
+      {/* Email Modal */}
+      <Modal open={emailModal} onClose={() => { setEmailModal(false); setEmailFile(null); }} title={`Email — ${task.customer.name}`}
+        footer={<>
+          <button className="btn-secondary" onClick={() => { setEmailModal(false); setEmailFile(null); }}>Cancel</button>
+          <button className="btn-primary" onClick={handleSendEmail} disabled={sendingEmail}>
+            {sendingEmail ? "Sending..." : "Send Email"}
+          </button>
+        </>}
+      >
+        <div className="space-y-4">
+          <div className="text-[11px] text-gray-400">Sending to: <span className="font-bold text-gray-700">{task.customer.email || "No email provided"}</span></div>
+          
+          {/* Quick Presets */}
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(DEFAULT_TEMPLATES).map(([key, defaultTpl]) => {
+              const customTpl = whatsappSettings ? (
+                key === "review" ? whatsappSettings.whatsapp_review_template :
+                key === "reorder" ? whatsappSettings.whatsapp_reorder_template :
+                key === "recovery" ? whatsappSettings.whatsapp_recovery_template :
+                key === "final_followup" ? whatsappSettings.whatsapp_final_template : null
+              ) : null;
+              
+              const tpl = customTpl || defaultTpl;
+              
+              return (
+                <button 
+                  key={key} 
+                  className={cn(
+                    "text-[10px] px-2 py-1 rounded bg-gray-50 border border-gray-200 text-gray-500 uppercase font-bold tracking-wider hover:bg-[#1c1c1c] hover:text-white transition-all",
+                    task.task_type === key && "bg-[#1c1c1c] text-white",
+                    emailMessage === tpl.replace("{{name}}", task.customer.name || "there").replace("{{product}}", product) && "ring-2 ring-[#1c1c1c]"
+                  )} 
+                  onClick={() => {
+                    let msg = tpl.replace("{{name}}", task.customer.name || "there").replace("{{product}}", product);
+                    if (msg.includes("{{abandon_link}}")) {
+                      const abandonLink = checkoutUrl || meta?.ABANDONLINK || task.customer.custom_meta?.ABANDONLINK || "https://cureforever.in/cart";
+                      msg = msg.replace("{{abandon_link}}", abandonLink);
+                    }
+                    setEmailMessage(msg);
+                    setEmailSubject(`${key.replace("_", " ").toUpperCase()} - CureForever`);
+                  }}
+                >
+                  {key.replace("_", " ")}
+                </button>
+              );
+            })}
+          </div>
+
+          <div>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Subject</label>
+            <input type="text" className="input text-sm" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Message</label>
+            <textarea className="input resize-none h-48 text-sm" value={emailMessage} onChange={e => setEmailMessage(e.target.value)} />
+          </div>
+
+          {/* File Attachment */}
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 px-3 py-2 rounded bg-gray-50 border border-dashed border-gray-300 text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/50 cursor-pointer transition-all">
+              <Paperclip className="w-3.5 h-3.5" />
+              <span className="text-xs font-medium">{emailFile ? "Change Attachment" : "Attach Document/Image"}</span>
+              <input 
+                type="file" 
+                className="hidden" 
+                onChange={e => setEmailFile(e.target.files?.[0] || null)} 
+              />
+            </label>
+            
+            {emailFile && (
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded bg-blue-50 border border-blue-100 text-blue-700">
+                <span className="text-[10px] font-bold truncate max-w-[150px]">{emailFile.name}</span>
+                <button 
+                  onClick={() => setEmailFile(null)}
                   className="p-0.5 hover:bg-blue-100 rounded-full transition-colors"
                 >
                   <X className="w-3 h-3" />
@@ -699,7 +1146,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   setDisposition("connected_bought");
                   setNote("Customer confirmed they have already purchased. Workflow complete.");
                 }}
-                className="px-2.5 py-1.5 rounded bg-blue-50 border border-blue-100 text-[10px] font-bold text-blue-700 hover:bg-[#2D1E6F] hover:text-white transition-all flex items-center gap-1.5"
+                className="px-2.5 py-1.5 rounded bg-blue-50 border border-blue-100 text-[10px] font-bold text-blue-700 hover:bg-[#1c1c1c] hover:text-white transition-all flex items-center gap-1.5"
               >
                 ✅ Already Bought
               </button>
@@ -801,7 +1248,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                     key={p.label}
                     type="button"
                     onClick={() => setNote(p.text)}
-                    className="px-2 py-1 rounded bg-gray-50 border border-gray-100 text-[10px] font-bold text-gray-500 hover:bg-[#2D1E6F] hover:text-white hover:border-[#2D1E6F] transition-all"
+                    className="px-2 py-1 rounded bg-gray-50 border border-gray-100 text-[10px] font-bold text-gray-500 hover:bg-[#1c1c1c] hover:text-white hover:border-[#1c1c1c] transition-all"
                   >
                     {p.label}
                   </button>
@@ -815,7 +1262,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
              <label className="flex items-center gap-2 cursor-pointer group mb-2">
                 <input 
                   type="checkbox" 
-                  className="rounded border-gray-300 text-[#2D1E6F] focus:ring-[#2D1E6F] cursor-pointer"
+                  className="rounded border-gray-300 text-[#1c1c1c] focus:ring-[#1c1c1c] cursor-pointer"
                   checked={sendWaInLog}
                   onChange={e => {
                     setSendWaInLog(e.target.checked);
@@ -825,7 +1272,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                     }
                   }}
                 />
-                <span className="text-xs font-bold text-gray-600 group-hover:text-[#2D1E6F] transition-colors">Follow up via WhatsApp?</span>
+                <span className="text-xs font-bold text-gray-600 group-hover:text-[#1c1c1c] transition-colors">Follow up via WhatsApp?</span>
              </label>
              
              {sendWaInLog && (

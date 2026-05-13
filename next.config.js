@@ -7,7 +7,7 @@ const nextConfig = {
   experimental: {
     serverActions: { allowedOrigins: serverActionAllowedOrigins }
   },
-  allowedDevOrigins: ['192.168.0.131', 'localhost:3000', 'supplemental-hero-indexed-overseas.trycloudflare.com'],
+  allowedDevOrigins: ['192.168.0.131', 'localhost:3000', 'supplemental-hero-indexed-overseas.trycloudflare.com', 'cureforeverpc.tail1b3337.ts.net'],
   images: {
   remotePatterns: [
     { protocol: 'https', hostname: 'example.com' }

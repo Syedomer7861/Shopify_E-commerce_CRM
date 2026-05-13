@@ -232,12 +232,12 @@ export default function ImportPage() {
         {(["upload", "mapping", "preview", "done"] as Step[]).map((s, i) => (
           <div key={s} className="flex items-center gap-2">
             <div className={cn("w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all",
-              step === s ? "bg-[#2D1E6F] text-white" : (["mapping","preview","done"].includes(step) && i < ["upload","mapping","preview","done"].indexOf(step)) ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-400"
+              step === s ? "bg-[#1c1c1c] text-white" : (["mapping","preview","done"].includes(step) && i < ["upload","mapping","preview","done"].indexOf(step)) ? "bg-[#1c1c1c] text-white" : "bg-gray-100 text-gray-400"
             )}>
               {(["mapping","preview","done"].includes(step) && i < ["upload","mapping","preview","done"].indexOf(step)) ? "✓" : i + 1}
             </div>
-            <span className={cn("text-xs font-medium capitalize", step === s ? "text-[#2D1E6F]" : "text-gray-400")}>{s}</span>
-            {i < 3 && <div className={cn("w-8 h-0.5", (step !== "upload" && i === 0) || (["preview","done"].includes(step) && i <= 1) || (step === "done" && i === 2) ? "bg-[#2D1E6F]" : "bg-gray-200")} />}
+            <span className={cn("text-xs font-medium capitalize", step === s ? "text-[#1c1c1c]" : "text-gray-400")}>{s}</span>
+            {i < 3 && <div className={cn("w-8 h-0.5", (step !== "upload" && i === 0) || (["preview","done"].includes(step) && i <= 1) || (step === "done" && i === 2) ? "bg-[#1c1c1c]" : "bg-gray-200")} />}
           </div>
         ))}
       </div>
@@ -249,12 +249,12 @@ export default function ImportPage() {
             <button 
               onClick={() => { setImportType("orders"); reset(); }}
               className={cn("px-4 py-1.5 text-xs font-semibold rounded-lg transition-all", 
-                importType === "orders" ? "bg-white text-[#2D1E6F] shadow-sm" : "text-gray-500 hover:text-gray-700")}
+                importType === "orders" ? "bg-white text-[#1c1c1c] shadow-sm" : "text-gray-500 hover:text-gray-700")}
             > Standard Orders </button>
             <button 
               onClick={() => { setImportType("abandoned"); reset(); }}
               className={cn("px-4 py-1.5 text-xs font-semibold rounded-lg transition-all", 
-                importType === "abandoned" ? "bg-white text-[#2D1E6F] shadow-sm" : "text-gray-500 hover:text-gray-700")}
+                importType === "abandoned" ? "bg-white text-[#1c1c1c] shadow-sm" : "text-gray-500 hover:text-gray-700")}
             > Abandoned Carts </button>
           </div>
 
@@ -265,15 +265,15 @@ export default function ImportPage() {
             onClick={() => inputRef.current?.click()}
             className={cn(
               "border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all",
-              dragging ? "border-[#2D1E6F] bg-[#2D1E6F]/5 scale-[1.01]" : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+              dragging ? "border-[#1c1c1c] bg-[#1c1c1c]/5 scale-[1.01]" : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
             )}
           >
             <input ref={inputRef} type="file" accept=".xlsx,.csv" className="hidden"
               onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-            <div className="w-14 h-14 rounded-2xl bg-[#2D1E6F]/5 flex items-center justify-center mx-auto mb-4">
-              <Upload className="w-7 h-7 text-[#2D1E6F]" />
+            <div className="w-14 h-14 rounded-2xl bg-[#1c1c1c]/5 flex items-center justify-center mx-auto mb-4">
+              <Upload className="w-7 h-7 text-[#1c1c1c]" />
             </div>
-            <div className="text-base font-semibold text-[#2D1E6F] mb-1">Drop your Excel file here</div>
+            <div className="text-base font-semibold text-[#1c1c1c] mb-1">Drop your Excel file here</div>
             <div className="text-sm text-gray-400 mb-4">or click to browse · .xlsx or .csv · up to 5,000 rows</div>
             <button className="btn-primary mx-auto">
               <FileSpreadsheet className="w-4 h-4" /> Choose File
@@ -289,14 +289,14 @@ export default function ImportPage() {
               <div className="space-y-1">
                 {activeRequired.map(c => (
                   <div key={c} className="flex items-center gap-2 text-xs text-gray-600">
-                    <CheckCircle className="w-3 h-3 text-blue-500 flex-shrink-0" /> {c}
+                    <CheckCircle className="w-3 h-3 text-[#1c1c1c] flex-shrink-0" /> {c}
                   </div>
                 ))}
               </div>
             </div>
             <div className="card p-4">
               <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
-                <span className="w-4 h-4 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold">O</span>
+                <span className="w-4 h-4 rounded bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center text-[10px] font-bold">O</span>
                 Optional columns
               </div>
               <div className="space-y-1">
@@ -311,7 +311,7 @@ export default function ImportPage() {
 
           <div className="card p-4 bg-amber-50 border-amber-200 text-xs text-amber-700">
             <div className="font-semibold mb-1 uppercase tracking-wider text-[10px]">Smart mapping enabled</div>
-            <p>Our system automatically aligns your Excel columns even if headers don't match exactly. Numbers are cleaned and duplicates are merged by phone.</p>
+            <p>Our system automatically aligns your Excel columns even if headers don&apos;t match exactly. Numbers are cleaned and duplicates are merged by phone.</p>
           </div>
         </div>
       )}
@@ -320,8 +320,8 @@ export default function ImportPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
             <div>
-              <h3 className="text-sm font-semibold text-[#2D1E6F]">Map Excel Columns</h3>
-              <p className="text-xs text-gray-500">Align your file's headers with the CRM fields below.</p>
+              <h3 className="text-sm font-semibold text-[#1c1c1c]">Map Excel Columns</h3>
+              <p className="text-xs text-gray-500">Align your file&apos;s headers with the CRM fields below.</p>
             </div>
             <div className="flex gap-2">
               <button onClick={reset} className="btn-secondary text-xs">Cancel</button>
@@ -359,7 +359,7 @@ export default function ImportPage() {
             {/* Optional Field Mapping */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 px-1">
-                <span className="w-4 h-4 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold">O</span>
+                <span className="w-4 h-4 rounded bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center text-[10px] font-bold">O</span>
                 <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Optional Fields</h4>
               </div>
               <div className="card divide-y divide-gray-50 overflow-hidden">
@@ -385,7 +385,7 @@ export default function ImportPage() {
             {/* Customer Details Mapping */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 px-1">
-                <span className="w-4 h-4 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold">C</span>
+                <span className="w-4 h-4 rounded bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center text-[10px] font-bold">C</span>
                 <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Customer Details</h4>
               </div>
               <div className="card divide-y divide-gray-50 overflow-hidden">
@@ -421,7 +421,7 @@ export default function ImportPage() {
                   const all = new Set(headers.filter(h => !Object.values(columnMapping).includes(h)));
                   setMetaColumns(all);
                 }}
-                className="text-[10px] font-bold text-[#2D1E6F] hover:underline"
+                className="text-[10px] font-bold text-[#1c1c1c] hover:underline"
               >
                 Select All Unmapped
               </button>
@@ -444,13 +444,13 @@ export default function ImportPage() {
                     className={cn(
                       "flex items-center justify-between p-2 rounded-lg border text-xs cursor-pointer transition-all",
                       isMapped ? "bg-gray-100 border-gray-100 opacity-50 cursor-not-allowed" :
-                      isSelected ? "bg-[#2D1E6F]/5 border-[#2D1E6F]/20 text-[#2D1E6F] font-medium" : "bg-white border-gray-100 hover:border-gray-200"
+                      isSelected ? "bg-[#1c1c1c]/5 border-[#1c1c1c]/20 text-[#1c1c1c] font-medium" : "bg-white border-gray-100 hover:border-gray-200"
                     )}
                   >
                     <span className="truncate pr-2">{header}</span>
                     {!isMapped && (
                       <div className={cn("w-3.5 h-3.5 rounded-sm border flex items-center justify-center",
-                        isSelected ? "bg-[#2D1E6F] border-[#2D1E6F] text-white" : "bg-white border-gray-300 shadow-inner"
+                        isSelected ? "bg-[#1c1c1c] border-[#1c1c1c] text-white" : "bg-white border-gray-300 shadow-inner"
                       )}>
                         {isSelected && <CheckCircle className="w-2.5 h-2.5" />}
                       </div>
@@ -462,16 +462,16 @@ export default function ImportPage() {
             </div>
           </div>
           
-          <div className="card p-4 bg-[#2D1E6F]/5 border-[#2D1E6F]/10 flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#2D1E6F]/10 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="w-4 h-4 text-[#2D1E6F]" />
+          <div className="card p-4 bg-[#1c1c1c]/5 border-[#1c1c1c]/10 flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#1c1c1c]/10 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-4 h-4 text-[#1c1c1c]" />
               </div>
               <div>
-                  <div className="text-xs font-bold text-[#2D1E6F] mb-1">Smart Mapping Tips</div>
-                  <p className="text-[11px] text-[#2D1E6F]/70 leading-relaxed">
-                      We've automatically suggested mappings based on your headers. 
+                  <div className="text-xs font-bold text-[#1c1c1c] mb-1">Smart Mapping Tips</div>
+                  <p className="text-[11px] text-[#1c1c1c]/70 leading-relaxed">
+                      We&apos;ve automatically suggested mappings based on your headers. 
                       You can manually change them if any are incorrect. 
-                      Fields left as <strong>"Select column..."</strong> will be skipped.
+                      Fields left as <strong>&ldquo;Select column...&rdquo;</strong> will be skipped.
                   </p>
               </div>
           </div>
@@ -482,12 +482,12 @@ export default function ImportPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm font-semibold text-[#2D1E6F] flex items-center gap-2">
+              <div className="text-sm font-semibold text-[#1c1c1c] flex items-center gap-2">
                 <FileSpreadsheet className="w-4 h-4 text-gray-500" /> {fileName}
               </div>
               <div className="text-xs text-gray-500 mt-0.5">
                 {data.length} rows found ·{" "}
-                <span className="text-blue-600 font-medium">{valid.length} valid</span> ·{" "}
+                <span className="text-[#1c1c1c] font-medium">{valid.length} valid</span> ·{" "}
                 <span className="text-rose-600 font-medium">{errors.length} errors</span>
               </div>
             </div>
@@ -527,7 +527,7 @@ export default function ImportPage() {
                       {importType === "orders" ? "Product" : "Total Value"}
                   </th>
                   {CUSTOMER_COLS.map(c => columnMapping[c] ? (
-                    <th key={c} className="text-left py-2.5 px-3 text-[10px] font-bold text-blue-500 uppercase tracking-wider">{c}</th>
+                    <th key={c} className="text-left py-2.5 px-3 text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">{c}</th>
                   ) : null)}
                   {metaColumns.size > 0 && (
                     <th className="text-left py-2.5 px-3 text-[10px] font-bold text-purple-500 uppercase tracking-wider">Custom Meta</th>
@@ -539,7 +539,7 @@ export default function ImportPage() {
                 {data.slice(0, 50).map(r => (
                   <tr key={r._n} className={cn("transition-colors", r._error ? "bg-rose-50/30" : "hover:bg-gray-50/50")}>
                     <td className="py-2.5 px-3 text-gray-400 font-mono">{r._n}</td>
-                    <td className="py-2.5 px-3 font-semibold text-[#2D1E6F] whitespace-nowrap">{r["Customer Name"] || "—"}</td>
+                    <td className="py-2.5 px-3 font-semibold text-[#1c1c1c] whitespace-nowrap">{r["Customer Name"] || "—"}</td>
                     <td className="py-2.5 px-3 text-gray-600 font-mono">{r["Phone Number"] || "—"}</td>
                     <td className="py-2.5 px-3 text-gray-600 truncate max-w-[120px]" title={importType === "orders" ? r["Product Name"] : r["Total Value"]}>
                         {importType === "orders" ? (r["Product Name"] || "—") : (r["Total Value"] || "—")}
@@ -563,11 +563,11 @@ export default function ImportPage() {
                         ) : "—"}
                       </td>
                     )}
-                    <td className="py-2.5 px-3 font-semibold text-[#2D1E6F]">
+                    <td className="py-2.5 px-3 font-semibold text-[#1c1c1c]">
                       {r._error ? (
                         <span className="text-rose-600 font-medium flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Error</span>
                       ) : (
-                        <span className="text-blue-600 font-medium flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Valid</span>
+                        <span className="text-[#1c1c1c] font-medium flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Valid</span>
                       )}
                     </td>
                   </tr>
@@ -583,10 +583,10 @@ export default function ImportPage() {
 
       {step === "done" && (
         <div className="card p-12 text-center animate-scale-in">
-          <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-8 h-8 text-blue-600" />
+          <div className="w-16 h-16 rounded-2xl bg-[#eceae4] flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-8 h-8 text-[#1c1c1c]" />
           </div>
-          <h2 className="text-xl font-display text-[#2D1E6F] mb-2">Import Successful</h2>
+          <h2 className="text-xl font-display text-[#1c1c1c] mb-2">Import Successful</h2>
           <p className="text-sm text-gray-500 mb-1">{results.imported} records processed successfully</p>
           <p className="text-xs text-gray-400 mb-6">{results.skipped} rows skipped (duplicates or data errors)</p>
           <div className="flex justify-center gap-3">

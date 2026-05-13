@@ -25,3 +25,10 @@ Thumbs.db
 .wa_session/
 .wwebjs_cache/
 .wwebjs_auth/
+scratch/
+shiprocket_full_order_*.json
+order_*.json
+mukesh.json
+*.log
+sync_progress.json
+.claude/

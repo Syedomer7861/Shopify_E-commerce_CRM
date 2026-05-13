@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 import { TaskType } from "@/types";
 import { getSystemSettings } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority, reassignOfflineAgentTasks } from "@/lib/task-engine";
 import { syncShopifyData } from "@/lib/sync-logic";
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  return createServerClient();
 }
 
 function mapShiprocketStatus(status: string | number | null | undefined) {
@@ -20,6 +20,10 @@ function mapShiprocketStatus(status: string | number | null | undefined) {
 }
 
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
+
+export async function GET(req: NextRequest) {
+  return POST(req);
+}
 
 export async function POST(req: NextRequest) {
   const { stream, send, close } = createSyncStream();
@@ -46,7 +50,8 @@ export async function POST(req: NextRequest) {
       .select("*")
       .in("source", ["shiprocket", "shiprocket_checkout"])
       .eq("status", "received")
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .limit(50);
 
     if (logs && logs.length > 0) {
       for (const log of logs) {
@@ -68,6 +73,7 @@ export async function POST(req: NextRequest) {
         try {
           // A1. Customer Upsert
           let customerId = null;
+          let customerSegment = null;
           if (phone) {
             const rawEmail = body.email || body.customer_email || body.shipping_address?.email || body.billing_address?.email || null;
             
@@ -88,10 +94,11 @@ export async function POST(req: NextRequest) {
             ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(", ");
 
             // 1. Check for existing customer to prevent overwriting unmasked data with masked data
-            const { data: existing } = await supabase.from('customers').select('id, phone').eq('phone', phone).maybeSingle();
+            const { data: existing } = await supabase.from('customers').select('id, phone, segment').eq('phone', phone).maybeSingle();
             
             if (existing) {
               customerId = existing.id;
+              customerSegment = existing.segment;
               // If incoming data is masked but we already have unmasked data, skip customer upsert details
               // but we still need the customerId for the order.
             } else {
@@ -113,9 +120,12 @@ export async function POST(req: NextRequest) {
                 state: body.state || shipAddr.state || billAddr.state || null,
                 zip: body.pincode || shipAddr.zip || billAddr.zip || shipAddr.pincode || null,
                 address: combinedAddress || null,
-              }, { onConflict: "phone" }).select("id");
+              }, { onConflict: "phone" }).select("id, segment");
               
-              if (customerData && customerData.length > 0) customerId = customerData[0].id;
+              if (customerData && customerData.length > 0) {
+                customerId = customerData[0].id;
+                customerSegment = customerData[0].segment;
+              }
             }
           }
 
@@ -148,7 +158,7 @@ export async function POST(req: NextRequest) {
                 await supabase.from("tasks").upsert({
                   customer_id: customerId,
                   abandoned_cart_id: cartData.id,
-                  assigned_to: await assignTaskOwner(supabase),
+                  assigned_to: await assignTaskOwner(supabase, "recovery", customerSegment),
                   task_type: "recovery" as any,
                   due_date: dueDate.toISOString().split("T")[0],
                   priority_score: calculateTaskPriority({
@@ -173,15 +183,15 @@ export async function POST(req: NextRequest) {
              // Authority Check: Don't let older logs or Shopify data overwrite newer Shiprocket status
              const { data: existingOrder } = await supabase
                .from("orders")
-               .select("delivery_status, source")
-               .eq("shopify_order_id", orderId.toString())
+               .select("id, delivery_status, source")
+               .or(`shopify_order_id.eq.${orderId.toString()},order_number.eq.${orderId.toString()}`)
                .maybeSingle();
 
              const statusToSave = (existingOrder && existingOrder.source === "shiprocket" && existingOrder.delivery_status !== "pending" && crmStatus === "pending")
                ? existingOrder.delivery_status 
                : crmStatus;
 
-             const { error: orderErr } = await supabase.from("orders").upsert({
+             const upsertData: any = {
                 customer_id: customerId,
                 shopify_order_id: orderId.toString(),
                 order_number: orderId.toString(),
@@ -192,7 +202,13 @@ export async function POST(req: NextRequest) {
                 fulfillment_status: statusToSave === "delivered" ? "fulfilled" : "unfulfilled",
                 delivered_at: statusToSave === "delivered" ? (body.delivered_date || new Date().toISOString()) : null,
                 line_items: enrichedItems
-             }, { onConflict: "shopify_order_id" });
+             };
+
+             if (existingOrder) {
+               upsertData.id = existingOrder.id;
+             }
+
+             const { error: orderErr } = await supabase.from("orders").upsert(upsertData, { onConflict: "shopify_order_id" });
 
              if (!orderErr) {
                 if (cartId) {
@@ -243,10 +259,14 @@ export async function POST(req: NextRequest) {
     send({ progress: 30, message: "Validating task generation rules..." });
     // 2. TRIGGER TASK GENERATOR LOGIC
     const settings = await getSystemSettings(supabase);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
     const { data: orders } = await supabase
       .from("orders")
       .select("id, customer_id, delivered_at, ordered_at, line_items, delivery_status")
-      .in("delivery_status", ["delivered", "Delivered"]);
+      .in("delivery_status", ["delivered", "Delivered"])
+      .gte("updated_at", sevenDaysAgo.toISOString());
 
     if (orders) {
         report.tasks.checked = orders.length;
@@ -258,7 +278,7 @@ export async function POST(req: NextRequest) {
 
            if (existingCount && existingCount > 0) continue;
 
-           const { data: customer } = await supabase.from("customers").select("rto_flag").eq("id", order.customer_id).single();
+           const { data: customer } = await supabase.from("customers").select("rto_flag, segment").eq("id", order.customer_id).single();
            if (customer?.rto_flag) continue;
 
            // FALLBACK LOGIC: If delivered_at is missing but status is delivered, 
@@ -292,7 +312,7 @@ export async function POST(req: NextRequest) {
              status: "pending",
            }));
 
-           const assignedTo = await assignTaskOwner(supabase);
+           const assignedTo = await assignTaskOwner(supabase, "review", customer?.segment);
            newTasks.forEach((task) => {
              task.assigned_to = assignedTo;
            });
@@ -325,11 +345,11 @@ export async function POST(req: NextRequest) {
           if ((count || 0) === 0) {
             const { data: customer } = await supabase
               .from("customers")
-              .select("total_orders, rto_flag")
+              .select("total_orders, rto_flag, segment")
               .eq("id", order.customer_id)
               .maybeSingle();
 
-            const assignedTo = await assignTaskOwner(supabase);
+            const assignedTo = await assignTaskOwner(supabase, "issue_resolution", customer?.segment);
             await supabase.from("tasks").insert({
               order_id: order.id,
               customer_id: order.customer_id,
@@ -367,11 +387,11 @@ export async function POST(req: NextRequest) {
           if ((count || 0) === 0) {
             const { data: customer } = await supabase
               .from("customers")
-              .select("total_orders, rto_flag")
+              .select("total_orders, rto_flag, segment")
               .eq("id", order.customer_id)
               .maybeSingle();
 
-            const assignedTo = await assignTaskOwner(supabase);
+            const assignedTo = await assignTaskOwner(supabase, "transit_update", customer?.segment);
             await supabase.from("tasks").insert({
               order_id: order.id,
               customer_id: order.customer_id,
@@ -392,167 +412,37 @@ export async function POST(req: NextRequest) {
     }
     
     send({ progress: 60, message: "Running system self-healing checks..." });
-    // 3. SELF-HEAL: CLOSE TASKS FOR RECOVERED CARTS / ORDERS
-    // This catches tasks that weren't closed during their respective log processing
-    const { data: pendingRecovery } = await supabase
-      .from("tasks")
-      .select("id, customer_id, abandoned_cart_id")
-      .eq("task_type", "recovery")
-      .eq("status", "pending");
-
-    if (pendingRecovery && pendingRecovery.length > 0) {
-      for (const t of pendingRecovery) {
-        // Check if customer has an order after the task was created
-        const { data: order } = await supabase
-          .from("orders")
-          .select("order_number, ordered_at")
-          .eq("customer_id", t.customer_id)
-          .limit(1)
-          .maybeSingle();
-
-        if (order) {
-           // TIME-AWARE HEALING: Only close if order was placed AFTER abandonment
-           const { data: cartObj } = await supabase.from("abandoned_carts").select("abandoned_at").eq("id", t.abandoned_cart_id).maybeSingle();
-           
-           if (cartObj && new Date(order.ordered_at) > new Date(cartObj.abandoned_at)) {
-             await supabase.from("tasks").update({ 
-                status: "done", 
-                completed_at: new Date().toISOString() 
-             } as any).eq("id", t.id);
-             
-             await supabase.from("call_logs").insert({
-               task_id: t.id,
-               customer_id: t.customer_id,
-               outcome: "done",
-               note: `Healed: Task resolved because new order #${order.order_number} was found.`,
-               agent_name: "Repair Sync"
-             });
-           }
-        }
-      }
-    }
-    
-    // 3.5 SELF-HEAL: CLOSE OBSOLETE TRANSIT/ISSUE TASKS
-    // If an order has been successfully delivered, it should immediately close out
-    // any pending investigations or transit updates related to its shipping journey.
-    const { data: obsoleteTasks } = await supabase
-      .from("tasks")
-      .select("id, customer_id, order_id, orders!inner(delivery_status)")
-      .in("task_type", ["transit_update", "issue_resolution"])
-      .not("status", "in", '("done","cancelled","skipped")');
-
-    const idsToCancel = (obsoleteTasks || [])
-      .filter((task: any) => {
-        const order = Array.isArray(task.orders) ? task.orders[0] : task.orders;
-        return order?.delivery_status === "delivered";
-      })
-      .map((task: any) => task.id);
-
-    if (idsToCancel.length > 0) {
-           await supabase
-             .from("tasks")
-             .update({ status: "cancelled" } as any)
-             .in("id", idsToCancel);
-             
-           // ADDING AUDIT LOGS FOR THE GLOBAL SYNC HEAL
-          for (const t of (obsoleteTasks || []).filter((ot: any) => idsToCancel.includes(ot.id))) {
-              await supabase.from("call_logs").insert({
-                 task_id: t.id,
-                 customer_id: (t as any).customer_id || (t as any).customer?.id, // Depends on join depth
-                 outcome: "done",
-                 note: `Self-Healed: Order verified as Delivered via Global Sync.`,
-                 agent_name: "System Sync",
-                 called_at: new Date().toISOString()
-              });
-           }
-             
-           console.log(`[Auto-Heal] Cancelled ${idsToCancel.length} obsolete transit tasks for delivered orders.`);
-       }
-    
-    send({ progress: 80, message: "Triggering automated reminders..." });
+     send({ progress: 80, message: "Triggering automated reminders..." });
     // 4. TRIGGER AUTO-SENDERS (Automation Fix)
     const baseUrl = req.nextUrl.origin;
-    // waResults already declared in outer scope
     const internalHeaders: HeadersInit = process.env.CRON_SECRET
       ? { "x-cron-secret": process.env.CRON_SECRET }
       : {};
     
-    try {
-      // Trigger them in parallel
-      const [recRes, reoRes, revRes] = await Promise.all([
-        fetch(`${baseUrl}/api/cron/recovery-reminder`, { headers: internalHeaders }).then(r => r.json()).catch(() => ({ sent: 0 })),
-        fetch(`${baseUrl}/api/cron/reorder-reminder`, { headers: internalHeaders }).then(r => r.json()).catch(() => ({ sent: 0 })),
-        fetch(`${baseUrl}/api/cron/review-reminder`, { headers: internalHeaders }).then(r => r.json()).catch(() => ({ sent: 0 }))
-      ]);
-      
-      waResults.recovery = recRes.sent || 0;
-      waResults.reorder = reoRes.sent || 0;
-      waResults.review = revRes.sent || 0;
-    } catch (waErr) {
-      console.error("Auto-sender trigger failed:", waErr);
-    }
-
-    send({ progress: 90, message: "Updating customer segmentation..." });
-    // 4.5 RECALCULATE CUSTOMER STATS (total_orders, segment, last_order_date)
-    try {
-      const { data: allOrders } = await supabase
-        .from("orders")
-        .select("customer_id, ordered_at, delivery_status");
-
-      if (allOrders) {
-        const ordersByCustomer: Record<string, any[]> = {};
-        allOrders.forEach(o => {
-          if (!ordersByCustomer[o.customer_id]) ordersByCustomer[o.customer_id] = [];
-          ordersByCustomer[o.customer_id].push(o);
-        });
-
-        const INACTIVE_DAYS = 45;
-        const inactiveThreshold = new Date();
-        inactiveThreshold.setDate(inactiveThreshold.getDate() - INACTIVE_DAYS);
-
-        for (const [custId, orders] of Object.entries(ordersByCustomer)) {
-          const totalOrders = orders.length;
-          const sorted = orders.sort((a, b) => new Date(b.ordered_at).getTime() - new Date(a.ordered_at).getTime());
-          const lastOrderDate = sorted[0]?.ordered_at || null;
-          const rtoCount = orders.filter(o => o.delivery_status === "rto" || o.delivery_status === "failed").length;
-          const rtoFlag = rtoCount >= 2;
-
-          let segment = "one_time";
-          if (totalOrders >= 2) segment = "repeat";
-          else if (lastOrderDate && new Date(lastOrderDate) < inactiveThreshold) segment = "inactive";
-          if (rtoFlag) segment = "risky";
-
-          await supabase.from("customers").update({
-            total_orders: totalOrders,
-            last_order_date: lastOrderDate,
-            segment,
-            rto_flag: rtoFlag,
-            rto_count: rtoCount,
-          }).eq("id", custId);
-        }
-      }
-    } catch (e) {
-      console.error("Customer stats recalc failed:", e);
-    }
+    // Trigger them in parallel but don't wait for them to finish before responding
+    // This allows the UI to stop "Refreshing..." as soon as the database is updated
+    Promise.all([
+      fetch(`${baseUrl}/api/cron/recovery-reminder`, { headers: internalHeaders, cache: 'no-store' }).catch(() => null),
+      fetch(`${baseUrl}/api/cron/reorder-reminder`, { headers: internalHeaders, cache: 'no-store' }).catch(() => null),
+      fetch(`${baseUrl}/api/cron/review-reminder`, { headers: internalHeaders, cache: 'no-store' }).catch(() => null)
+    ]);
 
     // 5. SYSTEM PULSE
-    await supabase.from("webhook_logs").insert({
-      source: "shiprocket",
-      topic: "system_sync",
-      status: "processed",
-      payload: { 
-        summary: "Full System Sync Completed", 
-        customer_name: "GLOBAL CRM REFRESH",
-        report: report 
-      }
-    });
+    const syncSummary = { 
+      summary: "Global CRM Refresh Triggered", 
+      report: report
+    };
 
-    // 6. AUTO REASSIGNMENT SWEEP (OFFLINE AGENTS)
-    const reassignedCount = await reassignOfflineAgentTasks(supabase);
-    if (reassignedCount > 0) {
-      console.log(`[Auto-Reassign] Shifted ${reassignedCount} tasks from offline agents to active agents.`);
-      (report as any).tasks_reassigned = reassignedCount;
-    }
+    // Log to Sheets silently
+    try {
+      const { appendToSheet } = await import("@/lib/google-sheets");
+      appendToSheet("Audit_Logs", {
+        timestamp: new Date().toISOString(),
+        action: "REFRESH",
+        entity: "Admin",
+        summary: `Refreshed dashboard and synced ${report.logs.processed} logs.`,
+      }).catch(() => {});
+    } catch {}
 
     send({ progress: 100, message: "Sync Complete!", ...report });
     close();

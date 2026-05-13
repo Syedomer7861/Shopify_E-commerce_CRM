@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  return createServerClient();
 }
 
 export async function POST(req: NextRequest) {
@@ -27,6 +27,9 @@ export async function POST(req: NextRequest) {
   let skipped = 0;
   let issueTasks = 0;
 
+  // Fetch product overrides once for the entire batch
+  const { data: overrideData } = await supabase.from("product_overrides").select("*");
+
   for (const order of orders) {
     // 1. Double check: Does this order already have standard tasks?
     // We check for "review" specifically as a proxy for the standard set
@@ -45,7 +48,7 @@ export async function POST(req: NextRequest) {
     // 2. Check Customer RTO Flag
     const { data: customer } = await supabase
       .from("customers")
-      .select("rto_flag")
+      .select("rto_flag, segment")
       .eq("id", order.customer_id)
       .single();
     if (customer?.rto_flag) {
@@ -54,13 +57,13 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Resolve Offsets
-    const productId = order.line_items?.[0]?.product_id;
-    let override: any = null;
-    if (productId) {
-      const { data: ov } = await supabase.from("product_overrides")
-        .select("*").eq("shopify_product_id", productId).single();
-      override = ov;
-    }
+    const lineItem = order.line_items?.[0];
+    const override = overrideData?.find(o => 
+      o.shopify_product_id === String(lineItem?.product_id) || 
+      o.shopify_product_id === String(lineItem?.id) || 
+      o.shopify_product_id === lineItem?.title ||
+      o.product_name === lineItem?.title
+    );
 
     const deliveredDate = new Date(order.delivered_at);
     if (isNaN(deliveredDate.getTime()) || deliveredDate.getFullYear() < 2020) {
@@ -80,7 +83,7 @@ export async function POST(req: NextRequest) {
       { task_type: "final_followup", offset: override?.final_offset_days    ?? settings?.final_offset_days    ?? 30 },
     ];
 
-    const assignedTo = await assignTaskOwner(supabase);
+    const assignedTo = await assignTaskOwner(supabase, "review", customer?.segment);
     const newTasks = taskTemplates.map(t => ({
       order_id: order.id,
       customer_id: order.customer_id,
@@ -137,11 +140,11 @@ export async function POST(req: NextRequest) {
 
     const { data: customer } = await supabase
       .from("customers")
-      .select("total_orders, rto_flag")
+      .select("total_orders, rto_flag, segment")
       .eq("id", order.customer_id)
       .maybeSingle();
 
-    const assignedTo = await assignTaskOwner(supabase);
+    const assignedTo = await assignTaskOwner(supabase, "issue_resolution", customer?.segment);
     const dueDate = new Date().toISOString().split("T")[0];
 
     const { error: issueErr } = await supabase.from("tasks").insert({

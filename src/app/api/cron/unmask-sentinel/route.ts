@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings, getShiprocketToken } from "@/lib/server-settings";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { NextResponse } from "next/server";
@@ -11,10 +11,7 @@ export const maxDuration = 60; // Max Allowed for Pro/Enterprise
  * Target: All customers with 'x', 'X', or '_SR_' in their phone.
  */
 export async function GET() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const supabase = createServerClient();
 
   try {
     // 1. Authorization (Optional: check for CRON header if on Vercel)

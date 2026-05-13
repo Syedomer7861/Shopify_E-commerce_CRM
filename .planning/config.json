@@ -14,5 +14,8 @@
     "researcher": "gemini-2.0-flash-thinking-exp-01-21",
     "planner": "gemini-2.0-flash-thinking-exp-01-21",
     "checker": "gemini-2.0-flash-thinking-exp-01-21"
+  },
+  "graphify": {
+    "enabled": true
   }
 }

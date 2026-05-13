@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getAuthenticatedSession } from "@/lib/auth-utils";
 
 // GET /api/dashboard — returns today's tasks, overdue, upcoming, counts
 export async function GET(req: NextRequest) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const { errorResponse, supabase } = await getAuthenticatedSession();
+  
+  if (errorResponse || !supabase) return errorResponse!;
+
 
   const today = new Date().toISOString().split("T")[0];
   const in3Days = new Date(Date.now() + 3 * 86400000).toISOString().split("T")[0];
@@ -14,21 +14,21 @@ export async function GET(req: NextRequest) {
   const [todayRes, overdueRes, upcomingRes, doneRes, recentRes] = await Promise.all([
     // Today's tasks
     supabase.from("tasks")
-      .select("*, customer:customers(*), order:orders(*)")
+      .select("id, title, status, due_date, customer_id, order_id, task_type, customer:customers(id, name, phone, segment), order:orders(id, order_number, total_price)")
       .eq("due_date", today)
       .in("status", ["pending", "due"])
       .order("created_at", { ascending: true }),
 
     // Overdue tasks
     supabase.from("tasks")
-      .select("*, customer:customers(*), order:orders(*)")
+      .select("id, title, status, due_date, customer_id, order_id, task_type, customer:customers(id, name, phone, segment), order:orders(id, order_number, total_price)")
       .lt("due_date", today)
       .not("status", "in", '("done","skipped","cancelled")')
       .order("due_date", { ascending: true }),
 
     // Upcoming (next 3 days, excluding today)
     supabase.from("tasks")
-      .select("*, customer:customers(*), order:orders(*)")
+      .select("id, title, status, due_date, customer_id, order_id, task_type, customer:customers(id, name, phone, segment), order:orders(id, order_number, total_price)")
       .gt("due_date", today)
       .lte("due_date", in3Days)
       .eq("status", "pending")
@@ -36,13 +36,13 @@ export async function GET(req: NextRequest) {
 
     // Done this week count
     supabase.from("tasks")
-      .select("id", { count: "exact" })
+      .select("id", { count: "exact", head: true })
       .eq("status", "done")
       .gte("completed_at", new Date(Date.now() - 7 * 86400000).toISOString()),
 
     // Recent call logs
     supabase.from("call_logs")
-      .select("*, customer:customers(name,phone)")
+      .select("id, status, duration, called_at, customer:customers(id, name, phone)")
       .order("called_at", { ascending: false })
       .limit(10),
   ]);

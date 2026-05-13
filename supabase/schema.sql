@@ -128,6 +128,14 @@ CREATE TABLE settings (
   whatsapp_final_template TEXT DEFAULT 'Hi {{name}}, just checking in one last time regarding your {{product}} journey. We''re here if you need anything! 🙏',
   recovery_delay_hours    INTEGER      DEFAULT 24,
   whatsapp_send_time      TIME         DEFAULT '10:00:00',
+  gmail_client_id         TEXT,
+  gmail_client_secret     TEXT,
+  gmail_project_id        TEXT,
+  gmail_auth_uri          TEXT         DEFAULT 'https://accounts.google.com/o/oauth2/auth',
+  gmail_token_uri         TEXT         DEFAULT 'https://oauth2.googleapis.com/token',
+  gmail_auth_provider_x509_cert_url TEXT DEFAULT 'https://www.googleapis.com/oauth2/v1/certs',
+  gmail_redirect_uris     TEXT[]       DEFAULT '{}',
+  gmail_refresh_token     TEXT,
   updated_at              TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

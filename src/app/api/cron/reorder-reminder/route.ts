@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 import { getTaskProductName } from "@/lib/utils";
 import { getSystemSettings } from "@/lib/server-settings";
+import { sendGmail } from "@/lib/gmail";
+import { personaliseTemplate, getTemplateVariables } from "@/lib/whatsapp";
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  return createServerClient();
 }
 
 export async function GET(req: NextRequest) {
@@ -23,9 +25,16 @@ async function processRequest(req: NextRequest) {
     // 1. Get Settings
     const settings = await getSystemSettings(supabase);
     
-    if (!settings?.whatsapp_enabled || !settings?.whatsapp_bridge_url || !settings?.wa_auto_reorder) {
-      console.log("⏭️ Reorder Cron Skipped: WhatsApp or Auto-Reorder disabled.");
-      return NextResponse.json({ skipped: true, reason: "WhatsApp or Auto-Reorder disabled in settings" });
+    if (!settings) {
+      return NextResponse.json({ error: "Settings not found" }, { status: 404 });
+    }
+
+    const waEnabled = settings.whatsapp_enabled && settings.whatsapp_bridge_url && settings.wa_auto_reorder;
+    const emailEnabled = settings.gmail_refresh_token && settings.email_auto_reorder;
+
+    if (!waEnabled && !emailEnabled) {
+      console.log("⏭️ Reorder Cron Skipped: Both WhatsApp and Email reorder automations disabled.");
+      return NextResponse.json({ skipped: true, reason: "Automations disabled in settings" });
     }
 
     // 2. Find "reorder" tasks due today
@@ -40,11 +49,19 @@ async function processRequest(req: NextRequest) {
           id,
           name,
           phone,
+          email,
           whatsapp_reminders_enabled
         ),
         order:orders (
+          id,
           order_number,
-          line_items
+          line_items,
+          shopify_order_id,
+          total_price,
+          tracking_number,
+          fulfillment_status,
+          delivery_status,
+          ordered_at
         )
       `)
       .eq("task_type", "reorder")
@@ -54,49 +71,67 @@ async function processRequest(req: NextRequest) {
     if (error) throw error;
     if (!tasks?.length) return NextResponse.json({ sent: 0, reason: "No reorder tasks due today" });
 
-    let sentCount = 0;
-    const bridgeUrl = settings.whatsapp_bridge_url;
+    let waSentCount = 0;
+    let emailSentCount = 0;
 
     for (const task of tasks) {
       const customer = task.customer as any;
-      if (customer.whatsapp_reminders_enabled === false) continue;
+      const order = task.order as any;
+      const variables = getTemplateVariables(customer, order);
+      let taskActioned = false;
 
-      const productName = getTaskProductName(task);
-      const template = settings.whatsapp_reorder_template || `Hi {{name}}! 👋\n\nHope you're doing well. It's been a few weeks since your last order of *{{product}}*. \n\nTime for a refill? Click here to order again: cureforever.in\n\n_Replenish your wellness journey today!_ 💊`;
+      // --- 1. WhatsApp Automation ---
+      if (waEnabled && customer.whatsapp_reminders_enabled !== false) {
+        const productName = getTaskProductName(task);
+        const template = settings.whatsapp_reorder_template || `Hi {{name}}! 👋\n\nHope you're doing well. It's been a few weeks since your last order of *{{product}}*. \n\nTime for a refill? Click here to order again: cureforever.in\n\n_Replenish your wellness journey today!_ 💊`;
+        const message = personaliseTemplate(template, variables);
 
-      const message = template
-        .replace(/{{name}}/g, customer.name || "there")
-        .replace(/{{product}}/g, productName);
-
-      try {
-        const res = await fetch(`${bridgeUrl}/send`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: customer.phone, message }),
-        });
-        
-        const result = await res.json();
-        if (res.ok && result.ok) {
-          sentCount++;
-          await supabase.from("tasks").update({ 
-            status: "done", 
-            completed_at: new Date().toISOString() 
-          }).eq("id", task.id);
-
-          await supabase.from("call_logs").insert({
-            task_id: task.id,
-            customer_id: customer.id,
-            outcome: "done",
-            note: `System (Automated): "${message}"`,
-            agent_name: "CureForever System"
+        try {
+          const res = await fetch(`${settings.whatsapp_bridge_url}/send`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone: customer.phone, message }),
           });
-        }
-      } catch (err) {
-        console.error(`Error sending reorder WA to ${customer.phone}:`, err);
+          const result = await res.json();
+          if (res.ok && result.ok) {
+            waSentCount++;
+            taskActioned = true;
+          }
+        } catch (err) { console.error(`WA Error:`, err); }
+      }
+
+      // --- 2. Email Automation ---
+      if (emailEnabled && customer.email) {
+        const subjectTemplate = settings.email_reorder_subject || "Time for a refill? 🌿 {{product}}";
+        const bodyTemplate = settings.email_reorder_template || "Time to replenish, {{name}}! 🌿 Your course of {{product}} should be finishing soon. 💊 Keep your wellness streak alive—order your refill here: https://cureforever.in 🙏✨";
+        
+        const subject = personaliseTemplate(subjectTemplate, variables);
+        const body = personaliseTemplate(bodyTemplate, variables);
+
+        try {
+          await sendGmail({ to: customer.email, subject, body });
+          emailSentCount++;
+          taskActioned = true;
+        } catch (err) { console.error(`Email Error:`, err); }
+      }
+
+      if (taskActioned) {
+        await supabase.from("tasks").update({ 
+          status: "done", 
+          completed_at: new Date().toISOString() 
+        }).eq("id", task.id);
+
+        await supabase.from("call_logs").insert({
+          task_id: task.id,
+          customer_id: customer.id,
+          outcome: "done",
+          note: `System (Automated): Reorder reminder sent via ${waSentCount > 0 ? "WhatsApp" : ""} ${emailSentCount > 0 ? "Email" : ""}`,
+          agent_name: "CureForever System"
+        });
       }
     }
 
-    return NextResponse.json({ sent: sentCount, total: tasks.length });
+    return NextResponse.json({ wa_sent: waSentCount, email_sent: emailSentCount, total: tasks.length });
   } catch (err: any) {
     console.error("Reorder reminder error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });

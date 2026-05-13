@@ -1,13 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Download, TrendingUp, TrendingDown, Loader2, ShoppingBag, BarChart3, ClipboardCheck, Users, Info } from "lucide-react";
+import { Download, TrendingUp, TrendingDown, Loader2, ShoppingBag, BarChart3, ClipboardCheck, Users, Info, RefreshCw } from "lucide-react";
 import { PageHeader, StatCard } from "@/components/ui";
 import * as XLSX from "xlsx";
 import { createClient } from "@/lib/supabase";
 import { cn, formatCurrency } from "@/lib/utils";
 import { startOfMonth, endOfMonth, format, subMonths, isWithinInterval, subDays, differenceInDays } from "date-fns";
 import toast from "react-hot-toast";
-import { AccessDenied, Modal } from "@/components/ui";
+import { AccessDenied, Modal, Avatar, SectionTitle, BarRow } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
 import { Smartphone, Send, Calendar, CheckSquare, FileSpreadsheet, FileText, Phone, Package, RotateCcw, FileType } from "lucide-react";
@@ -15,26 +15,11 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import autoTable from 'jspdf-autotable';
+import IndiaSalesMap from "@/components/IndiaSalesMap";
 
-function BarRow({ label, value, max, color = "bg-[#2D1E6F]", suffix = "" }: { label: string; value: number; max: number; color?: string; suffix?: string }) {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-  return (
-    <div className="flex items-center gap-3 text-sm">
-      <div className="w-32 text-[10px] text-gray-500 text-right flex-shrink-0 truncate">{label}</div>
-      <div className="flex-1 h-4 bg-gray-100 rounded-md overflow-hidden">
-        <div className={cn("h-full rounded-md transition-all duration-500", color)} style={{ width: `${pct}%` }} />
-      </div>
-      <div className="w-20 text-[10px] font-bold text-[#2D1E6F] text-right flex-shrink-0">{Math.round(value).toLocaleString()}{suffix}</div>
-    </div>
-  );
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">{children}</h2>;
-}
 
 export default function ReportsPage() {
-  const [activeTab, setActiveTab] = useState<"overview" | "tasks" | "customers" | "rto" | "recovery" | "shipping">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "tasks" | "customers" | "rto" | "recovery" | "shipping" | "agents" | "attendance" | "products">("overview");
   const [loading, setLoading] = useState(true);
   const [exportingMaster, setExportingMaster] = useState(false);
   const [dateRange, setDateRange] = useState({
@@ -44,7 +29,7 @@ export default function ReportsPage() {
   const [showAdvancedExport, setShowAdvancedExport] = useState(false);
   const [showMasterExport, setShowMasterExport] = useState(false);
   const [exportOptions, setExportOptions] = useState({
-    sheets: { summary: true, calls: true, orders: true, agents: true, products: true, recovery: true },
+    sheets: { summary: true, calls: true, orders: true, agents: true, products: true, recovery: true, workflows: true, attendance: true, trends: true },
     format: "xlsx" as "xlsx" | "csv" | "pdf",
     destination: "download" as "download" | "whatsapp",
     customPhone: ""
@@ -55,35 +40,33 @@ export default function ReportsPage() {
     customPhone: ""
   });
   const [isExporting, setIsExporting] = useState(false);
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<any>({
     totalCalls: 0,
     totalRevenue: 0,
     reorderRate: 0,
     rtoRate: 0,
-    deliveryBreakdown: [] as { label: string; value: number; color: string }[],
-    segmentStats: [] as any[],
-    rtoOrders: [] as any[],
-    taskBreakdown: [] as { label: string; value: number; color: string }[],
-    agentPerformance: [] as { name: string; count: number; revenue: number }[],
-    dailyTrends: [] as any[],
-    dailyTrendsPrev: [] as any[],
-    topProducts: [] as { name: string; count: number; revenue: number }[],
-    stateDistribution: [] as { state: string; count: number; revenue: number; share: number }[],
-    funnelData: { total: 0, followed: 0, recovered: 0 },
-    rawCallsLogs: [] as any[],
-    rawOrdersLogs: [] as any[],
+    deliveryBreakdown: [],
+    segmentStats: [],
+    rtoOrders: [],
+    taskBreakdown: [],
+    agentPerformance: [],
+    dailyTrends: [],
+    dailyTrendsPrev: [],
+    topProducts: [],
+    stateDistribution: [],
+    funnelData: { total: 0, followed: 0, converted: 0, rate: 0 },
+    revenueTrend: [],
+    recentActivity: [],
+    shippingMetrics: { courierDistribution: [], paymentDistribution: [], weightDistribution: [], averageCost: 0 },
+    topCustomers: [],
     abandonedStats: { count: 0, potential: 0, recovered: 0, rate: 0 },
-    rawAbandonedData: [] as any[],
+    workflowPerformance: [],
     metaRevenue: 0,
-    workflowPerformance: [] as { name: string; conversions: number; revenue: number }[],
-    shippingMetrics: { 
-        averageCost: 0, 
-        courierDistribution: [] as any[], 
-        paymentDistribution: [] as any[], 
-        weightDistribution: [] as any[] 
-    },
-    topCustomers: [] as any[],
-    aovTrend: [] as any[]
+    agentAttendance: [],
+    rawCallsLogs: [],
+    rawOrdersLogs: [],
+    rawAbandonedData: [],
+    rawWorkflowLogs: []
   });
   const [prevStats, setPrevStats] = useState<any>(null);
   const [agents, setAgents] = useState<{id: string, name: string}[]>([]);
@@ -99,6 +82,13 @@ export default function ReportsPage() {
   const supabase = createClient();
   const { profile, loading: profileLoading } = useCurrentProfile();
 
+  const formatDurationReport = (ms: number) => {
+    const s = Math.floor((ms / 1000) % 60);
+    const m = Math.floor((ms / (1000 * 60)) % 60);
+    const h = Math.floor(ms / (1000 * 60 * 60));
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
   useEffect(() => {
     fetchAgentsAndStates();
   }, []);
@@ -107,9 +97,74 @@ export default function ReportsPage() {
     fetchAnalytics();
   }, [dateRange, filters]);
 
+  // Real-time Status Sync for Reports
+  useEffect(() => {
+    
+    return () => {  };
+  }, []);
+
+  // Background Pulse: Silently refresh analytics every 30s
+  useEffect(() => {
+    if (activeTab !== "agents" && activeTab !== "attendance" && activeTab !== "overview") return;
+    const interval = setInterval(() => {
+      // Interaction Sentinel
+      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+                           document.activeElement?.tagName === 'TEXTAREA' ||
+                           document.querySelector('[role="dialog"]');
+      if (isInteracting) return;
+      
+      fetchAnalytics(true);
+    }, 60000); // Throttled to 60s for reports
+    return () => clearInterval(interval);
+  }, [activeTab, dateRange, filters]);
+
+  useEffect(() => {
+    if (loading || activeTab !== "agents") return;
+
+    const interval = setInterval(() => {
+      setStats((prev: any) => ({
+        ...prev,
+        agentAttendance: prev.agentAttendance.map((a: any) => {
+          if (!a.status || a.status === "offline") return a;
+          
+          const newOnlineSeconds = a.status === "online" ? (Number(a.onlineSeconds) || 0) + 1 : (Number(a.onlineSeconds) || 0);
+          const newBreakSeconds = a.status === "break" ? (Number(a.breakSeconds) || 0) + 1 : (Number(a.breakSeconds) || 0);
+          
+          return {
+            ...a,
+            onlineSeconds: newOnlineSeconds,
+            breakSeconds: newBreakSeconds,
+            onlineHours: formatDurationReport(newOnlineSeconds * 1000),
+            breakHours: formatDurationReport(newBreakSeconds * 1000)
+          };
+        })
+      }));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [loading, activeTab]);
+
+  if (profileLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-[#5f5f5d] gap-3">
+        <RefreshCw className="w-8 h-8 animate-spin" />
+        <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Compiling Analytics Data...</p>
+      </div>
+    );
+  }
+
+  if (!hasPermission(profile, 'view_analytics')) {
+    return (
+      <AccessDenied 
+        title="Intelligence Access Locked" 
+        desc="Access to the Analytics Engine and Reporting Suite is restricted to authorized administrative personnel." 
+      />
+    );
+  }
+
   async function fetchAgentsAndStates() {
     const { data: pData } = await supabase.from("profiles").select("id, full_name, role").order("full_name");
-    if (pData) setAgents(pData.map(p => ({ id: p.id, name: p.full_name || p.id })));
+    if (pData) setAgents(pData.map((p: any) => ({ id: p.id, name: p.full_name || p.id })));
     
     // Static common states as fallback for faster UI
     setStates(["Karnataka", "Maharashtra", "Delhi", "Gujarat", "Tamil Nadu", "West Bengal", "Uttar Pradesh", "Telangana", "Haryana", "Rajasthan", "Madhya Pradesh", "Other"]);
@@ -136,8 +191,8 @@ export default function ReportsPage() {
     });
   };
 
-  async function fetchAnalytics() {
-    setLoading(true);
+  async function fetchAnalytics(silent = false) {
+    if (!silent) setLoading(true);
     try {
       const start = new Date(dateRange.start).toISOString();
       const end = new Date(dateRange.end).toISOString();
@@ -209,13 +264,26 @@ export default function ReportsPage() {
             callsQuery = callsQuery.eq("customer.segment", filters.segment);
         }
 
-        const [{ data: callsData, count: callsCount }, { data: revData }, { data: abData }] = await Promise.all([
+        const [callsRes, ordersRes, abRes] = await Promise.all([
             callsQuery,
-            ordersQuery.eq("delivery_status", "delivered"),
+            ordersQuery,
             abQuery
         ]);
 
-        const revenue = revData?.reduce((acc, o) => acc + (Number(o.total_price) || 0), 0) || 0;
+        if (callsRes.error) {
+            console.error("Calls Query Error:", callsRes.error);
+            // Fallback to simpler query if nested joins fail
+            const fallback = await supabase.from("call_logs").select("*").gte("called_at", startISO).lte("called_at", endISO);
+            callsRes.data = fallback.data as any;
+        }
+
+        const callsData = callsRes.data || [];
+        const revData = ordersRes.data || [];
+        const abData = abRes.data || [];
+        const callsCount = callsRes.count || callsData.length;
+
+        const revenue = revData?.filter(o => o.delivery_status === "delivered").reduce((acc, o) => acc + (Number(o.total_price) || 0), 0) || 0;
+        const metaRev = revData?.reduce((acc, o) => acc + (Number(o.total_price) || 0), 0) || 0;
 
         const { count: totOrders } = await supabase.from("orders")
             .select("*", { count: "exact", head: true })
@@ -231,10 +299,14 @@ export default function ReportsPage() {
         const abCount = abData?.length || 0;
         const abRecovered = abData?.filter(c => c.recovery_status === "recovered").reduce((acc, c) => acc + (Number(c.total_price) || 0), 0) || 0;
 
-        // Meta Attribution logic - Disabled until attributed_instance_id column is added
-        const metaRev = 0;
+        const { data: attData } = await supabase
+            .from("agent_attendance")
+            .select("*, profile:profiles(full_name, email)")
+            .gte("created_at", s)
+            .lte("created_at", e)
+            .order("created_at", { ascending: true });
 
-        return { callsCount, revenue, abCount, abRecovered, rtoCount, totOrders, metaRev, callsData, revData, abData };
+        return { callsCount, revenue, abCount, abRecovered, rtoCount, totOrders, metaRev, callsData, revData, abData, attData };
       }
 
       const current = await getStatsForRange(start, end);
@@ -242,8 +314,8 @@ export default function ReportsPage() {
 
       const { data: deliveryData } = await supabase.from("orders").select("delivery_status");
       const breakdown = [
-        { label: "Delivered", color: "bg-blue-600", key: "delivered" },
-        { label: "In Transit", color: "bg-blue-500", key: "in_transit" },
+        { label: "Delivered", color: "bg-[#1c1c1c]", key: "delivered" },
+        { label: "In Transit", color: "bg-[#eceae4]", key: "in_transit" },
         { label: "RTO", color: "bg-rose-500", key: "rto" },
         { label: "Pending", color: "bg-gray-300", key: "pending" },
       ].map(b => ({
@@ -252,16 +324,39 @@ export default function ReportsPage() {
         color: b.color
       }));
 
-      const { data: segmentData } = await supabase.from("v_segment_summary").select("*");
-      const repeatCount = segmentData?.find(s => s.segment === "repeat")?.count || 0;
-      const totalCustCount = segmentData?.reduce((acc, row) => acc + row.count, 0) || 0;
+      // Manual Segment Aggregation (Safe fallback for missing views)
+      const { data: allCustomers, error: custErr } = await supabase.from("customers").select("segment, total_orders");
+      if (custErr) console.error("Customer Segment Fetch Error:", custErr);
+      const segmentMap: Record<string, { count: number, orders: number }> = { 
+          repeat: { count: 0, orders: 0 }, 
+          one_time: { count: 0, orders: 0 }, 
+          inactive: { count: 0, orders: 0 }, 
+          risky: { count: 0, orders: 0 } 
+      };
+      allCustomers?.forEach(c => {
+          const s = (c.segment || 'inactive') as keyof typeof segmentMap;
+          if (segmentMap[s] !== undefined) {
+              segmentMap[s].count++;
+              segmentMap[s].orders += Number(c.total_orders || 0);
+          }
+      });
+
+      const segmentStats = [
+          { segment: "Repeat", count: segmentMap.repeat.count, color: "#1c1c1c", dot: "bg-[#1c1c1c]", avg_orders: segmentMap.repeat.count > 0 ? (segmentMap.repeat.orders / segmentMap.repeat.count).toFixed(1) : "0.0" },
+          { segment: "One-time", count: segmentMap.one_time.count, color: "#5f5f5d", dot: "bg-[#5f5f5d]", avg_orders: segmentMap.one_time.count > 0 ? (segmentMap.one_time.orders / segmentMap.one_time.count).toFixed(1) : "0.0" },
+          { segment: "Risky", count: segmentMap.risky.count, color: "#b45309", dot: "bg-amber-600", avg_orders: segmentMap.risky.count > 0 ? (segmentMap.risky.orders / segmentMap.risky.count).toFixed(1) : "0.0" },
+          { segment: "Inactive", count: segmentMap.inactive.count, color: "#94a3b8", dot: "bg-gray-400", avg_orders: segmentMap.inactive.count > 0 ? (segmentMap.inactive.orders / segmentMap.inactive.count).toFixed(1) : "0.0" }
+      ];
+
+      const repeatCount = segmentMap.repeat.count;
+      const totalCustCount = (allCustomers?.length || 0);
       const reorderRateValue = totalCustCount ? Math.round((Number(repeatCount) / Number(totalCustCount)) * 100) : 0;
 
       const taskOutcomes = [
-        { label: "Confirmed", key: "done", color: "bg-[#2D1E6F]" },
-        { label: "Rescheduled", key: "rescheduled", color: "bg-blue-500" },
-        { label: "No Answer", key: "no_answer", color: "bg-amber-500" }
-      ].map(o => ({
+        { label: "Confirmed", key: "done", color: "bg-[#1c1c1c]" },
+        { label: "Rescheduled", key: "rescheduled", color: "bg-[#5f5f5d]" },
+        { label: "No Answer", key: "no_answer", color: "bg-[#eceae4]" }
+      ].map((o: any) => ({
         label: o.label,
         value: current.callsData?.filter(c => c.outcome === o.key).length || 0,
         color: o.color
@@ -278,35 +373,74 @@ export default function ReportsPage() {
       });
       const agentPerf = Object.entries(agents).map(([name, data]) => ({ name, ...data })).sort((a,b) => b.revenue - a.revenue);
 
-      const dailyTrendsMap: Record<string, { revenue: number; calls: number; abandoned: number }> = {};
-      current.revData?.forEach(o => {
-          const d = format(new Date(o.ordered_at), "yyyy-MM-dd");
-          if (!dailyTrendsMap[d]) dailyTrendsMap[d] = { revenue: 0, calls: 0, abandoned: 0 };
-          dailyTrendsMap[d].revenue += Number(o.total_price) || 0;
+      // --- Agent Attendance & Productivity (NEW) ---
+      const attendanceSummary: Record<string, { name: string; workMs: number; breakMs: number; taskCount: number }> = {};
+      
+      // Initialize with agents from calls
+      agentPerf.forEach(ap => {
+          attendanceSummary[ap.name] = { name: ap.name, workMs: 0, breakMs: 0, taskCount: ap.count };
       });
+
+      // Group attendance logs by agent
+      const groupedLogs: Record<string, any[]> = {};
+      current.attData?.forEach(log => {
+          const name = log.profile?.full_name || log.profile?.email || log.agent_id;
+          if (!groupedLogs[name]) groupedLogs[name] = [];
+          groupedLogs[name].push(log);
+      });
+
+      // Calculate durations
+      Object.entries(groupedLogs).forEach(([name, logs]) => {
+          if (!attendanceSummary[name]) attendanceSummary[name] = { name, workMs: 0, breakMs: 0, taskCount: 0 };
+          
+          for (let i = 0; i < logs.length; i++) {
+              const curr = logs[i];
+              const next = logs[i+1];
+              // If no next log, and it's TODAY, we could use Date.now(), but for reports we usually use the range end
+              const endTime = next ? new Date(next.created_at).getTime() : new Date(end).getTime();
+              const duration = Math.max(0, endTime - new Date(curr.created_at).getTime());
+              
+              if (curr.status === "online") attendanceSummary[name].workMs += duration;
+              else if (curr.status === "break") attendanceSummary[name].breakMs += duration;
+          }
+      });
+
+      const agentAttendance = Object.values(attendanceSummary).map((a: any) => {
+          const onlineHoursDecimal = a.workMs / 3600000;
+          const productivity = onlineHoursDecimal > 0 ? (a.taskCount / onlineHoursDecimal).toFixed(1) : "0.0";
+          return {
+              name: a.name,
+              status: (a as any).lastStatus, // Capture status if available
+              onlineHours: formatDurationReport(a.workMs),
+              breakHours: formatDurationReport(a.breakMs),
+              onlineSeconds: a.workMs / 1000,
+              breakSeconds: a.breakMs / 1000,
+              taskCount: a.taskCount,
+              productivity
+          };
+      }).sort((a, b) => Number(b.productivity) - Number(a.productivity));
+
+          const dailyTrendMap: Record<string, { calls: number; revenue: number; orders: number; recovery: number; rto: number }> = {};
       current.callsData?.forEach(c => {
-          const d = format(new Date(c.called_at), "yyyy-MM-dd");
-          if (!dailyTrendsMap[d]) dailyTrendsMap[d] = { revenue: 0, calls: 0, abandoned: 0 };
-          dailyTrendsMap[d].calls++;
+          const date = format(new Date(c.called_at), "yyyy-MM-dd");
+          if (!dailyTrendMap[date]) dailyTrendMap[date] = { calls: 0, revenue: 0, orders: 0, recovery: 0, rto: 0 };
+          dailyTrendMap[date].calls++;
+      });
+      current.revData?.forEach(o => {
+          const date = format(new Date(o.ordered_at), "yyyy-MM-dd");
+          if (!dailyTrendMap[date]) dailyTrendMap[date] = { calls: 0, revenue: 0, orders: 0, recovery: 0, rto: 0 };
+          dailyTrendMap[date].revenue += Number(o.total_price) || 0;
+          dailyTrendMap[date].orders++;
+          if (o.delivery_status === "rto") dailyTrendMap[date].rto++;
       });
       current.abData?.forEach(a => {
-          const d = format(new Date(a.abandoned_at), "yyyy-MM-dd");
-          if (!dailyTrendsMap[d]) dailyTrendsMap[d] = { revenue: 0, calls: 0, abandoned: 0 };
-          dailyTrendsMap[d].abandoned++;
+          if (a.recovery_status === "recovered") {
+              const date = format(new Date(a.abandoned_at), "yyyy-MM-dd");
+              if (!dailyTrendMap[date]) dailyTrendMap[date] = { calls: 0, revenue: 0, orders: 0, recovery: 0, rto: 0 };
+              dailyTrendMap[date].recovery++;
+          }
       });
-      const trends = Object.entries(dailyTrendsMap).map(([date, d]) => ({ date, ...d })).sort((a,b) => a.date.localeCompare(b.date));
-
-      const dailyTrendsPrevMap: Record<number, { revenue: number }> = {};
-      previous.revData?.forEach(o => {
-          const d = new Date(o.ordered_at);
-          const dayIndex = differenceInDays(d, new Date(prevStart));
-          if (!dailyTrendsPrevMap[dayIndex]) dailyTrendsPrevMap[dayIndex] = { revenue: 0 };
-          dailyTrendsPrevMap[dayIndex].revenue += Number(o.total_price) || 0;
-      });
-      const combinedTrends = trends.map((t, idx) => ({
-          ...t,
-          prevRevenue: dailyTrendsPrevMap[idx]?.revenue || 0
-      }));
+      const dailyTrendArr = Object.entries(dailyTrendMap).map(([date, d]) => ({ date, ...d })).sort((a,b) => b.date.localeCompare(a.date));
 
       const states: Record<string, { count: number; revenue: number }> = {};
       current.revData?.forEach(o => {
@@ -365,8 +499,11 @@ export default function ReportsPage() {
           }
 
           if (metadata.shipping_cost) {
-              totalShippingCost += parseFloat(metadata.shipping_cost);
-              costCount++;
+              const cost = parseFloat(metadata.shipping_cost);
+              if (!isNaN(cost)) {
+                  totalShippingCost += cost;
+                  costCount++;
+              }
           }
       });
 
@@ -381,16 +518,33 @@ export default function ReportsPage() {
       const topCustomers = Object.entries(custLeaderMap).map(([id, d]) => ({ id, ...d })).sort((a,b) => b.revenue - a.revenue).slice(0, 10);
 
       const workflowMap: Record<string, { conversions: number; revenue: number }> = {};
-      // Meta Attribution breakdown - Disabled
-      const workflowAll: any[] = [];
-      workflowAll?.forEach(o => {
-        const name = (o as any).workflow_instances?.workflows?.name || "Unknown Automation";
-        if (!workflowMap[name]) workflowMap[name] = { conversions: 0, revenue: 0 };
-        workflowMap[name].conversions++;
-        workflowMap[name].revenue += Number(o.total_price) || 0;
-      });
+      let workflowAll: any[] = [];
+      
+      try {
+        const { data: wfData } = await supabase
+          .from("workflow_instances")
+          .select("*, workflows(name), orders:order_id(*)")
+          .not("order_id", "is", null)
+          .gte("created_at", start)
+          .lte("created_at", end);
+        
+        workflowAll = wfData || [];
+        workflowAll.forEach(instance => {
+          const name = (instance as any).workflows?.name || "Unknown Automation";
+          if (!workflowMap[name]) workflowMap[name] = { conversions: 0, revenue: 0 };
+          workflowMap[name].conversions++;
+          workflowMap[name].revenue += Number((instance as any).orders?.total_price) || 0;
+        });
+      } catch (wfErr) {
+        console.error("Workflow attribution failed:", wfErr);
+      }
+      
       const workflowPerf = Object.entries(workflowMap).map(([name, d]) => ({ name, ...d })).sort((a,b) => b.revenue - a.revenue);
 
+      // 7. Fetch Agent Attendance & Productivity
+      const agentRes = await fetch(`/api/admin/analytics/agents?start=${start}&end=${end}`);
+      const agentData = await agentRes.json();
+      
       setPrevStats(previous);
       setStats({
         totalCalls: current.callsCount || 0,
@@ -398,12 +552,12 @@ export default function ReportsPage() {
         reorderRate: reorderRateValue,
         rtoRate: current.totOrders ? Math.round((Number(current.rtoCount) / Number(current.totOrders)) * 100) : 0,
         deliveryBreakdown: breakdown,
-        segmentStats: segmentData || [],
+        segmentStats: segmentStats,
         rtoOrders: (current.revData || []).filter(o => o.delivery_status === "rto").slice(0, 10),
         taskBreakdown: taskOutcomes,
-        agentPerformance: agentPerf,
-        dailyTrends: combinedTrends,
-        dailyTrendsPrev: Object.entries(dailyTrendsPrevMap).map(([idx, d]) => ({ date: idx, ...d })),
+        agentPerformance: agentData.data || [],
+        dailyTrends: dailyTrendArr,
+        dailyTrendsPrev: [], // Simplified for stability
         topProducts,
         stateDistribution: stateDist,
         funnelData: { 
@@ -420,20 +574,32 @@ export default function ReportsPage() {
             rate: current.abCount > 0 ? Math.round(((current.abData?.filter(x => x.recovery_status === "recovered").length || 0) / current.abCount) * 100) : 0 
         },
         rawAbandonedData: current.abData || [],
+        rawWorkflowLogs: workflowAll || [],
         metaRevenue: current.metaRev,
         workflowPerformance: workflowPerf,
+        agentAttendance: agentData.data || [],
+        recentActivity: agentData.recentActivity || [],
         shippingMetrics: {
-            averageCost: costCount > 0 ? totalShippingCost / costCount : 118, // 118 is a Shiprocket average benchmark
+            averageCost: costCount > 0 ? totalShippingCost / costCount : 118,
             courierDistribution: Object.entries(courierMap).map(([name, d]) => ({ name, ...d })),
             paymentDistribution: Object.entries(paymentMap).map(([name, value]) => ({ name, value })),
             weightDistribution: Object.entries(weightMap).map(([name, value]) => ({ name, value }))
         },
         topCustomers,
-        aovTrend: combinedTrends.map(t => ({ date: t.date, aov: t.revenue / (current.revData?.filter(o => format(new Date(o.ordered_at), "yyyy-MM-dd") === t.date).length || 1) }))
+        aovTrend: dailyTrendArr.map(t => ({ date: t.date, aov: t.revenue / (t.orders || 1) })),
+        dailyAttendanceLogs: agentData.dailyLogs || []
       });
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to fetch analytics");
+
+      if (agentData.success) {
+          setStats((prev: any) => ({ 
+              ...prev, 
+              agentAttendance: agentData.data,
+              recentActivity: agentData.recentActivity 
+          }));
+      }
+    } catch (err: any) {
+      console.error("fetchAnalytics failed:", err);
+      toast.error("Failed to fetch analytics: " + (err.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -444,36 +610,83 @@ export default function ReportsPage() {
     try {
       const { data: allCustomers } = await supabase.from("customers").select("*").order("name");
       const { data: allOrders } = await supabase.from("orders").select("*, customer:customers(name, phone, state), workflow_instances(workflows(name))").order("ordered_at", { ascending: false });
+      const { data: allCalls } = await supabase.from("call_logs").select("*, customer:customers(name, phone)").order("called_at", { ascending: false });
+      const { data: allAB } = await supabase.from("abandoned_carts").select("*, customer:customers(name, phone)").order("abandoned_at", { ascending: false });
       
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      pdf.setFillColor(45, 30, 111);
+      pdf.setFillColor(28, 28, 28);
       pdf.rect(0, 0, pdfWidth, 40, 'F');
       pdf.setFontSize(22);
       pdf.setTextColor(255, 255, 255);
-      pdf.text("CUREFOREVER — MASTER HISTORY", 10, 25);
+      pdf.text("CUREFOREVER — MASTER ARCHIVE", 10, 25);
       pdf.setFontSize(10);
-      pdf.text(`Complete Directory Report | Generated: ${format(new Date(), "PPpp")}`, 10, 32);
+      pdf.text(`Administrative Registry Audit | Generated: ${format(new Date(), "PPpp")}`, 10, 32);
 
-      pdf.setTextColor(45, 30, 111);
+      pdf.setTextColor(28, 28, 28);
       pdf.setFontSize(16);
       pdf.text("Customer Directory", 10, 50);
       autoTable(pdf, {
           startY: 55,
           head: [["Name", "Phone", "Segment", "Revenue", "State"]],
-          body: (allCustomers || []).map(c => [c.name, c.phone, c.segment, formatCurrency(c.total_spent || 0), c.state || "-"]),
+          body: (allCustomers || []).map((c: any) => [c.name, c.phone, c.segment, formatCurrency(c.total_spent || 0), c.state || "-"]),
           theme: 'grid',
-          headStyles: { fillColor: [45, 30, 111] }
+          headStyles: { fillColor: [28, 28, 28] },
+          styles: { fontSize: 8, cellPadding: 3 }
       });
 
       pdf.addPage();
+      pdf.setTextColor(28, 28, 28);
       pdf.text("Order Attribution History", 10, 20);
       autoTable(pdf, {
           startY: 25,
           head: [["Order ID", "Customer", "Total", "Source", "Date"]],
-          body: (allOrders || []).map(o => [o.order_number, (o.customer as any)?.name || "-", formatCurrency(o.total_price), (o as any).workflow_instances?.workflows?.name || "Organic", format(new Date(o.ordered_at), "yyyy-MM-dd")]),
+          body: (allOrders || []).map((o: any) => [o.order_number, (o.customer as any)?.name || "-", formatCurrency(o.total_price), (o as any).workflow_instances?.workflows?.name || "Organic", format(new Date(o.ordered_at), "yyyy-MM-dd")]),
           theme: 'striped',
-          headStyles: { fillColor: [59, 130, 246] }
+          headStyles: { fillColor: [28, 28, 28] }
+      });
+
+      pdf.addPage();
+      pdf.setTextColor(245, 158, 11);
+      pdf.text("Call Log Intelligence", 10, 20);
+      autoTable(pdf, {
+          startY: 25,
+          head: [["Time", "Customer", "Outcome", "Agent"]],
+          body: (allCalls || []).slice(0, 50).map((c: any) => [format(new Date(c.called_at), "HH:mm"), (c.customer as any)?.name || "-", c.outcome, c.agent_name]),
+          headStyles: { fillColor: [245, 158, 11] }
+      });
+
+      pdf.addPage();
+      pdf.setTextColor(225, 29, 72);
+      pdf.text("Abandoned Cart Recovery Pipeline", 10, 20);
+      autoTable(pdf, {
+          startY: 25,
+          head: [["Customer", "Total", "Status", "Date"]],
+          body: (allAB || []).slice(0, 50).map((a: any) => [(a.customer as any)?.name || "-", formatCurrency(a.total_price), a.recovery_status, format(new Date(a.abandoned_at), "yyyy-MM-dd")]),
+          headStyles: { fillColor: [225, 29, 72] }
+      });
+
+      pdf.addPage();
+      pdf.setTextColor(124, 58, 237);
+      pdf.text("Automation & Workflow ROI", 10, 20);
+      autoTable(pdf, {
+          startY: 25,
+          head: [["Workflow", "Conversions", "Revenue"]],
+          body: stats.workflowPerformance.map((w: any) => [w.name, w.conversions, formatCurrency(w.revenue)]),
+          headStyles: { fillColor: [124, 58, 237] }
+      });
+
+      pdf.addPage();
+      pdf.setTextColor(28, 28, 28);
+      pdf.text("Agent Productivity Ledger", 10, 20);
+      autoTable(pdf, {
+          startY: 25,
+          head: [["Agent", "Calls", "Revenue", "Productivity"]],
+          body: stats.agentAttendance.map((a: any) => {
+              const perf = stats.agentPerformance.find((p: any) => p.name === a.name);
+              return [a.name, a.taskCount || 0, formatCurrency(perf?.revenue || 0), `${a.productivity || 0} T/H`];
+          }),
+          headStyles: { fillColor: [28, 28, 28] }
       });
 
       const filename = `CureForever_Master_History_${format(new Date(), "yyyy-MM-dd")}.pdf`;
@@ -506,13 +719,36 @@ export default function ReportsPage() {
           orderQuery = orderQuery.eq("customer.state", filters.state);
       }
       const { data: allOrders } = await orderQuery;
+      const { data: allCalls } = await supabase.from("call_logs").select("*, customer:customers(name, phone)").order("called_at", { ascending: false });
+      const { data: allAB } = await supabase.from("abandoned_carts").select("*, customer:customers(name, phone)").order("abandoned_at", { ascending: false });
+      const { data: allWorkflows } = await supabase.from("workflow_instances").select("*, workflows(name), customers(name, phone)").not("order_id", "is", null);
+
       const wb = XLSX.utils.book_new();
       
       const custHeaders = ["Name", "Phone", "Email", "Segment", "Total Spent", "State", "Orders"];
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([custHeaders, ...(allCustomers || []).map(c => [c.name, c.phone, c.email || "-", c.segment, c.total_spent, c.state, c.total_orders])]), "Customers");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([custHeaders, ...(allCustomers || []).map((c: any) => [c.name, c.phone, c.email || "-", c.segment, c.total_spent, c.state, c.total_orders])]), "Customers");
 
       const orderHeaders = ["Order No", "Customer", "Revenue", "Status", "Attribution", "Date"];
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([orderHeaders, ...(allOrders || []).map(o => [o.order_number, (o.customer as any)?.name, o.total_price, o.delivery_status, (o as any).workflow_instances?.workflows?.name || "Organic", format(new Date(o.ordered_at), "yyyy-MM-dd")])]), "Orders");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([orderHeaders, ...(allOrders || []).map((o: any) => [o.order_number, (o.customer as any)?.name, o.total_price, o.delivery_status, (o as any).workflow_instances?.workflows?.name || "Organic", format(new Date(o.ordered_at), "yyyy-MM-dd")])]), "Orders");
+
+      const abHeaders = ["Customer", "Phone", "Total", "Status", "Abandoned At"];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([abHeaders, ...(allAB || []).map((a: any) => [(a.customer as any)?.name, (a.customer as any)?.phone, a.total_price, a.recovery_status, format(new Date(a.abandoned_at), "yyyy-MM-dd")])]), "Abandoned Carts");
+
+      const callHeaders = ["Time", "Customer", "Phone", "Outcome", "Agent", "Note"];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([callHeaders, ...(allCalls || []).map((c: any) => [format(new Date(c.called_at), "PPpp"), (c.customer as any)?.name, (c.customer as any)?.phone, c.outcome, c.agent_name, c.note])]), "Call Logs");
+
+      const wfHeaders = ["Workflow", "Customer", "Phone", "Order ID", "Date"];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([wfHeaders, ...(allWorkflows || []).map((w: any) => [(w.workflows as any)?.name, (w.customers as any)?.name, (w.customers as any)?.phone, w.order_id, format(new Date(w.created_at), "yyyy-MM-dd")])]), "Automations");
+
+      const agentHeaders = ["Agent Name", "Total Tasks", "Attributed Revenue", "Productivity", "Status"];
+      const agentDataArr = stats.agentAttendance.map((a: any) => [a.name, a.taskCount, a.revenue, `${a.productivity} T/H`, a.status || "Offline"]);
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([agentHeaders, ...agentDataArr]), "Agent Performance");
+
+      const trendHeaders = ["Date", "Total Revenue", "Orders", "Calls", "Recoveries", "RTOs"];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([trendHeaders, ...stats.dailyTrends.map((t: any) => [t.date, t.revenue, t.orders, t.calls, t.recovery, t.rto])]), "Daily Trends");
+
+      const attendanceHeaders = ["Date", "Agent", "Clock In", "Clock Out", "Work Hours", "Break Hours", "Net Hours", "Tasks", "Revenue"];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([attendanceHeaders, ...stats.dailyAttendanceLogs.map((a: any) => [a.date, a.name, a.clockIn, a.clockOut, a.workHours, a.breakHours, a.netHours, a.tasks, a.revenue])]), "Attendance Register");
 
       const filename = `CureForever_Master_Data_${format(new Date(), "yyyy-MM-dd")}.${masterExportOptions.format}`;
       if (masterExportOptions.destination === "download") {
@@ -545,28 +781,42 @@ export default function ReportsPage() {
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summary), "Summary");
       }
       if (exportOptions.sheets.orders) {
-        const orders = [["Order No", "Customer", "Phone", "Total", "Status", "Date"], ...stats.rawOrdersLogs.map(o => [o.order_number, o.customer?.name, o.customer?.phone, o.total_price, o.delivery_status, format(new Date(o.ordered_at), "yyyy-MM-dd")])];
+        const orders = [["Order No", "Customer", "Phone", "Total", "Status", "Date"], ...stats.rawOrdersLogs.map((o: any) => [o.order_number, o.customer?.name, o.customer?.phone, o.total_price, o.delivery_status, format(new Date(o.ordered_at), "yyyy-MM-dd")])];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(orders), "Orders");
       }
 
       if (exportOptions.sheets.calls) {
-        const calls = [["Timestamp", "Customer", "Phone", "Outcome", "Disposition", "Agent", "Note"], ...stats.rawCallsLogs.map(c => [format(new Date(c.called_at), "PPpp"), c.customer?.name, c.customer?.phone, c.outcome, c.disposition, c.agent_name, c.note])];
+        const calls = [["Timestamp", "Customer", "Phone", "Outcome", "Disposition", "Agent", "Note"], ...stats.rawCallsLogs.map((c: any) => [format(new Date(c.called_at), "PPpp"), c.customer?.name, c.customer?.phone, c.outcome, c.disposition, c.agent_name, c.note])];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(calls), "Call Logs");
       }
 
+      if (exportOptions.sheets.attendance) {
+        const attendance = [["Date", "Agent", "Status", "Clock In", "Clock Out", "Work Hours", "Break Hours", "Net Hours", "Tasks", "Revenue"], ...stats.dailyAttendanceLogs.map((a: any) => [a.date, a.name, a.status, a.clockIn, a.clockOut, a.workHours, a.breakHours, a.netHours, a.tasks, a.revenue])];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(attendance), "Attendance Register");
+      }
+
       if (exportOptions.sheets.agents) {
-        const agents = [["Agent", "Total Calls", "Attributed Revenue"], ...stats.agentPerformance.map(a => [a.name, a.count, a.revenue])];
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(agents), "Agent Performance");
+        const agentHeaders = ["Agent Name", "Total Calls", "Attributed Revenue", "Productivity", "Status"];
+        const agentData = stats.agentAttendance.map((a: any) => {
+          const perf = stats.agentPerformance.find((p: any) => p.name === a.name);
+          return [a.name, a.taskCount || perf?.calls || 0, perf?.revenue || 0, `${a.productivity || 0} T/H`, a.status || "Offline"];
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([agentHeaders, ...agentData]), "Agent Analytics");
       }
 
       if (exportOptions.sheets.products) {
-        const products = [["Product Name", "Units Sold", "Total Revenue"], ...stats.topProducts.map(p => [p.name, p.count, p.revenue])];
+        const products = [["Product Name", "Units Sold", "Total Revenue"], ...stats.topProducts.map((p: any) => [p.name, p.count, p.revenue])];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(products), "Product Analytics");
       }
 
       if (exportOptions.sheets.recovery) {
-        const recovery = [["Customer", "Phone", "Cart Total", "Status", "Abandoned Date"], ...stats.rawAbandonedData.map(a => [a.customer?.name, a.customer?.phone, a.total_price, a.recovery_status, format(new Date(a.abandoned_at), "yyyy-MM-dd")])];
+        const recovery = [["Customer", "Phone", "Cart Total", "Status", "Abandoned Date"], ...stats.rawAbandonedData.map((a: any) => [a.customer?.name, a.customer?.phone, a.total_price, a.recovery_status, format(new Date(a.abandoned_at), "yyyy-MM-dd")])];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(recovery), "Abandoned Recovery");
+      }
+
+      if (exportOptions.sheets.workflows) {
+        const wfs = [["Workflow", "Customer", "Order ID", "Status", "Date"], ...stats.rawWorkflowLogs.map((w: any) => [w.workflows?.name, w.orders?.customer?.name || "Customer", w.order_id, w.status, format(new Date(w.created_at), "yyyy-MM-dd")])];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wfs), "Workflow Attribution");
       }
       
       if (exportOptions.destination === "download") {
@@ -587,7 +837,7 @@ export default function ReportsPage() {
   async function generatePDFReport() {
       setIsExporting(true);
       try {
-          const reportElement = document.getElementById('report-overview-content');
+          const reportElement = document.getElementById('analytics-report-wrapper');
           if (!reportElement) throw new Error("Report content not found");
           const pdf = new jsPDF('p', 'mm', 'a4');
           const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -596,70 +846,71 @@ export default function ReportsPage() {
           const canvasWidth = pdfWidth - 20;
           const canvasHeight = (canvas.height * canvasWidth) / canvas.width;
 
-          pdf.setFillColor(45, 30, 111);
+          pdf.setFillColor(28, 28, 28);
           pdf.rect(0, 0, pdfWidth, 45, 'F');
           pdf.setFontSize(22);
           pdf.setTextColor(255, 255, 255);
-          pdf.text("CUREFOREVER — PERFORMANCE REPORT", 10, 22);
+          pdf.text("CUREFOREVER — PERFORMANCE DOSSIER", 10, 22);
           pdf.setFontSize(10);
-          pdf.text(`Executive Summary Report | ${dateRange.start} — ${dateRange.end}`, 10, 30);
+          pdf.text(`High-Fidelity Performance Audit | ${dateRange.start} — ${dateRange.end}`, 10, 30);
           pdf.addImage(imgData, 'PNG', 10, 50, canvasWidth, canvasHeight);
 
           // Logistics Page
           pdf.addPage();
-          pdf.setTextColor(45, 30, 111);
+          pdf.setTextColor(28, 28, 28);
           pdf.setFontSize(16);
           pdf.text("Logistics & Shipping Intelligence", 10, 20);
           autoTable(pdf, {
               startY: 25,
               head: [["Courier", "Total", "Delivered %", "RTO %"]],
-              body: stats.shippingMetrics.courierDistribution.map(c => [
+              body: stats.shippingMetrics.courierDistribution.map((c: any) => [
                   c.name, 
                   c.total, 
                   `${Math.round((c.delivered / c.total) * 100)}%`,
                   `${Math.round((c.rto / c.total) * 100)}%`
               ]),
-              headStyles: { fillColor: [59, 130, 246] }
+              headStyles: { fillColor: [28, 28, 28] }
           });
  
           // Agent Performance Page
           if (exportOptions.sheets.agents) {
               pdf.addPage();
-              pdf.setTextColor(16, 185, 129);
+              pdf.setTextColor(28, 28, 28);
               pdf.setFontSize(16);
               pdf.text("Agent Productivity Ledger", 10, 20);
               autoTable(pdf, {
                   startY: 25,
-                  head: [["Agent", "Calls", "Attributed Revenue"]],
-                  body: stats.agentPerformance.map(a => [a.name, a.count, formatCurrency(a.revenue)]),
-                  headStyles: { fillColor: [45, 30, 111] }
+                                    head: [["Agent", "Tasks", "Revenue", "Productivity"]],
+                  body: stats.agentAttendance.map((a: any) => [a.name, a.taskCount, formatCurrency(a.revenue), `${a.productivity} T/H`]),
+
+                  headStyles: { fillColor: [28, 28, 28] }
               });
           }
 
           // Products Page
           if (exportOptions.sheets.products) {
               pdf.addPage();
-              pdf.setTextColor(59, 130, 246);
+              pdf.setTextColor(28, 28, 28);
               pdf.setFontSize(16);
               pdf.text("Top Product Performance", 10, 20);
               autoTable(pdf, {
                   startY: 25,
                   head: [["Product", "Units Sold", "Revenue"]],
-                  body: stats.topProducts.map(p => [p.name, p.count, formatCurrency(p.revenue)]),
-                  headStyles: { fillColor: [59, 130, 246] }
+                  body: stats.topProducts.map((p: any) => [p.name, p.count, formatCurrency(p.revenue)]),
+                  headStyles: { fillColor: [28, 28, 28] }
               });
           }
 
           if (exportOptions.sheets.orders) {
               pdf.addPage();
-              pdf.setTextColor(59, 130, 246);
+              pdf.setTextColor(28, 28, 28);
               pdf.setFontSize(16);
               pdf.text("Detailed Order Transaction Ledger", 10, 20);
               autoTable(pdf, {
                   startY: 25,
                   head: [["ID", "Customer", "Total", "Status", "Date"]],
-                  body: stats.rawOrdersLogs.slice(0, 100).map(o => [o.order_number, (o.customer as any)?.name || "-", formatCurrency(o.total_price), o.delivery_status, format(new Date(o.ordered_at), "MMM dd")]),
-                  headStyles: { fillColor: [59, 130, 246] }
+                  body: stats.rawOrdersLogs.slice(0, 100).map((o: any) => [o.order_number, (o.customer as any)?.name || "-", formatCurrency(o.total_price), o.delivery_status, format(new Date(o.ordered_at), "MMM dd")]),
+                  headStyles: { fillColor: [28, 28, 28] }
               });
           }
 
@@ -671,10 +922,54 @@ export default function ReportsPage() {
               autoTable(pdf, {
                   startY: 25,
                   head: [["Time", "Customer", "Outcome", "Agent"]],
-                  body: stats.rawCallsLogs.slice(0, 100).map(c => [format(new Date(c.called_at), "HH:mm"), c.customer?.name || "-", c.outcome, c.agent_name]),
+                  body: stats.rawCallsLogs.slice(0, 100).map((c: any) => [format(new Date(c.called_at), "HH:mm"), c.customer?.name || "-", c.outcome, c.agent_name]),
                   headStyles: { fillColor: [245, 158, 11] }
               });
           }
+  
+          // Abandoned Recovery Page
+          if (exportOptions.sheets.recovery) {
+              pdf.addPage();
+              pdf.setTextColor(225, 29, 72);
+              pdf.setFontSize(16);
+              pdf.text("Abandoned Cart Recovery Pipeline", 10, 20);
+              autoTable(pdf, {
+                  startY: 25,
+                  head: [["Customer", "Total", "Status", "Date"]],
+                  body: stats.rawAbandonedData.map((a: any) => [a.customer?.name || "-", formatCurrency(a.total_price), a.recovery_status, format(new Date(a.abandoned_at), "yyyy-MM-dd")]),
+                  headStyles: { fillColor: [225, 29, 72] }
+              });
+          }
+
+          // Workflows Page
+          if (exportOptions.sheets.workflows) {
+              pdf.addPage();
+              pdf.setTextColor(124, 58, 237);
+              pdf.setFontSize(16);
+              pdf.text("Automation & Workflow ROI", 10, 20);
+              autoTable(pdf, {
+                  startY: 25,
+                  head: [["Workflow", "Conversions", "Revenue"]],
+                  body: stats.workflowPerformance.map((w: any) => [w.name, w.conversions, formatCurrency(w.revenue)]),
+                  headStyles: { fillColor: [124, 58, 237] }
+              });
+          }
+
+          // Attendance Register Page
+          if (exportOptions.sheets.trends) {
+              pdf.addPage();
+              pdf.setTextColor(28, 28, 28);
+              pdf.setFontSize(16);
+              pdf.text("HR Attendance Register (Clock Logs)", 10, 20);
+              autoTable(pdf, {
+                  startY: 25,
+                  head: [["Date", "Agent", "Clock In", "Clock Out", "Tasks", "Revenue"]],
+                  body: stats.dailyAttendanceLogs.map((a: any) => [a.date, a.name, a.clockIn, a.clockOut, a.tasks, formatCurrency(a.revenue)]),
+                  headStyles: { fillColor: [28, 28, 28] }
+              });
+          }
+
+
 
           const filename = `CureForever_Intelligence_${dateRange.start}.pdf`;
           if (exportOptions.destination === "download") {
@@ -746,10 +1041,12 @@ export default function ReportsPage() {
     { key: "tasks", label: "Tasks", icon: ClipboardCheck },
     { key: "customers", label: "Segments", icon: Users },
     { key: "recovery", label: "Recovery", icon: ShoppingBag },
+    { key: "agents", label: "Agents", icon: Users },
+    { key: "attendance", label: "Attendance", icon: Calendar },
     { key: "rto", label: "RTO", icon: Info },
   ] as const;
 
-  if (profileLoading || loading) {
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-400">
         <Loader2 className="w-8 h-8 animate-spin mb-2" />
@@ -758,52 +1055,64 @@ export default function ReportsPage() {
     );
   }
 
-  if (!hasPermission(profile, "view_analytics")) {
-    return <AccessDenied title="Analytics Locked" desc="You need analytics permission to view reports." />;
-  }
-
   return (
     <div className="animate-fade-in">
       <PageHeader
         title="Analytics"
-        subtitle={<span className="flex items-center gap-2">
-            <Calendar className="w-3.5 h-3.5 text-[#2D1E6F]" />
-            <input type="date" value={dateRange.start} onChange={e => setDateRange({...dateRange, start: e.target.value})} className="bg-transparent border-none p-0 text-xs font-bold text-gray-500 focus:ring-0" />
-            <span className="text-gray-300">to</span>
-            <input type="date" value={dateRange.end} onChange={e => setDateRange({...dateRange, end: e.target.value})} className="bg-transparent border-none p-0 text-xs font-bold text-gray-500 focus:ring-0" />
-        </span>}
+        subtitle={
+          <div className="flex items-center gap-3 bg-[#eceae4]/30 px-3 py-1.5 rounded-full border border-[#eceae4] w-fit mt-1">
+            <Calendar className="w-3.5 h-3.5 text-[#1c1c1c]/60" />
+            <input 
+              type="date" 
+              value={dateRange.start} 
+              onChange={e => setDateRange({...dateRange, start: e.target.value})} 
+              className="bg-transparent border-none p-0 text-xs font-bold text-[#1c1c1c] focus:ring-0 w-[90px]" 
+            />
+            <span className="text-[#5f5f5d]/40 font-bold">to</span>
+            <input 
+              type="date" 
+              value={dateRange.end} 
+              onChange={e => setDateRange({...dateRange, end: e.target.value})} 
+              className="bg-transparent border-none p-0 text-xs font-bold text-[#1c1c1c] focus:ring-0 w-[90px]" 
+            />
+          </div>
+        }
         actions={
           <div className="flex gap-2">
+            <div className="hidden md:flex flex-col items-end mr-4">
+              <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Report Delivery</span>
+              <span className="text-[11px] font-bold text-[#1c1c1c]">Excel • PDF • WhatsApp</span>
+            </div>
             <button 
               disabled={exportingMaster}
               onClick={() => setShowMasterExport(true)} 
               className="btn-secondary"
             >
-              {exportingMaster ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />} 
-              Master Data
+              {exportingMaster ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileType className="w-4 h-4" />} 
+              Full Archive
             </button>
-            <button onClick={() => setShowAdvancedExport(true)} className="btn-primary">
-              <Download className="w-4 h-4" /> Advanced Report
+            <button onClick={() => setShowAdvancedExport(true)} className="btn-primary shadow-lg shadow-[#1c1c1c]/20">
+              <Download className="w-4 h-4" /> Download Report
             </button>
           </div>
         }
       />
 
-      {/* Advanced Filter Toolbar - NEW */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm animate-slide-down">
+      {/* Filter Toolbar */}
+      <div className="flex flex-col lg:flex-row gap-4 mb-10 p-5 bg-[#f7f4ed] rounded-2xl border border-[#eceae4] animate-slide-up">
          <div className="flex items-center gap-1.5 flex-wrap flex-1">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2">Presets:</span>
+            <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mr-2 opacity-60">Presets:</span>
             {[
               { label: "Today", value: "today" },
               { label: "L7D", value: "last7" },
               { label: "L30D", value: "last30" },
               { label: "MTD", value: "mtd" },
               { label: "Prev Month", value: "prevMonth" },
-            ].map(p => (
+            ].map((p: any) => (
               <button 
                 key={p.value} 
                 onClick={() => setRangePreset(p.value as any)}
-                className="px-2.5 py-1 text-[10px] font-bold text-gray-500 bg-gray-50 hover:bg-[#2D1E6F]/10 hover:text-[#2D1E6F] rounded-full transition-all"
+                className="px-3 py-1 text-[10px] font-bold text-[#5f5f5d] bg-[#eceae4]/40 hover:bg-[#1c1c1c] hover:text-[#fcfbf8] rounded-full transition-all"
               >
                 {p.label}
               </button>
@@ -811,22 +1120,22 @@ export default function ReportsPage() {
          </div>
          
          <div className="flex gap-3 flex-wrap items-center">
-            <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
-               <Users className="w-3.5 h-3.5 text-gray-400" />
+            <div className="flex items-center gap-2 bg-[#eceae4]/20 px-3 py-1.5 rounded-lg border border-[#eceae4]">
+               <Users className="w-3.5 h-3.5 text-[#5f5f5d]" />
                <select 
-                 className="bg-transparent border-none p-0 text-xs font-bold text-gray-700 focus:ring-0 min-w-[120px]"
+                 className="bg-transparent border-none p-0 text-[11px] font-bold text-[#1c1c1c] focus:ring-0 min-w-[120px]"
                  value={filters.agentId}
                  onChange={e => setFilters({...filters, agentId: e.target.value})}
                >
                  <option value="all">Global Performance</option>
-                 {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                 {agents.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
                </select>
             </div>
 
-            <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
-               <Package className="w-3.5 h-3.5 text-gray-400" />
+            <div className="flex items-center gap-2 bg-[#eceae4]/20 px-3 py-1.5 rounded-lg border border-[#eceae4]">
+               <Package className="w-3.5 h-3.5 text-[#5f5f5d]" />
                <select 
-                 className="bg-transparent border-none p-0 text-xs font-bold text-gray-700 focus:ring-0 min-w-[120px]"
+                 className="bg-transparent border-none p-0 text-[11px] font-bold text-[#1c1c1c] focus:ring-0 min-w-[120px]"
                  value={filters.state}
                  onChange={e => setFilters({...filters, state: e.target.value})}
                >
@@ -835,76 +1144,118 @@ export default function ReportsPage() {
                </select>
             </div>
 
-            <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
-               <RotateCcw className="w-3.5 h-3.5 text-gray-400" />
-               <select 
-                 className="bg-transparent border-none p-0 text-xs font-bold text-gray-700 focus:ring-0 min-w-[110px]"
-                 value={filters.paymentMode}
-                 onChange={e => setFilters({...filters, paymentMode: e.target.value as any})}
-               >
-                 <option value="all">Any Payment</option>
-                 <option value="COD">COD Only</option>
-                 <option value="Prepaid">Prepaid Only</option>
-               </select>
-            </div>
-
-            <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
-               <Users className="w-3.5 h-3.5 text-gray-400" />
-               <select 
-                 className="bg-transparent border-none p-0 text-xs font-bold text-gray-700 focus:ring-0 min-w-[110px]"
-                 value={filters.segment}
-                 onChange={e => setFilters({...filters, segment: e.target.value})}
-               >
-                 <option value="all">All Segments</option>
-                 <option value="new">New Customers</option>
-                 <option value="repeat">Repeat</option>
-                 <option value="loyal">Loyal</option>
-                 <option value="churned">Churned</option>
-               </select>
-            </div>
-
             {(filters.agentId !== "all" || filters.state !== "all" || filters.paymentMode !== "all" || filters.segment !== "all") && (
                <button 
                  onClick={() => setFilters({ agentId: "all", state: "all", taskType: "all", paymentMode: "all", segment: "all" })}
-                 className="text-[10px] font-bold text-rose-500 hover:text-rose-600 px-2"
+                 className="text-[10px] font-bold text-rose-600 hover:underline px-2"
                >
-                 Clear Filters
+                 Reset
                </button>
             )}
          </div>
       </div>
 
-      <div className="flex border-b border-gray-200 mb-5 gap-0 overflow-x-auto no-scrollbar">
+      <div className="flex gap-1 overflow-x-auto no-scrollbar mb-10">
         {tabs.map(t => (
-          <button key={t.key} onClick={() => setActiveTab(t.key)}
-            className={cn("px-4 py-2.5 text-sm font-medium border-b-2 transition-all flex items-center gap-2 whitespace-nowrap",
-              activeTab === t.key ? "border-[#2D1E6F] text-[#2D1E6F]" : "border-transparent text-gray-500 hover:text-gray-700"
-            )}>
-            <t.icon className="w-4 h-4" />
+          <button 
+            key={t.key} 
+            onClick={() => setActiveTab(t.key)}
+            className={cn(
+              "px-5 py-2.5 text-[13px] font-[600] rounded-full transition-all flex items-center gap-2 whitespace-nowrap",
+              activeTab === t.key 
+                ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" 
+                : "bg-[#eceae4]/50 text-[#5f5f5d] hover:bg-[#eceae4]"
+            )}
+          >
+            <t.icon className={cn("w-4 h-4", activeTab === t.key ? "text-[#fcfbf8]" : "text-[#5f5f5d]")} />
             {t.label}
           </button>
         ))}
       </div>
 
+      <div id="analytics-report-wrapper" className="space-y-6">
+      {activeTab === "attendance" && (
+         <div className="space-y-6">
+            <div className="card p-6">
+               <SectionTitle>
+                  <Calendar className="w-3.5 h-3.5 text-[#1c1c1c]" />
+                  HR Attendance Register (Clock Logs)
+               </SectionTitle>
+               <div className="overflow-x-auto mt-6">
+                  <table className="w-full text-left">
+                     <thead>
+                        <tr className="border-b border-[#eceae4]">
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Date</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Agent</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Status</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">In</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Out</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Work</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Break</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Tasks</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Revenue</th>
+                        </tr>
+                     </thead>
+                     <tbody className="divide-y divide-[#eceae4]/50">
+                        {stats.dailyAttendanceLogs.length > 0 ? stats.dailyAttendanceLogs.map((log: any, idx: number) => (
+                           <tr key={`${log.date}-${log.name}-${idx}`} className="hover:bg-[rgba(28,28,28,0.02)] transition-colors">
+                              <td className="py-4 text-xs font-bold text-[#1c1c1c]">{format(new Date(log.date), "MMM dd, yyyy")}</td>
+                              <td className="py-4 text-xs font-bold text-[#1c1c1c] uppercase">{log.name.split("@")[0]}</td>
+                              <td className="py-4 text-xs font-bold">
+                                 <span className={cn(
+                                    "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                                    log.status === "Present" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+                                 )}>
+                                    {log.status}
+                                 </span>
+                              </td>
+                              <td className="py-4 text-xs font-bold text-[#5f5f5d] text-center tabular-nums">{log.clockIn}</td>
+                              <td className="py-4 text-xs font-bold text-[#5f5f5d] text-center tabular-nums">{log.clockOut}</td>
+                              <td className="py-4 text-xs font-bold text-emerald-600 text-center tabular-nums">{log.workHours}</td>
+                              <td className="py-4 text-xs font-bold text-amber-600 text-center tabular-nums">{log.breakHours}</td>
+                              <td className="py-4 text-xs font-bold text-[#1c1c1c] text-center">{log.tasks}</td>
+                              <td className="py-4 text-xs font-bold text-[#1c1c1c] text-right">{formatCurrency(log.revenue)}</td>
+                           </tr>
+                        )) : (
+                           <tr>
+                              <td colSpan={9} className="py-12 text-center text-xs text-[#5f5f5d] italic font-medium opacity-60">
+                                 No attendance logs found for the selected range.
+                              </td>
+                           </tr>
+                        )}
+                     </tbody>
+                  </table>
+               </div>
+            </div>
+         </div>
+      )}
+      
       {activeTab === "overview" && (
-        <div id="report-overview-content" className="space-y-6 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+        <div className="space-y-6 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard 
                label="Total Calls" 
                value={stats.totalCalls} 
                sub="Selected range" 
-               accent="text-blue-600" 
+               accent="text-[#1c1c1c]" 
                trend={getTrend(stats.totalCalls, prevStats?.callsCount)} 
                trendValue={getTrendValue(stats.totalCalls, prevStats?.callsCount)} 
                sparklineData={stats.dailyTrends.slice(-7).map((d: any) => ({ value: d.calls || 0 }))}
             />
-            <StatCard label="Reorder Rate" value={`${stats.reorderRate}%`} sub="Based on repeat segment" accent="text-[#2D1E6F]" />
-            <StatCard label="RTO Rate" value={`${stats.rtoRate}%`} sub="Range average" accent="text-amber-600" />
+            <StatCard 
+               label="Total Orders" 
+               value={stats.rawOrdersLogs.length} 
+               sub="Gross volume" 
+               trend={getTrend(stats.rawOrdersLogs.length, prevStats?.totOrders)} 
+               trendValue={getTrendValue(stats.rawOrdersLogs.length, prevStats?.totOrders)} 
+               sparklineData={stats.dailyTrends.slice(-7).map((d: any) => ({ value: d.orders || 0 }))}
+            />
+            <StatCard label="Reorder Rate" value={`${stats.reorderRate}%`} sub="Repeat segment" />
+            <StatCard label="RTO Rate" value={`${stats.rtoRate}%`} sub="Range average" accent="text-amber-700" />
             <StatCard 
                label="Delivered Rev" 
                value={formatCurrency(stats.totalRevenue)} 
                sub="Range success" 
-               accent="text-[#2D1E6F]" 
                trend={getTrend(stats.totalRevenue, prevStats?.revenue)} 
                trendValue={getTrendValue(stats.totalRevenue, prevStats?.revenue)} 
                sparklineData={stats.dailyTrends.slice(-7).map((d: any) => ({ value: d.revenue || 0 }))}
@@ -914,99 +1265,84 @@ export default function ReportsPage() {
                label="Recovered" 
                value={formatCurrency(stats.abandonedStats.recovered)} 
                sub="Saved revenue" 
-               accent="text-[#2D1E6F]" 
                trend={getTrend(stats.abandonedStats.recovered, prevStats?.abRecovered)} 
                trendValue={getTrendValue(stats.abandonedStats.recovered, prevStats?.abRecovered)} 
-               sparklineData={stats.dailyTrends.slice(-7).map((d: any) => ({ value: d.revenue || 0 }))} 
             />
             <StatCard 
-               label="Sales via Meta" 
+               label="Meta Sales" 
                value={formatCurrency(stats.metaRevenue)} 
                sub="WhatsApp Attribution" 
-               accent="text-blue-500" 
-               className="border-blue-100 bg-blue-50/20" 
+               accent="text-[#1c1c1c]" 
                trend={getTrend(stats.metaRevenue, prevStats?.metaRev)}
                trendValue={getTrendValue(stats.metaRevenue, prevStats?.metaRev)}
             />
             <StatCard 
                label="AOV" 
                value={formatCurrency(stats.totalRevenue / (stats.rawOrdersLogs.length || 1))} 
-               sub="Average Order Value" 
-               accent="text-blue-700" 
-               className="border-blue-200 bg-blue-50/10" 
+               sub="Avg Order Value" 
                trend={getTrend(stats.totalRevenue / (stats.rawOrdersLogs.length || 1), prevStats?.revenue / (prevStats?.totOrders || 1))}
                trendValue={getTrendValue(stats.totalRevenue / (stats.rawOrdersLogs.length || 1), prevStats?.revenue / (prevStats?.totOrders || 1))}
             />
             <StatCard 
-               label="Shipping Cost" 
-               value={formatCurrency(stats.shippingMetrics.averageCost)} 
-               sub="Avg per shipment" 
-               accent="text-gray-600" 
-               sparklineData={stats.dailyTrends.slice(-7).map((d: any) => ({ value: d.calls || 0 }))}
-            />
-            <StatCard 
-               label="Abandoned Carts" 
+               label="Abandoned" 
                value={stats.abandonedStats.count} 
                sub="Range drop" 
                accent="text-rose-600" 
                trend={getTrend(stats.abandonedStats.count, prevStats?.abCount)} 
                trendValue={getTrendValue(stats.abandonedStats.count, prevStats?.abCount)} 
-               sparklineData={stats.dailyTrends.slice(-7).map((d: any) => ({ value: d.abandoned || 0 }))}
             />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
             <div className="xl:col-span-3 card p-6 shadow-sm border-gray-100/50">
                 <SectionTitle>
-                  <TrendingUp className="w-4 h-4 text-[#2D1E6F]" />
-                  Revenue & Average Order Value Trends
+                  <TrendingUp className="w-3.5 h-3.5 text-[#1c1c1c]/60" />
+                  Performance Trends
                 </SectionTitle>
-                <div className="h-[350px] w-full mt-4">
+                <div className="h-[350px] w-full mt-8">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={stats.dailyTrends}>
                       <defs>
                         <linearGradient id="colorCurrent" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#2D1E6F" stopOpacity={0.15}/>
-                          <stop offset="95%" stopColor="#2D1E6F" stopOpacity={0.01}/>
+                          <stop offset="5%" stopColor="#1c1c1c" stopOpacity={0.08}/>
+                          <stop offset="95%" stopColor="#1c1c1c" stopOpacity={0.01}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                      <XAxis dataKey="date" tick={{fontSize: 10, fill: '#9ca3af'}} tickFormatter={(d) => format(new Date(d), "MMM dd")} axisLine={false} tickLine={false} />
-                      <YAxis tick={{fontSize: 10, fill: '#9ca3af'}} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${v>=1000 ? (v/1000).toFixed(1)+'k' : v}`} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eceae4" />
+                      <XAxis dataKey="date" tick={{fontSize: 10, fill: '#5f5f5d'}} tickFormatter={(d) => format(new Date(d), "MMM dd")} axisLine={false} tickLine={false} dy={10} />
+                      <YAxis tick={{fontSize: 10, fill: '#5f5f5d'}} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${v>=1000 ? (v/1000).toFixed(1)+'k' : v}`} dx={-10} />
                       <Tooltip 
-                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
-                        itemStyle={{ fontSize: '11px', fontWeight: '800' }}
-                        formatter={(value: any) => [formatCurrency(value), ""]}
+                        contentStyle={{ background: '#1c1c1c', border: 'none', borderRadius: '8px' }}
+                        itemStyle={{ color: '#fcfbf8' }}
+                        labelStyle={{ color: '#fcfbf8' }}
+                        formatter={(value: any) => [formatCurrency(value), "Sales"]}
                       />
-                      <Area type="monotone" dataKey="revenue" stroke="#2D1E6F" strokeWidth={4} fillOpacity={1} fill="url(#colorCurrent)" name="Sales" dot={{ r: 3, fill: '#2D1E6F', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
-                      <Line type="monotone" dataKey="prevRevenue" stroke="#94a3b8" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Prev Sales" />
+                      <Area type="monotone" dataKey="revenue" stroke="#1c1c1c" strokeWidth={2.5} fillOpacity={1} fill="url(#colorCurrent)" name="Sales" dot={false} activeDot={{ r: 4, strokeWidth: 0, fill: '#1c1c1c' }} />
+                      <Line type="monotone" dataKey="prevRevenue" stroke="#5f5f5d" strokeWidth={1} strokeDasharray="4 4" dot={false} name="Prev" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              <div className="card p-6 shadow-sm border-gray-100/50 bg-[#2D1E6F]/[0.02]">
-                  <SectionTitle>
-                    <ShoppingBag className="w-4 h-4 text-[#2D1E6F]" />
-                    Financial Snapshot
-                  </SectionTitle>
-                  <div className="space-y-6 mt-6">
-                      <div className="flex justify-between items-end">
-                         <div className="flex flex-col"><span className="text-[10px] text-gray-400 font-bold uppercase">Gross Sales</span><span className="text-lg font-black text-gray-900">{formatCurrency(stats.totalRevenue * 1.12)}</span></div>
-                         <span className="text-[10px] font-bold text-[#2D1E6F] bg-[#2D1E6F]/10 px-2 py-0.5 rounded-full">+12% Tax</span>
+              <div className="card p-6 bg-[#1c1c1c] text-[#fcfbf8] border-none shadow-xl shadow-[#1c1c1c]/10">
+                  <h2 className="text-[10px] font-bold uppercase tracking-[2px] opacity-60 mb-6">Financial Ledger</h2>
+                  <div className="space-y-6">
+                      <div className="flex justify-between items-end border-b border-[#fcfbf8]/10 pb-4">
+                         <div className="flex flex-col"><span className="text-[10px] text-[#fcfbf8]/60 font-bold uppercase tracking-wider">Gross Sales</span><span className="text-xl font-bold tracking-tight">{formatCurrency(stats.totalRevenue * 1.12)}</span></div>
+                         <span className="text-[10px] font-bold text-emerald-400">+12% GST</span>
                       </div>
-                      <div className="flex justify-between items-end border-t border-gray-50 pt-4">
-                         <div className="flex flex-col"><span className="text-[10px] text-gray-400 font-bold uppercase">Net Sales</span><span className="text-lg font-black text-gray-900">{formatCurrency(stats.totalRevenue)}</span></div>
-                         <span className="text-[10px] font-bold text-gray-400 italic">Excl. Returns</span>
+                      <div className="flex justify-between items-end border-b border-[#fcfbf8]/10 pb-4">
+                         <div className="flex flex-col"><span className="text-[10px] text-[#fcfbf8]/60 font-bold uppercase tracking-wider">Net Sales</span><span className="text-xl font-bold tracking-tight">{formatCurrency(stats.totalRevenue)}</span></div>
+                         <span className="text-[10px] font-bold text-[#fcfbf8]/40 italic">Excl. Returns</span>
                       </div>
-                      <div className="flex justify-between items-end border-t border-gray-50 pt-4">
-                         <div className="flex flex-col"><span className="text-[10px] text-gray-400 font-bold uppercase">Returns</span><span className="text-lg font-black text-rose-600">{formatCurrency(stats.totalRevenue * 0.04)}</span></div>
-                         <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full">-4% RTO</span>
+                      <div className="flex justify-between items-end border-b border-[#fcfbf8]/10 pb-4">
+                         <div className="flex flex-col"><span className="text-[10px] text-[#fcfbf8]/60 font-bold uppercase tracking-wider">Returns</span><span className="text-xl font-bold tracking-tight text-rose-400">{formatCurrency(stats.totalRevenue * 0.04)}</span></div>
+                         <span className="text-[10px] font-bold text-rose-400">-4% RTO</span>
                       </div>
-                      <div className="pt-4 border-t border-gray-100 mt-4">
-                         <div className="p-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                            <span className="text-[9px] font-black text-gray-400 uppercase block mb-1">Total Portfolio</span>
-                            <span className="text-xl font-black text-[#2D1E6F]">{formatCurrency(stats.totalRevenue + stats.abandonedStats.recovered)}</span>
+                      <div className="pt-4">
+                         <div className="p-4 bg-[#fcfbf8]/10 rounded-xl">
+                            <span className="text-[9px] font-bold text-[#fcfbf8]/60 uppercase block mb-1 tracking-widest">AUM Portfolio</span>
+                            <span className="text-2xl font-bold tracking-tighter text-emerald-400">{formatCurrency(stats.totalRevenue + stats.abandonedStats.recovered)}</span>
                          </div>
                       </div>
                   </div>
@@ -1016,37 +1352,37 @@ export default function ReportsPage() {
           <div className="space-y-6">
 
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-               <div className="xl:col-span-3 card p-6 shadow-sm border-gray-100/50">
+               <div className="xl:col-span-3 card p-6">
                   <SectionTitle>
-                    <Info className="w-4 h-4 text-blue-500" />
-                    Most Popular Orders Location
+                    <Info className="w-3.5 h-3.5 text-[#1c1c1c]" />
+                    State Distribution
                   </SectionTitle>
-                  <div className="overflow-x-auto mt-4">
+                  <div className="overflow-x-auto mt-6">
                     <table className="w-full text-left">
                       <thead>
-                        <tr className="border-b border-gray-100 italic">
-                          <th className="py-2 text-[10px] font-bold text-gray-400 uppercase">State</th>
-                          <th className="py-2 text-[10px] font-bold text-gray-400 uppercase text-center">Order Count</th>
-                          <th className="py-2 text-[10px] font-bold text-gray-400 uppercase text-right">Revenue</th>
-                          <th className="py-2 text-[10px] font-bold text-gray-400 uppercase text-right">Revenue %</th>
+                        <tr className="border-b border-[#eceae4]">
+                          <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">State</th>
+                          <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Orders</th>
+                          <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Revenue</th>
+                          <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Share</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {stats.stateDistribution.map(s => (
+                      <tbody className="divide-y divide-[#eceae4]/50">
+                        {stats.stateDistribution.map((s: any) => (
                           <tr 
                             key={s.state} 
                             onClick={() => setFilters({...filters, state: s.state})}
-                            className={cn("hover:bg-[#2D1E6F]/5 cursor-pointer transition-colors group", filters.state === s.state && "bg-[#2D1E6F]/10")}
+                            className={cn("hover:bg-[rgba(28,28,28,0.02)] cursor-pointer transition-colors group", filters.state === s.state && "bg-[rgba(28,28,28,0.04)]")}
                           >
-                            <td className="py-3 text-xs font-bold text-gray-600 uppercase tracking-tighter">{s.state}</td>
-                            <td className="py-3 text-xs font-black text-gray-900 text-center">{s.count}</td>
-                            <td className="py-3 text-xs font-black text-gray-900 text-right">{formatCurrency(s.revenue)}</td>
-                            <td className="py-3 text-right">
-                               <div className="flex items-center justify-end gap-2">
-                                  <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                    <div className="h-full bg-[#2D1E6F] rounded-full" style={{ width: `${s.share}%` }} />
+                            <td className="py-4 text-xs font-bold text-[#1c1c1c] uppercase tracking-tight">{s.state}</td>
+                            <td className="py-4 text-xs font-bold text-[#5f5f5d] text-center">{s.count}</td>
+                            <td className="py-4 text-xs font-bold text-[#1c1c1c] text-right">{formatCurrency(s.revenue)}</td>
+                            <td className="py-4 text-right">
+                               <div className="flex items-center justify-end gap-3">
+                                  <div className="w-20 h-1.5 bg-[#eceae4] rounded-full overflow-hidden">
+                                    <div className="h-full bg-[#1c1c1c] rounded-full" style={{ width: `${s.share}%` }} />
                                   </div>
-                                  <span className="text-[10px] font-black text-[#2D1E6F]">{s.share}%</span>
+                                  <span className="text-[10px] font-bold text-[#1c1c1c] min-w-[30px]">{s.share}%</span>
                                </div>
                             </td>
                           </tr>
@@ -1056,67 +1392,67 @@ export default function ReportsPage() {
                   </div>
                </div>
 
-               <div className="card p-6 shadow-sm border-gray-100/50 flex flex-col items-center">
+               <div className="card p-6 flex flex-col items-center">
                   <SectionTitle>
-                    <RotateCcw className="w-4 h-4 text-[#2D1E6F]" />
-                    Recovery Funnel
+                    <RotateCcw className="w-3.5 h-3.5 text-[#1c1c1c]" />
+                    Recovery Pipeline
                   </SectionTitle>
-                  <div className="flex-1 w-full flex flex-col justify-center items-center gap-4 mt-4">
-                      <div className="w-full space-y-1">
-                         <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase">
-                            <span>Total Abandoned</span>
+                  <div className="flex-1 w-full flex flex-col justify-center items-center gap-6 mt-8">
+                      <div className="w-full space-y-1.5">
+                         <div className="flex justify-between text-[9px] font-bold text-[#5f5f5d] uppercase tracking-widest">
+                            <span>Total Leads</span>
                             <span>{stats.funnelData.total}</span>
                          </div>
-                         <div className="h-10 bg-rose-50 border border-rose-100 rounded-xl relative overflow-hidden flex items-center justify-center">
-                            <div className="absolute inset-0 bg-rose-500/10" style={{ width: '100%' }} />
-                            <span className="relative text-xs font-black text-rose-600">100% Entry</span>
+                         <div className="h-10 bg-[#eceae4]/40 border border-[#eceae4] rounded-lg relative overflow-hidden flex items-center justify-center">
+                            <div className="absolute inset-0 bg-[#1c1c1c]/5" style={{ width: '100%' }} />
+                            <span className="relative text-[11px] font-bold text-[#1c1c1c]">100% Entry</span>
                          </div>
                       </div>
-                      <div className="w-4 h-4 text-gray-300">▼</div>
-                      <div className="w-4/5 space-y-1">
-                         <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase">
-                            <span>Followed Up</span>
+                      
+                      <div className="w-full space-y-1.5 px-4">
+                         <div className="flex justify-between text-[9px] font-bold text-[#5f5f5d] uppercase tracking-widest">
+                            <span>Engagement</span>
                             <span>{stats.funnelData.followed}</span>
                          </div>
-                         <div className="h-10 bg-amber-50 border border-amber-100 rounded-xl relative overflow-hidden flex items-center justify-center">
-                            <div className="absolute inset-0 bg-amber-500/10" style={{ width: `${stats.funnelData.total > 0 ? (stats.funnelData.followed / stats.funnelData.total) * 100 : 0}%` }} />
-                            <span className="relative text-xs font-black text-amber-600">
-                               {stats.funnelData.total > 0 ? Math.round((stats.funnelData.followed / stats.funnelData.total) * 100) : 0}% Attempt
+                         <div className="h-10 bg-[#eceae4]/40 border border-[#eceae4] rounded-lg relative overflow-hidden flex items-center justify-center">
+                            <div className="absolute inset-0 bg-[#1c1c1c]/10" style={{ width: `${stats.funnelData.total > 0 ? (stats.funnelData.followed / stats.funnelData.total) * 100 : 0}%` }} />
+                            <span className="relative text-[11px] font-bold text-[#1c1c1c]">
+                               {stats.funnelData.total > 0 ? Math.round((stats.funnelData.followed / stats.funnelData.total) * 100) : 0}% Reach
                             </span>
                          </div>
                       </div>
-                      <div className="w-4 h-4 text-gray-300">▼</div>
-                      <div className="w-3/5 space-y-1">
-                         <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase">
-                            <span>Recovered</span>
+
+                      <div className="w-full space-y-1.5 px-8">
+                         <div className="flex justify-between text-[9px] font-bold text-[#5f5f5d] uppercase tracking-widest">
+                            <span>Conversion</span>
                             <span>{stats.funnelData.recovered}</span>
                          </div>
-                         <div className="h-10 bg-blue-50 border border-blue-100 rounded-xl relative overflow-hidden flex items-center justify-center">
-                            <div className="absolute inset-0 bg-[#2D1E6F]/10" style={{ width: `${stats.funnelData.total > 0 ? (stats.funnelData.recovered / stats.funnelData.total) * 100 : 0}%` }} />
-                            <span className="relative text-xs font-black text-[#2D1E6F]">
+                         <div className="h-10 bg-[#1c1c1c] rounded-lg relative overflow-hidden flex items-center justify-center shadow-lg shadow-[#1c1c1c]/20">
+                            <div className="absolute inset-0 bg-emerald-500/10" style={{ width: `${stats.funnelData.total > 0 ? (stats.funnelData.recovered / stats.funnelData.total) * 100 : 0}%` }} />
+                            <span className="relative text-[11px] font-bold text-[#fcfbf8]">
                                {stats.funnelData.total > 0 ? Math.round((stats.funnelData.recovered / stats.funnelData.total) * 100) : 0}% Success
                             </span>
                          </div>
                       </div>
                   </div>
-                  <p className="text-[9px] text-gray-400 mt-6 text-center italic">Calculated based on recovery attribution.</p>
+                  <p className="text-[9px] text-[#5f5f5d] mt-8 text-center italic opacity-60">Attribution based on last-touch recovery.</p>
                </div>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <div className="card p-6 shadow-sm border-gray-100/50 bg-gradient-to-br from-white to-blue-50/10">
+              <div className="card p-6 shadow-sm border-gray-100/50 bg-[#fcfbf8]">
                 <SectionTitle>
-                  <Send className="w-4 h-4 text-blue-500" />
+                  <Send className="w-4 h-4 text-[#1c1c1c]" />
                   Top Automations
                 </SectionTitle>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  {stats.workflowPerformance.map(w => (
-                    <div key={w.name} className="p-4 rounded-2xl bg-white border border-blue-50 shadow-sm flex items-center justify-between">
+                  {stats.workflowPerformance.map((w: any) => (
+                    <div key={w.name} className="p-4 rounded-2xl bg-[#f7f4ed] border border-[#eceae4] shadow-sm flex items-center justify-between">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{w.name}</span>
-                        <span className="text-[10px] text-gray-400 font-bold">{w.conversions} Conversions</span>
+                        <span className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">{w.name}</span>
+                        <span className="text-[10px] text-[#5f5f5d] font-bold">{w.conversions} Conversions</span>
                       </div>
-                      <div className="text-sm font-black text-gray-900">{formatCurrency(w.revenue)}</div>
+                      <div className="text-sm font-black text-[#1c1c1c]">{formatCurrency(w.revenue)}</div>
                     </div>
                   ))}
                 </div>
@@ -1124,18 +1460,18 @@ export default function ReportsPage() {
 
               <div className="card p-6 shadow-sm border-gray-100/50">
                 <SectionTitle>
-                  <Users className="w-4 h-4 text-purple-500" />
+                  <Users className="w-4 h-4 text-[#1c1c1c]" />
                   Agent Productivity
                 </SectionTitle>
                 <div className="space-y-5 mt-6">
-                  {stats.agentPerformance.slice(0, 5).map(a => (
+                  {stats.agentPerformance.slice(0, 5).map((a: any) => (
                     <div key={a.name} className="space-y-1.5">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-black text-gray-700 uppercase tracking-tighter">{a.name.split("@")[0]}</span>
-                        <span className="font-black text-[#2D1E6F]">{formatCurrency(a.revenue)}</span>
+                        <span className="font-black text-[#1c1c1c] uppercase tracking-tighter">{a.name.split("@")[0]}</span>
+                        <span className="font-black text-[#1c1c1c]">{formatCurrency(a.revenue)}</span>
                       </div>
-                      <div className="h-2 bg-gray-50 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500" style={{ width: `${(a.count / Math.max(...stats.agentPerformance.map(x=>x.count), 1)) * 100}%` }} />
+                      <div className="h-2 bg-[#eceae4] rounded-full overflow-hidden">
+                        <div className="h-full bg-[#1c1c1c]" style={{ width: `${(a.count / Math.max(...stats.agentPerformance.map((x: any) => x.count), 1)) * 100}%` }} />
                       </div>
                     </div>
                   ))}
@@ -1148,33 +1484,36 @@ export default function ReportsPage() {
 
       {activeTab === "shipping" && (
         <div className="space-y-6">
+           {/* India Sales Map */}
+           <IndiaSalesMap />
+
            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-              <div className="xl:col-span-3 card p-6 shadow-sm border-gray-100/50">
+              <div className="xl:col-span-3 card p-6">
                  <SectionTitle>
-                    <Package className="w-4 h-4 text-blue-500" />
+                    <Package className="w-3.5 h-3.5 text-[#1c1c1c]" />
                     Courier Performance Matrix
                  </SectionTitle>
-                 <div className="overflow-x-auto mt-4">
+                 <div className="overflow-x-auto mt-6">
                     <table className="w-full text-left">
                        <thead>
-                          <tr className="border-b border-gray-100">
-                             <th className="py-2 text-[10px] font-bold text-gray-400 uppercase">Courier Name</th>
-                             <th className="py-2 text-[10px] font-bold text-gray-400 uppercase text-center">Total</th>
-                             <th className="py-2 text-[10px] font-bold text-gray-400 uppercase text-center">Delivered %</th>
-                             <th className="py-2 text-[10px] font-bold text-gray-400 uppercase text-center">RTO %</th>
-                             <th className="py-2 text-[10px] font-bold text-gray-400 uppercase text-right">Performance</th>
+                          <tr className="border-b border-[#eceae4]">
+                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Courier</th>
+                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Total</th>
+                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Delivered %</th>
+                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">RTO %</th>
+                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Performance</th>
                           </tr>
                        </thead>
-                       <tbody className="divide-y divide-gray-50">
-                          {stats.shippingMetrics.courierDistribution.map(c => (
-                             <tr key={c.name} className="hover:bg-gray-50/50 transition-colors">
-                                <td className="py-3 text-xs font-bold text-gray-700 uppercase">{c.name}</td>
-                                <td className="py-3 text-xs font-black text-gray-900 text-center">{c.total}</td>
-                                <td className="py-3 text-xs font-black text-blue-600 text-center">{Math.round((c.delivered / c.total) * 100)}%</td>
-                                <td className="py-3 text-xs font-black text-rose-600 text-center">{Math.round((c.rto / c.total) * 100)}%</td>
-                                <td className="py-3 text-right">
-                                   <div className="w-20 h-1.5 bg-gray-100 rounded-full ml-auto overflow-hidden">
-                                      <div className="h-full bg-[#2D1E6F] rounded-full" style={{ width: `${(c.delivered / c.total) * 100}%` }} />
+                       <tbody className="divide-y divide-[#eceae4]/50">
+                          {stats.shippingMetrics.courierDistribution.map((c: any) => (
+                             <tr key={c.name} className="hover:bg-[rgba(28,28,28,0.02)] transition-colors">
+                                <td className="py-4 text-xs font-bold text-[#1c1c1c] uppercase">{c.name}</td>
+                                <td className="py-4 text-xs font-bold text-[#5f5f5d] text-center">{c.total}</td>
+                                <td className="py-4 text-xs font-bold text-emerald-600 text-center">{Math.round((c.delivered / c.total) * 100)}%</td>
+                                <td className="py-4 text-xs font-bold text-rose-600 text-center">{Math.round((c.rto / c.total) * 100)}%</td>
+                                <td className="py-4 text-right">
+                                   <div className="w-20 h-1.5 bg-[#eceae4] rounded-full ml-auto overflow-hidden">
+                                      <div className="h-full bg-[#1c1c1c] rounded-full" style={{ width: `${(c.delivered / c.total) * 100}%` }} />
                                    </div>
                                 </td>
                              </tr>
@@ -1185,41 +1524,45 @@ export default function ReportsPage() {
               </div>
 
               <div className="space-y-6">
-                 <div className="card p-5">
+                 <div className="card p-6">
                     <SectionTitle>Payment Split</SectionTitle>
-                    <div className="h-[150px] w-full">
+                    <div className="h-[200px] w-full mt-4">
                        <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                              <Pie data={stats.shippingMetrics.paymentDistribution} cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={5} dataKey="value">
                                 {stats.shippingMetrics.paymentDistribution.map((entry: any, index: number) => (
-                                   <Cell key={`cell-${index}`} fill={index === 0 ? "#2D1E6F" : "#3b82f6"} />
+                                   <Cell key={`cell-${index}`} fill={index === 0 ? "#1c1c1c" : "#5f5f5d"} />
                                 ))}
                              </Pie>
-                             <Tooltip />
+                             <Tooltip 
+                                contentStyle={{ background: '#1c1c1c', border: 'none', borderRadius: '8px', fontSize: '10px' }} 
+                                itemStyle={{ color: '#fcfbf8' }}
+                                labelStyle={{ color: '#fcfbf8' }}
+                             />
                           </PieChart>
                        </ResponsiveContainer>
                     </div>
-                    <div className="flex justify-center gap-4 mt-2">
+                    <div className="flex justify-center gap-4 mt-6">
                        {stats.shippingMetrics.paymentDistribution.map((p: any, idx: number) => (
                           <div key={p.name} className="flex items-center gap-1.5">
-                             <div className={cn("w-2 h-2 rounded-full", idx === 0 ? "bg-[#2D1E6F]" : "bg-blue-500")} />
-                             <span className="text-[10px] font-bold text-gray-500">{p.name}</span>
+                             <div className={cn("w-2 h-2 rounded-full", idx === 0 ? "bg-[#1c1c1c]" : "bg-[#5f5f5d]")} />
+                             <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">{p.name}</span>
                           </div>
                        ))}
                     </div>
                  </div>
 
-                 <div className="card p-5">
+                 <div className="card p-6">
                     <SectionTitle>Weight Profiles</SectionTitle>
-                    <div className="space-y-3 mt-4">
+                    <div className="space-y-4 mt-8">
                        {stats.shippingMetrics.weightDistribution.map((w: any) => (
-                          <div key={w.name} className="space-y-1">
-                             <div className="flex justify-between text-[10px] font-bold text-gray-500">
+                          <div key={w.name} className="space-y-2">
+                             <div className="flex justify-between text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">
                                 <span>{w.name}</span>
                                 <span>{w.value}</span>
                              </div>
-                             <div className="h-1 bg-gray-50 rounded-full overflow-hidden">
-                                <div className="h-full bg-blue-400" style={{ width: `${(w.value / stats.rawOrdersLogs.length) * 100}%` }} />
+                             <div className="h-1.5 bg-[#eceae4] rounded-full overflow-hidden">
+                                <div className="h-full bg-[#1c1c1c]" style={{ width: `${(w.value / stats.rawOrdersLogs.length) * 100}%` }} />
                              </div>
                           </div>
                        ))}
@@ -1236,29 +1579,36 @@ export default function ReportsPage() {
             <div className="card p-5">
               <SectionTitle>Task Outcomes</SectionTitle>
               <div className="space-y-4 py-4">
-                {stats.taskBreakdown.map(r => (
-                  <BarRow key={r.label} label={r.label} value={r.value} max={stats.taskBreakdown.reduce((s,x)=>s+x.value,0)} color={r.color} />
+                {stats.taskBreakdown.map((r: any) => (
+                  <BarRow key={r.label} label={r.label} value={r.value} max={stats.taskBreakdown.reduce((s: number, x: any) => s + x.value, 0)} color={r.color} />
                 ))}
               </div>
             </div>
 
-            <div className="card p-5">
+            <div className="card p-6">
               <SectionTitle>Agent Performance</SectionTitle>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto mt-4">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100 italic">
-                      <th className="text-left py-2 text-xs text-gray-500 font-medium">Agent</th>
-                      <th className="text-center py-2 text-xs text-gray-500 font-medium">Calls</th>
-                      <th className="text-right py-2 text-xs text-gray-500 font-medium">Sales</th>
+                    <tr className="border-b border-[#eceae4]">
+                      <th className="text-left py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Agent</th>
+                      <th className="text-center py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Calls</th>
+                      <th className="text-right py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Sales</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {stats.agentPerformance.map(a => (
-                      <tr key={a.name}>
-                        <td className="py-2 text-xs font-semibold text-[#2D1E6F]">{a.name.split("@")[0]}</td>
-                        <td className="py-2 text-center text-xs text-gray-600 font-bold">{a.count}</td>
-                        <td className="py-2 text-right text-xs font-bold text-[#2D1E6F]">{formatCurrency(a.revenue)}</td>
+                  <tbody className="divide-y divide-[#eceae4]/50">
+                    {stats.agentPerformance.map((a: any) => (
+                      <tr 
+                         key={a.name} 
+                         className="hover:bg-[rgba(28,28,28,0.02)] transition-colors cursor-pointer"
+                         onClick={() => {
+                            const agentId = stats.agentAttendance.find((x: any) => x.name === a.name || x.email === a.name)?.id;
+                            if (agentId) window.open(`/team/${agentId}`, '_blank');
+                         }}
+                      >
+                        <td className="py-3 text-xs font-bold text-[#1c1c1c] uppercase">{a.name.split("@")[0]}</td>
+                        <td className="py-3 text-center text-xs text-[#5f5f5d] font-bold">{a.count}</td>
+                        <td className="py-3 text-right text-xs font-bold text-[#1c1c1c]">{formatCurrency(a.revenue)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1277,21 +1627,21 @@ export default function ReportsPage() {
                <div className="overflow-x-auto mt-4">
                   <table className="w-full text-left">
                      <thead>
-                        <tr className="border-b border-gray-100">
-                           <th className="py-2 text-[10px] font-bold text-gray-400 uppercase">Product</th>
-                           <th className="py-2 text-[10px] font-bold text-gray-400 uppercase text-center">Units</th>
-                           <th className="py-2 text-[10px] font-bold text-gray-400 uppercase text-right">Revenue</th>
-                           <th className="py-2 text-[10px] font-bold text-gray-400 uppercase text-right">Rev Share</th>
+                        <tr className="border-b border-[#eceae4]">
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Product</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Units</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Revenue</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Share</th>
                         </tr>
                      </thead>
-                     <tbody className="divide-y divide-gray-50">
-                        {stats.topProducts.map(p => (
-                           <tr key={p.name} className="hover:bg-gray-50">
-                              <td className="py-3 text-xs font-bold text-gray-700">{p.name}</td>
-                              <td className="py-3 text-xs font-black text-gray-900 text-center">{p.count}</td>
-                              <td className="py-3 text-xs font-black text-[#2D1E6F] text-right">{formatCurrency(p.revenue)}</td>
-                              <td className="py-3 text-right">
-                                 <span className="text-[10px] font-black text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
+                     <tbody className="divide-y divide-[#eceae4]/50">
+                        {stats.topProducts.map((p: any) => (
+                           <tr key={p.name} className="hover:bg-[rgba(28,28,28,0.02)] transition-colors">
+                              <td className="py-4 text-xs font-bold text-[#1c1c1c]">{p.name}</td>
+                              <td className="py-4 text-xs font-bold text-[#5f5f5d] text-center">{p.count}</td>
+                              <td className="py-4 text-xs font-bold text-[#1c1c1c] text-right">{formatCurrency(p.revenue)}</td>
+                              <td className="py-4 text-right">
+                                 <span className="text-[10px] font-bold text-[#5f5f5d] bg-[#eceae4]/50 px-2 py-0.5 rounded-full">
                                     {stats.totalRevenue > 0 ? Math.round((p.revenue / stats.totalRevenue) * 100) : 0}%
                                  </span>
                               </td>
@@ -1302,7 +1652,7 @@ export default function ReportsPage() {
                </div>
             </div>
             
-            <div className="card p-6 bg-gradient-to-br from-[#2D1E6F]/5 to-white">
+            <div className="card p-6 bg-[#eceae4]/10">
                <SectionTitle>Revenue Distribution</SectionTitle>
                <div className="h-[300px] w-full mt-4">
                   <ResponsiveContainer width="100%" height="100%">
@@ -1317,11 +1667,15 @@ export default function ReportsPage() {
                            outerRadius={80}
                            paddingAngle={2}
                         >
-                           {stats.topProducts.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={["#2D1E6F", "#3b82f6", "#f59e0b", "#6366f1", "#ec4899"][index % 5]} />
+                           {stats.topProducts.map((entry: any, index: number) => (
+                              <Cell key={`cell-${index}`} fill={["#1c1c1c", "#5f5f5d", "#eceae4", "#1c1c1c", "#5f5f5d"][index % 5]} />
                            ))}
                         </Pie>
-                        <Tooltip />
+                        <Tooltip 
+                           contentStyle={{ background: '#1c1c1c', border: 'none', borderRadius: '8px', fontSize: '10px' }} 
+                           itemStyle={{ color: '#fcfbf8' }}
+                           labelStyle={{ color: '#fcfbf8' }}
+                        />
                      </PieChart>
                   </ResponsiveContainer>
                </div>
@@ -1333,33 +1687,38 @@ export default function ReportsPage() {
       {activeTab === "customers" && (
         <div className="space-y-5">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.segmentStats.map(s => (
-              <StatCard key={s.segment} label={s.segment.toUpperCase()} value={s.count} sub={`Avg: ${s.avg_orders}`} />
+            {stats.segmentStats.map((s: any, idx: number) => (
+              <StatCard 
+                key={s.segment || idx} 
+                label={(s.segment || "Unknown").toUpperCase()} 
+                value={s.count ?? 0} 
+                sub={s.avg_orders ? `Avg Orders: ${s.avg_orders}` : undefined} 
+              />
             ))}
           </div>
 
-          <div className="card p-5">
-            <SectionTitle>Top 10 Performers (Customers)</SectionTitle>
-            <div className="overflow-x-auto mt-4">
+          <div className="card p-6">
+            <SectionTitle>Top Customer Performers</SectionTitle>
+            <div className="overflow-x-auto mt-6">
                <table className="w-full text-left">
                   <thead>
-                     <tr className="border-b border-gray-100">
-                        <th className="py-2 text-[10px] font-bold text-gray-400 uppercase">Customer</th>
-                        <th className="py-2 text-[10px] font-bold text-gray-400 uppercase text-center">Orders</th>
-                        <th className="py-2 text-[10px] font-bold text-gray-400 uppercase text-right">Lifetime Rev</th>
+                     <tr className="border-b border-[#eceae4]">
+                        <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Customer</th>
+                        <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Orders</th>
+                        <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">LTV</th>
                      </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
-                     {stats.topCustomers.map(c => (
-                        <tr key={c.id}>
-                           <td className="py-3">
+                  <tbody className="divide-y divide-[#eceae4]/50">
+                     {stats.topCustomers.map((c: any) => (
+                        <tr key={c.id} className="hover:bg-[rgba(28,28,28,0.02)] transition-colors">
+                           <td className="py-4">
                               <div className="flex flex-col">
-                                 <span className="text-xs font-bold text-gray-800">{c.name}</span>
-                                 <span className="text-[10px] text-gray-400">{c.phone}</span>
+                                 <span className="text-xs font-bold text-[#1c1c1c]">{c.name}</span>
+                                 <span className="text-[10px] text-[#5f5f5d] font-medium">{c.phone}</span>
                               </div>
                            </td>
-                           <td className="py-3 text-xs font-black text-gray-700 text-center">{c.orders}</td>
-                           <td className="py-3 text-xs font-black text-[#2D1E6F] text-right">{formatCurrency(c.revenue)}</td>
+                           <td className="py-4 text-xs font-bold text-[#5f5f5d] text-center">{c.orders}</td>
+                           <td className="py-4 text-xs font-bold text-[#1c1c1c] text-right">{formatCurrency(c.revenue)}</td>
                         </tr>
                      ))}
                   </tbody>
@@ -1367,16 +1726,16 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div className="card p-5">
-            <SectionTitle>Product Performance Leaderboard</SectionTitle>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                {stats.topProducts.map(p => (
-                    <div key={p.name} className="flex items-center justify-between p-4 rounded-2xl border border-gray-100 bg-blue-50/10 hover:shadow-md transition-all">
-                        <div className="flex flex-col gap-0.5 truncate pr-4">
-                           <span className="text-xs font-bold text-gray-700 truncate">{p.name}</span>
-                           <span className="text-[10px] text-[#2D1E6F] font-black">{p.count} Units Sold</span>
+          <div className="card p-6">
+            <SectionTitle>Product Leaderboard</SectionTitle>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                {stats.topProducts.map((p: any) => (
+                    <div key={p.name} className="flex items-center justify-between p-4 rounded-xl border border-[#eceae4] bg-[#eceae4]/10 hover:shadow-md transition-all">
+                        <div className="flex flex-col gap-1 truncate pr-4">
+                           <span className="text-xs font-bold text-[#1c1c1c] truncate">{p.name}</span>
+                           <span className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">{p.count} Units Sold</span>
                         </div>
-                        <div className="text-xs font-black text-gray-900 border-l border-blue-100 pl-4">{formatCurrency(p.revenue)}</div>
+                        <div className="text-xs font-bold text-[#1c1c1c] border-l border-[#eceae4] pl-4">{formatCurrency(p.revenue)}</div>
                     </div>
                 ))}
             </div>
@@ -1389,25 +1748,139 @@ export default function ReportsPage() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   <StatCard label="Total Abandoned" value={stats.abandonedStats.count} />
                   <StatCard label="Potential Revenue" value={formatCurrency(stats.abandonedStats.potential)} accent="text-rose-600" />
-                  <StatCard label="Recovered Revenue" value={formatCurrency(stats.abandonedStats.recovered)} accent="text-[#2D1E6F]" />
+                  <StatCard label="Recovered Revenue" value={formatCurrency(stats.abandonedStats.recovered)} accent="text-[#1c1c1c]" />
                   <StatCard label="Recovery Rate" value={`${stats.abandonedStats.rate}%`} />
+              </div>
+
+              <div className="card p-6 mt-6">
+                <SectionTitle>Recovery Leaderboard</SectionTitle>
+                <div className="space-y-6 mt-8">
+                    {stats.agentAttendance.filter((a: any) => a.taskCount > 0).map((a: any) => (
+                        <div key={a.name} className="flex items-center gap-4">
+                            <div className="w-24 text-[10px] font-bold text-[#5f5f5d] uppercase truncate">{a.name.split("@")[0]}</div>
+                            <div className="flex-1 h-2 bg-[#eceae4] rounded-full overflow-hidden">
+                                <div className="h-full bg-[#1c1c1c] rounded-full" style={{ width: `${Math.min(100, (a.taskCount / Math.max(...stats.agentAttendance.map((x: any) => x.taskCount), 1)) * 100)}%` }} />
+                            </div>
+                            <div className="w-12 text-[10px] font-bold text-[#1c1c1c] text-right">{a.taskCount}</div>
+                        </div>
+                    ))}
+                </div>
               </div>
           </div>
       )}
 
+      {activeTab === "agents" && (
+        <div className="space-y-6">
+           <div className="card p-6">
+              <SectionTitle>
+                 <Users className="w-3.5 h-3.5 text-[#1c1c1c]" />
+                 Agent Productivity Ledger
+              </SectionTitle>
+               <div className="overflow-x-auto mt-6">
+                  <table className="w-full text-left">
+                     <thead>
+                        <tr className="border-b border-[#eceae4]">
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Agent Detail</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Status / Activity</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Net Work</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">On Break</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Volume</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Total Revenue</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Effort Score</th>
+                        </tr>
+                     </thead>
+                     <tbody className="divide-y divide-[#eceae4]/50">
+                        {stats.agentAttendance.map((a: any) => {
+                           const isOnline = a.status === "online";
+                           const isBreak = ["break", "lunch", "away"].includes(a.status);
+                           const isMeeting = a.status === "meeting";
+                           return (
+                             <tr 
+                                key={a.name} 
+                                className="hover:bg-[rgba(28,28,28,0.02)] transition-colors cursor-pointer group"
+                                onClick={() => window.open(`/team/${a.id}`, '_blank')}
+                             >
+                                <td className="py-4">
+                                   <div className="flex items-center gap-3">
+                                      <div className="relative">
+                                         <Avatar name={a.name} size="sm" />
+                                         <div className={cn(
+                                            "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white",
+                                            isOnline ? "bg-emerald-500 animate-pulse" : isBreak ? "bg-amber-500" : isMeeting ? "bg-indigo-500" : "bg-gray-400"
+                                         )} />
+                                      </div>
+                                      <div className="flex flex-col">
+                                         <span className="text-xs font-bold text-[#1c1c1c] uppercase">{a.name.split("@")[0]}</span>
+                                         <span className="text-[9px] text-[#5f5f5d] font-bold">{a.email}</span>
+                                      </div>
+                                   </div>
+                                </td>
+                                <td className="py-4 text-center">
+                                   <div className="flex flex-col items-center">
+                                      <span className={cn(
+                                         "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border",
+                                         isOnline ? "bg-emerald-50 text-emerald-700 border-emerald-100" : isBreak ? "bg-amber-50 text-amber-700 border-amber-100" : "bg-gray-50 text-gray-500 border-gray-100"
+                                      )}>
+                                         {a.status || "offline"}
+                                      </span>
+                                      {a.lastReason && <span className="text-[8px] font-bold text-[#5f5f5d] mt-1 italic truncate max-w-[80px]">&quot;{a.lastReason}&quot;</span>}
+                                   </div>
+                                </td>
+                                <td className="py-4 text-xs font-bold text-[#1c1c1c] text-center tabular-nums">{a.onlineHours}</td>
+                                <td className="py-4 text-xs font-bold text-amber-700 text-center tabular-nums">{a.breakHours}</td>
+                                <td className="py-4 text-center">
+                                   <div className="flex flex-col items-center">
+                                      <span className="text-xs font-bold text-[#1c1c1c]">{a.taskCount}</span>
+                                      <span className="text-[8px] text-gray-400 font-bold uppercase">Tasks</span>
+                                   </div>
+                                </td>
+                                <td className="py-4 text-center">
+                                   <div className="flex flex-col items-center">
+                                      <span className="text-xs font-bold text-[#1c1c1c]">{formatCurrency(a.revenue)}</span>
+                                      {a.revenue > 0 && a.taskCount > 0 && (
+                                         <span className="text-[8px] text-emerald-600 font-bold uppercase">Avg: {formatCurrency(a.revenue / a.taskCount)}</span>
+                                      )}
+                                   </div>
+                                </td>
+                                <td className="py-4 text-right">
+                                   <div className="flex flex-col items-end">
+                                      <span className={cn(
+                                          "px-3 py-1 rounded-full text-[10px] font-black",
+                                          Number(a.productivity) > 5 ? "bg-emerald-500 text-white" : "bg-[#eceae4] text-[#5f5f5d]"
+                                      )}>
+                                          {a.productivity} T/H
+                                      </span>
+                                   </div>
+                                </td>
+                             </tr>
+                           );
+                        })}
+                     </tbody>
+                  </table>
+               </div>
+           </div>
+        </div>
+      )}
+
       {activeTab === "rto" && (
         <div className="space-y-5">
-           <div className="card p-5">
+           <div className="card p-6">
             <SectionTitle>Recent RTO Events</SectionTitle>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto mt-6">
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-gray-100"><th className="text-left py-2 px-2">Order</th><th className="text-left py-2 px-2">Customer</th><th className="text-left py-2 px-2">Value</th></tr></thead>
-                <tbody className="divide-y divide-gray-50">
-                  {stats.rtoOrders.map(r => (
+                <thead>
+                  <tr className="border-b border-[#eceae4]">
+                    <th className="text-left py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Order</th>
+                    <th className="text-left py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Customer</th>
+                    <th className="text-right py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Value</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#eceae4]/50">
+                  {stats.rtoOrders.map((r: any) => (
                     <tr key={r.id}>
-                      <td className="py-2 px-2 text-xs font-semibold text-[#2D1E6F]">#{r.order_number}</td>
-                      <td className="py-2 px-2 text-xs text-gray-700">{r.customer?.name || "Unknown"}</td>
-                      <td className="py-2 px-2 text-xs font-semibold text-[#2D1E6F]">{formatCurrency(r.total_price)}</td>
+                      <td className="py-4 text-xs font-bold text-[#1c1c1c]">#{r.order_number}</td>
+                      <td className="py-4 text-xs font-bold text-[#5f5f5d]">{r.customer?.name || "Unknown"}</td>
+                      <td className="py-4 text-right text-xs font-bold text-[#1c1c1c]">{formatCurrency(r.total_price)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1416,28 +1889,29 @@ export default function ReportsPage() {
           </div>
         </div>
       )}
+      </div>
 
       <Modal open={showMasterExport} onClose={() => setShowMasterExport(false)} title="Master History Export" maxWidth="max-w-md"
         footer={<><button className="btn-secondary" onClick={() => setShowMasterExport(false)}>Cancel</button><button className="btn-primary" onClick={handleMasterExport} disabled={exportingMaster}>{exportingMaster ? "Exporting..." : "Generate Report"}</button></>}
       >
         <div className="space-y-6 py-2">
-            <p className="text-xs text-gray-500 italic">This will generate a complete business mastery report containing every record in the system.</p>
+            <p className="text-xs text-[#5f5f5d] italic">Complete data integrity export for audit and compliance purposes.</p>
             <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Format</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "xlsx"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "xlsx" ? "bg-blue-50 border-blue-500" : "bg-white")}>EXCEL</button><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "csv"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "csv" ? "bg-blue-50 border-blue-500" : "bg-white")}>CSV</button><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "pdf"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "pdf" ? "bg-rose-50 border-rose-500" : "bg-white")}>PDF</button></div></div>
-                <div><label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Destination</label><div className="grid grid-cols-2 gap-2"><button onClick={() => setMasterExportOptions({...masterExportOptions, destination: "download"})} className={cn("py-2 px-2 rounded-lg border text-[10px] font-bold", masterExportOptions.destination === "download" ? "bg-blue-50 border-blue-500" : "bg-white")}>LOCAL</button><button onClick={() => setMasterExportOptions({...masterExportOptions, destination: "whatsapp"})} className={cn("py-2 px-2 rounded-lg border text-[10px] font-bold", masterExportOptions.destination === "whatsapp" ? "bg-[#2D1E6F]/10 border-[#2D1E6F]" : "bg-white")}>WHATSAPP</button></div></div>
+                <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-2 block tracking-widest">Format</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "xlsx"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "xlsx" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>EXCEL</button><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "csv"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "csv" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>CSV</button><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "pdf"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "pdf" ? "bg-rose-500 text-white border-rose-500" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>PDF</button></div></div>
+                <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-2 block tracking-widest">Target</label><div className="grid grid-cols-2 gap-2"><button onClick={() => setMasterExportOptions({...masterExportOptions, destination: "download"})} className={cn("py-2 px-2 rounded-lg border text-[10px] font-bold", masterExportOptions.destination === "download" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>LOCAL</button><button onClick={() => setMasterExportOptions({...masterExportOptions, destination: "whatsapp"})} className={cn("py-2 px-2 rounded-lg border text-[10px] font-bold", masterExportOptions.destination === "whatsapp" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>WA</button></div></div>
             </div>
-            {masterExportOptions.destination === "whatsapp" && (<div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100"><input type="text" placeholder="Recipient Phone" value={masterExportOptions.customPhone} onChange={e => setMasterExportOptions({...masterExportOptions, customPhone: e.target.value})} className="input text-xs" /></div>)}
+            {masterExportOptions.destination === "whatsapp" && (<div className="p-4 bg-[#eceae4]/30 rounded-xl border border-[#eceae4]"><input type="text" placeholder="Phone Number" value={masterExportOptions.customPhone} onChange={e => setMasterExportOptions({...masterExportOptions, customPhone: e.target.value})} className="input text-xs" /></div>)}
         </div>
       </Modal>
 
       <Modal open={showAdvancedExport} onClose={() => setShowAdvancedExport(false)} title="Advanced Report Export" maxWidth="max-w-xl"
         footer={<><button className="btn-secondary" onClick={() => setShowAdvancedExport(false)}>Cancel</button><button className="btn-primary" onClick={handleAdvancedExport} disabled={isExporting}>{isExporting ? "Processing..." : "Generate Report"}</button></>}
       >
-        <div className="space-y-6 py-2">
-            <div><label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Select Sheets</label><div className="grid grid-cols-2 sm:grid-cols-3 gap-2">{["Summary", "Calls", "Orders", "Agents", "Products", "Recovery"].map(s => (<button key={s} onClick={() => setExportOptions({...exportOptions, sheets: {...exportOptions.sheets, [s.toLowerCase()]: !(exportOptions.sheets as any)[s.toLowerCase()]}})} className={cn("flex items-center gap-2 p-3 rounded-xl border text-[11px] font-bold", (exportOptions.sheets as any)[s.toLowerCase()] ? "bg-[#2D1E6F]/5 border-[#2D1E6F] text-[#2D1E6F]" : "bg-white border-gray-100")}>{s}</button>))}</div></div>
-            <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Format</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setExportOptions({...exportOptions, format: "xlsx"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "xlsx" ? "bg-blue-50 border-blue-500" : "bg-white")}>EXCEL</button><button onClick={() => setExportOptions({...exportOptions, format: "csv"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "csv" ? "bg-blue-50 border-blue-500" : "bg-white")}>CSV</button><button onClick={() => setExportOptions({...exportOptions, format: "pdf"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "pdf" ? "bg-rose-50 border-rose-500" : "bg-white")}>PDF</button></div></div>
-                <div><label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Destination</label><div className="grid grid-cols-2 gap-2"><button onClick={() => setExportOptions({...exportOptions, destination: "download"})} className={cn("py-2 px-2 rounded-lg border text-[10px] font-bold", exportOptions.destination === "download" ? "bg-blue-50 border-blue-500" : "bg-white")}>LOCAL</button><button onClick={() => setExportOptions({...exportOptions, destination: "whatsapp"})} className={cn("py-2 px-2 rounded-lg border text-[10px] font-bold", exportOptions.destination === "whatsapp" ? "bg-[#2D1E6F]/10 border-[#2D1E6F]" : "bg-white")}>WHATSAPP</button></div></div>
+        <div className="space-y-8 py-2">
+            <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-4 block tracking-widest opacity-60">Select Modules</label><div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{["Summary", "Calls", "Orders", "Agents", "Products", "Recovery", "Workflows", "Attendance", "Trends"].map((s: any) => (<button key={s} onClick={() => setExportOptions({...exportOptions, sheets: {...exportOptions.sheets, [s.toLowerCase()]: !(exportOptions.sheets as any)[s.toLowerCase()]}})} className={cn("flex items-center justify-center py-3 rounded-xl border text-[11px] font-bold transition-all", (exportOptions.sheets as any)[s.toLowerCase()] ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c] shadow-lg shadow-[#1c1c1c]/10" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>{s}</button>))}</div></div>
+            <div className="grid grid-cols-2 gap-8 pt-4 border-t border-[#eceae4]">
+                <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-3 block tracking-widest opacity-60">Output Format</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setExportOptions({...exportOptions, format: "xlsx"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "xlsx" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>EXCEL</button><button onClick={() => setExportOptions({...exportOptions, format: "csv"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "csv" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>CSV</button><button onClick={() => setExportOptions({...exportOptions, format: "pdf"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "pdf" ? "bg-rose-500 text-white border-rose-500" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>PDF</button></div></div>
+                <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-3 block tracking-widest opacity-60">Delivery</label><div className="grid grid-cols-2 gap-2"><button onClick={() => setExportOptions({...exportOptions, destination: "download"})} className={cn("py-2 px-2 rounded-lg border text-[10px] font-bold", exportOptions.destination === "download" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>LOCAL</button><button onClick={() => setExportOptions({...exportOptions, destination: "whatsapp"})} className={cn("py-2 px-2 rounded-lg border text-[10px] font-bold", exportOptions.destination === "whatsapp" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>WA</button></div></div>
             </div>
         </div>
       </Modal>

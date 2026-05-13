@@ -1,19 +1,22 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CheckCircle2, WifiOff, ShoppingBag, Zap } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CheckCircle2, WifiOff, ShoppingBag, Zap, Mail, Check, ShieldCheck } from "lucide-react";
 import { PageHeader, Modal, SyncProgressBar } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn, toDbDateString } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { AccessDenied } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermission, isAdmin } from "@/lib/permissions";
 import { logAuditEvent } from "@/lib/audit";
 import * as XLSX from "xlsx";
 
-type Tab = "general" | "notifications" | "overrides" | "shopify" | "shiprocket" | "database";
+type Tab = "general" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
+
+import { getTemplateVariables, personaliseTemplate } from "@/lib/whatsapp";
 
 const WA_PRESETS: Record<string, string[]> = {
   wa_welcome_template: [
@@ -42,8 +45,51 @@ const WA_PRESETS: Record<string, string[]> = {
   ]
 };
 
+const EMAIL_PRESETS: Record<string, { subject: string, body: string }[]> = {
+  email_welcome_template: [
+    { subject: "Welcome to CureForever! 🌿", body: "Hi {{name}} 👋, welcome to the CureForever family! 🌿 We're thrilled to have you here. Our mission is to provide you with the finest Ayurvedic & Nutraceutical solutions. If you have any questions, simply reply to this email! 🙏" },
+    { subject: "CureForever: Your Wellness Journey Starts Here! ✨", body: "Welcome aboard, {{name}}! 🌿 We're so glad you've chosen us. Stay tuned for health tips and order updates right here! ✨" }
+  ],
+  email_order_placed_template: [
+    { subject: "Order Confirmed: {{order_no}} ✅", body: "Hi {{name}}! 🎉 Your order {{order_no}} for {{product}} has been successfully placed! 🛒 We're currently preparing it for shipment. We'll notify you as soon as it's on the way! 🚀" },
+    { subject: "CureForever: We've received your order! 📦", body: "Order Confirmed: {{order_no}}! ✅ Hi {{name}}, we've received your order for {{product}}. Our team is packing it with care. We will notify you once it's out for delivery! 📦" }
+  ],
+  email_order_transit_template: [
+    { subject: "Your order {{order_no}} is in transit! 🚚", body: "Great news, {{name}}! 🚚 Your order {{order_no}} is now in transit and will be with you shortly! You can track your package here: {{tracking_link}}. Get ready to start your wellness journey! 🌿✨" },
+    { subject: "On the move! 🚛 Order {{order_no}} update", body: "Hi {{name}}, your package {{order_no}} is on the move! 🚛 Check its progress here: {{tracking_link}}. We can't wait for you to receive it! ✨" }
+  ],
+  email_order_delivered_template: [
+    { subject: "Delivered! 🎁 Your order {{order_no}} has arrived", body: "Hi {{name}} 👋, our records show that your order {{order_no}} for {{product}} has been delivered! 🎁 We hope you love it. 🌿 How was your experience? We'd love to hear your feedback! 🙏" },
+    { subject: "Order {{order_no}} Delivered ✅ - How was it?", body: "Delivered! ✅ Hi {{name}}, we hope you're enjoying your {{product}}. 🌿 Your feedback helps us grow—please let us know how your experience was! 🙏✨" }
+  ],
+  email_cart_abandoned_template: [
+    { subject: "Still interested in your items? 🛒", body: "Hi {{name}} 👋, we noticed you left some items in your cart! 🛒 Don't miss out on your {{product}}. To help you complete your order, here's a special 10% discount! Use code HEALTH10 at checkout. 💊\n\nFinish here: {{abandon_link}}" },
+    { subject: "CureForever: Your cart is waiting! 🌿", body: "Forgot something, {{name}}? 🛒 Your {{product}} is still waiting! 💊 Complete your purchase now and use code RECOVER5 for 5% off. 🌿\n\nLink: {{abandon_link}}" }
+  ],
+  email_reorder_template: [
+    { subject: "Time for a refill? 🌿 {{product}}", body: "Hi {{name}}! 👋 Hope you're doing well. It's been a few weeks since your last order of {{product}}. 💊 Time for a refill? Click here to order again: https://cureforever.in" },
+    { subject: "Don't run out! 🌿 Replenish your {{product}}", body: "Time to replenish, {{name}}! 🌿 Your course of {{product}} should be finishing soon. 💊 Keep your wellness streak alive—order your refill here: https://cureforever.in 🙏✨" }
+  ]
+};
+
 export default function SettingsPage() {
-  const [tab, setTab] = useState<Tab>("general");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [tab, setTab] = useState<Tab>((searchParams.get("tab") as Tab) || "general");
+
+  useEffect(() => {
+    const authStatus = searchParams.get("auth");
+    if (authStatus === "success") {
+      toast.success("Gmail authenticated successfully!");
+      fetchSettings();
+      // Clean URL
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.delete("auth");
+      router.replace(`/settings?${newParams.toString()}`);
+    } else if (authStatus === "error") {
+      toast.error("Gmail authentication failed.");
+    }
+  }, [searchParams]);
   const [settings, setSettings] = useState<any>({
     id: SETTINGS_ID,
     review_offset_days: 5,
@@ -61,6 +107,7 @@ export default function SettingsPage() {
     whatsapp_phone_id: "",
     whatsapp_token: "",
     whatsapp_verify_token: "",
+    whatsapp_admin_phone: "",
     meta_review_name: "",
     meta_reorder_name: "",
     meta_recovery_name: "",
@@ -84,7 +131,33 @@ export default function SettingsPage() {
     wa_order_transit_template: "",
     wa_order_delivered_template: "",
     wa_cart_abandoned_template: "",
-    wa_reorder_template: ""
+    wa_reorder_template: "",
+    gmail_client_id: "",
+    gmail_client_secret: "",
+    gmail_project_id: "",
+    gmail_auth_uri: "https://accounts.google.com/o/oauth2/auth",
+    gmail_token_uri: "https://oauth2.googleapis.com/token",
+    gmail_auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+    gmail_redirect_uris: [],
+    gmail_refresh_token: "",
+    email_auto_welcome: false,
+    email_auto_order_placed: false,
+    email_auto_order_transit: false,
+    email_auto_order_delivered: false,
+    email_auto_cart_abandoned: false,
+    email_auto_reorder: false,
+    email_welcome_subject: "",
+    email_welcome_template: "",
+    email_order_placed_subject: "",
+    email_order_placed_template: "",
+    email_order_transit_subject: "",
+    email_order_transit_template: "",
+    email_order_delivered_subject: "",
+    email_order_delivered_template: "",
+    email_cart_abandoned_subject: "",
+    email_cart_abandoned_template: "",
+    email_reorder_subject: "",
+    email_reorder_template: "",
   });
   const [pipeline, setPipeline] = useState<{ sent: any[], waiting: any[] }>({ sent: [], waiting: [] });
   const [fetchingPipeline, setFetchingPipeline] = useState(false);
@@ -95,6 +168,13 @@ export default function SettingsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [maskedCount, setMaskedCount] = useState<number | null>(null);
   const [showAddOverride, setShowAddOverride] = useState(false);
+  const [now, setNow] = useState(new Date());
+
+  // Ticking clock for live countdowns
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
   const [newOverride, setNewOverride] = useState({
     shopify_product_id: "",
     product_name: "",
@@ -111,6 +191,25 @@ export default function SettingsPage() {
 
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: "customers" | "orders" | "tasks" | "abandoned_carts" | null }>({ open: false, type: null });
   const [waStatus, setWaStatus] = useState<{ ready?: boolean; state?: string; error?: string; qr?: string | null }>({ state: "INITIALISING" });
+  const [lastSync, setLastSync] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchLastSync() {
+      try {
+        const { data } = await supabase
+          .from("webhook_logs")
+          .select("created_at")
+          .eq("source", "system_sync")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (data) setLastSync(data.created_at);
+      } catch (err) {
+        console.error("Failed to fetch sync stats", err);
+      }
+    }
+    fetchLastSync();
+  }, []);
   const [manualWaModal, setManualWaModal] = useState(false);
   const [manualWaTaskId, setManualWaTaskId] = useState("");
   const [manualWaCustomerName, setManualWaCustomerName] = useState("");
@@ -174,6 +273,7 @@ export default function SettingsPage() {
               }));
 
               if (data.progress === 100) {
+                 setSyncStatus(prev => ({ ...prev, active: false }));
                  toast.success(data.message || "Sync Complete!", { duration: 5000 });
                  fetchPipelineData();
                  fetchMaskedCount();
@@ -227,14 +327,11 @@ export default function SettingsPage() {
     const interval = setInterval(fetchStatus, 5000);
 
     // Auto-sync for products (Realtime)
-    const channel = supabase
-      .channel('setting-updates')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, () => fetchAvailableProducts())
-      .subscribe();
+    
 
     return () => {
       clearInterval(interval);
-      supabase.removeChannel(channel);
+      
     };
   }, []);
 
@@ -284,9 +381,10 @@ export default function SettingsPage() {
     setFetchingPipeline(true);
     try {
       const today = toDbDateString(new Date());
+      const now = new Date();
       
-      // 1. Waiting Queue (Today's pending reminders)
-      const { data: waiting } = await supabase
+      // 1. Waiting Queue (Manual Tasks + Auto Workflows)
+      const { data: waitingTasks } = await supabase
         .from("tasks")
         .select(`
           id, task_type, 
@@ -295,20 +393,57 @@ export default function SettingsPage() {
         .eq("due_date", today)
         .eq("status", "pending")
         .in("task_type", ["review", "reorder", "recovery", "final_followup", "issue_resolution"])
+        .limit(15);
+
+      const { data: workflowInstances } = await supabase
+        .from("workflow_instances")
+        .select(`
+          id, next_run_at, status, 
+          customer:customers (id, name),
+          workflows (name)
+        `)
+        .eq("status", "active")
+        .lte("next_run_at", new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString()) // Next 24h
+        .order("next_run_at", { ascending: true })
         .limit(10);
 
-      // 2. Recently Sent (Today's WhatsApp logs)
-      const { data: sent } = await supabase
-        .from("call_logs")
+      // 2. Recently Sent (WhatsApp Logs - includes Auto & Manual)
+      const { data: sentLogs } = await supabase
+        .from("whatsapp_messages")
         .select("*, customer:customers(name)")
-        .eq("outcome", "whatsapp")
-        .gte("called_at", today + "T00:00:00Z")
-        .order("called_at", { ascending: false })
-        .limit(10);
+        .eq("direction", "outbound")
+        .gte("created_at", today + "T00:00:00Z")
+        .order("created_at", { ascending: false })
+        .limit(15);
+
+      const formattedWaiting = [
+        ...(waitingTasks || [])
+          .filter((t: any) => t.customer?.whatsapp_reminders_enabled !== false)
+          .map(t => ({ ...t, isManual: true })),
+        ...(workflowInstances || []).map((w: any) => ({
+          id: w.id,
+          isWorkflow: true,
+          task_type: "automation",
+          customer: w.customer,
+          due_date: w.next_run_at,
+          workflowName: w.workflows?.name
+        }))
+      ].sort((a: any, b: any) => {
+        const dateA = a.isWorkflow ? new Date(a.due_date).getTime() : new Date(today).getTime();
+        const dateB = b.isWorkflow ? new Date(b.due_date).getTime() : new Date(today).getTime();
+        return dateA - dateB;
+      });
 
       setPipeline({ 
-        sent: (sent || []), 
-        waiting: (waiting || []).filter((t: any) => t.customer?.whatsapp_reminders_enabled !== false) 
+        sent: (sentLogs || []).map(l => ({
+          id: l.id,
+          customer: l.customer,
+          called_at: l.created_at,
+          note: l.body,
+          type: l.type,
+          isAuto: !!l.meta_message_id
+        })), 
+        waiting: formattedWaiting
       });
     } catch (err) {
       console.error("Pipeline fetch error:", err);
@@ -334,32 +469,20 @@ export default function SettingsPage() {
       const order = fullTask.order;
       const abandonedCart = fullTask.abandoned_cart;
       let template = "";
-      let productStr = "your items";
-      let link = "https://cureforever.in/cart";
-
       if (task.task_type === "review") {
         template = settings.whatsapp_review_template || "Hi {{name}} 👋, thank you for ordering {{product}}! How was your experience? We'd love to hear your feedback. 🌿\n\nPlease leave us a review here: https://search.google.com/local/writereview?placeid=ChIJv5_GsCGRyzsR2_y1wjbi3Ck";
-        productStr = order?.line_items?.[0]?.name || order?.line_items?.[0]?.title || "your previous order";
       } else if (task.task_type === "reorder") {
         template = settings.whatsapp_reorder_template || "Hi {{name}}! It's been a while since your last {{product}} order. Time for a refill? 💊 Use code REFILL10 for 10% off!";
-        productStr = order?.line_items?.[0]?.name || "your previous order";
       } else if (task.task_type === "recovery") {
         template = settings.whatsapp_recovery_template || "Hi {{name}} 👋, we noticed you left some items in your cart! 🛒 Can we help you complete your purchase? Use code RECOVER5 for 5% off! 🌿";
-        productStr = abandonedCart?.line_items?.[0]?.name || abandonedCart?.line_items?.[0]?.title || "your items";
-        link = abandonedCart?.custom_meta?.ABANDONLINK || customer.custom_meta?.ABANDONLINK || link;
       } else if (task.task_type === "final_followup") {
         template = settings.whatsapp_final_template || "Hi {{name}}, just checking in one last time regarding your {{product}} journey. We're here if you need anything! 🙏";
-        productStr = order?.line_items?.[0]?.name || "your previous order";
       } else if (task.task_type === "issue_resolution") {
         template = "Hi {{name}}, we noticed an issue with your recent order for {{product}}. Our team is reviewing it and will help resolve it quickly.";
-        productStr = order?.line_items?.[0]?.name || "your recent order";
       }
 
-      const msg = template
-        .replace(/{{name}}/g, customer.name || "there")
-        .replace(/{{product}}/g, productStr)
-        .replace(/{{abandon_link}}/g, link)
-        .replace(/{{order_no}}/g, order?.order_number || "your order");
+      const variables = getTemplateVariables(customer, order, abandonedCart, fullTask);
+      const msg = personaliseTemplate(template, variables);
 
       setManualWaTaskId(task.id);
       setManualWaCustomerName(customer.name);
@@ -448,9 +571,12 @@ export default function SettingsPage() {
       allOrders.forEach(order => {
         const items = Array.isArray(order.line_items) ? order.line_items : [];
         items.forEach((item: any) => {
-          const id = item.product_id || item.id || item.title || item.name;
+          const rawId = item.product_id || item.id || item.title || item.name;
           const name = item.title || item.name || item.product_name;
-          if (id && name) productsMap.set(id, name);
+          if (rawId && name) {
+            const id = String(rawId);
+            productsMap.set(id, name);
+          }
         });
       });
 
@@ -496,8 +622,13 @@ export default function SettingsPage() {
         const order = Array.isArray(t.orders) ? t.orders[0] : (t.orders as any);
         if (!order?.delivered_at) continue;
 
-        const productId = order.line_items?.[0]?.product_id || order.line_items?.[0]?.id || order.line_items?.[0]?.title;
-        const override: any = overridesMap.get(productId);
+        const lineItem = order.line_items?.[0];
+        const override = overrideData?.find(o => 
+          o.shopify_product_id === String(lineItem?.product_id) || 
+          o.shopify_product_id === String(lineItem?.id) || 
+          o.shopify_product_id === lineItem?.title ||
+          o.product_name === lineItem?.title
+        );
 
         let newDueDate = "";
         if (t.task_type === "review") {
@@ -531,27 +662,83 @@ export default function SettingsPage() {
     }
   }
 
+  const handleImportGmailJson = (jsonStr: string) => {
+    try {
+      const data = JSON.parse(jsonStr);
+      const installed = data.installed || data.web;
+      if (!installed) throw new Error("Invalid Google JSON format");
+      
+      setSettings({
+        ...settings,
+        gmail_client_id: installed.client_id || "",
+        gmail_client_secret: installed.client_secret || "",
+        gmail_project_id: installed.project_id || "",
+        gmail_auth_uri: installed.auth_uri || "https://accounts.google.com/o/oauth2/auth",
+        gmail_token_uri: installed.token_uri || "https://oauth2.googleapis.com/token",
+        gmail_auth_provider_x509_cert_url: installed.auth_provider_x509_cert_url || "https://www.googleapis.com/oauth2/v1/certs",
+        gmail_redirect_uris: installed.redirect_uris || []
+      });
+      toast.success("Gmail configuration imported!");
+    } catch (e: any) {
+      toast.error("Failed to parse JSON: " + e.message);
+    }
+  };
+
   async function handleSave() {
     if (!settings) return;
     setSaving(true);
+    let fallbackTriggered = false;
     try {
-      let { error } = await supabase.from("settings").upsert(settings);
+      // 1. Fetch current DB state to ensure we don't overwrite sensitive tokens saved via callback
+      const { data: currentDbSettings } = await supabase
+        .from("settings")
+        .select("gmail_refresh_token, shopify_refresh_token")
+        .eq("id", SETTINGS_ID)
+        .maybeSingle();
+
+      const finalSettings = { ...settings };
+      
+      // Preserve tokens if local state is empty but DB has them
+      if (!finalSettings.gmail_refresh_token && currentDbSettings?.gmail_refresh_token) {
+        finalSettings.gmail_refresh_token = currentDbSettings.gmail_refresh_token;
+      }
+      if (!finalSettings.shopify_refresh_token && currentDbSettings?.shopify_refresh_token) {
+        finalSettings.shopify_refresh_token = currentDbSettings.shopify_refresh_token;
+      }
+
+      let { error } = await supabase.from("settings").upsert(finalSettings);
+      
+      // Enhanced backward-compatible save path: If DB migration hasn't been run, strip new columns and retry.
       if (error && (
-        String(error.message || "").includes("shopify_client_id") || 
-        String(error.message || "").includes("shopify_api_secret") ||
-        String(error.message || "").includes("shopify_refresh_token")
+        String(error.message || "").includes("column") || 
+        String(error.message || "").includes("schema cache")
       )) {
-        // Backward-compatible save path for environments where migration isn't applied yet.
-        const { 
-          shopify_client_id, 
-          shopify_token_expires_at, 
-          shopify_api_secret, 
-          shopify_refresh_token, 
-          ...legacySettings 
-        } = settings;
+        fallbackTriggered = true;
+        console.warn("Detected schema mismatch, attempting legacy save fallback...", error.message);
+        
+        const newColumns = [
+          "shopify_client_id", "shopify_token_expires_at", "shopify_api_secret", "shopify_refresh_token",
+          "whatsapp_app_id", "whatsapp_app_secret", "whatsapp_phone_id", "whatsapp_token", "whatsapp_verify_token",
+          "whatsapp_admin_phone", "meta_review_name", "meta_reorder_name", "meta_recovery_name", "meta_final_name",
+          "wa_auto_welcome", "wa_auto_order_placed", "wa_auto_order_transit", "wa_auto_order_delivered",
+          "wa_auto_cart_abandoned", "wa_auto_reorder", "wa_welcome_template", "wa_order_placed_template",
+          "wa_order_transit_template", "wa_order_delivered_template", "wa_cart_abandoned_template", "wa_reorder_template",
+          "gmail_client_id", "gmail_client_secret", "gmail_project_id", "gmail_auth_uri", "gmail_token_uri",
+          "gmail_auth_provider_x509_cert_url", "gmail_redirect_uris", "gmail_refresh_token",
+          "email_auto_welcome", "email_auto_order_placed", "email_auto_order_transit", "email_auto_order_delivered",
+          "email_auto_cart_abandoned", "email_auto_reorder", "email_welcome_subject", "email_welcome_template",
+          "email_order_placed_subject", "email_order_placed_template", "email_order_transit_subject", "email_order_transit_template",
+          "email_order_delivered_subject", "email_order_delivered_template", "email_cart_abandoned_subject", "email_cart_abandoned_template",
+          "email_reorder_subject", "email_reorder_template"
+        ];
+
+        const legacySettings = { ...settings };
+        newColumns.forEach(col => delete (legacySettings as any)[col]);
+
         const retry = await supabase.from("settings").upsert(legacySettings);
         error = retry.error || null;
       }
+      
       if (error) throw error;
       
       // Auto-recalculate tasks for global alignment
@@ -563,7 +750,11 @@ export default function SettingsPage() {
         summary: "Updated system settings",
       });
       
-      toast.success("Settings saved and tasks aligned!");
+      if (fallbackTriggered) {
+        toast.success("Saved in Legacy Mode! (New WhatsApp fields were skipped. Please run the SQL migration.)", { duration: 6000 });
+      } else {
+        toast.success("Settings saved and tasks aligned!");
+      }
     } catch (err: any) {
       toast.error("Failed to save: " + err.message);
     } finally {
@@ -585,6 +776,30 @@ export default function SettingsPage() {
       toast.error(`Shopify test failed: ${err.message}`);
     } finally {
       setTestingShopify(false);
+    }
+  }
+
+  async function handleDeepSync() {
+    setSaving(true);
+    try {
+      toast.loading("Initiating 48-hour recovery audit...", { id: "deep-sync" });
+      const res = await fetch("/api/sync/shopify?full=true");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Sync failed");
+      
+      const report = data.report;
+      toast.success(`Audit Complete: Synced ${report.abandoned.synced} checkouts and ${report.orders.synced} orders.`, { id: "deep-sync", duration: 5000 });
+      
+      await logAuditEvent({
+        entityType: "sync",
+        entityId: "shopify-deep",
+        action: "execute",
+        summary: `Executed 48h deep sync. Found ${report.abandoned.synced} carts.`,
+      });
+    } catch (err: any) {
+      toast.error(`Deep sync failed: ${err.message}`, { id: "deep-sync" });
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -729,8 +944,8 @@ export default function SettingsPage() {
     );
   }
 
-  if (!hasPermission(profile, "manage_team")) {
-    return <AccessDenied title="Settings Locked" desc="Only admins or users with management access can change settings." />;
+  if (!isAdmin(profile)) {
+    return <AccessDenied title="System Settings Locked" desc="Only administrators can modify system-level configurations and API integrations." />;
   }
 
   return (
@@ -738,7 +953,7 @@ export default function SettingsPage() {
       <PageHeader title="Settings" subtitle="Configure your CRM behaviour, integrations, and notifications" />
 
       {syncStatus.active && (
-        <div className="mb-6 card p-4 border-[#2D1E6F]/20 bg-[#2D1E6F]/[0.02] shadow-sm animate-in slide-in-from-top-4 duration-500">
+        <div className="mb-8 card p-5 bg-[#eceae4]/30 shadow-inner animate-in slide-in-from-top-4 duration-500">
           <SyncProgressBar 
             progress={syncStatus.progress} 
             message={syncStatus.message} 
@@ -748,18 +963,19 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="flex border-b border-gray-200 mb-6 gap-0 overflow-x-auto">
+      <div className="flex border-b border-[#eceae4] mb-8 gap-0 overflow-x-auto scroller-hide">
         {[
-          { key: "general", label: "General", icon: Sliders },
-          { key: "notifications", label: "WhatsApp", icon: Bell },
-          { key: "overrides", label: "Product Overrides", icon: Package },
-          { key: "shopify", label: "Shopify", icon: ShoppingBag },
-          { key: "shiprocket", label: "Shiprocket", icon: Package },
-          { key: "database", label: "Danger Zone", icon: Database },
+          { key: "general", label: "Preferences", icon: Sliders },
+          { key: "notifications", label: "WhatsApp Hub", icon: Bell },
+          { key: "email", label: "Email API", icon: Mail },
+          { key: "overrides", label: "Product Rules", icon: Package },
+          { key: "shopify", label: "Shopify API", icon: ShoppingBag },
+          { key: "shiprocket", label: "Logistics", icon: Package },
+          { key: "database", label: "System Health", icon: Database },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key as Tab)}
-            className={cn("flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap",
-              tab === t.key ? "border-[#2D1E6F] text-[#2D1E6F]" : "border-transparent text-gray-500 hover:text-gray-700"
+            className={cn("flex items-center gap-2.5 px-6 py-3.5 text-[10px] font-bold uppercase tracking-[0.2em] border-b-2 transition-all whitespace-nowrap",
+              tab === t.key ? "border-[#1c1c1c] text-[#1c1c1c]" : "border-transparent text-[#5f5f5d] hover:text-[#1c1c1c] opacity-50"
             )}>
             <t.icon className="w-3.5 h-3.5" /> {t.label}
           </button>
@@ -768,126 +984,169 @@ export default function SettingsPage() {
 
       {/* GENERAL */}
       {tab === "general" && (
-        <div className="space-y-5">
-          <div className="card p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-1">Follow-up Timing</h3>
-            <p className="text-xs text-gray-400 mb-4">Days after delivery to trigger each follow-up call. <strong>Saving will automatically update existing tasks.</strong></p>
+        <div className="space-y-6">
+          <div className="card p-6">
+            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2">Cycle Configuration</h3>
+            <p className="text-xs text-[#5f5f5d] mb-6 leading-relaxed">Define the temporal triggers for your customer retention sequences. Changes here propagate to all active pending tasks.</p>
             
             {[
-              { label: "Review call offset", field: "review_offset_days", desc: "Days after delivery to request a review", max: 30 },
-              { label: "Reorder call offset", field: "reorder_offset_days", desc: "Days after delivery to prompt a reorder", max: 60 },
-              { label: "Final follow-up offset", field: "final_offset_days", desc: "Last touchpoint before marking inactive", max: 90 },
-              { label: "Inactive threshold", field: "inactive_threshold_days", desc: "Days without order to mark customer inactive", max: 180 },
+              { label: "Engagement window (Review)", field: "review_offset_days", desc: "Interval before post-delivery feedback request", max: 30 },
+              { label: "Refill trigger (Reorder)", field: "reorder_offset_days", desc: "Calculated threshold for replenishment call", max: 60 },
+              { label: "Retention anchor (Final)", field: "final_offset_days", desc: "Terminal follow-up before archival", max: 90 },
+              { label: "Churn threshold (Inactive)", field: "inactive_threshold_days", desc: "Dormancy limit for active customer status", max: 180 },
             ].map(f => (
-              <div key={f.field} className="flex items-center justify-between py-4 border-b border-gray-50 last:border-0 gap-4">
+              <div key={f.field} className="flex items-center justify-between py-6 border-b border-[#eceae4]/50 last:border-0 gap-8">
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-[#2D1E6F]">{f.label}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">{f.desc}</div>
+                  <div className="text-xs font-bold text-[#1c1c1c]">{f.label}</div>
+                  <div className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">{f.desc}</div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-6">
                   <input type="range" min={1} max={f.max} value={settings[f.field]} step={1}
                     onChange={e => setSettings({ ...settings, [f.field]: +e.target.value })}
-                    className="w-32 accent-[#2D1E6F]" />
-                  <div className="w-16 text-center">
-                    <span className="text-lg font-bold text-[#2D1E6F]">{settings[f.field]}</span>
-                    <span className="text-xs text-gray-400 ml-1">days</span>
+                    className="w-32 accent-[#1c1c1c] cursor-pointer" />
+                  <div className="w-20 text-right">
+                    <span className="text-2xl font-bold text-[#1c1c1c] tabular-nums tracking-tighter">{settings[f.field]}</span>
+                    <span className="text-[10px] text-[#5f5f5d] font-bold uppercase ml-1 opacity-50">Days</span>
                   </div>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="flex justify-end">
-            <button className="btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {saving ? "Saving & Aligning..." : "Save Settings"}
-            </button>
+          <div className="flex justify-end gap-3">
+             <button onClick={handleRepairDates} disabled={saving} className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest">
+                Force Realignment
+             </button>
+             <button onClick={handleSave} disabled={saving} className="btn-primary py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest min-w-[140px]">
+                {saving ? "Processing..." : "Commit Changes"}
+             </button>
           </div>
         </div>
       )}
 
       {/* WHATSAPP */}
       {tab === "notifications" && (
-        <div className="space-y-5">
-            <div className={cn("space-y-6 transition-all", !settings.whatsapp_enabled && "opacity-40 pointer-events-none")}>
+        <div className="space-y-6">
+            {/* Master Control Hub */}
+            <div className="card p-6 border-[#1c1c1c]/10 bg-[#1c1c1c]/5 shadow-inner">
+              <div className="flex items-center justify-between gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className={cn("w-2 h-2 rounded-full", settings.whatsapp_enabled ? "bg-emerald-500 animate-pulse" : "bg-gray-300")} />
+                    <h3 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest">Master WhatsApp Gateway</h3>
+                  </div>
+                  <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed italic opacity-60">
+                    Enable or disable the entire WhatsApp communication infrastructure. When OFF, all automated broadcasts and manual triggers are suspended.
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setSettings({ ...settings, whatsapp_enabled: !settings.whatsapp_enabled })}
+                  className="focus:outline-none transition-transform active:scale-95"
+                >
+                  {settings.whatsapp_enabled ? (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-[#1c1c1c] border border-[#1c1c1c] rounded-2xl shadow-lg shadow-black/10">
+                      <ToggleRight className="w-5 h-5 text-white" />
+                      <span className="text-[10px] font-black text-white uppercase tracking-widest">SYSTEM ACTIVE</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-white border border-[#eceae4] rounded-2xl shadow-sm">
+                      <ToggleLeft className="w-5 h-5 text-gray-400" />
+                      <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">GATEWAY CLOSED</span>
+                    </div>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className={cn("space-y-8 transition-all", !settings.whatsapp_enabled && "opacity-40 pointer-events-none grayscale")}>
               
               {/* Meta Cloud API (Official) */}
-              <div className="card overflow-hidden border-[#2D1E6F]/10 bg-gradient-to-br from-white to-[#2D1E6F]/5">
-                <div className="px-5 py-3 bg-[#2D1E6F] text-white flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+              <div className="card overflow-hidden bg-[#fcfbf8]">
+                <div className="px-6 py-4 bg-[#1c1c1c] text-[#f7f4ed] flex items-center justify-between">
+                  <div className="flex items-center gap-3">
                     <Smartphone className="w-4 h-4" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider">Official Meta Cloud API</h3>
+                    <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Enterprise Meta API</h3>
                   </div>
-                  <span className="text-[10px] font-black bg-white/20 text-white px-2 py-0.5 rounded border border-white/30">PREMIUM</span>
+                  <span className="text-[9px] font-black bg-white/20 text-white px-2.5 py-1 rounded-lg border border-white/30 tracking-widest">PREMIUM</span>
                 </div>
                 
-                <div className="p-5 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="p-6 space-y-6">
+                  <div className="grid grid-cols-2 gap-6">
                     <div className="col-span-2">
-                       <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Cloud System Access Token</label>
+                       <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">System Access Token</label>
                        <input 
                          type="password" 
                          value={settings.whatsapp_token || ""} 
                          onChange={e => setSettings({ ...settings, whatsapp_token: e.target.value })}
                          placeholder="EAAV..."
-                         className="input font-mono text-xs" 
+                         className="input font-mono text-[10px] bg-[#fcfbf8]" 
                        />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Phone Number ID</label>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Phone Number ID</label>
                       <input 
                         type="text" 
                         value={settings.whatsapp_phone_id || ""} 
                         onChange={e => setSettings({ ...settings, whatsapp_phone_id: e.target.value })}
                         placeholder="123456789..."
-                        className="input font-mono text-xs" 
+                        className="input font-mono text-[10px] bg-[#fcfbf8]" 
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Meta App ID</label>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Meta App ID</label>
                       <input 
                         type="text" 
                         value={settings.whatsapp_app_id || ""} 
                         onChange={e => setSettings({ ...settings, whatsapp_app_id: e.target.value })}
                         placeholder="7890..."
-                        className="input font-mono text-xs" 
+                        className="input font-mono text-[10px] h-10 bg-[#fcfbf8]" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Meta App Secret</label>
+                      <input 
+                        type="password" 
+                        value={settings.whatsapp_app_secret || ""} 
+                        onChange={e => setSettings({ ...settings, whatsapp_app_secret: e.target.value })}
+                        placeholder="••••••••"
+                        className="input font-mono text-[10px] h-10 bg-[#fcfbf8]" 
                       />
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-blue-100/50">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Webhook Configuration</label>
-                    <p className="text-[10px] text-gray-400 mb-3 italic">Set these in Meta Dashboard &gt; Webhooks &gt; WhatsApp Business Account</p>
+                  <div className="pt-6 border-t border-[#eceae4]/50">
+                    <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Webhook Configuration</label>
+                    <p className="text-[10px] text-[#5f5f5d] mb-4 italic opacity-70">Configure these in Meta Dashboard &gt; Webhooks</p>
                     
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <div>
-                        <div className="text-[9px] font-bold text-[#2D1E6F] mb-1">Callback URL</div>
+                        <div className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1.5 opacity-60">Callback URL</div>
                         <div className="flex gap-2">
                           <input 
                             type="text" 
                             readOnly 
                             value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/whatsapp`}
-                            className="input font-mono text-[10px] h-8 bg-gray-50 text-gray-500 cursor-default" 
+                            className="input font-mono text-[10px] h-9 bg-[#eceae4]/20 border-transparent text-[#5f5f5d] cursor-default" 
                           />
                           <button 
                             onClick={() => {
                               navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/whatsapp`);
                               toast.success("URL Copied!");
                             }}
-                            className="px-2 border border-gray-200 rounded hover:bg-gray-50 text-gray-400 hover:text-[#2D1E6F] transition-colors"
+                            className="w-9 h-9 flex items-center justify-center border border-[#eceae4] rounded-lg hover:bg-[#eceae4] text-[#5f5f5d] hover:text-[#1c1c1c] transition-all"
                           >
                             <Paperclip className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
                       <div>
-                        <div className="text-[9px] font-bold text-[#2D1E6F] mb-1">Verify Token</div>
+                        <div className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1.5 opacity-60">Verify Token</div>
                         <input 
                           type="text" 
                           value={settings.whatsapp_verify_token || ""} 
                           onChange={e => setSettings({ ...settings, whatsapp_verify_token: e.target.value })}
                           placeholder="MySecureToken123"
-                          className="input font-mono text-[10px] h-8 bg-blue-50/30 border-blue-100" 
+                          className="input font-mono text-[10px] h-9 bg-[#fcfbf8]" 
                         />
                       </div>
                     </div>
@@ -896,178 +1155,161 @@ export default function SettingsPage() {
               </div>
 
               {/* High Visibility QR Scanner (Only when pending) */}
+              {/* High Visibility QR Scanner (Only when pending) */}
               {!waStatus.ready && waStatus.qr && (
-                <div className="card border-amber-200 bg-gradient-to-br from-amber-50/50 to-white overflow-hidden mb-6">
-                  <div className="px-5 py-3 bg-amber-500 text-white flex items-center gap-2">
+                <div className="card overflow-hidden bg-[#fcfbf8] border-[#1c1c1c]/10">
+                  <div className="px-6 py-4 bg-[#1c1c1c] text-[#f7f4ed] flex items-center gap-3">
                     <AlertCircle className="w-4 h-4" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider">Action Required: Scan QR Code</h3>
+                    <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Authenticating Bridge</h3>
                   </div>
-                  <div className="p-8 text-center bg-white/40">
-                    <p className="text-xs text-gray-600 mb-6 font-medium">Please scan this QR code with your WhatsApp app to enable the Local Bridge.</p>
-                    <div className="inline-block p-4 bg-white rounded-2xl shadow-xl border border-amber-100 relative group">
-                       <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-                       <img src={waStatus.qr} alt="QR" className="w-48 h-48 relative z-10" />
-                       {!waStatus.qr && <div className="w-48 h-48 flex items-center justify-center text-gray-300"><Loader2 className="w-8 h-8 animate-spin" /></div>}
+                  <div className="p-10 text-center bg-[#eceae4]/10">
+                    <p className="text-xs text-[#5f5f5d] mb-8 font-medium max-w-xs mx-auto leading-relaxed">Securely link your WhatsApp instance by scanning the cryptographic token below.</p>
+                    <div className="inline-block p-6 bg-white rounded-3xl shadow-2xl border border-[#eceae4] relative group">
+                       <img src={waStatus.qr} alt="QR" className="w-52 h-52 relative z-10" />
+                       {!waStatus.qr && <div className="w-52 h-52 flex items-center justify-center text-[#eceae4]"><Loader2 className="w-10 h-10 animate-spin" /></div>}
                     </div>
-                    <div className="mt-6 flex flex-col items-center gap-2">
-                       <div className="flex items-center gap-2 text-[10px] text-amber-600 font-bold bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
-                          <WifiOff className="w-3 h-3" /> WAITING FOR DISCOVERY...
+                    <div className="mt-8 flex flex-col items-center gap-3">
+                       <div className="flex items-center gap-3 text-[10px] text-[#1c1c1c] font-bold bg-white px-5 py-2 rounded-xl border border-[#eceae4] shadow-sm uppercase tracking-widest">
+                          <WifiOff className="w-3.5 h-3.5 animate-pulse" /> Awaiting Handshake...
                        </div>
-                       <button onClick={fetchStatus} className="text-[10px] text-gray-400 hover:text-[#2D1E6F] underline transition-colors">Not seeing a QR? Click here to refresh</button>
+                       <button onClick={fetchStatus} className="text-[10px] text-[#5f5f5d] hover:text-[#1c1c1c] underline underline-offset-4 decoration-[#eceae4] transition-all font-bold uppercase tracking-widest">Refresh Sequence</button>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Legacy Bridge (Accordion) */}
-              <details className="card border-gray-100 opacity-60">
-                <summary className="px-5 py-3 text-xs font-bold text-gray-500 cursor-pointer hover:text-[#2D1E6F] transition-colors flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+              <details className="card border-[#eceae4]/60 bg-[#eceae4]/10 group">
+                <summary className="px-6 py-4 text-[10px] font-bold text-[#5f5f5d] cursor-pointer hover:text-[#1c1c1c] transition-colors flex items-center justify-between uppercase tracking-widest list-none">
+                  <div className="flex items-center gap-3">
                     <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Legacy Local Bridge (wa_server.js) Settings</span>
+                    <span>Local Bridge Infrastructure</span>
                   </div>
-                  <span className="text-[9px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">FALLBACK</span>
+                  <span className="text-[9px] bg-[#eceae4] text-[#1c1c1c] px-2 py-0.5 rounded-lg tracking-widest">v2.0</span>
                 </summary>
                 
-                <div className="px-5 pb-5 pt-2 border-t border-gray-50 space-y-4">
+                <div className="px-6 pb-6 pt-2 border-t border-[#eceae4]/50 space-y-5">
                   {waStatus.ready ? (
-                    <div className="p-4 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-blue-800 font-bold text-xs">
-                        <CheckCircle2 className="w-4 h-4" /> Connected
+                    <div className="p-4 rounded-xl bg-[#1c1c1c] text-[#f7f4ed] flex items-center justify-between shadow-lg shadow-black/10">
+                      <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Infrastructure Live
                       </div>
-                      <button onClick={fetchStatus} className="text-[10px] text-blue-600 underline">Refresh Status</button>
+                      <button onClick={fetchStatus} className="text-[9px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 underline underline-offset-4">Recalibrate</button>
                     </div>
                   ) : (
-                    <div className="p-4 text-center text-[10px] text-gray-400 italic">Technical settings below. Scanner is shown above when active.</div>
+                    <div className="p-4 text-center text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest opacity-40">Awaiting Service Discovery</div>
                   )}
                   
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Bridge Endpoint URL</label>
+                    <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-60">Service Endpoint</label>
                     <input 
                       type="text" 
                       value={settings.whatsapp_bridge_url || ""} 
                       onChange={e => setSettings({ ...settings, whatsapp_bridge_url: e.target.value })}
                       placeholder="http://localhost:3001"
-                      className="input font-mono text-[10px] h-9" 
+                      className="input font-mono text-[10px] h-10 bg-[#fcfbf8]" 
                     />
                   </div>
                 </div>
               </details>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-xs font-medium text-gray-600 block mb-1">Admin Phone (Reports)</label>
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Management Channel</label>
                   <input 
                     type="text" 
                     value={settings.whatsapp_admin_phone || ""} 
                     onChange={e => setSettings({ ...settings, whatsapp_admin_phone: e.target.value })}
                     placeholder="+91XXXXXXXXXX"
-                    className="input font-mono text-xs" 
+                    className="input font-mono text-[10px] bg-[#fcfbf8]" 
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-600 block mb-1">Preferred Send Time</label>
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Broadcast Window</label>
                   <input 
                     type="time" 
                     value={settings.whatsapp_send_time || "10:00"} 
                     onChange={e => setSettings({ ...settings, whatsapp_send_time: e.target.value })}
-                    className="input font-mono text-xs" 
+                    className="input font-mono text-[10px] bg-[#fcfbf8]" 
                   />
                 </div>
               </div>
 
               {/* Compact Status Bar */}
-              <div className="pt-4 border-t border-gray-50">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className={cn("w-2 h-2 rounded-full animate-pulse", 
-                      waStatus.ready ? "bg-blue-500 shadow-[0_0_8px_rgba(37,99,235,0.5)]" : 
+              <div className="pt-6 border-t border-[#eceae4]/50">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className={cn("w-2.5 h-2.5 rounded-full animate-pulse", 
+                      waStatus.ready ? "bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]" : 
                       waStatus.state === "DISCONNECTED" ? "bg-rose-500" : "bg-amber-500")} />
-                    <span className="text-xs font-semibold text-gray-700">
+                    <span className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-[0.2em]">
                       Status: <span className={cn(
-                        waStatus.ready ? "text-blue-600" : 
+                        waStatus.ready ? "text-emerald-600" : 
                         waStatus.state === "DISCONNECTED" ? "text-rose-600" : "text-amber-600"
-                      )}>{waStatus.ready ? "CONNECTED" : waStatus.state?.replace("_", " ") || "UNKNOWN"}</span>
+                      )}>{waStatus.ready ? "Authenticated" : waStatus.state?.replace("_", " ") || "INITIALISING"}</span>
                     </span>
                   </div>
                   {!waStatus.ready && (
-                     <button onClick={fetchStatus} className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors border border-blue-100 font-bold">
-                        <RefreshCw className={cn("w-3 h-3 inline mr-1", saving && "animate-spin")} /> Retry Discovery
+                     <button onClick={fetchStatus} className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] hover:text-[#1c1c1c] transition-colors flex items-center gap-2">
+                        <RefreshCw className={cn("w-3.5 h-3.5", saving && "animate-spin")} /> Re-run Scan
                      </button>
                   )}
                 </div>
               </div>
 
               {/* Testing & Tools */}
-              <div className="pt-6 mt-6 border-t border-gray-100">
-                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Testing & Tools</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <button 
-                    onClick={async () => {
+              <div className="pt-8 mt-4 border-t border-[#eceae4]/50">
+                <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4">Diagnostics & Manual Triggers</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { label: "Dispatch Daily Digest", icon: Send, onClick: async () => {
                       setSaving(true);
                       try {
                         const res = await fetch("/api/cron/daily-digest?force=true", { method: "POST" });
                         const data = await res.json();
-                        if (data.sent) toast.success("Summary sent to your WhatsApp!");
-                        else toast.error(data.error || "Failed to send summary");
+                        if (data.sent) toast.success("Summary dispatched!");
+                        else toast.error(data.error || "Dispatch failed");
                       } catch (err: any) { toast.error("Connection error: " + err.message); }
                       finally { setSaving(false); }
-                    }}
-                    className="flex items-center justify-center gap-2 py-2 px-3 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded text-[11px] font-semibold transition-colors border border-gray-200"
-                  >
-                    <Send className="w-3 h-3" /> Send Daily Summary
-                  </button>
-                    <button 
-                      onClick={async () => {
+                    }},
+                    { label: "Sync Reorder Rules", icon: RefreshCw, onClick: async () => {
                         setSaving(true);
                         try {
                           const res = await fetch("/api/cron/reorder-reminder?force=true", { method: "POST" });
                           const data = await res.json();
-                          if (res.ok) toast.success(`Sent ${data.sent || 0} reorder reminders!`);
-                          else toast.error(data.error || "Failed to run reminders");
+                          if (res.ok) toast.success(`Processed ${data.sent || 0} reminders`);
+                          else toast.error(data.error || "Sync failed");
                         } catch (err: any) { toast.error("Connection error: " + err.message); }
                         finally { setSaving(false); }
-                      }}
-                      className="flex items-center justify-center gap-2 py-2 px-3 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded text-[11px] font-semibold transition-colors border border-gray-200"
-                    >
-                      <RefreshCw className="w-3 h-3" /> Run Reorder Reminders
-                    </button>
-                    <button 
-                      onClick={async () => {
+                    }},
+                    { label: "Force Recovery Cycle", icon: Send, onClick: async () => {
                         setSaving(true);
                         try {
                           const res = await fetch("/api/cron/recovery-reminder?force=true", { method: "POST" });
                           const data = await res.json();
-                          if (res.ok) toast.success(`Sent ${data.sent || 0} recovery reminders!`);
-                          else toast.error(data.error || "Failed to run reminders");
+                          if (res.ok) toast.success(`Recovered ${data.sent || 0} items`);
+                          else toast.error(data.error || "Cycle failed");
                         } catch (err: any) { toast.error("Connection error: " + err.message); }
                         finally { setSaving(false); }
-                      }}
-                      className="flex items-center justify-center gap-2 py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded text-[11px] font-semibold transition-colors border border-blue-100"
-                    >
-                      <Send className="w-3 h-3" /> Run Recovery Reminders
-                    </button>
-                  <button 
-                    onClick={async () => {
+                    }},
+                    { label: "Rebuild Task Pipeline", icon: RefreshCw, onClick: async () => {
                       setSaving(true);
                       try {
                         const res = await fetch("/api/cron/task-generator", { method: "POST" });
                         const data = await res.json();
-                        toast.success(`Generated ${data.generated} new tasks!`);
+                        toast.success(`Pipeline rebuilt: ${data.generated} tasks`);
                         fetchPipelineData();
                       } catch (err: any) { toast.error("Error: " + err.message); }
                       finally { setSaving(false); }
                     }}
-                    className="flex items-center justify-center gap-2 py-2 px-3 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded text-[11px] font-semibold transition-colors border border-gray-200"
-                  >
-                    <RefreshCw className="w-3 h-3" /> Refresh Task Queue
-                  </button>
-                  <button 
-                    onClick={handleRepairDates}
-                    className="flex items-center justify-center gap-2 py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded text-[11px] font-semibold transition-colors border border-amber-100"
-                  >
-                    <AlertCircle className="w-3 h-3" /> Repair 1970 Dates
-                  </button>
+                  ].map((btn, i) => (
+                    <button key={i}
+                      onClick={btn.onClick}
+                      className="flex items-center justify-center gap-3 py-3 px-4 bg-[#fcfbf8] hover:bg-[#eceae4] text-[#1c1c1c] rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-[#eceae4] shadow-sm hover:shadow-md"
+                    >
+                      <btn.icon className="w-3.5 h-3.5" /> {btn.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -1088,7 +1330,7 @@ export default function SettingsPage() {
                     <div key={rule.field} className="card p-4 border-gray-100 bg-gray-50/30">
                       <div className="flex items-center justify-between gap-4 mb-4">
                         <div className="flex-1">
-                          <div className="text-xs font-bold text-[#2D1E6F]">{rule.label}</div>
+                          <div className="text-xs font-bold text-[#1c1c1c]">{rule.label}</div>
                           <div className="text-[10px] text-gray-400 mt-0.5">{rule.desc}</div>
                         </div>
                         <button 
@@ -1096,9 +1338,9 @@ export default function SettingsPage() {
                           className="focus:outline-none transition-transform active:scale-95"
                         >
                           {settings[rule.field] ? (
-                            <div className="flex items-center gap-1.5 px-2 py-1 bg-[#2D1E6F]/10 border border-[#2D1E6F]/20 rounded-full">
-                              <ToggleRight className="w-4 h-4 text-[#2D1E6F]" />
-                              <span className="text-[9px] font-black text-[#2D1E6F] uppercase">ACTIVE</span>
+                            <div className="flex items-center gap-1.5 px-2 py-1 bg-[#1c1c1c]/10 border border-[#1c1c1c]/20 rounded-full">
+                              <ToggleRight className="w-4 h-4 text-[#1c1c1c]" />
+                              <span className="text-[9px] font-black text-[#1c1c1c] uppercase">ACTIVE</span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 border border-gray-200 rounded-full">
@@ -1110,24 +1352,24 @@ export default function SettingsPage() {
                       </div>
 
                       {settings[rule.field] && (
-                        <div className="mt-4 animate-fade-in-down border-t border-[#2D1E6F]/5 pt-4">
+                        <div className="mt-4 animate-fade-in-down border-t border-[#1c1c1c]/5 pt-4">
                           <div className="flex flex-col gap-3">
                             <div className="flex items-center justify-between">
-                              <label className="text-[10px] font-black text-[#2D1E6F]/40 uppercase tracking-widest">Message Content</label>
-                              <div className="flex items-center gap-2">
-                                <div className="text-[10px] font-bold text-gray-300 italic">Recommended:</div>
-                                <div className="flex gap-1.5">
+                              <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest opacity-60">Message Content</label>
+                              <div className="flex items-center gap-3">
+                                <div className="text-[10px] font-bold text-[#5f5f5d] italic opacity-40">Proposals:</div>
+                                <div className="flex gap-2">
                                   {WA_PRESETS[rule.templateField]?.map((preset, idx) => (
                                     <button 
                                       key={idx}
                                       onClick={() => {
                                         setSettings({ ...settings, [rule.templateField]: preset });
-                                        toast.success("Ready to use!");
+                                        toast.success("Template Loaded");
                                       }}
-                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#2D1E6F]/10 rounded-lg text-[10px] font-bold text-[#2D1E6F] hover:bg-[#2D1E6F] hover:text-white hover:border-[#2D1E6F] transition-all shadow-sm hover:shadow-[#2D1E6F]/20 group"
+                                      className="flex items-center gap-2 px-3 py-1.5 bg-[#fcfbf8] border border-[#eceae4] rounded-lg text-[9px] font-bold text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] hover:border-[#1c1c1c] transition-all shadow-sm group"
                                     >
-                                      <Send className="w-3 h-3 opacity-50 group-hover:opacity-100" />
-                                      {idx === 0 ? "Option A" : "Option B"}
+                                      <Send className="w-3 h-3 opacity-40 group-hover:opacity-100" />
+                                      {idx === 0 ? "Option Alpha" : "Option Beta"}
                                     </button>
                                   ))}
                                 </div>
@@ -1135,12 +1377,11 @@ export default function SettingsPage() {
                             </div>
                             
                             <div className="relative group">
-                              <div className="absolute -inset-0.5 bg-gradient-to-r from-[#2D1E6F]/10 to-[#2D1E6F]/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                               <textarea 
                                 value={settings[rule.templateField] || ""} 
                                 onChange={e => setSettings({ ...settings, [rule.templateField]: e.target.value })}
-                                className="relative w-full input text-xs min-h-[100px] font-medium leading-relaxed bg-white border-[#2D1E6F]/10 focus:border-[#2D1E6F] rounded-xl p-4 shadow-sm"
-                                placeholder="Type your automated message..."
+                                className="relative w-full input text-xs min-h-[120px] font-medium leading-relaxed bg-[#fcfbf8] border-[#eceae4] focus:border-[#1c1c1c] rounded-xl p-5 shadow-sm"
+                                placeholder="Draft your automated broadcast..."
                               />
                             </div>
                           </div>
@@ -1151,154 +1392,186 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Message Templates */}
-              <div className="pt-8 mt-8 border-t border-gray-100">
-                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Task Follow-up Templates (Scheduled)</h4>
+               {/* Message Templates */}
+               <div className="pt-10 mt-8 border-t border-[#eceae4]">
+                <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-6">Task Specific Prototypes (Scheduled)</h4>
                 
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {[
-                    { label: "Review Reminder", field: "whatsapp_review_template", metaField: "meta_review_name", desc: "Sent after delivery to request feedback" },
-                    { label: "Reorder Reminder", field: "whatsapp_reorder_template", metaField: "meta_reorder_name", desc: "Sent for refill prompts" },
-                    { label: "Abandoned Cart Recovery", field: "whatsapp_recovery_template", metaField: "meta_recovery_name", desc: "Sent to recover incomplete checkouts" },
-                    { label: "Final Follow-up", field: "whatsapp_final_template", metaField: "meta_final_name", desc: "Last touchpoint for inactive customers" },
+                    { label: "Post-Purchase Review", field: "whatsapp_review_template", metaField: "meta_review_name", desc: "Requested automatically after delivery to gather customer feedback and build trust." },
+                    { label: "Replenishment Prompt", field: "whatsapp_reorder_template", metaField: "meta_reorder_name", desc: "Scheduled to fire when a customer's supply is likely finishing, encouraging repeat orders." },
+                    { label: "Retention Sequence", field: "whatsapp_recovery_template", metaField: "meta_recovery_name", desc: "Targeted at customers with abandoned carts to recover potentially lost revenue." },
+                    { label: "Archival Notice", field: "whatsapp_final_template", metaField: "meta_final_name", desc: "A final re-engagement touchpoint for long-term inactive customers before moving to archival status." },
                   ].map(t => (
-                    <div key={t.field} className="grid grid-cols-3 gap-4">
+                    <div key={t.field} className="grid grid-cols-3 gap-6">
                       <div className="col-span-2">
-                        <div className="flex justify-between items-end mb-1.5">
-                          <label className="text-xs font-bold text-gray-700">{t.label} (Legacy Text)</label>
+                        <div className="flex flex-col mb-3">
+                          <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest opacity-60 mb-1">{t.label}</label>
+                          <p className="text-[9px] text-[#5f5f5d] font-medium opacity-50 italic">{t.desc}</p>
                         </div>
                         <textarea 
                           value={settings[t.field] || ""} 
                           onChange={e => setSettings({ ...settings, [t.field]: e.target.value })}
-                          className="input text-xs min-h-[80px] font-medium leading-relaxed bg-gray-50/50"
-                          placeholder="Type your message here..."
+                          className="input text-xs min-h-[100px] font-medium leading-relaxed bg-[#fcfbf8] border-[#eceae4] rounded-xl p-4"
+                          placeholder="Refine follow-up logic..."
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-bold text-[#2D1E6F] mb-1.5 block">Official Meta Name</label>
+                        <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-60">Meta ID</label>
                         <input 
                           type="text" 
                           value={settings[t.metaField] || ""} 
                           onChange={e => setSettings({ ...settings, [t.metaField]: e.target.value })}
                           placeholder="review_v1"
-                          className="input font-mono text-[10px] bg-[#2D1E6F]/5 border-[#2D1E6F]/10" 
+                          className="input font-mono text-[10px] bg-[#eceae4]/20 border-transparent h-10" 
                         />
-                        <p className="text-[9px] text-gray-400 mt-1.5">Must match the approved name in Meta Dashboard.</p>
+                        <p className="text-[9px] text-[#5f5f5d] mt-2 opacity-50 italic">Must mirror the approved namespace in Meta Dashboard.</p>
                       </div>
-                      <div className="col-span-3 h-px bg-gray-50 my-2" />
+                      <div className="col-span-3 h-px bg-[#eceae4]/50 my-2" />
                     </div>
                   ))}
 
-                  <div className="bg-[#2D1E6F]/5 border border-[#2D1E6F]/10 rounded-lg p-3">
-                    <h5 className="text-[10px] font-bold text-[#2D1E6F] uppercase mb-2">Variables Guide</h5>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                      <div className="text-[10px] text-[#2D1E6F]/80 flex justify-between"><span>{"{{name}}"}</span> <span className="text-[#2D1E6F]/50">Customer Name</span></div>
-                      <div className="text-[10px] text-[#2D1E6F]/80 flex justify-between"><span>{"{{product}}"}</span> <span className="text-[#2D1E6F]/50">First Item Name</span></div>
-                      <div className="text-[10px] text-[#2D1E6F]/80 flex justify-between"><span>{"{{abandon_link}}"}</span> <span className="text-[#2D1E6F]/50">Recovery URL</span></div>
-                      <div className="text-[10px] text-[#2D1E6F]/80 flex justify-between"><span>{"{{order_no}}"}</span> <span className="text-[#2D1E6F]/50">Order Number</span></div>
+                  <div className="bg-[#1c1c1c] text-[#f7f4ed] rounded-xl p-5 shadow-lg shadow-black/10">
+                    <h5 className="text-[10px] font-bold uppercase tracking-widest mb-3 opacity-60">System Attributes</h5>
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+                      <div className="text-[10px] font-bold flex justify-between"><span>{"{{name}}"}</span> <span className="opacity-40">Full Name</span></div>
+                      <div className="text-[10px] font-bold flex justify-between"><span>{"{{first_name}}"}</span> <span className="opacity-40">First Name</span></div>
+                      <div className="text-[10px] font-bold flex justify-between"><span>{"{{order_no}}"}</span> <span className="opacity-40">Order ID</span></div>
+                      <div className="text-[10px] font-bold flex justify-between"><span>{"{{product}}"}</span> <span className="opacity-40">Primary Item</span></div>
+                      <div className="text-[10px] font-bold flex justify-between"><span>{"{{items_list}}"}</span> <span className="opacity-40">All Items</span></div>
+                      <div className="text-[10px] font-bold flex justify-between"><span>{"{{total_amount}}"}</span> <span className="opacity-40">Amount</span></div>
+                      <div className="text-[10px] font-bold flex justify-between"><span>{"{{tracking_no}}"}</span> <span className="opacity-40">Ship ID</span></div>
+                      <div className="text-[10px] font-bold flex justify-between"><span>{"{{tracking_link}}"}</span> <span className="opacity-40">Track URL</span></div>
+                      <div className="text-[10px] font-bold flex justify-between"><span>{"{{abandon_link}}"}</span> <span className="opacity-40">Cart URL</span></div>
+                      <div className="text-[10px] font-bold flex justify-between"><span>{"{{city}}"}</span> <span className="opacity-40">City</span></div>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Abandoned Cart Recovery Delay</label>
-                    <div className="flex items-center gap-2">
+                  <div className="pt-4 flex items-center justify-between border-t border-[#eceae4]/50">
+                    <div>
+                      <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-1 opacity-60">Recovery Sequence Latency</label>
+                      <p className="text-[10px] text-[#5f5f5d] italic opacity-50">Hours elapsed before cart abandonment trigger</p>
+                    </div>
+                    <div className="flex items-center gap-4">
                        <input 
                         type="number" 
                         step="0.01"
                         value={settings.recovery_delay_hours} 
                         onChange={e => setSettings({ ...settings, recovery_delay_hours: parseFloat(e.target.value) })}
-                        className="input text-xs w-20" 
+                        className="input text-[10px] font-bold text-[#1c1c1c] w-20 bg-[#fcfbf8] h-10 text-center" 
                       />
-                      <span className="text-xs text-gray-400 font-medium">hours after abandonment </span>
-                      {settings.recovery_delay_hours === 0.25 && <span className="text-[10px] bg-[#2D1E6F]/10 text-[#2D1E6F] px-1.5 py-0.5 rounded font-bold">15 MINS</span>}
+                      {settings.recovery_delay_hours === 0.25 && <span className="text-[10px] bg-[#1c1c1c] text-white px-2 py-1 rounded font-bold tracking-widest">RAPID</span>}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Automation Command Center */}
-              <div className="pt-8 mt-8 border-t border-gray-100">
-                <div className="flex items-center justify-between mb-4">
+               {/* Automation Command Center */}
+               <div className="pt-10 mt-8 border-t border-[#eceae4]">
+                <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Automation Pipeline</h4>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Visibility into today's communication status</p>
+                    <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Live Pipeline Monitoring</h4>
+                    <p className="text-[10px] text-[#5f5f5d] mt-1 opacity-60 font-medium">Real-time visibility into administrative communication flows</p>
                   </div>
-                  <button onClick={fetchPipelineData} className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-[#2D1E6F] transition-colors">
+                  <button onClick={fetchPipelineData} className="w-9 h-9 flex items-center justify-center hover:bg-[#eceae4] rounded-lg text-[#5f5f5d] transition-all">
                     <RefreshCw className={cn("w-3.5 h-3.5", fetchingPipeline && "animate-spin")} />
                   </button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                   {/* Column 1: Recently Sent */}
-                   <div className="space-y-2">
-                     <h5 className="text-[10px] font-bold text-gray-700 uppercase px-1">Recently Sent (Today)</h5>
-                     <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-1">
-                        {pipeline.sent.length === 0 ? (
-                          <div className="text-[10px] text-gray-400 italic p-3 border border-dashed rounded text-center">No recent activity</div>
-                        ) : pipeline.sent.map(log => (
-                          <div key={log.id} className="p-2 bg-[#2D1E6F]/5 border border-[#2D1E6F]/10 rounded group transition-all hover:bg-[#2D1E6F]/10">
-                            <div className="flex justify-between items-start">
-                              <span className="text-[10px] font-bold text-[#2D1E6F] truncate max-w-[100px]">{log.customer?.name || "Customer"}</span>
-                              <span className="text-[8px] text-[#2D1E6F]/60 font-mono">{new Date(log.called_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                            </div>
-                            <div className="text-[9px] text-[#2D1E6F]/80 truncate mt-0.5 line-clamp-1">{log.note}</div>
-                          </div>
-                        ))}
-                     </div>
-                   </div>
-
-                   {/* Column 2: In Queue */}
-                   <div className="space-y-2">
-                     <h5 className="text-[10px] font-bold text-gray-700 uppercase px-1">In Queue (Waiting)</h5>
-                     <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-1">
-                        {pipeline.waiting.length === 0 ? (
-                          <div className="text-[10px] text-gray-400 italic p-3 border border-dashed rounded text-center">Queue is empty</div>
-                        ) : pipeline.waiting.map(task => {
-                          const [h, m] = (settings.whatsapp_send_time || "10:00").split(":");
-                          const now = new Date();
-                          const target = new Date();
-                          target.setHours(parseInt(h), parseInt(m), 0, 0);
-                          const diffMs = target.getTime() - now.getTime();
-                          const diffMin = Math.round(diffMs / 60000);
-                          
-                          let timeText = `Scheduled for ${settings.whatsapp_send_time || "10:00"}`;
-                          let isOverdue = diffMs < 0;
-                          
-                          if (!isOverdue) {
-                            const hours = Math.floor(diffMin / 60);
-                            const mins = diffMin % 60;
-                            timeText = `Sends in ${hours > 0 ? hours + "h " : ""}${mins}m`;
-                          } else {
-                            timeText = "Ready to send";
-                          }
-
-                          return (
-                            <div key={task.id} className="flex gap-2 p-1 bg-white border border-[#2D1E6F]/20 rounded-2xl shadow-sm backdrop-blur-xl bg-[#2D1E6F]/[0.02] group hover:border-[#2D1E6F]/40 transition-all">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <div className="text-[10px] font-bold text-gray-700 truncate max-w-[100px]">{task.customer?.name || "Customer"}</div>
-                                  <div className="flex items-center gap-1.5 mt-0.5">
-                                    <span className={cn("text-[8px] font-bold uppercase tracking-tight", isOverdue ? "text-[#2D1E6F]" : "text-gray-400")}>
-                                      {timeText}
-                                    </span>
-                                    <span className="text-[8px] px-1 py-0.5 bg-gray-50 border border-gray-100 text-gray-400 rounded-full font-bold uppercase tracking-widest">{task.task_type.replace("_", " ")}</span>
-                                  </div>
+                    {/* Column 1: Recently Sent */}
+                    <div className="space-y-4">
+                      <h5 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest px-1 opacity-40">Recently Dispatched</h5>
+                      <div className="space-y-2 max-h-[240px] overflow-y-auto pr-2 scroller-hide">
+                         {pipeline.sent.length === 0 ? (
+                           <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest p-8 border border-dashed border-[#eceae4] rounded-2xl text-center opacity-30 bg-[#eceae4]/10">No recent activity</div>
+                         ) : pipeline.sent.map(log => (
+                           <div key={log.id} className="p-4 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl group transition-all hover:border-[#1c1c1c]/30 shadow-sm">
+                             <div className="flex justify-between items-start mb-1">
+                               <div className="flex items-center gap-2">
+                                  <span className="text-[10px] font-bold text-[#1c1c1c] truncate uppercase tracking-widest">{log.customer?.name || "Customer"}</span>
+                                  {log.isAuto && <span className="text-[8px] px-1.5 py-0.5 bg-[#1c1c1c] text-white rounded font-bold uppercase tracking-tighter">Auto</span>}
                                 </div>
-                                <button 
-                                  onClick={() => handleOpenManualWa(task)}
-                                  className="p-1.5 bg-gray-50 hover:bg-[#2D1E6F] text-gray-400 hover:text-white rounded transition-all opacity-0 group-hover:opacity-100 shadow-sm"
-                                  title="Review & Send Now"
-                                >
-                                  <Send className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
+                                <span className="text-[9px] text-[#5f5f5d] font-bold opacity-40 tabular-nums">{new Date(log.called_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                             </div>
+                             <div className="text-[9px] text-[#5f5f5d] font-medium truncate opacity-60 leading-relaxed">{log.note}</div>
+                           </div>
+                         ))}
                       </div>
                     </div>
-                 </div>
-              </div>
+
+                    {/* Column 2: In Queue */}
+                    <div className="space-y-4">
+                      <h5 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest px-1 opacity-40">Queued for Dispatch</h5>
+                      <div className="space-y-2 max-h-[240px] overflow-y-auto pr-2 scroller-hide">
+                         {pipeline.waiting.length === 0 ? (
+                           <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest p-8 border border-dashed border-[#eceae4] rounded-2xl text-center opacity-30 bg-[#eceae4]/10">Queue finalized</div>
+                         ) : pipeline.waiting.map(task => {
+                           const [h, m] = (settings.whatsapp_send_time || "10:00").split(":");
+                           const target = new Date();
+                           target.setHours(parseInt(h), parseInt(m), 0, 0);
+                           let isOverdue = target.getTime() - new Date().getTime() < 0;
+                           let timeText = `Launch at ${settings.whatsapp_send_time || "10:00"}`;
+                            
+                           if (task.isWorkflow) {
+                               const runTime = new Date(task.due_date);
+                               const diff = runTime.getTime() - now.getTime();
+                               if (diff < 0) {
+                                  timeText = "Processing Now";
+                                  isOverdue = true;
+                               } else {
+                                  const hours = Math.floor(diff / 3600000);
+                                  const mins = Math.floor((diff % 3600000) / 60000);
+                                  const secs = Math.floor((diff % 60000) / 1000);
+                                  timeText = `Auto: ${hours > 0 ? hours + "h " : ""}${mins}m ${secs}s`;
+                                  isOverdue = false;
+                               }
+                            } else if (!isOverdue) {
+                               const diffMs = target.getTime() - now.getTime();
+                               const hours = Math.floor(diffMs / 3600000);
+                               const mins = Math.floor((diffMs % 3600000) / 60000);
+                               const secs = Math.floor((diffMs % 60000) / 1000);
+                               timeText = `Wait: ${hours > 0 ? hours + "h " : ""}${mins}m ${secs}s`;
+                            } else {
+                              timeText = "Ready for execution";
+                            }
+ 
+                           return (
+                             <div key={task.id} className="p-4 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl group hover:border-[#1c1c1c]/30 transition-all shadow-sm">
+                               <div className="flex justify-between items-start mb-2">
+                                 <div>
+                                   <div className="flex items-center gap-2 mb-1">
+                                     <div className="text-[10px] font-bold text-[#1c1c1c] truncate uppercase tracking-widest">{task.customer?.name || "Customer"}</div>
+                                     {task.isWorkflow ? (
+                                       <span className="text-[8px] px-1.5 py-0.5 bg-[#1c1c1c] text-white rounded font-bold uppercase tracking-tighter">Auto</span>
+                                     ) : (
+                                       <span className="text-[8px] px-1.5 py-0.5 bg-[#eceae4] text-[#5f5f5d] rounded font-bold uppercase tracking-tighter">Manual</span>
+                                     )}
+                                   </div>
+                                   <div className="flex items-center gap-2">
+                                     <span className={cn("text-[9px] font-bold uppercase tracking-widest", isOverdue ? "text-[#1c1c1c]" : "text-[#5f5f5d] opacity-50")}>
+                                       {timeText}
+                                     </span>
+                                     <span className="text-[8px] px-2 py-0.5 bg-[#eceae4]/30 border border-[#eceae4] text-[#5f5f5d] rounded-lg font-bold uppercase tracking-widest">
+                                       {task.isWorkflow ? (task.workflowName || "Workflow") : task.task_type.replace("_", " ")}
+                                     </span>
+                                   </div>
+                                 </div>
+                                 <button 
+                                   onClick={() => handleOpenManualWa(task)}
+                                   className="w-8 h-8 flex items-center justify-center bg-[#1c1c1c] text-[#f7f4ed] rounded-lg transition-all opacity-0 group-hover:opacity-100 shadow-lg shadow-black/10 hover:scale-105 active:scale-95"
+                                   title="Execute Broadcast"
+                                 >
+                                   <Send className="w-3.5 h-3.5" />
+                                 </button>
+                               </div>
+                             </div>
+                           );
+                         })}
+                       </div>
+                    </div>
+                  </div>
+               </div>
 
               <div className="flex justify-end mt-8 pt-8 border-t border-gray-100">
                 <button className="btn-primary" onClick={handleSave} disabled={saving}>
@@ -1310,214 +1583,441 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* SHOPIFY */}
-      {tab === "shopify" && (
-        <div className="space-y-5">
-          <div className="card p-5">
-            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">Shopify Direct Bypass</h3>
-            <p className="text-[10px] text-gray-400 mb-6 italic">Connect to Shopify Admin API to fetch unmasked customer contact details. Shopify data is never masked, making this the most reliable source for your CRM.</p>
-            
-            <div className="space-y-6">
-              <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Store Domain</label>
-                <div className="flex gap-2">
+      {/* EMAIL API */}
+      {tab === "email" && (
+        <div className="space-y-6">
+          <div className="card p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Mail className="w-4 h-4 text-[#1c1c1c]" />
+              <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Google OAuth Configuration</h3>
+            </div>
+            <p className="text-xs text-[#5f5f5d] mb-6 leading-relaxed">Configure your Gmail API credentials to enable automated email communications and re-engagement campaigns.</p>
+
+            <div className="bg-[#1c1c1c]/5 border border-[#1c1c1c]/10 rounded-2xl p-5 mb-8">
+              <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-3 opacity-60">Fast Import (credentials.json)</label>
+              <textarea 
+                className="w-full h-24 bg-white border-[#eceae4] rounded-xl p-4 text-[10px] font-mono mb-3"
+                placeholder='Paste your Google credentials JSON here...'
+                onChange={(e) => {
+                  if (e.target.value.trim().startsWith('{')) {
+                    handleImportGmailJson(e.target.value);
+                  }
+                }}
+              />
+              <p className="text-[9px] text-[#5f5f5d] italic opacity-50">Download the JSON from Google Cloud Console (APIs & Services {">"} Credentials {">"} OAuth 2.0 Client IDs) and paste it here to automatically populate the fields below.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block opacity-60">Client ID</label>
+                <input 
+                  type="text" 
+                  value={settings.gmail_client_id || ""} 
+                  onChange={e => setSettings({ ...settings, gmail_client_id: e.target.value })}
+                  placeholder="2570...apps.googleusercontent.com"
+                  className="input font-mono text-[10px] bg-[#fcfbf8]" 
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block opacity-60">Client Secret</label>
+                <input 
+                  type="password" 
+                  value={settings.gmail_client_secret || ""} 
+                  onChange={e => setSettings({ ...settings, gmail_client_secret: e.target.value })}
+                  placeholder="GOCSPX-..."
+                  className="input font-mono text-[10px] bg-[#fcfbf8]" 
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block opacity-60">Project ID</label>
+                <input 
+                  type="text" 
+                  value={settings.gmail_project_id || ""} 
+                  onChange={e => setSettings({ ...settings, gmail_project_id: e.target.value })}
+                  placeholder="cureforever2025"
+                  className="input font-mono text-[10px] bg-[#fcfbf8]" 
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block opacity-60">Redirect URIs</label>
+                <input 
+                  type="text" 
+                  value={settings.gmail_redirect_uris?.join(", ") || ""} 
+                  onChange={e => setSettings({ ...settings, gmail_redirect_uris: e.target.value.split(",").map(u => u.trim()).filter(u => u) })}
+                  placeholder="http://localhost, https://..."
+                  className="input font-mono text-[10px] bg-[#fcfbf8]" 
+                />
+              </div>
+            </div>
+
+            <details className="mt-8 pt-8 border-t border-[#eceae4]/50 group">
+              <summary className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest cursor-pointer opacity-40 hover:opacity-100 transition-opacity list-none flex items-center gap-2">
+                Advanced Endpoints <Sliders className="w-3 h-3" />
+              </summary>
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block opacity-60">Auth URI</label>
                   <input 
                     type="text" 
-                    value={settings.shopify_store_domain || ""} 
-                    onChange={e => setSettings({ ...settings, shopify_store_domain: e.target.value })}
-                    placeholder="e.g. cureforever.myshopify.com"
-                    className="input text-xs" 
+                    value={settings.gmail_auth_uri || ""} 
+                    onChange={e => setSettings({ ...settings, gmail_auth_uri: e.target.value })}
+                    className="input font-mono text-[10px] bg-[#fcfbf8]" 
                   />
                 </div>
-                <p className="text-[9px] text-gray-400 mt-1.5">Your official myshopify.com domain.</p>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block opacity-60">Token URI</label>
+                  <input 
+                    type="text" 
+                    value={settings.gmail_token_uri || ""} 
+                    onChange={e => setSettings({ ...settings, gmail_token_uri: e.target.value })}
+                    className="input font-mono text-[10px] bg-[#fcfbf8]" 
+                  />
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <div className="flex justify-end gap-3">
+             {settings.gmail_refresh_token ? (
+               <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100">
+                 <Check className="w-3.5 h-3.5" />
+                 <span className="text-[10px] font-bold uppercase tracking-widest">Authenticated</span>
+               </div>
+             ) : (
+               <a 
+                 href="/api/auth/google" 
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 className="flex items-center gap-2 px-6 py-2.5 bg-[#fcfbf8] hover:bg-[#eceae4] text-[#1c1c1c] rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-[#eceae4] shadow-sm hover:shadow-md"
+               >
+                 <ShieldCheck className="w-4 h-4" /> Authorize Gmail
+               </a>
+             )}
+             <button onClick={handleSave} disabled={saving} className="btn-primary py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest min-w-[140px]">
+                {saving ? "Processing..." : "Commit Gmail Settings"}
+             </button>
+          </div>
+
+          {/* Email Automation Rules */}
+          <div className="pt-10 mt-10 border-t border-[#eceae4]">
+            <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-amber-500" /> Branded Email Automations
+            </h4>
+            <p className="text-[10px] text-[#5f5f5d] mb-8 italic">Enable these to send professional, branded HTML emails automatically. These will be wrapped in your high-fidelity template with the CureForever logo.</p>
+            
+            <div className="space-y-6">
+              {[
+                { label: "Welcome Email", field: "email_auto_welcome", subjectField: "email_welcome_subject", templateField: "email_welcome_template", desc: "Sent when a new customer is added to CRM" },
+                { label: "Order Confirmation", field: "email_auto_order_placed", subjectField: "email_order_placed_subject", templateField: "email_order_placed_template", desc: "Sent when an order is successfully placed" },
+                { label: "Shipping Update", field: "email_auto_order_transit", subjectField: "email_order_transit_subject", templateField: "email_order_transit_template", desc: "Sent when an order is shipped or in transit" },
+                { label: "Delivery & Feedback", field: "email_auto_order_delivered", subjectField: "email_order_delivered_subject", templateField: "email_order_delivered_template", desc: "Sent when an order is delivered" },
+                { label: "Cart Recovery", field: "email_auto_cart_abandoned", subjectField: "email_cart_abandoned_subject", templateField: "email_cart_abandoned_template", desc: "Sent after a customer abandons their cart" },
+                { label: "Refill Reminder", field: "email_auto_reorder", subjectField: "email_reorder_subject", templateField: "email_reorder_template", desc: "Sent when it's time for a product refill" },
+              ].map(rule => (
+                <div key={rule.field} className="card p-6 border-[#eceae4] bg-[#fcfbf8]/50">
+                  <div className="flex items-center justify-between gap-4 mb-6">
+                    <div className="flex-1">
+                      <div className="text-xs font-bold text-[#1c1c1c] tracking-tight">{rule.label}</div>
+                      <div className="text-[10px] text-[#5f5f5d] mt-1 font-medium">{rule.desc}</div>
+                    </div>
+                    <button 
+                      onClick={() => setSettings({ ...settings, [rule.field]: !settings[rule.field] })}
+                      className="focus:outline-none transition-transform active:scale-95"
+                    >
+                      {settings[rule.field] ? (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1c1c1c] text-[#f7f4ed] rounded-full shadow-lg shadow-black/10">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span className="text-[9px] font-black uppercase tracking-widest">ACTIVE</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#eceae4] text-[#5f5f5d] rounded-full">
+                          <ToggleLeft className="w-3.5 h-3.5 opacity-40" />
+                          <span className="text-[9px] font-black uppercase tracking-widest">DISABLED</span>
+                        </div>
+                      )}
+                    </button>
+                  </div>
+
+                  {settings[rule.field] && (
+                    <div className="space-y-4 pt-6 border-t border-[#eceae4] animate-fade-in-down">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest opacity-40">Configure Template</label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-bold text-[#5f5f5d] italic mr-1">Load Preset:</span>
+                          {EMAIL_PRESETS[rule.templateField]?.map((preset, idx) => (
+                            <button 
+                              key={idx}
+                              onClick={() => {
+                                setSettings({ 
+                                  ...settings, 
+                                  [rule.subjectField]: preset.subject,
+                                  [rule.templateField]: preset.body 
+                                });
+                                toast.success("Template & Subject Loaded");
+                              }}
+                              className="px-2.5 py-1 bg-white border border-[#eceae4] rounded-lg text-[9px] font-bold text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
+                            >
+                              Variant {idx + 1}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1.5 block opacity-60">Subject Line</label>
+                          <input 
+                            type="text" 
+                            value={settings[rule.subjectField] || ""} 
+                            onChange={e => setSettings({ ...settings, [rule.subjectField]: e.target.value })}
+                            placeholder="e.g. Welcome to the family! 🌿"
+                            className="input text-xs bg-white border-[#eceae4] font-medium" 
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1.5 block opacity-60">Email Body (Plain Text)</label>
+                          <textarea 
+                            value={settings[rule.templateField] || ""} 
+                            onChange={e => setSettings({ ...settings, [rule.templateField]: e.target.value })}
+                            className="input text-xs min-h-[120px] bg-white border-[#eceae4] font-medium leading-relaxed p-4"
+                            placeholder="Write your message here... You can use {{name}}, {{product}}, etc."
+                          />
+                          <p className="text-[9px] text-[#5f5f5d] mt-2 italic opacity-50">Note: New lines will automatically be converted to breaks. Branded header & footer are added automatically.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end mt-10">
+            <button className="btn-primary py-3 px-10 text-[10px] font-bold uppercase tracking-widest" onClick={handleSave} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {saving ? "Saving Configuration..." : "Save All Email Settings"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* SHOPIFY */}
+      {tab === "shopify" && (
+        <div className="space-y-6">
+          <div className="card p-6">
+            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 opacity-60">Admin API Integration</h3>
+            <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Establish a direct secure tunnel to Shopify GraphQL endpoints for high-fidelity data extraction and identity resolution.</p>
+            
+            <div className="space-y-8">
+              <div>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Canonical Store URL</label>
+                <input 
+                  type="text" 
+                  value={settings.shopify_store_domain || ""} 
+                  onChange={e => setSettings({ ...settings, shopify_store_domain: e.target.value })}
+                  placeholder="e.g. cureforever.myshopify.com"
+                  className="input text-[10px] font-bold bg-[#fcfbf8]" 
+                />
+                <p className="text-[9px] text-[#5f5f5d] mt-2 opacity-50">Your primary myshopify.com domain.</p>
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Admin API Access Token</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Infrastructure Access Token</label>
                 <input 
                   type="password" 
                   value={settings.shopify_api_key || ""} 
                   onChange={e => setSettings({ ...settings, shopify_api_key: e.target.value })}
                   placeholder="shpat_••••••••••••••••••••••••"
-                  className="input font-mono text-xs" 
+                  className="input font-mono text-[10px] bg-[#fcfbf8]" 
                 />
-                <p className="text-[9px] text-gray-400 mt-1.5 leading-relaxed">Generated in Shopify Admin &gt; Settings &gt; App and sales channels &gt; Develop apps.<br/>Required scope: <strong>read_orders, read_customers</strong></p>
+                <p className="text-[9px] text-[#5f5f5d] mt-2 leading-relaxed opacity-50">Required scopes: <strong>read_orders, read_customers</strong>. Generated in Shopify Admin &gt; Develop Apps.</p>
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">OAuth Client ID (Optional)</label>
-                <input
-                  type="text"
-                  value={settings.shopify_client_id || ""}
-                  onChange={e => setSettings({ ...settings, shopify_client_id: e.target.value })}
-                  placeholder="For auto-refresh mode"
-                  className="input font-mono text-xs"
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Webhook Verification Crypt</label>
+                <input 
+                  type="password" 
+                  value={settings.shopify_webhook_secret || ""} 
+                  onChange={e => setSettings({ ...settings, shopify_webhook_secret: e.target.value })}
+                  placeholder="X-Shopify-Hmac-Sha256"
+                  className="input font-mono text-[10px] bg-[#fcfbf8]" 
                 />
-                <p className="text-[9px] text-gray-400 mt-1.5 leading-relaxed">Optional. Add with API Secret to auto-refresh short-lived Shopify tokens.</p>
+                <p className="text-[9px] text-[#5f5f5d] mt-2 leading-relaxed opacity-50">Used to authenticate event payloads. Found in <strong>Notifications &gt; Webhooks</strong>.</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">OAuth Principal ID</label>
+                  <input
+                    type="text"
+                    value={settings.shopify_client_id || ""}
+                    onChange={e => setSettings({ ...settings, shopify_client_id: e.target.value })}
+                    placeholder="Optional"
+                    className="input font-mono text-[10px] bg-[#fcfbf8]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">OAuth Secret</label>
+                  <input
+                    type="password"
+                    value={settings.shopify_api_secret || ""}
+                    onChange={e => setSettings({ ...settings, shopify_api_secret: e.target.value })}
+                    placeholder="Optional"
+                    className="input font-mono text-[10px] bg-[#fcfbf8]"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Client Secret (Required for Refresh)</label>
-                <input
-                  type="password"
-                  value={settings.shopify_api_secret || ""}
-                  onChange={e => setSettings({ ...settings, shopify_api_secret: e.target.value })}
-                  placeholder="For auto-refresh mode"
-                  className="input font-mono text-xs"
-                />
-                <p className="text-[9px] text-gray-400 mt-1.5 leading-relaxed">Saved in settings and used only for token refresh calls.</p>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Refresh Token (Required for 24h Token Auto-Refresh)</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Refresh Token Persistence</label>
                 <input
                   type="password"
                   value={settings.shopify_refresh_token || ""}
                   onChange={e => setSettings({ ...settings, shopify_refresh_token: e.target.value })}
-                  placeholder="The persistent token used to get new access tokens"
-                  className="input font-mono text-xs"
+                  placeholder="Offline refresh token"
+                  className="input font-mono text-[10px] bg-[#fcfbf8]"
                 />
-                <p className="text-[9px] text-gray-400 mt-1.5 leading-relaxed">If your token expires every 24h, paste the most recent <strong>refresh_token</strong> from your Postman response here. The CRM will handle it automatically from then on.</p>
               </div>
 
               {settings.shopify_token_expires_at && (
-                <div className="text-[10px] text-gray-500 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
-                  Current token refreshes before: <span className="font-mono">{new Date(settings.shopify_token_expires_at).toLocaleString()}</span>
+                <div className="text-[10px] font-bold text-[#1c1c1c] bg-[#eceae4]/30 border border-[#eceae4] rounded-xl px-4 py-3 flex items-center justify-between">
+                  <span className="opacity-60 uppercase tracking-widest">Token Lifecycle Ends:</span>
+                  <span className="font-mono">{new Date(settings.shopify_token_expires_at).toLocaleString()}</span>
                 </div>
               )}
 
-              <div className="pt-6 border-t border-gray-50 flex items-center justify-between">
+              <div className="pt-8 border-t border-[#eceae4]/50 flex items-center justify-between">
                 <div>
-                   <h4 className="text-sm font-semibold text-gray-700">Sentinel Unmasking Mode</h4>
-                   <p className="text-xs text-gray-400 mt-0.5 whitespace-nowrap">Automatically attempt Shopify lookup when masked data arrives.</p>
+                   <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Autonomous Sentinel</h4>
+                   <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">
+                     {lastSync 
+                       ? `Last background sync: ${new Date(lastSync).toLocaleString()}` 
+                       : "Self-healing identity resolution via Shopify lookup"}
+                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                   <span className={cn("text-[9px] font-black px-2 py-0.5 rounded border transition-all", 
-                     settings.shopify_api_key ? "bg-[#2D1E6F]/10 text-[#2D1E6F] border-[#2D1E6F]/20" : "bg-gray-50 text-gray-400 border-gray-100")}>
-                     {settings.shopify_api_key ? "SENTINEL ACTIVE" : "INACTIVE"}
-                   </span>
+                <div className={cn(
+                  "px-4 py-1.5 rounded-full text-[9px] font-black tracking-widest border transition-all", 
+                  settings.shopify_api_key ? "bg-[#1c1c1c] text-[#f7f4ed] border-[#1c1c1c]" : "bg-[#eceae4]/30 text-[#5f5f5d] border-[#eceae4]"
+                )}>
+                  {settings.shopify_api_key ? "ACTIVE" : "OFFLINE"}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <button className="btn-secondary" onClick={handleTestShopifyConnection} disabled={testingShopify}>
-              {testingShopify ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-              {testingShopify ? "Testing..." : "Test Shopify Connection"}
+          <div className="flex justify-end gap-3 pt-4">
+            <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={handleTestShopifyConnection} disabled={testingShopify}>
+              {testingShopify ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-2" />}
+              {testingShopify ? "Validating..." : "Ping Shopify API"}
             </button>
             <button 
-              className="flex items-center justify-center gap-2 py-2 px-4 bg-[#2D1E6F] hover:bg-[#2D1E6F]/90 text-white rounded-lg text-xs font-bold transition-all shadow-sm"
+              className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest border-[#1c1c1c]/10 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-100 transition-all"
+              onClick={handleDeepSync}
+              disabled={saving || !settings.shopify_api_key}
+            >
+              <Zap className={cn("w-3.5 h-3.5 mr-2", saving && "animate-pulse")} /> Run 48h Recovery Audit
+            </button>
+            <button 
+              className="btn-primary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest bg-[#1c1c1c] hover:bg-[#1c1c1c]/90 text-[#f7f4ed]"
               onClick={() => startSyncStream("/api/sync/shopify")}
               disabled={saving || !settings.shopify_api_key}
             >
-              <RefreshCw className={cn("w-4 h-4", syncStatus.active && "animate-spin")} /> Pull Shopify API
-            </button>
-            <button className="btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {saving ? "Saving..." : "Save Shopify Settings"}
+              <RefreshCw className={cn("w-3.5 h-3.5 mr-2", syncStatus.active && "animate-spin")} /> Ingest Catalog
             </button>
           </div>
         </div>
       )}
 
       {/* SHIPROCKET */}
+
       {tab === "shiprocket" && (
-        <div className="space-y-5">
-          <div className="card p-5">
-            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">Shiprocket API Credentials</h3>
-            <p className="text-[10px] text-gray-400 mb-4 italic">Required for full order history and delivery status synchronization. Created in Shiprocket Panel &gt; Settings &gt; API.</p>
+        <div className="space-y-6">
+          <div className="card p-6">
+            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 opacity-60">Logistics API Gateway</h3>
+            <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Establish a high-priority link to Shiprocket for real-time shipment tracking and delivery status reconciliation.</p>
             
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-2 gap-6 mb-8">
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">API Email</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Identity Principal (Email)</label>
                 <input 
                   type="email" 
                   value={settings.shiprocket_email || ""} 
                   onChange={e => setSettings({ ...settings, shiprocket_email: e.target.value })}
                   placeholder="e.g. api-user@yourdomain.com"
-                  className="input text-xs" 
+                  className="input text-[10px] font-bold bg-[#fcfbf8]" 
                 />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">API Password</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Access Key</label>
                 <input 
                   type="password" 
                   value={settings.shiprocket_password || ""} 
                   onChange={e => setSettings({ ...settings, shiprocket_password: e.target.value })}
                   placeholder="••••••••"
-                  className="input text-xs" 
+                  className="input text-[10px] font-bold bg-[#fcfbf8]" 
                 />
               </div>
             </div>
 
-            <div className="pt-6 border-t border-gray-100">
-               <div className="flex items-center justify-between mb-4">
+            <div className="pt-8 border-t border-[#eceae4]/50">
+               <div className="flex items-center justify-between mb-6">
                   <div>
-                     <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                       <Zap className="w-4 h-4 text-orange-500 fill-orange-500" /> Fastrr Checkout (Automated Sync)
+                     <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest flex items-center gap-2">
+                       <Zap className="w-3.5 h-3.5 text-[#1c1c1c]" /> Fastrr Checkout Synchronicity
                      </h4>
-                     <p className="text-[11px] text-gray-400 mt-1">Receive real-time abandoned cart data directly from your Fastrr/Shiprocket checkout panel.</p>
+                     <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">High-fidelity abandoned cart extraction via Fastrr Solution stack</p>
                   </div>
                </div>
 
-               <div className="bg-orange-50/50 border border-orange-100 rounded-xl p-4 space-y-3">
-                  <div className="flex items-start gap-3">
-                     <div className="w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-[10px] font-bold text-orange-600">1</span>
-                     </div>
-                     <p className="text-[11px] text-orange-800 leading-relaxed">
-                       Open your <strong>Shiprocket Dashboard</strong> &gt; <strong>Checkout</strong> (Solutions) &gt; <strong>Settings</strong> &gt; <strong>Webhooks</strong>.
+               <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-6 space-y-4">
+                  <div className="flex items-start gap-4">
+                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">1</div>
+                     <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
+                       Navigate to <strong>Shiprocket Dashboard</strong> &gt; <strong>Checkout</strong> &gt; <strong>Settings</strong> &gt; <strong>Webhooks</strong>.
                      </p>
                   </div>
-                  <div className="flex items-start gap-3">
-                     <div className="w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-[10px] font-bold text-orange-600">2</span>
-                     </div>
+                  <div className="flex items-start gap-4">
+                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">2</div>
                      <div className="flex-1">
-                        <p className="text-[11px] text-orange-800">Add a new webhook for the <strong>"Abandoned Cart"</strong> event:</p>
-                        <div className="mt-2 flex items-center gap-2 bg-white border border-orange-200 rounded-lg p-2">
-                           <code className="text-[10px] text-orange-700 font-mono flex-1 break-all">
-                             https://tenesha-unrecognizable-cristina.ngrok-free.dev/api/webhooks/shiprocket
+                        <p className="text-[11px] text-[#1c1c1c] font-medium">Provision a new webhook for the <strong>&quot;Abandoned Cart&quot;</strong> event:</p>
+                        <div className="mt-3 flex items-center gap-3 bg-[#f7f4ed] border border-[#eceae4] rounded-xl p-3">
+                           <code className="text-[10px] text-[#1c1c1c] font-mono flex-1 break-all opacity-70">
+                             https://cureforeverpc.tail1b3337.ts.net/api/webhooks/shiprocket
                            </code>
                            <button 
                              onClick={() => {
-                               const url = `https://tenesha-unrecognizable-cristina.ngrok-free.dev/api/webhooks/shiprocket`;
+                               const url = `https://cureforeverpc.tail1b3337.ts.net/api/webhooks/shiprocket`;
                                navigator.clipboard.writeText(url);
-                               toast.success("Permanent URL copied!");
+                               toast.success("URL Captured");
                              }}
-                             className="p-1.5 hover:bg-orange-50 rounded text-orange-600 transition-colors"
+                             className="w-8 h-8 flex items-center justify-center hover:bg-[#eceae4] rounded-lg text-[#1c1c1c] transition-all"
                            >
                               <CheckCircle2 className="w-3.5 h-3.5" />
                            </button>
                         </div>
                      </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                     <div className="w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-[10px] font-bold text-orange-600">3</span>
-                     </div>
-                     <p className="text-[11px] text-orange-800 leading-relaxed">
-                       Enter the Secret Header as: <code className="bg-white px-1.5 py-0.5 rounded border border-orange-200 font-mono">cureforever_shiprocket_sync_2026</code>
+                  <div className="flex items-start gap-4">
+                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">3</div>
+                     <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
+                       Assign Authorization Header: <code className="bg-[#eceae4]/30 px-2 py-0.5 rounded font-mono text-[#1c1c1c]">cureforever_shiprocket_sync_2026</code>
                      </p>
                   </div>
                </div>
             </div>
 
-            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">Shiprocket Webhook Configuration</h3>
-            
-            <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 mb-6 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <WifiOff className="w-12 h-12 text-amber-900" />
+            <div className="bg-[#1c1c1c] text-[#f7f4ed] rounded-2xl p-6 mb-8 relative overflow-hidden shadow-xl shadow-black/10">
+              <div className="absolute top-0 right-0 p-6 opacity-5">
+                <WifiOff className="w-16 h-16" />
               </div>
-              <div className="flex gap-3 relative z-10">
-                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+              <div className="flex gap-4 relative z-10">
+                <AlertCircle className="w-5 h-5 text-white shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-sm font-semibold text-amber-900">Configure Shiprocket & Fastrr Webhooks</h4>
-                  <p className="text-xs text-amber-700 mt-1 leading-relaxed">
-                    1. Go to Shiprocket Dashboard &gt; Settings &gt; Webhooks.<br />
-                    2. Add a new Webhook with the URL below using your secret token.<br />
-                    3. Select events: <strong>Order Created, Shipment Created, Tracking Update</strong> AND <strong>Abandoned Cart</strong>.
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest mb-2 opacity-60">Webhook Provisioning Protocol</h4>
+                  <p className="text-[11px] leading-relaxed opacity-80 font-medium">
+                    1. Direct to Shiprocket &gt; Settings &gt; Webhooks.<br />
+                    2. Instantiate a secure endpoint with the URL below.<br />
+                    3. Subscribe to: <strong>Order/Shipment Creation, Tracking Updates,</strong> and <strong>Abandoned Carts</strong>.
                   </p>
                 </div>
               </div>
@@ -1525,39 +2025,37 @@ export default function SettingsPage() {
 
             {/* Localhost Warning */}
             {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
-              <div className="bg-red-50 border border-red-100 rounded-lg p-4 mb-6 animate-pulse shadow-sm">
-                <div className="flex gap-3">
-                  <WifiOff className="w-5 h-5 text-red-600 shrink-0" />
+              <div className="bg-[#1c1c1c] border border-white/10 rounded-2xl p-6 mb-8 shadow-2xl">
+                <div className="flex gap-4">
+                  <WifiOff className="w-5 h-5 text-rose-500 shrink-0" />
                   <div>
-                    <h4 className="text-sm font-black text-red-900 uppercase tracking-tighter">⚠️ Localhost Bottleneck Detected</h4>
-                    <p className="text-[10px] text-red-700 mt-1 leading-relaxed font-bold">
-                      Your CRM is running on <span className="underline italic">localhost</span>. Shiprocket's cloud servers **CANNOT** send real-time data to your computer.
-                      <br /> 
-                      <span className="text-red-900 font-black">Impact:</span> Real-time abandoned carts (like Aarti) will NOT appear automatically.
-                      <br />
-                      <span className="text-red-900 font-black">Fix:</span> Use <span className="bg-red-200 px-1 rounded">ngrok</span> or deploy to a public URL, then update Shiprocket.
+                    <h4 className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-2">Local Development Impasse</h4>
+                    <p className="text-[11px] text-[#f7f4ed] leading-relaxed font-medium">
+                      Administrative oversight is compromised. Shiprocket cannot reach <span className="underline decoration-rose-500/50 italic text-[#eceae4]">localhost</span> from the cloud.
+                      <br /><br />
+                      <span className="text-rose-500 font-bold uppercase tracking-widest">Remedy:</span> Implement an <span className="bg-white/10 px-2 py-0.5 rounded-lg text-[#eceae4]">ngrok</span> tunnel or deploy to a reachable staging environment to restore live cart visibility.
                     </p>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Webhook Endpoint URL</label>
-                <div className="flex gap-2">
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Operational Endpoint</label>
+                <div className="flex gap-3">
                   <input 
                     type="text" 
                     readOnly 
                     value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/shiprocket`}
-                    className="input font-mono text-xs bg-gray-50 text-gray-500 cursor-default" 
+                    className="input font-mono text-[10px] bg-[#eceae4]/30 text-[#1c1c1c] cursor-default border-transparent" 
                   />
                   <button 
                     onClick={() => {
                       navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/shiprocket`);
-                      toast.success("URL Copied!");
+                      toast.success("Endpoint Captured");
                     }}
-                    className="p-2 border border-gray-200 rounded hover:bg-gray-50 text-gray-400 hover:text-[#2D1E6F] transition-colors"
+                    className="w-10 h-10 flex items-center justify-center border border-[#eceae4] rounded-xl hover:bg-[#1c1c1c] hover:text-[#f7f4ed] hover:border-[#1c1c1c] text-[#5f5f5d] transition-all"
                   >
                     <Paperclip className="w-4 h-4" />
                   </button>
@@ -1565,29 +2063,29 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Webhook Secret Token (X-Shiprocket-Secret)</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Verification Token (X-Shiprocket-Secret)</label>
                 <input 
                   type="text" 
                   value={settings.shiprocket_webhook_secret || ""} 
                   onChange={e => setSettings({ ...settings, shiprocket_webhook_secret: e.target.value })}
-                  placeholder="e.g. your_secret_token_here"
-                  className="input font-mono text-xs" 
+                  placeholder="Private verification string..."
+                  className="input font-mono text-[10px] bg-[#fcfbf8]" 
                 />
-                <p className="text-[10px] text-gray-400 mt-1">This token must match the one set in Shiprocket Dashboard for secure communication.</p>
+                <p className="text-[9px] text-[#5f5f5d] mt-2 opacity-50 italic">Must mirror the secret string defined in your Shiprocket Webhook settings.</p>
               </div>
 
-              <div className="pt-6 mt-6 border-t border-[#2D1E6F]/10 bg-[#2D1E6F]/5 -mx-5 px-5 pb-5 rounded-b-xl">
-                 <div className="flex items-center gap-3 mb-4">
-                    <ShoppingBag className="w-4 h-4 text-[#2D1E6F]" />
-                    <h3 className="text-xs font-black text-[#2D1E6F] uppercase tracking-widest">Historical Fastrr Abandoned Sync</h3>
+              <div className="pt-10 mt-8 border-t border-[#eceae4]">
+                 <div className="flex items-center gap-3 mb-6">
+                    <Database className="w-4 h-4 text-[#1c1c1c]" />
+                    <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Historical Fastrr Ingestion</h3>
                  </div>
-                 <div className="flex items-center gap-6">
+                 <div className="flex items-center gap-8 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-6">
                     <div className="flex-1">
-                        <p className="text-[10px] text-[#2D1E6F]/70 leading-relaxed">
-                        Export your abandoned cart list from <strong>Shiprocket Dashboard &gt; Checkout &gt; Abandoned Cart</strong> using the 'Download All' button, then upload it here to recover missing historical carts.
+                        <p className="text-[11px] text-[#5f5f5d] leading-relaxed font-medium">
+                        Reconstruct historical abandoned cart sequences by importing a CSV from <strong>Checkout &gt; Abandoned Cart</strong>. Missing identities will be automatically mapped and tasks generated.
                         </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                         <input
                             type="file"
                             ref={fileInputRef as any}
@@ -1640,81 +2138,81 @@ export default function SettingsPage() {
                         />
                         <button 
                             onClick={() => (fileInputRef as any).current?.click()}
-                            className="flex items-center gap-2 py-3 px-6 bg-[#2D1E6F] hover:bg-[#2D1E6F]/90 text-white rounded-xl text-xs font-black transition-all shadow-lg shadow-[#2D1E6F]/10"
+                            className="btn-primary bg-[#1c1c1c] hover:bg-[#1c1c1c]/90 text-[#f7f4ed] py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10"
                             disabled={saving}
                         >
-                            <Database className="w-4 h-4" /> Import Fastrr CSV
+                            <Plus className="w-3.5 h-3.5 mr-2" /> Upload Registry
                         </button>
                     </div>
                  </div>
               </div>
 
-              <div className="pt-6 mt-6 border-t border-gray-100">
-                <div className="flex flex-col gap-4">
+              <div className="pt-10 mt-8 border-t border-[#eceae4]">
+                <div className="space-y-8">
                   <div className="flex items-center justify-between">
                      <div>
-                        <h4 className="text-sm font-semibold text-gray-700">Pull Shiprocket Data (Orders & Customers)</h4>
-                        <p className="text-xs text-gray-400 mt-0.5">Contact Shiprocket API directly to pull ALL historical orders, abandoned carts, and missing identities.</p>
+                        <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Manual API Synchronization</h4>
+                        <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">Execute a deep scan of Shiprocket GraphQL endpoints for identity resolution</p>
                      </div>
                       <button 
                         onClick={() => startSyncStream("/api/sync/shiprocket")}
-                        className="flex items-center justify-center gap-2 py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-bold transition-all shadow-sm shrink-0"
+                        className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10"
                         disabled={saving}
                       >
-                        <RefreshCw className={cn("w-4 h-4", syncStatus.active && "animate-spin")} /> Pull Shiprocket API
+                        <RefreshCw className={cn("w-3.5 h-3.5 mr-2", syncStatus.active && "animate-spin")} /> Execute Sync
                       </button>
                   </div>
                   
-                  <div className="flex items-center justify-between border-t border-gray-50 pt-6">
-                     <div className="flex-1 pr-4">
-                        <div className="flex items-center gap-2">
-                           <h4 className="text-sm font-bold text-gray-700">Global Customer Unmasking</h4>
+                  <div className="flex items-center justify-between border-t border-[#eceae4]/50 pt-8">
+                     <div className="flex-1 pr-12">
+                        <div className="flex items-center gap-3 mb-2">
+                           <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Global Identity Resolver</h4>
                            {maskedCount !== null && maskedCount > 0 && (
-                             <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 text-[9px] font-black rounded border border-rose-100 flex items-center gap-1">
-                               <AlertCircle className="w-2.5 h-2.5" /> {maskedCount} MASKED
+                             <span className="px-2 py-0.5 bg-rose-500 text-white text-[9px] font-black rounded-lg tracking-widest uppercase">
+                               {maskedCount} Masked
                              </span>
                            )}
                            {maskedCount === 0 && (
-                             <span className="px-1.5 py-0.5 bg-[#2D1E6F]/10 text-[#2D1E6F] text-[9px] font-black rounded border border-[#2D1E6F]/20 flex items-center gap-1">
-                               <CheckCircle2 className="w-2.5 h-2.5" /> DATABASE CLEAN
+                             <span className="px-2 py-0.5 bg-[#1c1c1c] text-[#f7f4ed] text-[9px] font-black rounded-lg tracking-widest uppercase">
+                               Optimized
                              </span>
                            )}
                         </div>
-                        <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
-                          Attempts to recover real phone numbers from Abandoned Carts, Shiprocket API, and Webhook History. 
-                          <span className="text-[#2D1E6F] font-semibold block mt-0.5 italic">Duplicate records will be automatically merged.</span>
+                        <p className="text-[11px] text-[#5f5f5d] leading-relaxed font-medium opacity-60">
+                          Attempts to resolve real phone numbers from secondary data clusters. 
+                          <span className="text-[#1c1c1c] block mt-1 font-bold">Duplicate records will be automatically reconciled.</span>
                         </p>
                      </div>
                      <button 
                       onClick={() => {
-                        if (confirm("This will attempt to resolve real phone numbers for all masked customers. This run will process up to 100 records. Continue?")) {
+                        if (confirm("Initiate global identity resolution? (Processes up to 100 records per cycle)")) {
                           startSyncStream("/api/sync/unmask");
                         }
                       }}
                       className={cn(
-                        "flex items-center justify-center gap-2 py-2.5 px-5 rounded-lg text-xs font-bold transition-all shadow-sm shrink-0",
+                        "btn-primary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl transition-all",
                         maskedCount && maskedCount > 0 
-                          ? "bg-[#2D1E6F] text-white hover:bg-[#2D1E6F]/90 shadow-[#2D1E6F]/10" 
-                          : "bg-gray-50 text-gray-400 cursor-not-allowed"
+                          ? "bg-[#1c1c1c] text-[#f7f4ed] shadow-black/10" 
+                          : "bg-[#eceae4]/50 text-[#5f5f5d] shadow-none cursor-not-allowed border-[#eceae4]"
                       )}
                       disabled={syncStatus.active || maskedCount === 0}
                      >
-                       {syncStatus.active ? <Loader2 className="w-4 h-4 animate-spin" /> : <Smartphone className="w-4 h-4" />}
-                       {syncStatus.active ? "Processing..." : "Run Unmask Tool"}
+                       {syncStatus.active ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Smartphone className="w-3.5 h-3.5 mr-2" />}
+                       {syncStatus.active ? "Resolving..." : "Run Unmask Tool"}
                      </button>
                   </div>
                   
-                  <div className="flex items-center justify-between border-t border-gray-50 pt-4">
+                  <div className="flex items-center justify-between border-t border-[#eceae4]/50 pt-8">
                      <div>
-                        <h4 className="text-sm font-semibold text-gray-700">Process Local Webhook Queue</h4>
-                        <p className="text-xs text-gray-400 mt-0.5">Force process any pending webhook logs and generate tasks dynamically.</p>
+                        <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Webhook Queue Manifest</h4>
+                        <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">Force reconcile any pending event logs in the administrative pipeline</p>
                      </div>
                      <button 
                       onClick={() => startSyncStream("/api/sync/all")}
-                      className="flex items-center justify-center gap-2 py-2 px-4 bg-[#2D1E6F] hover:bg-[#2D1E6F]/90 text-white rounded-lg text-xs font-bold transition-all shadow-sm shrink-0"
+                      className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest"
                       disabled={saving}
                      >
-                       <RefreshCw className={cn("w-4 h-4", syncStatus.active && "animate-spin")} /> Process Webhook Queue
+                       <RefreshCw className={cn("w-3.5 h-3.5 mr-2", syncStatus.active && "animate-spin")} /> Process Queue
                      </button>
                   </div>
                 </div>
@@ -1722,54 +2220,55 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <button className="btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {saving ? "Saving..." : "Save Changes"}
+          <div className="flex justify-end pt-8 mt-8 border-t border-[#eceae4]">
+            <button className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-3 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleSave} disabled={saving}>
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Save className="w-3.5 h-3.5 mr-2" />}
+              {saving ? "Commiting..." : "Finalize Infrastructure"}
             </button>
           </div>
         </div>
       )}
 
       {/* Manual Dispatch Modal */}
-      <Modal open={manualWaModal} onClose={() => setManualWaModal(false)} title={`Manual Dispatch — ${manualWaCustomerName}`}
+      <Modal open={manualWaModal} onClose={() => setManualWaModal(false)} title="Administrative Dispatch"
         footer={<>
-          <button className="btn-secondary" onClick={() => setManualWaModal(false)}>Cancel</button>
-          <button className="btn-primary" onClick={handleManualSend} disabled={sendingManualWa}>
-            {sendingManualWa ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            {sendingManualWa ? "Sending..." : "Send Immediately"}
+          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setManualWaModal(false)}>Abort</button>
+          <button className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleManualSend} disabled={sendingManualWa}>
+            {sendingManualWa ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Send className="w-3.5 h-3.5 mr-2" />}
+            {sendingManualWa ? "Executing..." : "Send Immediately"}
           </button>
         </>}
       >
-        <div className="space-y-4 py-2">
-          <div className="bg-amber-50 border border-amber-100 p-3 rounded-lg flex gap-3">
-             <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-             <div className="text-[11px] text-amber-800 leading-relaxed font-medium">
-                This will send the message below instantly and mark the customer's task as <strong>Done</strong>. Your changes here will only affect this single message.
+        <div className="space-y-6 py-4">
+          <div className="bg-[#1c1c1c] text-[#f7f4ed] p-5 rounded-2xl flex gap-4 shadow-xl">
+             <AlertCircle className="w-4 h-4 text-white shrink-0 mt-0.5" />
+             <div className="text-[10px] font-bold uppercase tracking-widest leading-relaxed opacity-80">
+                Manual override initiated for <span className="text-white">{manualWaCustomerName}</span>. This sequence bypasses standard latency and marks the task as <span className="text-white">Resolved</span>.
              </div>
           </div>
           
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Personalized Message</label>
+            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Message Payload</label>
             <textarea 
-              className="input text-xs h-32 leading-relaxed" 
+              className="input text-xs h-40 leading-relaxed bg-[#fcfbf8] border-[#eceae4] rounded-2xl p-5" 
               value={manualWaMessage} 
               onChange={e => setManualWaMessage(e.target.value)}
+              placeholder="Refine communication strategy..."
             />
           </div>
 
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Attachment (Optional)</label>
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded hover:border-[#2D1E6F] hover:bg-[#2D1E6F]/5 transition-all cursor-pointer text-gray-500 hover:text-[#2D1E6F]">
+            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Digital Assets (Optional)</label>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-3 px-5 py-3 border border-dashed border-[#eceae4] rounded-xl hover:border-[#1c1c1c] hover:bg-[#eceae4]/30 transition-all cursor-pointer text-[#5f5f5d]">
                 <Paperclip className="w-3.5 h-3.5" />
-                <span className="text-xs font-medium">{manualWaFile ? "Change File" : "Choose File"}</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">{manualWaFile ? "Replace Asset" : "Attach Asset"}</span>
                 <input type="file" className="hidden" onChange={e => setManualWaFile(e.target.files?.[0] || null)} />
               </label>
               {manualWaFile && (
-                <div className="text-[10px] bg-[#2D1E6F]/5 text-[#2D1E6F] font-bold px-2 py-1 rounded flex items-center gap-2">
-                  <span className="truncate max-w-[150px]">{manualWaFile.name}</span>
-                  <button onClick={() => setManualWaFile(null)} className="p-0.5 hover:bg-[#2D1E6F]/10 rounded-full"><X className="w-3 h-3" /></button>
+                <div className="text-[10px] bg-[#1c1c1c] text-[#f7f4ed] font-bold px-4 py-2 rounded-xl flex items-center gap-3 shadow-lg shadow-black/10">
+                  <span className="truncate max-w-[180px]">{manualWaFile.name}</span>
+                  <button onClick={() => setManualWaFile(null)} className="w-5 h-5 flex items-center justify-center hover:bg-white/10 rounded-full"><X className="w-3 h-3" /></button>
                 </div>
               )}
             </div>
@@ -1779,25 +2278,27 @@ export default function SettingsPage() {
 
       {/* OVERRIDES */}
       {tab === "overrides" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between gap-6 p-6 bg-[#fcfbf8] rounded-2xl border border-[#eceae4]">
              <div>
-                <h4 className="text-xs font-bold text-gray-700">Product Lifecycle Management</h4>
-                <p className="text-[10px] text-gray-500">Configure offsets and course durations per product.</p>
+                <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Product Lifecycle Management</h4>
+                <p className="text-[11px] text-[#5f5f5d] font-medium opacity-60">Define custom offsets and administrative logic per catalog entity</p>
              </div>
-             <div className="flex gap-2">
+             <div className="flex gap-3">
                 <button 
-                  className="btn-secondary py-2 px-3 text-[10px] h-9" 
+                  className="w-10 h-10 flex items-center justify-center border border-[#eceae4] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] hover:border-[#1c1c1c] transition-all" 
                   onClick={() => downloadOverrideTemplate()}
+                  title="Download CSV Schema"
                 >
-                  <Package className="w-3.5 h-3.5" /> Template
+                  <Package className="w-4 h-4" />
                 </button>
                 <div className="relative">
                   <button 
-                    className="btn-secondary py-2 px-3 text-[10px] h-9" 
+                    className="w-10 h-10 flex items-center justify-center border border-[#eceae4] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] hover:border-[#1c1c1c] transition-all" 
                     onClick={() => document.getElementById('bulk-import')?.click()}
+                    title="Bulk Schema Ingestion"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" /> Bulk Import
+                    <RefreshCw className="w-4 h-4" />
                   </button>
                   <input 
                     type="file" 
@@ -1808,7 +2309,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <button 
-                  className="btn-primary py-2 px-4 text-xs h-9" 
+                  className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-2 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" 
                   onClick={() => {
                     setEditingId(null);
                     setNewOverride({
@@ -1825,24 +2326,24 @@ export default function SettingsPage() {
                     setShowAddOverride(true);
                   }}
                 >
-                  <Plus className="w-4 h-4" /> Add Override
+                  <Plus className="w-3.5 h-3.5 mr-2" /> Add Protocol
                 </button>
              </div>
           </div>
 
           {overrides.length === 0 ? (
-            <div className="card p-12 text-center text-gray-400 text-sm">
-              No product overrides configured.
+            <div className="card p-20 text-center border-dashed border-[#eceae4]">
+              <p className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest opacity-20">No protocol overrides defined.</p>
             </div>
           ) : overrides.map(o => (
-            <div key={o.id} className="card p-5">
-              <div className="flex items-start justify-between gap-3 mb-4">
+            <div key={o.id} className="card p-6 border-[#eceae4] hover:border-[#1c1c1c]/30 transition-all">
+              <div className="flex items-start justify-between gap-6 mb-6">
                 <div>
-                  <div className="text-sm font-semibold text-[#2D1E6F]">{o.product_name}</div>
-                  <div className="text-[10px] text-gray-400 font-mono">ID: {o.shopify_product_id}</div>
+                  <div className="text-[11px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">{o.product_name}</div>
+                  <div className="text-[9px] text-[#5f5f5d] font-mono opacity-40">{o.shopify_product_id}</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button className="btn-secondary text-xs py-1 px-2 h-7" onClick={() => {
+                <div className="flex items-center gap-3">
+                  <button className="w-8 h-8 flex items-center justify-center bg-[#fcfbf8] border border-[#eceae4] rounded-lg text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] hover:border-[#1c1c1c] transition-all shadow-sm" onClick={() => {
                     setEditingId(o.id);
                     setNewOverride({
                       shopify_product_id: o.shopify_product_id,
@@ -1857,52 +2358,56 @@ export default function SettingsPage() {
                     });
                     setShowAddOverride(true);
                   }}>
-                    <Sliders className="w-3 h-3" /> Edit
+                    <Sliders className="w-3.5 h-3.5" />
                   </button>
-                  <button className="btn-danger text-xs py-1 px-2 h-7" onClick={async () => {
-                     await supabase.from("product_overrides").delete().eq("id", o.id);
-                     await recalculateTasks(settings);
-                     fetchSettings();
-                     toast.success("Override deleted and tasks aligned");
+                  <button className="w-8 h-8 flex items-center justify-center bg-[#fcfbf8] border border-[#eceae4] rounded-lg text-rose-500 hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all shadow-sm" onClick={async () => {
+                     if (confirm("Permanently delete this product protocol?")) {
+                       await supabase.from("product_overrides").delete().eq("id", o.id);
+                       await recalculateTasks(settings);
+                       fetchSettings();
+                       toast.success("Protocol Extinguished");
+                     }
                   }}>
-                    <Trash2 className="w-3 h-3" /> Delete
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-8">
                 {[
-                  { label: "Review offset", value: o.review_offset_days },
-                  { label: "Reorder offset", value: o.reorder_offset_days },
-                  { label: "Final offset", value: o.final_offset_days },
-                  { label: "Course Duration", value: o.course_duration_days },
+                  { label: "Review Latency", value: o.review_offset_days },
+                  { label: "Reorder Trigger", value: o.reorder_offset_days },
+                  { label: "Sequence Exit", value: o.final_offset_days },
+                  { label: "Course Length", value: o.course_duration_days },
                 ].map(f => (
                   <div key={f.label}>
-                    <label className="text-[10px] font-bold text-gray-400 uppercase block mb-0.5">{f.label}</label>
-                    <div className="flex items-center gap-1 text-xs font-semibold text-gray-700">{f.value || 0} days</div>
+                    <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-40">{f.label}</label>
+                    <div className="text-[10px] font-bold text-[#1c1c1c] tabular-nums">{f.value || 0} Days</div>
                   </div>
                 ))}
               </div>
               
               {(o.usage_notes || o.upsell_product_name || o.is_priority) && (
-                <div className="mt-4 pt-4 border-t border-gray-50 grid grid-cols-2 gap-4">
+                <div className="mt-6 pt-6 border-t border-[#eceae4]/50 grid grid-cols-2 gap-8">
                   {o.usage_notes && (
                     <div className="col-span-2">
-                       <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Usage Notes</label>
-                       <p className="text-[10px] text-gray-600 bg-gray-50 p-2 rounded italic border border-gray-100">"{o.usage_notes}"</p>
+                       <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-40">Operational Notes</label>
+                       <p className="text-[10px] text-[#1c1c1c] font-medium italic opacity-70 leading-relaxed">&quot;{o.usage_notes}&quot;</p>
                     </div>
                   )}
-                  {o.is_priority && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                      <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">High Priority Boost (+50)</span>
-                    </div>
-                  )}
-                  {o.upsell_product_name && (
-                    <div className="flex items-center gap-2">
-                      <ShoppingBag className="w-3 h-3 text-[#2D1E6F]" />
-                      <span className="text-[10px] font-bold text-[#2D1E6F] uppercase tracking-wider">Upsell: {o.upsell_product_name}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-6">
+                    {o.is_priority && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest">High Priority Boost</span>
+                      </div>
+                    )}
+                    {o.upsell_product_name && (
+                      <div className="flex items-center gap-2">
+                        <ShoppingBag className="w-3 h-3 text-[#1c1c1c] opacity-40" />
+                        <span className="text-[9px] font-black text-[#1c1c1c] uppercase tracking-widest opacity-60">Upsell: {o.upsell_product_name}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -1913,26 +2418,29 @@ export default function SettingsPage() {
 
       {/* DANGER ZONE */}
       {tab === "database" && (
-        <div className="space-y-5">
-          <div className="card p-0 border-rose-200 overflow-hidden">
-            <div className="bg-rose-50 px-5 py-3 border-b border-rose-200 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-600" />
-              <h3 className="text-sm font-bold text-rose-900 uppercase tracking-wider">Danger Zone</h3>
+        <div className="space-y-6">
+          <div className="card p-0 border-rose-200 overflow-hidden shadow-2xl">
+            <div className="bg-rose-500 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-4 h-4 text-white" />
+                <h3 className="text-[10px] font-bold text-white uppercase tracking-widest">Administrative Termination</h3>
+              </div>
+              <span className="text-[9px] font-black text-white/50 uppercase tracking-widest">High Risk Operations</span>
             </div>
-            <div className="p-5 space-y-6">
+            <div className="p-8 space-y-8 bg-[#fcfbf8]">
               {[
-                { type: "customers", label: "Clear All Customers", desc: "Permanently delete all customers, their orders, and tasks." },
-                { type: "orders", label: "Clear All Orders", desc: "Remove internal order history." },
-                { type: "tasks", label: "Clear All Tasks", desc: "Delete all schedules and logs." },
-                { type: "abandoned_carts", label: "Clear All Abandoned Carts", desc: "Remove all potential revenue records." },
+                { type: "customers", label: "Registry Purge: Customers", desc: "Permanently extinguish all customer records, associated orders, and task history." },
+                { type: "orders", label: "Registry Purge: Orders", desc: "Remove all historical order data from internal storage clusters." },
+                { type: "tasks", label: "Registry Purge: Tasks", desc: "Delete all scheduled communication sequences and dispatch logs." },
+                { type: "abandoned_carts", label: "Registry Purge: Abandoned Carts", desc: "Permanently remove all recovered cart data and revenue leads." },
               ].map(d => (
-                <div key={d.type} className="flex items-center justify-between gap-4 pt-4 first:pt-0 border-t first:border-0 border-gray-100">
-                  <div>
-                    <div className="text-sm font-semibold text-gray-900">{d.label}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">{d.desc}</div>
+                <div key={d.type} className="flex items-center justify-between gap-12 group">
+                  <div className="flex-1">
+                    <div className="text-[11px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1 group-hover:text-rose-500 transition-colors">{d.label}</div>
+                    <div className="text-[10px] text-[#5f5f5d] font-medium opacity-60 leading-relaxed">{d.desc}</div>
                   </div>
-                  <button onClick={() => setConfirmModal({ open: true, type: d.type as any })} className="btn-danger whitespace-nowrap">
-                    Clear {d.type}
+                  <button onClick={() => setConfirmModal({ open: true, type: d.type as any })} className="btn-primary bg-rose-500 hover:bg-rose-600 text-white py-2 px-6 text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-rose-500/20">
+                    Purge
                   </button>
                 </div>
               ))}
@@ -1942,20 +2450,20 @@ export default function SettingsPage() {
       )}
 
       {/* Add/Edit Override Modal */}
-      <Modal open={showAddOverride} onClose={() => setShowAddOverride(false)} title={editingId ? "Edit Product Override" : "Add Product Override"} 
+      <Modal open={showAddOverride} onClose={() => setShowAddOverride(false)} title={editingId ? "Modify Protocol" : "Define Protocol"} 
         footer={<>
-          <button className="btn-secondary" onClick={() => setShowAddOverride(false)}>Cancel</button>
-          <button className="btn-primary" onClick={handleAddOverride} disabled={saving}>
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingId ? <CheckCircle2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />)}
-            {saving ? "Aligning Tasks..." : (editingId ? "Save Changes" : "Add Override")}
+          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setShowAddOverride(false)}>Discard</button>
+          <button className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleAddOverride} disabled={saving}>
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : (editingId ? <CheckCircle2 className="w-3.5 h-3.5 mr-2" /> : <Plus className="w-3.5 h-3.5 mr-2" />)}
+            {saving ? "Aligning..." : (editingId ? "Commit Changes" : "Activate Protocol")}
           </button>
         </>}
       >
-        <div className="space-y-4 py-2">
+        <div className="space-y-6 py-4">
           <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">Select Product</label>
+            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Catalog Entity</label>
             <select 
-              className="input text-xs disabled:opacity-50 disabled:bg-gray-50"
+              className="input text-[11px] font-bold bg-[#fcfbf8] border-[#eceae4] rounded-xl h-12 disabled:opacity-30"
               disabled={!!editingId}
               value={newOverride.shopify_product_id}
               onChange={e => {
@@ -1964,90 +2472,90 @@ export default function SettingsPage() {
               }}
             >
               <option value="">-- Choose Product --</option>
-              {/* Add the current editing product to options if it's missing from availableProducts */}
               {editingId && !availableProducts.find(p => p.id === newOverride.shopify_product_id) && (
                 <option value={newOverride.shopify_product_id}>{newOverride.product_name}</option>
               )}
-              {availableProducts.sort((a,b) => a.name.localeCompare(b.name)).map(p => (
+              {[...availableProducts].sort((a,b) => a.name.localeCompare(b.name)).map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
-            {editingId && <p className="text-[9px] text-gray-400 mt-1 italic">Note: Product cannot be changed while editing an existing override.</p>}
           </div>
 
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-4 gap-4">
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Review (Days)</label>
-              <input type="number" className="input text-xs" value={newOverride.review_offset_days} onChange={e => setNewOverride({ ...newOverride, review_offset_days: +e.target.value })} />
+              <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Review</label>
+              <input type="number" className="input text-[10px] font-bold bg-[#fcfbf8] h-12 text-center" value={newOverride.review_offset_days} onChange={e => setNewOverride({ ...newOverride, review_offset_days: +e.target.value })} />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Reorder (Days)</label>
-              <input type="number" className="input text-xs" value={newOverride.reorder_offset_days} onChange={e => setNewOverride({ ...newOverride, reorder_offset_days: +e.target.value })} />
+              <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Reorder</label>
+              <input type="number" className="input text-[10px] font-bold bg-[#fcfbf8] h-12 text-center" value={newOverride.reorder_offset_days} onChange={e => setNewOverride({ ...newOverride, reorder_offset_days: +e.target.value })} />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Final (Days)</label>
-              <input type="number" className="input text-xs" value={newOverride.final_offset_days} onChange={e => setNewOverride({ ...newOverride, final_offset_days: +e.target.value })} />
+              <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Exit</label>
+              <input type="number" className="input text-[10px] font-bold bg-[#fcfbf8] h-12 text-center" value={newOverride.final_offset_days} onChange={e => setNewOverride({ ...newOverride, final_offset_days: +e.target.value })} />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-[#2D1E6F] uppercase block mb-1">Course Duration</label>
-              <input type="number" className="input text-xs border-[#2D1E6F]/20 bg-[#2D1E6F]/5" value={newOverride.course_duration_days} onChange={e => setNewOverride({ ...newOverride, course_duration_days: +e.target.value })} />
+              <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Duration</label>
+              <input type="number" className="input text-[10px] font-bold bg-[#1c1c1c] text-[#f7f4ed] h-12 text-center border-transparent" value={newOverride.course_duration_days} onChange={e => setNewOverride({ ...newOverride, course_duration_days: +e.target.value })} />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-6">
              <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Usage Notes (Visible to Agent)</label>
+                <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Operational Notes</label>
                 <textarea 
                   value={newOverride.usage_notes}
                   onChange={e => setNewOverride({...newOverride, usage_notes: e.target.value})}
-                  className="input text-[10px] h-16 resize-none"
-                  placeholder="e.g. Take 1 tab daily after breakfast"
+                  className="input text-[10px] h-20 resize-none bg-[#fcfbf8] border-[#eceae4] rounded-xl p-3 font-medium"
+                  placeholder="e.g. Tactical usage instructions..."
                 />
              </div>
-             <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Upsell Suggestion</label>
-                <input 
-                  type="text"
-                  value={newOverride.upsell_product_name}
-                  onChange={e => setNewOverride({...newOverride, upsell_product_name: e.target.value})}
-                  className="input text-[10px]"
-                  placeholder="e.g. Liver Detox Tabs"
-                />
+             <div className="space-y-4">
+                <div>
+                  <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Upsell Logic</label>
+                  <input 
+                    type="text"
+                    value={newOverride.upsell_product_name}
+                    onChange={e => setNewOverride({...newOverride, upsell_product_name: e.target.value})}
+                    className="input text-[10px] font-bold bg-[#fcfbf8] h-11"
+                    placeholder="Complementary SKU..."
+                  />
+                </div>
                 
-                <div className="mt-3 flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-100">
+                <div className="flex items-center justify-between p-4 bg-[#fcfbf8] rounded-xl border border-[#eceae4]">
                     <div>
-                      <div className="text-[9px] font-bold text-gray-700 uppercase">High Priority Boost</div>
-                      <div className="text-[8px] text-gray-400 italic">Score tasks +50 higher</div>
+                      <div className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest">Priority Boost</div>
+                      <div className="text-[8px] text-[#5f5f5d] italic opacity-60">Elevate task score (+50)</div>
                     </div>
                     <button 
                       onClick={() => setNewOverride({...newOverride, is_priority: !newOverride.is_priority})}
-                      className={cn("p-1 rounded transition-all", newOverride.is_priority ? "text-[#2D1E6F] bg-[#2D1E6F]/10" : "text-gray-300 bg-white border border-gray-100")}
+                      className={cn("w-10 h-6 rounded-full transition-all relative", newOverride.is_priority ? "bg-[#1c1c1c]" : "bg-[#eceae4]")}
                     >
-                      {newOverride.is_priority ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
+                      <div className={cn("w-4 h-4 bg-white rounded-full absolute top-1 transition-all", newOverride.is_priority ? "right-1" : "left-1")} />
                     </button>
                 </div>
              </div>
           </div>
 
-          <div className="p-3 bg-amber-50 text-amber-700 text-[10px] rounded border border-amber-100 flex gap-2">
-            <AlertCircle className="w-3 h-3 flex-shrink-0" />
-            <p><strong>Heads up:</strong> Saving this will instantly update the due dates for all pending tasks for this product based on the new timing.</p>
+          <div className="p-4 bg-[#1c1c1c] text-[#f7f4ed] text-[10px] font-bold uppercase tracking-widest rounded-2xl flex gap-4 shadow-xl">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <p className="opacity-80 leading-relaxed">Infrastructure Update: Pendency realignment will occur instantly upon commitment.</p>
           </div>
         </div>
       </Modal>
 
       {/* Clear Confirmation Modal */}
-      <Modal open={confirmModal.open} onClose={() => setConfirmModal({ open: false, type: null })} title={`Clear all ${confirmModal.type}?`}
+      <Modal open={confirmModal.open} onClose={() => setConfirmModal({ open: false, type: null })} title="Confirm Registry Termination"
         footer={<>
-          <button className="btn-secondary" onClick={() => setConfirmModal({ open: false, type: null })}>Cancel</button>
-          <button className="btn-danger" onClick={() => confirmModal.type && handleClearData(confirmModal.type)} disabled={isDeleting}>
-            {isDeleting ? "Clearing..." : "Yes, Delete Everything"}
+          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setConfirmModal({ open: false, type: null })}>Abort</button>
+          <button className="btn-primary bg-rose-500 text-white py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-rose-500/20" onClick={() => confirmModal.type && handleClearData(confirmModal.type)} disabled={isDeleting}>
+            {isDeleting ? "Terminating..." : "Confirm Purge"}
           </button>
         </>}
       >
-        <div className="p-4 bg-rose-50 text-rose-700 text-xs rounded-lg flex gap-3">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <p>This action is <strong>irreversible</strong>.</p>
+        <div className="p-6 bg-rose-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-2xl flex gap-4 shadow-2xl">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <p className="leading-relaxed">Critical Warning: This administrative action is irreversible. All targeted registry data will be permanently extinguished.</p>
         </div>
       </Modal>
     </div>

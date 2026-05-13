@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase";
+import { getAuthenticatedSession } from "@/lib/auth-utils";
 import { sendWhatsApp, cleanPhone, personaliseTemplate } from "@/lib/whatsapp";
+import { z } from "zod";
+
+const WhatsAppSendSchema = z.object({
+  phone: z.string(),
+  message: z.string(),
+  customerData: z.any().optional(),
+  imagePath: z.string().optional()
+});
 
 export async function POST(req: NextRequest) {
   try {
-    const { phone, message, customerData, imagePath } = await req.json();
+    const { errorResponse } = await getAuthenticatedSession();
+    if (errorResponse) return errorResponse;
 
-    if (!phone || !message) {
-      return NextResponse.json({ ok: false, error: "Phone and message are required" }, { status: 400 });
-    }
+    const body = await req.json();
+    const validated = WhatsAppSendSchema.parse(body);
+    const { phone, message, customerData, imagePath } = validated;
 
     const cleanedPhone = cleanPhone(phone);
     const finalMessage = customerData ? personaliseTemplate(message, customerData) : message;
@@ -21,6 +30,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: result.error }, { status: 500 });
     }
   } catch (err: any) {
+    if (err instanceof z.ZodError) {
+      return NextResponse.json({ ok: false, error: "Validation failed", details: err.issues }, { status: 400 });
+    }
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }

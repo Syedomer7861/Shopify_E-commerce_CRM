@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
+  const supabase = createServerClient();
   const { data: settings } = await supabase.from("settings").select("whatsapp_bridge_url").single();
   const bridgeUrl = settings?.whatsapp_bridge_url || "http://127.0.0.1:3001";
 

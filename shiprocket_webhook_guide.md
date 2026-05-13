@@ -11,17 +11,17 @@ Click "Add New Webhook" for each of the following:
 
 ### 1. Tracking Updates (For "Delivered" status)
 - **Event:** `Tracking Update`
-- **URL:** `https://tenesha-unrecognizable-cristina.ngrok-free.dev/api/webhooks/shiprocket`
+- **URL:** `https://cureforeverpc.tail1b3337.ts.net/api/webhooks/shiprocket`
 - **Header (x-shiprocket-secret):** `cureforever_shiprocket_sync_2026`
 
 ### 2. Direct Orders (For non-abandoned orders)
 - **Event:** `Order Created`
-- **URL:** `https://tenesha-unrecognizable-cristina.ngrok-free.dev/api/webhooks/shiprocket`
+- **URL:** `https://cureforeverpc.tail1b3337.ts.net/api/webhooks/shiprocket`
 - **Header (x-shiprocket-secret):** `cureforever_shiprocket_sync_2026`
 
 ### 3. Shipment Created (For tracking numbers)
 - **Event:** `Shipment Created`
-- **URL:** `https://tenesha-unrecognizable-cristina.ngrok-free.dev/api/webhooks/shiprocket`
+- **URL:** `https://cureforeverpc.tail1b3337.ts.net/api/webhooks/shiprocket`
 - **Header (x-shiprocket-secret):** `cureforever_shiprocket_sync_2026`
 
 ## Step 3: Test Webhooks
@@ -32,4 +32,4 @@ Click "Add New Webhook" for each of the following:
 
 > [!TIP]
 > **Why is my URL so long?** 
-> Since you are running the CRM on your local computer, we are using `ngrok` to let Shiprocket "talk" to your machine. If you restart your computer or ngrok, this URL may change. In a production environment, this would be a constant `cureforever.in` style link.
+> Since you are running the CRM on your local computer, we are using **Tailscale Funnel** to let Shiprocket "talk" to your machine. This URL is permanent as long as your Tailscale machine is active! In a production environment, this would be a constant `cureforever.in` style link.

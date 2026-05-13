@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  return createServerClient();
 }
 
 // GET /api/tasks — list with filters
@@ -18,7 +18,12 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("tasks")
-    .select("*, customer:customers(*), order:orders(*)")
+    .select(`
+      id, status, due_date, task_type, customer_id, order_id, assigned_to, priority_score, created_at,
+      customer:customers(id, name, phone, email, segment, rto_flag, address, city, state, zip),
+      order:orders(id, order_number, shopify_order_id, total_price, line_items, delivered_at, payment_status, delivery_status),
+      abandoned_cart:abandoned_carts(id, cart_token, total_price, line_items, abandoned_at, custom_meta)
+    `)
     .order("due_date", { ascending: true });
 
   if (status) query = query.eq("status", status);
@@ -40,7 +45,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase.from("tasks").insert({
     order_id: body.order_id,
     customer_id: body.customer_id,
-    assigned_to: body.assigned_to || await assignTaskOwner(supabase),
+    assigned_to: body.assigned_to || await assignTaskOwner(supabase, body.task_type),
     task_type: body.task_type,
     due_date: body.due_date,
     priority_score: calculateTaskPriority({

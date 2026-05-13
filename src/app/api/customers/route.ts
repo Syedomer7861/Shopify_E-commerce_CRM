@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  return createServerClient();
 }
 
 // GET /api/customers
@@ -13,7 +13,11 @@ export async function GET(req: NextRequest) {
   const rto = searchParams.get("rto");
   const search = searchParams.get("search");
 
-  let query = supabase.from("customers").select("*").order("created_at", { ascending: false });
+  let query = supabase
+    .from("customers")
+    .select("id, name, phone, email, segment, created_at, tags, notes, rto_flag")
+    .order("created_at", { ascending: false })
+    .limit(50);
 
   if (segment) query = query.eq("segment", segment);
   if (rto === "true") query = query.eq("rto_flag", true);
@@ -62,5 +66,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: { code: "DUPLICATE_PHONE", message: "Phone number already exists", status: 409 } }, { status: 409 });
   }
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  // Live Sync to Google Sheets
+  if (data) {
+    import("@/lib/google-sheets").then(m => {
+      m.appendToSheet("Customers", {
+        id: data.id,
+        name: data.name,
+        phone: data.phone,
+        email: data.email || "",
+        created_at: data.created_at,
+        source: "Manual"
+      });
+    }).catch(err => console.error("Sync failed:", err));
+  }
+
   return NextResponse.json(data, { status: 201 });
 }

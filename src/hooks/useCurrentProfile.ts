@@ -15,8 +15,8 @@ export function useCurrentProfile() {
 
     async function load() {
       setLoading(true);
-      const { data: auth } = await supabase.auth.getUser();
-      const user = auth.user;
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
 
       if (!user) {
         if (active) {

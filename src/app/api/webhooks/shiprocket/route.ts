@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 import { DeliveryStatus, TaskType } from "@/types";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { WorkflowEngine } from "@/lib/workflow-engine";
@@ -9,19 +9,16 @@ import { notifyAdmin } from "@/lib/notifications";
 export const dynamic = "force-dynamic";
 
 function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  return createServerClient();
 }
 
 function mapShiprocketStatus(status: string | number): DeliveryStatus {
   const s = String(status).toLowerCase();
   if (s.includes("rto") || s === "9") return "rto";
   if (s.includes("delivered") || s === "7" || s === "10") return "delivered";
-  if (s.includes("shipped") || s === "6" || s === "12" || s.includes("transit") || s.includes("undelivered")) return "in_transit";
+  if (s.includes("shipped") || s === "6" || s === "12" || s.includes("transit")) return "in_transit";
   if (s.includes("out for delivery") || s === "13") return "out_for_delivery";
-  if (s.includes("canceled") || s === "8" || s.includes("failed")) return "failed";
+  if (s.includes("canceled") || s === "8" || s.includes("failed") || s.includes("undelivered") || s.includes("ndr")) return "failed";
   return "pending";
 }
 
@@ -100,6 +97,10 @@ export async function POST(req: NextRequest) {
                        (firstName ? `${firstName} ${lastName}`.trim() : "Shiprocket Customer");
 
       const productList = data.items || data.line_items || (data.item ? [data.item] : []);
+      const enrichedItems = [
+        ...(productList || []),
+        { __metadata: true, payload: body }
+      ];
 
       if (!customerPhone && !cartId && !orderId) {
         return NextResponse.json({ error: "Missing identity identifiers" }, { status: 400 });
@@ -177,18 +178,18 @@ export async function POST(req: NextRequest) {
       }
 
       // A2. Handle as Abandoned Cart (Only if NOT order_placed and no real order ID)
+      const topic = (body.topic || "").toLowerCase();
       const isAbandonedStage = stage.includes("abandoned") || 
                                stage.includes("cart_update") || 
                                stage.includes("checkout") || 
                                stage.includes("partial") ||
-                               stage === "cart_created";
+                               stage === "cart_created" ||
+                               stage === "init" ||
+                               stage === "order_screen" ||
+                               stage === "phone_received" ||
+                               topic.includes("cart_update");
 
       if (cartId && !orderId && isAbandonedStage) {
-        const enrichedItems = [
-          ...(productList || []),
-          { __metadata: true, payload: body }
-        ];
-
         const { data: cartDataArr, error: cartErr } = await supabase
           .from("abandoned_carts")
           .upsert({
@@ -199,8 +200,7 @@ export async function POST(req: NextRequest) {
             total_price: parseFloat(data.total_price || data.cart_value || data.cart_amount || body.total_price || body.cart_value || 0),
             line_items: enrichedItems,
             recovery_status: "pending",
-            abandoned_at: new Date().toISOString(),
-            source: "shiprocket_checkout"
+            abandoned_at: new Date().toISOString()
           }, { onConflict: "cart_token" })
           .select("id, abandoned_at, total_price");
 
@@ -242,31 +242,43 @@ export async function POST(req: NextRequest) {
             .eq("status", "pending")
             .maybeSingle();
 
-          if (existingTask) {
-            // Update existing task instead of creating a new one
-            await supabase.from("tasks").update({
-              abandoned_cart_id: cartData.id,
-              due_date: dueDateStr
-            }).eq("id", existingTask.id);
-          } else {
-            // Create new task
-            await supabase.from("tasks").upsert({
-              customer_id: customerId,
-              abandoned_cart_id: cartData.id,
-              assigned_to: await assignTaskOwner(supabase),
-              task_type: "recovery" as TaskType,
-              due_date: dueDateStr,
-              priority_score: calculateTaskPriority({ taskType: "recovery" }),
-              status: "pending"
-            }, { onConflict: "abandoned_cart_id, task_type" });
-          }
+          const isActionable = customerPhone && customerPhone !== "unknown" && !customerPhone.startsWith("GUEST-");
 
-          // Trigger Workflow: Abandoned Cart
-          await WorkflowEngine.trigger("cart_abandoned", { 
-            cart_id: cartData.id, 
-            customer_id: customerId, 
-            total: cartData.total_price 
-          });
+          if (isActionable) {
+            if (existingTask) {
+              // Update existing task instead of creating a new one
+              await supabase.from("tasks").update({
+                abandoned_cart_id: cartData.id,
+                due_date: dueDateStr
+              }).eq("id", existingTask.id);
+            } else {
+              // Create new task
+              const { data: customerDetails } = await supabase.from("customers").select("segment").eq("id", customerId).single();
+              const segment = customerDetails?.segment;
+
+              await supabase.from("tasks").upsert({
+                customer_id: customerId,
+                abandoned_cart_id: cartData.id,
+                assigned_to: await assignTaskOwner(supabase, "recovery", segment),
+                task_type: "recovery" as any,
+                due_date: dueDateStr,
+                priority_score: calculateTaskPriority({ 
+                  taskType: "recovery",
+                  totalPrice: cartData.total_price || 0,
+                  totalOrders: 0, // We could fetch this if needed
+                  rtoFlag: false 
+                }),
+                status: "pending"
+              }, { onConflict: "abandoned_cart_id, task_type" });
+            }
+
+            // Trigger Workflow: Abandoned Cart
+            await WorkflowEngine.trigger("cart_abandoned", { 
+              cart_id: cartData.id, 
+              customer_id: customerId, 
+              total: cartData.total_price 
+            });
+          }
       }
     }
       
@@ -279,6 +291,11 @@ export async function POST(req: NextRequest) {
           .select("id, source, delivery_status")
           .or(`shopify_order_id.eq.${orderIdentifier},order_number.eq.${orderIdentifier}`)
           .maybeSingle();
+
+        const enrichedItems = [
+          ...(productList || []),
+          { __metadata: true, payload: body }
+        ];
 
         const upsertData: any = {
           customer_id: customerId,
@@ -374,7 +391,12 @@ export async function POST(req: NextRequest) {
       const identifierStr = identifier?.toString();
 
       // --- IDEMPOTENCY CHECK ---
-      const { data: existingOrd } = await supabase.from("orders").select("id, delivery_status").eq("shopify_order_id", identifierStr).maybeSingle();
+      // Search by ANY identifier we have (shopify_order_id or order_number)
+      const { data: existingOrd } = await supabase.from("orders")
+        .select("id, delivery_status")
+        .or(`shopify_order_id.eq.${identifierStr},order_number.eq.${identifierStr}`)
+        .maybeSingle();
+
       if (existingOrd && existingOrd.delivery_status === crmStatus) {
          console.log(`⚡ Idempotency hit: Order ${identifierStr} is already ${crmStatus}. Skipping duplicate webhook.`);
          return NextResponse.json({ success: true, message: "Idempotency hit, status already matches" });
@@ -434,7 +456,7 @@ export async function POST(req: NextRequest) {
 
         const { data: orders } = await supabase.from("orders")
           .select("id, line_items, shopify_order_id, order_number, customer_id")
-          .or(`shopify_order_id.eq.${identifier},order_number.eq.${identifier}`)
+          .or(`shopify_order_id.eq.${identifierStr},order_number.eq.${identifierStr}`)
           .limit(1);
 
       if (orders && orders.length > 0) {
@@ -506,10 +528,13 @@ export async function POST(req: NextRequest) {
             .eq("task_type", "transit_update");
 
           if ((count || 0) === 0) {
+            const { data: customerDetails } = await supabase.from("customers").select("segment").eq("id", currentCustomerId || customerId).single();
+            const segment = customerDetails?.segment;
+
             await supabase.from("tasks").insert({
               order_id: orderId,
               customer_id: currentCustomerId || customerId,
-              assigned_to: await assignTaskOwner(supabase),
+              assigned_to: await assignTaskOwner(supabase, "transit_update", segment),
               task_type: "transit_update",
               due_date: new Date().toISOString().split("T")[0],
               priority_score: calculateTaskPriority({
@@ -522,7 +547,6 @@ export async function POST(req: NextRequest) {
         }
 
         if (crmStatus === "rto" || crmStatus === "failed") {
-          const assignedTo = await assignTaskOwner(supabase);
           const { count } = await supabase
             .from("tasks")
             .select("id", { count: "exact", head: true })
@@ -533,9 +557,11 @@ export async function POST(req: NextRequest) {
           if ((count || 0) === 0) {
             const { data: customer } = await supabase
               .from("customers")
-              .select("total_orders, rto_flag")
+              .select("total_orders, rto_flag, segment")
               .eq("id", customerId)
               .maybeSingle();
+
+            const assignedTo = await assignTaskOwner(supabase, "issue_resolution", customer?.segment);
 
             await supabase.from("tasks").insert({
               order_id: orders[0].id,
@@ -574,12 +600,78 @@ export async function POST(req: NextRequest) {
         if (crmStatus === "delivered") {
           updateData.delivered_at = deliveredAt || new Date().toISOString();
         }
-        await supabase.from("orders").insert(updateData);
+
+        const { data: newOrders } = await supabase.from("orders").insert(updateData).select("id");
+        const newOrderId = newOrders?.[0]?.id;
+
+        if (newOrderId) {
+          const trigger = getTriggerByStatus(crmStatus);
+          if (trigger) {
+            await WorkflowEngine.trigger(trigger, { 
+              order_id: newOrderId, 
+              customer_id: customerId 
+            });
+          }
+
+          // Proactive Tasks for Direct Orders
+          if (crmStatus === "in_transit") {
+            const { data: customerDetails } = await supabase.from("customers").select("segment").eq("id", customerId).single();
+            await supabase.from("tasks").insert({
+              order_id: newOrderId,
+              customer_id: customerId,
+              assigned_to: await assignTaskOwner(supabase, "transit_update", customerDetails?.segment),
+              task_type: "transit_update",
+              due_date: new Date().toISOString().split("T")[0],
+              priority_score: calculateTaskPriority({ taskType: "transit_update", totalPrice: Number(body.total || 0) }),
+              status: "pending",
+            });
+          } else if (crmStatus === "rto" || crmStatus === "failed") {
+            const { data: customer } = await supabase.from("customers").select("total_orders, rto_flag, segment").eq("id", customerId).maybeSingle();
+            await supabase.from("tasks").insert({
+              order_id: newOrderId,
+              customer_id: customerId,
+              assigned_to: await assignTaskOwner(supabase, "issue_resolution", customer?.segment),
+              task_type: "issue_resolution",
+              due_date: new Date().toISOString().split("T")[0],
+              priority_score: calculateTaskPriority({
+                taskType: "issue_resolution",
+                rtoFlag: crmStatus === "rto" || customer?.rto_flag,
+                totalOrders: customer?.total_orders || 0,
+              }),
+              status: "pending",
+            });
+          }
+        }
       }
 
       if (logEntry) {
         await supabase.from("webhook_logs").update({ status: "processed", topic: "tracking_update" }).eq("id", logEntry.id);
       }
+
+      // Live Sync to Google Sheets (Shipping Tracking)
+      import("@/lib/google-sheets").then(m => {
+        m.appendToSheet("Shipping_Logs", {
+          awb: body.awb || "N/A",
+          order: identifierStr,
+          status: body.status || "unknown",
+          crm_status: crmStatus,
+          customer: body.customer_name || body.billing_customer_name || "N/A",
+          phone: phone || "N/A",
+          location: `${body.customer_city || ""}, ${body.customer_state || ""}`,
+          timestamp: new Date().toISOString()
+        });
+
+        if (crmStatus === "rto" || crmStatus === "failed") {
+          m.appendToSheet("NDR_Exceptions", {
+            order: identifierStr,
+            awb: body.awb || "N/A",
+            customer: body.customer_name || "N/A",
+            phone: phone || "N/A",
+            reason: body.latest_status || body.status || "Delivery Failed",
+            timestamp: new Date().toISOString()
+          });
+        }
+      });
 
       return NextResponse.json({ success: true, type: "tracking", id: identifier });
     }

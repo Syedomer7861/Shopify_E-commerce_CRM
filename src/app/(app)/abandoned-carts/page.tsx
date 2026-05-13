@@ -1,7 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, Pagination } from "@/components/ui";
 import { 
   ShoppingBag, 
   MessageCircle, 
@@ -16,20 +16,23 @@ import {
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import { AccessDenied } from "@/components/ui";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { hasPermission } from "@/lib/permissions";
+import { RefreshCw } from "lucide-react";
 
 export default function AbandonedCartsPage() {
+  const { profile, loading: profileLoading } = useCurrentProfile();
   const [carts, setCarts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("pending");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 25;
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchCarts();
-  }, [statusFilter]);
-
-  async function fetchCarts() {
+  const fetchCarts = useCallback(async () => {
     setLoading(true);
     try {
       let query = supabase
@@ -66,7 +69,28 @@ export default function AbandonedCartsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [statusFilter, search, supabase]);
+
+  useEffect(() => {
+    fetchCarts();
+
+    // ── 60s polling fallback ──
+    const poll = setInterval(() => fetchCarts(), 60_000);
+
+    // ── Supabase real-time: new abandoned carts appear instantly ──
+    const channel = supabase
+      .channel("abandoned-carts-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "abandoned_carts" },
+        () => fetchCarts())
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "abandoned_carts" },
+        () => fetchCarts())
+      .subscribe();
+
+    return () => {
+      clearInterval(poll);
+      supabase.removeChannel(channel);
+    };
+  }, [fetchCarts, supabase]);
 
   async function deleteCart(id: string) {
     if (!confirm("Are you sure you want to delete this record?")) return;
@@ -95,6 +119,11 @@ export default function AbandonedCartsPage() {
     (c.customer?.name || "").toLowerCase().includes(search.toLowerCase())
   );
 
+  const paginatedCarts = filteredCarts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   const stats = {
     totalValue: carts.reduce((acc, c) => acc + (Number(c.total_price) || 0), 0),
     recoveredValue: carts.filter(c => c.recovery_status === "recovered").reduce((acc, c) => acc + (Number(c.total_price) || 0), 0),
@@ -110,12 +139,12 @@ export default function AbandonedCartsPage() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="card p-5 border-l-4 border-l-[#2D1E6F]">
+        <div className="card p-5 border-l-4 border-l-[#1c1c1c]">
           <div className="flex items-center gap-3 mb-2 text-gray-500">
             <Clock className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Pending Recovery</span>
           </div>
-          <div className="text-2xl font-display text-[#2D1E6F] font-bold">{stats.pendingCount}</div>
+          <div className="text-2xl font-display text-[#1c1c1c] font-bold">{stats.pendingCount}</div>
           <div className="text-[10px] text-gray-400 mt-1">Carts waiting for follow-up</div>
         </div>
         <div className="card p-5 border-l-4 border-l-rose-400">
@@ -123,15 +152,15 @@ export default function AbandonedCartsPage() {
             <AlertCircle className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Potential Revenue</span>
           </div>
-          <div className="text-2xl font-display text-rose-600 font-bold">₹{stats.totalValue.toLocaleString()}</div>
+          <div className="text-2xl font-display text-[#1c1c1c] font-bold">₹{stats.totalValue.toLocaleString()}</div>
           <div className="text-[10px] text-gray-400 mt-1">Total value of all abandoned items</div>
         </div>
-        <div className="card p-5 border-l-4 border-l-[#2D1E6F]">
+        <div className="card p-5 border-l-4 border-l-[#1c1c1c]">
           <div className="flex items-center gap-3 mb-2 text-gray-500">
             <CheckCircle2 className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Recovered Revenue</span>
           </div>
-          <div className="text-2xl font-display text-[#2D1E6F] font-bold">₹{stats.recoveredValue.toLocaleString()}</div>
+          <div className="text-2xl font-display text-[#1c1c1c] font-bold">₹{stats.recoveredValue.toLocaleString()}</div>
           <div className="text-[10px] text-gray-400 mt-1">Orders secured after follow-up</div>
         </div>
       </div>
@@ -154,7 +183,7 @@ export default function AbandonedCartsPage() {
               key={f}
               onClick={() => setStatusFilter(f)}
               className={cn("px-4 h-10 text-xs font-semibold rounded-xl transition-all capitalize",
-                statusFilter === f ? "bg-[#2D1E6F] text-white shadow-sm" : "bg-white text-gray-500 border border-gray-100 hover:bg-gray-50"
+                statusFilter === f ? "bg-[#1c1c1c] text-white shadow-sm" : "bg-white text-gray-500 border border-gray-100 hover:bg-gray-50"
               )}
             >
               {f}
@@ -181,10 +210,10 @@ export default function AbandonedCartsPage() {
                 <tr><td colSpan={5} className="py-20 text-center text-gray-400">Loading abandoned carts...</td></tr>
               ) : filteredCarts.length === 0 ? (
                 <tr><td colSpan={5} className="py-20 text-center text-gray-400 italic">No carts found matching your filters.</td></tr>
-              ) : filteredCarts.map(cart => (
+              ) : paginatedCarts.map(cart => (
                 <tr key={cart.id} className="hover:bg-gray-50/30 transition-colors group">
                   <td className="py-4 px-6">
-                    <div className="font-semibold text-[#2D1E6F] uppercase tracking-tight">{cart.customer?.name || "Anonymous"}</div>
+                    <div className="font-semibold text-[#1c1c1c] uppercase tracking-tight">{cart.customer?.name || "Anonymous"}</div>
                     <div className="text-xs text-gray-500 font-mono">{cart.phone}</div>
                   </td>
                   <td className="py-4 px-6">
@@ -201,7 +230,7 @@ export default function AbandonedCartsPage() {
                   </td>
                   <td className="py-4 px-6">
                      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                       cart.recovery_status === "recovered" ? "bg-blue-100 text-blue-600" : "bg-amber-100 text-amber-600"
+                       cart.recovery_status === "recovered" ? "bg-[#eceae4] text-[#1c1c1c]" : "bg-amber-100 text-amber-600"
                      )}>
                       {cart.recovery_status}
                     </span>
@@ -228,6 +257,14 @@ export default function AbandonedCartsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="px-6 border-t border-gray-50 bg-white">
+          <Pagination 
+            current={currentPage}
+            total={filteredCarts.length}
+            pageSize={ITEMS_PER_PAGE}
+            onChange={setCurrentPage}
+          />
         </div>
       </div>
     </div>

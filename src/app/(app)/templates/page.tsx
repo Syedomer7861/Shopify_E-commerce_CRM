@@ -4,6 +4,10 @@ import { Plus, Search, MessageSquare, Save, Trash2, Edit3, Type, CheckCircle2, C
 import { PageHeader, Modal } from "@/components/ui";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import { AccessDenied } from "@/components/ui";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { isAdmin } from "@/lib/permissions";
+import { RefreshCw } from "lucide-react";
 
 const VARIABLES = [
   { key: "{{name}}", label: "Customer Name" },
@@ -13,6 +17,7 @@ const VARIABLES = [
 ];
 
 export default function TemplateManager() {
+  const { profile, loading: profileLoading } = useCurrentProfile();
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -41,6 +46,24 @@ export default function TemplateManager() {
   useEffect(() => {
     fetchTemplates();
   }, []);
+
+  if (profileLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-[#5f5f5d] gap-3">
+        <RefreshCw className="w-8 h-8 animate-spin" />
+        <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Authenticating Access...</p>
+      </div>
+    );
+  }
+
+  if (!isAdmin(profile)) {
+    return (
+      <AccessDenied 
+        title="Template Access Denied" 
+        desc="Management of dynamic message templates and variable configurations is restricted to administrators." 
+      />
+    );
+  }
 
   const handleSave = async () => {
     if (!formData.name || !formData.body) return toast.error("Please fill in name and body");
@@ -105,29 +128,29 @@ export default function TemplateManager() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filtered.map(tpl => (
-          <div key={tpl.id} className="card group hover:shadow-lg transition-all border-l-4 border-l-[#2D1E6F] flex flex-col h-full">
+          <div key={tpl.id} className="card group hover:shadow-lg transition-all border-l-4 border-l-[#1c1c1c] flex flex-col h-full">
             <div className="p-5 flex-1">
               <div className="flex justify-between items-start mb-3">
-                <div className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-wider border border-blue-100">
+                <div className="px-2 py-0.5 rounded bg-[#eceae4] text-[#1c1c1c] text-[10px] font-bold uppercase tracking-wider border border-[#eceae4]">
                   {tpl.category}
                 </div>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => { setEditingTemplate(tpl); setFormData(tpl); setShowModal(true); }} className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-blue-600 transition-colors">
+                  <button onClick={() => { setEditingTemplate(tpl); setFormData(tpl); setShowModal(true); }} className="p-1.5 hover:bg-[rgba(28,28,28,0.05)] rounded text-[#1c1c1c] transition-colors">
                     <Edit3 className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => handleDelete(tpl.id)} className="p-1.5 hover:bg-rose-50 rounded text-gray-400 hover:text-rose-600 transition-colors">
+                  <button onClick={() => handleDelete(tpl.id)} className="p-1.5 hover:bg-rose-50 rounded text-[#1c1c1c] hover:text-rose-600 transition-colors">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
-              <h3 className="text-sm font-bold text-[#2D1E6F] mb-2 line-clamp-1">{tpl.name}</h3>
+              <h3 className="text-sm font-bold text-[#1c1c1c] mb-2 line-clamp-1">{tpl.name}</h3>
               <p className="text-xs text-gray-500 leading-relaxed line-clamp-4 whitespace-pre-wrap">
                 {tpl.body}
               </p>
             </div>
             <div className="px-5 py-3 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
               <span className="text-[10px] text-gray-400 font-medium">Auto-variable detection active</span>
-              <MessageSquare className="w-3.5 h-3.5 text-blue-300" />
+              <MessageSquare className="w-3.5 h-3.5 text-[#1c1c1c]/40" />
             </div>
           </div>
         ))}
@@ -179,13 +202,13 @@ export default function TemplateManager() {
               <label className="text-xs font-bold text-gray-700">Message Body</label>
               <div className="flex items-center gap-1.5">
                 {VARIABLES.map(v => (
-                  <button 
-                    key={v.key}
-                    onClick={() => setFormData({ ...formData, body: formData.body + v.key })}
-                    className="text-[9px] font-bold bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100 hover:bg-blue-100 transition-colors"
-                  >
-                    {v.key}
-                  </button>
+                    <button 
+                      key={v.key}
+                      onClick={() => setFormData({ ...formData, body: formData.body + v.key })}
+                      className="text-[9px] font-bold bg-[#eceae4] text-[#1c1c1c] px-1.5 py-0.5 rounded border border-[#eceae4] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] transition-all"
+                    >
+                      {v.key}
+                    </button>
                 ))}
               </div>
             </div>

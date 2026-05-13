@@ -1,17 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Shield, User, Loader2, Mail, Trash2, Edit2, UserPlus, CheckCircle2, XCircle } from "lucide-react";
+import { Shield, User, Loader2, Mail, Trash2, Edit2, UserPlus, CheckCircle2, XCircle, ShoppingBag, Users, MessageSquare, Eye } from "lucide-react";
 import { PageHeader, Avatar, EmptyState, Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import type { Profile, UserPermissions } from "@/types";
 import { AccessDenied } from "@/components/ui";
-import { DEFAULT_PERMISSIONS, hasPermission } from "@/lib/permissions";
+import { DEFAULT_PERMISSIONS, DEFAULT_HR_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS, hasPermission } from "@/lib/permissions";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { logAuditEvent } from "@/lib/audit";
 
-import { createTeamMemberServer, updateTeamMemberPasswordServer } from "@/app/actions/admin";
+import { createTeamMemberServer, updateTeamMemberPasswordServer, deleteTeamMemberServer } from "@/app/actions/admin";
 
 export default function TeamPage() {
   const [loading, setLoading] = useState(true);
@@ -22,26 +22,37 @@ export default function TeamPage() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   // New user state
-  const [newUser, setNewUser] = useState({ email: "", password: "", name: "", role: "agent" as "agent" | "admin" });
+  const [newUser, setNewUser] = useState({ email: "", password: "", name: "", role: "agent" as "agent" | "admin" | "hr" | "manager" });
   const { profile: currentProfile, loading: profileLoading } = useCurrentProfile();
 
   const supabase = createClient();
 
   useEffect(() => {
-    fetchProfiles();
-  }, []);
+    if (!profileLoading) {
+      fetchProfiles();
+    }
+  }, [profileLoading, currentProfile?.id]);
 
   async function fetchProfiles() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: true });
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: true });
 
-    if (error) {
-      toast.error(error.message);
-    } else {
-      setProfiles(data || []);
+      if (error) {
+        toast.error(error.message);
+      } else {
+        // Filter: HR should not see Admins in Team Directory. Only Admins see everyone.
+        const filtered = (data || []).filter(p => {
+          if (currentProfile?.role === 'admin') return true;
+          return p.role !== 'admin';
+        });
+        setProfiles(filtered);
+      }
+    } catch (err) {
+      console.error(err);
     }
     setLoading(false);
   }
@@ -62,6 +73,21 @@ export default function TeamPage() {
         can_import: true,
         can_delete: true,
         manage_team: true,
+        manage_orders: true,
+        manage_customers: true,
+        send_whatsapp: true,
+        audit_tasks: true,
+        manage_automations: true,
+      } : newUser.role === "manager" ? {
+        view_analytics: true,
+        can_import: true,
+        can_delete: false,
+        manage_team: true,
+        manage_orders: true,
+        manage_customers: true,
+        send_whatsapp: true,
+        audit_tasks: true,
+        manage_automations: false,
       } : DEFAULT_PERMISSIONS,
     });
 
@@ -83,21 +109,24 @@ export default function TeamPage() {
   }
 
   async function handleRemoveMember(id: string) {
-    if (!confirm("Are you sure you want to remove this team member? This action cannot be undone.")) return;
+    if (!confirm("Are you sure you want to remove this team member? This action will permanently delete their account and access. This cannot be undone.")) return;
     
-    const { error } = await supabase.from("profiles").delete().eq("id", id);
-    if (error) {
-      toast.error(error.message);
+    setIsUpdating(true);
+    const res = await deleteTeamMemberServer(id);
+    
+    if (!res.success) {
+      toast.error(res.error || "Failed to remove member");
     } else {
       await logAuditEvent({
         entityType: "profile",
         entityId: id,
         action: "delete",
-        summary: "Removed team member profile",
+        summary: "Permanently deleted team member account and profile",
       });
-      toast.success("Member removed");
+      toast.success("Member completely removed from system");
       fetchProfiles();
     }
+    setIsUpdating(false);
   }
 
   async function updateProfile(updates: Partial<Profile>) {
@@ -132,6 +161,17 @@ export default function TeamPage() {
     const current = selectedProfile.permissions || DEFAULT_PERMISSIONS;
     const updated = { ...current, [key]: !current[key] };
     updateProfile({ permissions: updated });
+  };
+
+  const toggleSpecialization = (type: 'segments' | 'tasks', value: string) => {
+    if (!selectedProfile) return;
+    const field = type === 'segments' ? 'assigned_segments' : 'assigned_task_types';
+    const current = (selectedProfile[field] || []) as string[];
+    const updated = current.includes(value) 
+      ? current.filter(v => v !== value) 
+      : [...current, value];
+    
+    updateProfile({ [field]: updated.length === 0 ? null : updated });
   };
 
   const [newUpdatePassword, setNewUpdatePassword] = useState("");
@@ -190,7 +230,7 @@ export default function TeamPage() {
         ) : (
           profiles.map(p => {
             const lastSeen = (p as any).last_seen_at;
-            const isOnline = lastSeen && (Date.now() - new Date(lastSeen).getTime()) < 5 * 60 * 1000;
+            const isOnline = lastSeen && (Date.now() - new Date(lastSeen).getTime()) < 60 * 1000;
             const isRecent = lastSeen && (Date.now() - new Date(lastSeen).getTime()) < 60 * 60 * 1000;
             
             function getPresenceLabel() {
@@ -198,7 +238,7 @@ export default function TeamPage() {
               if (!lastSeen) return "Never logged in";
               const diff = Date.now() - new Date(lastSeen).getTime();
               const mins = Math.floor(diff / 60000);
-              if (mins < 2) return "Online now";
+              if (mins < 1) return "Online now";
               if (mins < 60) return `Last seen ${mins}m ago`;
               const hrs = Math.floor(mins / 60);
               if (hrs < 24) return `Last seen ${hrs}h ago`;
@@ -207,18 +247,26 @@ export default function TeamPage() {
             }
             
             const presenceLabel = getPresenceLabel();
-            const dotColor = !p.is_active ? "bg-gray-400" : isOnline ? "bg-blue-500" : isRecent ? "bg-amber-400" : "bg-rose-400";
+            const dotColor = !p.is_active ? "bg-gray-400" : isOnline ? "bg-[#1c1c1c]" : isRecent ? "bg-amber-400" : "bg-rose-400";
             
             return (
-            <div key={p.id} className={`card p-4 hover:shadow-md transition-all group border-l-4 ${p.is_active ? 'border-l-transparent hover:border-l-[#2D1E6F]' : 'border-l-gray-200 opacity-60'}`}>
+            <div 
+              key={p.id} 
+              className={`card p-4 hover:shadow-md transition-all group border-l-4 cursor-pointer ${p.is_active ? 'border-l-transparent hover:border-l-[#1c1c1c]' : 'border-l-gray-200 opacity-60'}`}
+              onClick={(e) => {
+                // Don't trigger if clicking buttons inside
+                if ((e.target as HTMLElement).closest('button')) return;
+                window.open(`/team/${p.id}`, '_blank');
+              }}
+            >
                <div className="flex items-center justify-between mb-3">
                 <div className="relative">
                   <Avatar name={p.name || p.email} size="md" />
                   <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white", dotColor, isOnline && "animate-pulse")} />
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${p.role === 'admin' ? 'bg-[#2D1E6F] text-white' : 'bg-gray-100 text-gray-500'}`}>
-                    {p.role}
+                  <div className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${p.role === 'admin' ? 'bg-[#1c1c1c] text-white' : 'bg-gray-100 text-gray-500'}`}>
+                    {p.role === 'hr' ? 'HR' : p.role}
                   </div>
                   <button onClick={() => handleRemoveMember(p.id)} className="p-1.5 text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
                     <Trash2 className="w-3.5 h-3.5" />
@@ -226,7 +274,7 @@ export default function TeamPage() {
                 </div>
               </div>
               <div className="mb-4">
-                <div className="text-sm font-semibold text-[#2D1E6F] truncate flex items-center gap-2">
+                <div className="text-sm font-semibold text-[#1c1c1c] truncate flex items-center gap-2">
                   {p.name || "Pending Signup"}
                   {!p.is_active && <XCircle className="w-3 h-3 text-rose-500" />}
                 </div>
@@ -235,7 +283,7 @@ export default function TeamPage() {
                 </div>
                 <div className={cn(
                   "text-[10px] font-bold mt-1.5 flex items-center gap-1.5",
-                  isOnline ? "text-blue-600" : isRecent ? "text-amber-600" : "text-gray-400"
+                  isOnline ? "text-[#1c1c1c]" : isRecent ? "text-amber-600" : "text-gray-400"
                 )}>
                   <div className={cn("w-1.5 h-1.5 rounded-full", dotColor)} />
                   {presenceLabel}
@@ -248,6 +296,7 @@ export default function TeamPage() {
                 >
                   <Edit2 className="w-3 h-3" /> Edit Permissions
                 </button>
+
               </div>
             </div>
             );
@@ -278,6 +327,8 @@ export default function TeamPage() {
             <label className="text-xs font-medium text-gray-700 block mb-1">Initial Role</label>
             <select className="select" value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value as any })}>
               <option value="agent">Sales Agent</option>
+              <option value="hr">HR (Staffing)</option>
+              <option value="manager">Manager (Operations)</option>
               <option value="admin">Administrator</option>
             </select>
           </div>
@@ -299,7 +350,7 @@ export default function TeamPage() {
              <div className="flex items-center gap-3">
                <Avatar name={selectedProfile?.name || selectedProfile?.email || ""} size="sm" />
                <div>
-                  <div className="text-xs font-bold text-[#2D1E6F]">{selectedProfile?.name || "Pending User"}</div>
+                  <div className="text-xs font-bold text-[#1c1c1c]">{selectedProfile?.name || "Pending User"}</div>
                   <div className="text-[10px] text-gray-400">{selectedProfile?.email}</div>
                </div>
              </div>
@@ -308,7 +359,7 @@ export default function TeamPage() {
                 <button 
                   onClick={() => updateProfile({ is_active: !selectedProfile?.is_active })}
                   disabled={isUpdating}
-                  className={`w-8 h-4 rounded-full relative transition-colors ${selectedProfile?.is_active ? 'bg-[#2D1E6F]' : 'bg-gray-200'}`}
+                  className={`w-8 h-4 rounded-full relative transition-colors ${selectedProfile?.is_active ? 'bg-[#1c1c1c]' : 'bg-gray-200'}`}
                 >
                   <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${selectedProfile?.is_active ? 'left-4.5' : 'left-0.5'}`} />
                 </button>
@@ -317,20 +368,34 @@ export default function TeamPage() {
 
           <div className="space-y-3">
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Security Role</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                <button 
-                 onClick={() => updateProfile({ role: "agent" })}
-                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'agent' ? 'border-[#2D1E6F] bg-[#2D1E6F]/5' : 'border-gray-100 hover:border-gray-200'}`}
+                 onClick={() => updateProfile({ role: "agent", permissions: DEFAULT_PERMISSIONS })}
+                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'agent' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
                >
-                 <div className={`text-xs font-bold ${selectedProfile?.role === 'agent' ? 'text-[#2D1E6F]' : 'text-gray-600'}`}>Agent</div>
-                 <div className="text-[9px] text-gray-400 mt-0.5">Restricted rights</div>
+                 <div className={`text-xs font-bold ${selectedProfile?.role === 'agent' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>Agent</div>
+                 <div className="text-[9px] text-gray-400 mt-0.5">Sales Only</div>
+               </button>
+               <button 
+                 onClick={() => updateProfile({ role: "hr", permissions: DEFAULT_HR_PERMISSIONS })}
+                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'hr' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
+               >
+                 <div className={`text-xs font-bold ${selectedProfile?.role === 'hr' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>HR</div>
+                 <div className="text-[9px] text-gray-400 mt-0.5">Staffing</div>
+               </button>
+               <button 
+                 onClick={() => updateProfile({ role: "manager", permissions: DEFAULT_MANAGER_PERMISSIONS })}
+                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'manager' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
+               >
+                 <div className={`text-xs font-bold ${selectedProfile?.role === 'manager' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>Manager</div>
+                 <div className="text-[9px] text-gray-400 mt-0.5">Operations</div>
                </button>
                <button 
                  onClick={() => updateProfile({ role: "admin" })}
-                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'admin' ? 'border-[#2D1E6F] bg-[#2D1E6F]/5' : 'border-gray-100 hover:border-gray-200'}`}
+                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'admin' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
                >
-                 <div className={`text-xs font-bold ${selectedProfile?.role === 'admin' ? 'text-[#2D1E6F]' : 'text-gray-600'}`}>Admin</div>
-                 <div className="text-[9px] text-gray-400 mt-0.5">Full access</div>
+                 <div className={`text-xs font-bold ${selectedProfile?.role === 'admin' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>Admin</div>
+                 <div className="text-[9px] text-gray-400 mt-0.5">Full System</div>
                </button>
             </div>
           </div>
@@ -339,32 +404,96 @@ export default function TeamPage() {
              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Specific Permissions</label>
              <div className="space-y-2">
                 {[
-                  { key: "view_analytics", label: "View Reports & Analytics", icon: Shield },
+                  { key: "view_analytics", label: "View Reports & Analytics", icon: Eye },
                   { key: "can_import", label: "Import & Export Data", icon: Shield },
                   { key: "can_delete", label: "Delete Records (Customers/Orders)", icon: Trash2 },
                   { key: "manage_team", label: "Manage Team & Roles", icon: UserPlus },
+                  { key: "manage_orders", label: "Manage Orders & Shipments", icon: ShoppingBag },
+                  { key: "manage_customers", label: "Manage Customers & Segments", icon: Users },
+                  { key: "send_whatsapp", label: "Send WhatsApp Messages", icon: MessageSquare },
+                  { key: "audit_tasks", label: "Manager Oversight (Audit Tasks)", icon: Shield },
                 ].map((perm) => {
-                  const has = selectedProfile?.role === "admin" || (selectedProfile?.permissions as any)?.[perm.key];
+                  const isAdmin = selectedProfile?.role === "admin";
+                  const has = isAdmin || (selectedProfile?.permissions as any)?.[perm.key];
                   return (
-                    <div key={perm.key} className={`flex items-center justify-between p-3 rounded-lg border ${has ? 'border-[#2D1E6F]/20 bg-[#2D1E6F]/5' : 'border-gray-100'}`}>
+                    <button 
+                      key={perm.key} 
+                      onClick={() => togglePermission(perm.key as any)}
+                      disabled={isAdmin || isUpdating}
+                      className={cn(
+                        "w-full flex items-center justify-between p-3 rounded-lg border transition-all text-left group/perm",
+                        has ? 'border-[#1c1c1c]/20 bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'
+                      )}
+                    >
                       <div className="flex items-center gap-3">
-                        <perm.icon className={`w-3.5 h-3.5 ${has ? 'text-[#2D1E6F]' : 'text-gray-300'}`} />
-                        <span className={`text-xs font-medium ${has ? 'text-[#2D1E6F]' : 'text-gray-500'}`}>{perm.label}</span>
+                        <perm.icon className={`w-3.5 h-3.5 ${has ? 'text-[#1c1c1c]' : 'text-gray-300'}`} />
+                        <span className={`text-xs font-medium ${has ? 'text-[#1c1c1c]' : 'text-gray-500'}`}>{perm.label}</span>
                       </div>
-                      <button 
-                        onClick={() => togglePermission(perm.key as any)}
-                        disabled={selectedProfile?.role === "admin" || isUpdating}
-                        className={`w-5 h-5 rounded flex items-center justify-center transition-all ${has ? 'bg-[#2D1E6F] text-white' : 'border-2 border-gray-100'}`}
+                      <div 
+                        className={`w-5 h-5 rounded flex items-center justify-center transition-all ${has ? 'bg-[#1c1c1c] text-white' : 'border-2 border-gray-100'}`}
                       >
                         {has && <CheckCircle2 className="w-3 h-3" />}
-                      </button>
-                    </div>
+                      </div>
+                    </button>
                   );
                 })}
              </div>
              {selectedProfile?.role === "admin" && (
                <p className="text-[9px] text-gray-400 italic text-center">Administrators have all permissions by default.</p>
              )}
+          </div>
+
+          {/* Agent Specialization Section */}
+          <div className="space-y-4 pt-4 border-t border-gray-100">
+             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Agent Specialization</label>
+             
+             <div className="space-y-3">
+               <div className="text-[10px] font-medium text-gray-500">Target Customer Segments</div>
+               <div className="flex flex-wrap gap-2">
+                 {["repeat", "one_time", "inactive", "risky"].map(segment => {
+                   const isSelected = selectedProfile?.assigned_segments?.includes(segment as any);
+                   return (
+                     <button 
+                       key={segment}
+                       onClick={() => toggleSpecialization('segments', segment)}
+                       className={cn(
+                         "px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border",
+                         isSelected 
+                           ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" 
+                           : "bg-white text-gray-500 border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                       )}
+                     >
+                       {segment.replace("_", "-").toUpperCase()}
+                     </button>
+                   );
+                 })}
+               </div>
+               <p className="text-[9px] text-gray-400 italic">If none selected, agent sees all customer segments.</p>
+             </div>
+
+             <div className="space-y-3">
+               <div className="text-[10px] font-medium text-gray-500">Priority Task Types</div>
+               <div className="flex flex-wrap gap-2">
+                 {["review", "reorder", "recovery", "issue_resolution", "transit_update", "final_followup"].map(type => {
+                   const isSelected = selectedProfile?.assigned_task_types?.includes(type as any);
+                   return (
+                     <button 
+                       key={type}
+                       onClick={() => toggleSpecialization('tasks', type)}
+                       className={cn(
+                         "px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border",
+                         isSelected 
+                           ? "bg-indigo-600 text-white border-indigo-600" 
+                           : "bg-white text-gray-500 border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                       )}
+                     >
+                       {type.replace("_", " ").toUpperCase()}
+                     </button>
+                   );
+                 })}
+               </div>
+               <p className="text-[9px] text-gray-400 italic">If none selected, agent sees all task types.</p>
+             </div>
           </div>
           
           <div className="space-y-3 pt-3 border-t border-gray-100">
@@ -380,7 +509,7 @@ export default function TeamPage() {
                 <button 
                   onClick={handleUpdatePassword} 
                   disabled={isUpdating || newUpdatePassword.length < 6} 
-                  className="btn-secondary whitespace-nowrap bg-gray-900 border-gray-900 text-white hover:bg-[#2D1E6F] hover:border-[#2D1E6F] hover:text-white"
+                  className="btn-secondary whitespace-nowrap bg-gray-900 border-gray-900 text-white hover:bg-[#1c1c1c] hover:border-[#1c1c1c] hover:text-white"
                 >
                   {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Set Password"}
                 </button>

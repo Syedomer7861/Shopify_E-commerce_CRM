@@ -1,4 +1,5 @@
 "use server";
+import { createServerClient } from "@/lib/supabase";
 import { createClient } from "@supabase/supabase-js";
 import type { UserPermissions } from "@/types";
 import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
@@ -17,7 +18,7 @@ export async function createTeamMemberServer({
   email: string;
   password: string;
   name: string;
-  role: "admin" | "agent";
+  role: "admin" | "agent" | "hr" | "manager";
   permissions: UserPermissions;
 }) {
   const supabaseAdmin = createClient(
@@ -78,6 +79,11 @@ export async function createTeamMemberServer({
             can_import: true,
             can_delete: true,
             manage_team: true,
+            manage_orders: true,
+            manage_customers: true,
+            send_whatsapp: true,
+            audit_tasks: true,
+            manage_automations: true,
         } : (permissions || DEFAULT_PERMISSIONS),
         is_active: true
       }, { onConflict: 'id' });
@@ -120,5 +126,36 @@ export async function updateTeamMemberPasswordServer(userId: string, newPassword
   } catch (error: any) {
     console.error("DEBUG: Update Password Error:", error);
     return { success: false, error: error.message || "Failed to update password" };
+  }
+}
+
+/**
+ * Deletes a team member completely.
+ * Removes them from both the profiles table and Supabase Auth.
+ */
+export async function deleteTeamMemberServer(userId: string) {
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        }
+    }
+  );
+
+  try {
+    // 1. Delete from profiles table (Referential integrity handles logs if configured)
+    await supabaseAdmin.from("profiles").delete().eq("id", userId);
+
+    // 2. Delete from Supabase Auth
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error("DEBUG: Delete User Error:", error);
+    return { success: false, error: error.message || "Failed to delete user account" };
   }
 }

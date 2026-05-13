@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  return createServerClient();
 }
 
 // PATCH /api/tasks/[id]/[action]
@@ -17,10 +17,23 @@ export async function PATCH(
   if (action === "complete") {
     const now = new Date().toISOString();
 
-    const { data: task } = await supabase.from("tasks").select("customer_id").eq("id", id).single();
+    const { data: task } = await supabase
+      .from("tasks")
+      .select("customer_id, task_type, customers(name)")
+      .eq("id", id)
+      .single();
     if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
-    await supabase.from("tasks").update({ status: "done", completed_at: now }).eq("id", id);
+    const isAutoReschedule = body.outcome === "rescheduled" || body.outcome === "no_answer";
+    const tomorrowDate = new Date();
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrow = tomorrowDate.toISOString().split('T')[0];
+
+    const updateData: any = isAutoReschedule 
+      ? { status: "rescheduled", due_date: tomorrow, rescheduled_to: tomorrow }
+      : { status: "done", completed_at: now };
+
+    await supabase.from("tasks").update(updateData).eq("id", id);
 
     await supabase.from("call_logs").insert({
       task_id: id,
@@ -30,13 +43,43 @@ export async function PATCH(
       agent_name: body.agent_name ?? null,
     });
 
+    // 2. Log to Audit System
+    const { triggerAuditTask } = await import("@/lib/task-engine");
+    await triggerAuditTask(supabase, { 
+      ...task, 
+      id, 
+      outcome: body.outcome,
+      agent_email: body.agent_email // Pass email for the audit task note
+    });
+
+    // 3. Live Sync to Google Sheets (Comprehensive)
+    try {
+      const { appendToSheet } = await import("@/lib/google-sheets");
+      await appendToSheet("Task_Resolutions", {
+        task_id: id,
+        task_type: (task as any).task_type || "manual",
+        customer: (task as any).customers?.name || "Unknown",
+        action: "complete",
+        outcome: body.outcome || "done",
+        note: body.note || "",
+        agent: body.agent_email || "System",
+        timestamp: now
+      });
+    } catch (err) {
+      console.error("Sync to Sheets failed in API:", err);
+    }
+
     return NextResponse.json({ ok: true });
   }
 
   if (action === "reschedule") {
     if (!body.new_date) return NextResponse.json({ error: "new_date required" }, { status: 400 });
 
-    const { data: task } = await supabase.from("tasks").select("customer_id").eq("id", id).single();
+    const { data: task } = await supabase
+      .from("tasks")
+      .select("customer_id, task_type, customers(name)")
+      .eq("id", id)
+      .single();
     if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
     await supabase.from("tasks").update({ status: "rescheduled", rescheduled_to: body.new_date }).eq("id", id);
@@ -48,11 +91,46 @@ export async function PATCH(
       note: body.reason ?? null,
     });
 
+    // Live Sync to Google Sheets (In-Depth)
+    import("@/lib/google-sheets").then(m => {
+      m.appendToSheet("Task_Resolutions", {
+        task_id: id,
+        task_type: (task as any).task_type || "manual",
+        customer: (task as any).customers?.name || "Unknown",
+        action: "reschedule",
+        outcome: "rescheduled",
+        note: body.reason || "",
+        agent: "Manual",
+        timestamp: new Date().toISOString()
+      });
+    });
+
     return NextResponse.json({ ok: true });
   }
 
   if (action === "skip") {
+    // Fetch details for skip too
+    const { data: task } = await supabase
+      .from("tasks")
+      .select("customer_id, task_type, customers(name)")
+      .eq("id", id)
+      .single();
+
     await supabase.from("tasks").update({ status: "skipped" }).eq("id", id);
+
+    // Live Sync to Google Sheets (In-Depth)
+    import("@/lib/google-sheets").then(m => {
+      m.appendToSheet("Task_Resolutions", {
+        task_id: id,
+        task_type: (task as any)?.task_type || "manual",
+        customer: (task as any)?.customers?.name || "Unknown",
+        action: "skip",
+        outcome: "skipped",
+        agent: "Manual",
+        timestamp: new Date().toISOString()
+      });
+    });
+
     return NextResponse.json({ ok: true });
   }
 

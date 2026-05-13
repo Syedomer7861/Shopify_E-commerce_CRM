@@ -4,6 +4,10 @@ import { getSystemSettings, getShopifyAccessToken } from "./server-settings";
 let shopifyUnauthorizedUntilMs = 0;
 let hasLoggedUnauthorizedBackoff = false;
 
+let cachedSettings: any = null;
+let cachedToken: string | null = null;
+let cacheExpiry = 0;
+
 /**
  * Shopify Direct Bypass Utility
  * Calls Shopify Admin API to fetch unmasked customer data.
@@ -23,14 +27,21 @@ export async function fetchUnmaskedFromShopify(
     }
     hasLoggedUnauthorizedBackoff = false;
 
-    const settings = await getSystemSettings(supabase);
-    if (!settings?.shopify_store_domain || !settings?.shopify_api_key) {
+    // Cache settings and token for 5 minutes to speed up the loop
+    if (!cachedSettings || !cachedToken || now > cacheExpiry) {
+      cachedSettings = await getSystemSettings(supabase);
+      cachedToken = await getShopifyAccessToken(supabase);
+      cacheExpiry = now + 5 * 60 * 1000;
+    }
+
+    if (!cachedSettings?.shopify_store_domain || !cachedSettings?.shopify_api_key) {
       console.warn("Shopify Unmasking: Missing credentials in settings.");
       return null;
     }
 
-    const domain = settings.shopify_store_domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
-    const token = await getShopifyAccessToken(supabase);
+    const domain = cachedSettings.shopify_store_domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    const token = cachedToken;
+    if (!token) return null;
 
     // Use Shopify REST API to find the order by name (e.g., #1001)
     const url = `https://${domain}/admin/api/2024-04/orders.json?name=${encodeURIComponent(orderNumber)}&status=any`;

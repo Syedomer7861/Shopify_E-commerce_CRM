@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Zap, Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
+import { sendAdminNotification } from "@/lib/notifications";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("agent@cureforever.in");
@@ -17,79 +18,86 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
-      toast.error(error.message);
+    if (error || !data.user) {
+      toast.error(error?.message || "Login failed");
       setLoading(false);
       return;
     }
 
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .single();
+
     setLoading(false);
+    await sendAdminNotification(`👤 Agent Log-in: ${email}`, "info");
     toast.success("Welcome back!");
-    router.push("/dashboard");
+    
+    if (profile?.role === "manager") {
+      router.push("/manager");
+    } else {
+      router.push("/dashboard");
+    }
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Decorative Blur Backgrounds */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#2D1E6F]/40 rounded-full blur-[120px] animate-pulse-slow" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-400/20 rounded-full blur-[120px] animate-pulse-slow" />
+    <div className="min-h-screen bg-[#f7f4ed] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Editorial Decorative Background */}
+      <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none" 
+           style={{ backgroundImage: `radial-gradient(#1c1c1c 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
       
-      <div className="w-full max-w-[420px] relative z-10 animate-slide-up">
+      <div className="w-full max-w-[420px] relative z-10">
         {/* Logo Section */}
-        <div className="text-center mb-10">
-          <div className="group relative w-20 h-20 mx-auto mb-6">
-            <div className="absolute inset-0 bg-blue-400/30 rounded-3xl blur-xl group-hover:bg-blue-400/50 transition-all duration-500 animate-pulse" />
-            <div className="relative w-full h-full bg-[#2D1E6F] rounded-3xl flex items-center justify-center border border-white/10 shadow-2xl transition-transform hover:scale-110 duration-300">
-              <Zap className="w-10 h-10 text-white" strokeWidth={2.5} />
+        <div className="text-center mb-12 animate-fade-in">
+          <div className="group relative w-16 h-16 mx-auto mb-6">
+            <div className="absolute inset-0 bg-[#1c1c1c]/10 rounded-2xl blur-xl group-hover:bg-[#1c1c1c]/20 transition-all duration-500" />
+            <div className="relative w-full h-full bg-[#1c1c1c] rounded-2xl flex items-center justify-center shadow-2xl transition-transform hover:scale-105 duration-300">
+              <Zap className="w-8 h-8 text-[#f7f4ed]" strokeWidth={2} />
             </div>
           </div>
-          <h1 className="text-4xl font-display text-white tracking-tight mb-2">CureForever</h1>
+          <h1 className="text-3xl font-display text-[#1c1c1c] tracking-tight mb-2 font-black uppercase">CureForever</h1>
           <div className="flex items-center justify-center gap-2">
-            <div className="h-px w-8 bg-gradient-to-r from-transparent to-white/20" />
-            <span className="text-blue-200/60 text-[10px] font-bold uppercase tracking-[0.2em]">CRM</span>
-            <div className="h-px w-8 bg-gradient-to-l from-transparent to-white/20" />
+            <div className="h-px w-6 bg-[#1c1c1c]/10" />
+            <span className="text-[#1c1c1c]/40 text-[9px] font-black uppercase tracking-[0.3em]">Administrative Suite</span>
+            <div className="h-px w-6 bg-[#1c1c1c]/10" />
           </div>
         </div>
 
-        {/* Login Card - Glassmorphism */}
-        <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 border border-white/10 shadow-2xl relative overflow-hidden group">
-          {/* Subtle line across the card */}
-          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-          
-          <div className="mb-8">
-            <h2 className="text-2xl font-display text-white mb-1">Welcome Back</h2>
-            <p className="text-white/40 text-xs">Sign in to manage your e-commerce operations</p>
+        {/* Login Card */}
+        <div className="bg-white rounded-[2rem] p-10 border border-[#eceae4] shadow-[0_20px_50px_rgba(28,28,28,0.05)] relative overflow-hidden animate-slide-up">
+          <div className="mb-10">
+            <h2 className="text-xl font-bold text-[#1c1c1c] mb-1">Authorization Required</h2>
+            <p className="text-[#5f5f5d] text-[11px] font-medium uppercase tracking-wider">Please authenticate to access the command center</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest ml-1">Work Email</label>
-              <div className="relative">
-                <input 
-                  type="email" 
-                  className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400/30 transition-all text-sm" 
-                  placeholder="admin@cureforever.in"
-                  value={email} 
-                  onChange={e => setEmail(e.target.value)} 
-                  required 
-                />
-              </div>
+              <label className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest ml-1">Terminal ID (Email)</label>
+              <input 
+                type="email" 
+                className="w-full h-14 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-5 text-[#1c1c1c] placeholder:text-[#1c1c1c]/20 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c]/20 transition-all text-sm font-medium" 
+                placeholder="admin@cureforever.in"
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                required 
+              />
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
-                <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Password</label>
-                <button type="button" className="text-[10px] font-bold text-blue-200/40 hover:text-blue-200 transition-colors">Forgot?</button>
+                <label className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">Access Key</label>
+                <button type="button" className="text-[10px] font-bold text-[#1c1c1c]/40 hover:text-[#1c1c1c] transition-colors">Recover</button>
               </div>
               <div className="relative">
                 <input 
                   type={show ? "text" : "password"} 
-                  className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 pr-12 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400/30 transition-all text-sm" 
+                  className="w-full h-14 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-5 pr-12 text-[#1c1c1c] placeholder:text-[#1c1c1c]/20 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c]/20 transition-all text-sm font-medium" 
                   placeholder="••••••••"
                   value={password} 
                   onChange={e => setPassword(e.target.value)} 
@@ -98,7 +106,7 @@ export default function LoginPage() {
                 <button 
                   type="button" 
                   onClick={() => setShow(s => !s)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1c1c1c]/20 hover:text-[#1c1c1c] transition-colors"
                 >
                   {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -108,31 +116,28 @@ export default function LoginPage() {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full h-12 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:translate-y-0 flex items-center justify-center gap-2 group/btn"
+              className="w-full h-14 bg-[#1c1c1c] text-[#f7f4ed] font-black uppercase tracking-widest rounded-2xl shadow-xl hover:shadow-[#1c1c1c]/10 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-3"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-[#f7f4ed]/20 border-t-[#f7f4ed] rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>Initialize Dashboard</span>
+                  <span>Initialize Session</span>
                 </>
               )}
             </button>
           </form>
-
-          {/* Decorative Corner Accent */}
-          <div className="absolute bottom-[-10px] right-[-10px] w-12 h-12 bg-white/5 rounded-full blur-xl group-hover:bg-white/10 transition-all" />
         </div>
 
         {/* Footer Info */}
-        <div className="mt-12 flex flex-col items-center gap-4">
-          <div className="flex items-center gap-6">
-            <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">V_01 Stable</span>
-            <div className="w-1 h-1 rounded-full bg-white/10" />
-            <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Cloud Sync Active</span>
+        <div className="mt-12 text-center">
+          <div className="flex items-center justify-center gap-6 mb-4">
+            <span className="text-[9px] font-black text-[#1c1c1c]/20 uppercase tracking-[0.2em]">V_01 Stable</span>
+            <div className="w-1 h-1 rounded-full bg-[#1c1c1c]/10" />
+            <span className="text-[9px] font-black text-[#1c1c1c]/20 uppercase tracking-[0.2em]">Encrypted Session</span>
           </div>
-          <p className="text-[10px] text-white/10 text-center leading-relaxed">
-            &copy; 2026 CureForever
+          <p className="text-[9px] text-[#1c1c1c]/20 font-bold uppercase tracking-widest leading-relaxed">
+            &copy; 2026 CureForever Administrative Control
           </p>
         </div>
       </div>

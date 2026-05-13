@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase";
 
 function cleanNumber(val: any): number {
   if (typeof val === "number") return val;
@@ -110,7 +110,7 @@ export interface AbandonedRow {
 }
 
 export async function processAbandonedImport(rows: AbandonedRow[]) {
-  const supabase = createClient();
+  const supabase = createServerClient();
   const results = { imported: 0, skipped: 0, errors: [] as string[] };
 
   for (const row of rows) {
@@ -202,7 +202,7 @@ export async function processAbandonedImport(rows: AbandonedRow[]) {
 }
 
 export async function processImport(rows: ImportRow[]) {
-  const supabase = createClient();
+  const supabase = createServerClient();
   const results = { imported: 0, skipped: 0, errors: [] as string[] };
 
   for (const row of rows) {

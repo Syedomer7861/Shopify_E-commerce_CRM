@@ -1,9 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
+
+
 import { Search, UserPlus, Phone, AlertTriangle, RefreshCw, Trash2, CheckCircle, X, Filter } from "lucide-react";
 import Link from "next/link";
-import { PageHeader, SegmentBadge, Avatar, EmptyState, Modal } from "@/components/ui";
-import { AddCustomerModal } from "@/components/AddCustomerModal";
+import { PageHeader, SegmentBadge, Avatar, EmptyState, Modal, Pagination } from "@/components/ui";
+import dynamic from 'next/dynamic';
+const AddCustomerModal = dynamic(() => import("@/components/AddCustomerModal").then(mod => mod.AddCustomerModal), { 
+  loading: () => <div className="p-8 text-center"><RefreshCw className="w-6 h-6 animate-spin mx-auto text-gray-300" /></div>
+});
 import { createClient } from "@/lib/supabase";
 import { cn, formatDate } from "@/lib/utils";
 import type { Customer, CustomerSegment } from "@/types";
@@ -45,6 +50,32 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
+    const pollInterval = setInterval(() => {
+      debouncedRefresh();
+    }, 60000);
+
+    let refreshTimeout: NodeJS.Timeout;
+    const debouncedRefresh = () => {
+      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+                           document.activeElement?.tagName === 'TEXTAREA' ||
+                           document.querySelector('[role="dialog"]');
+      if (isInteracting) return;
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => fetchCustomers(true), 3000);
+    };
+
+    // ── Supabase real-time: refresh when customers are inserted or updated ──
+    const channel = supabase
+      .channel("customers-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "customers" }, debouncedRefresh)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "customers" }, debouncedRefresh)
+      .subscribe();
+
+    return () => {
+      clearInterval(pollInterval);
+      clearTimeout(refreshTimeout);
+      supabase.removeChannel(channel);
+    };
   }, [seg, search, page, minOrders, maxOrders, lastOrderStart, lastOrderEnd]);
 
   // Reset page when filters change
@@ -52,8 +83,8 @@ export default function CustomersPage() {
     setPage(1);
   }, [seg, search, minOrders, maxOrders, lastOrderStart, lastOrderEnd]);
 
-  async function fetchCustomers() {
-    setLoading(true);
+  async function fetchCustomers(silent = false) {
+    if (!silent) setLoading(true);
     let query = supabase.from("customers").select("*", { count: "exact" });
 
     if (seg !== "all") {
@@ -178,7 +209,7 @@ export default function CustomersPage() {
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setShowFilters(!showFilters)}
-              className={cn("btn-secondary flex items-center gap-1.5 py-1.5 px-4", showFilters && "bg-[#2D1E6F]/10 border-[#2D1E6F] text-[#2D1E6F]")}
+              className={cn("btn-secondary flex items-center gap-1.5 py-1.5 px-4", showFilters && "bg-[#1c1c1c] text-white border-[#1c1c1c]")}
             >
               <Filter className="w-3.5 h-3.5" />
               {showFilters ? "Hide Filters" : "Filters"}
@@ -217,26 +248,26 @@ export default function CustomersPage() {
 
       {/* Advanced Filter Panel */}
       {showFilters && (
-        <div className="card p-4 mb-5 border-[#2D1E6F]/10 animate-slide-down bg-white shadow-lg overflow-visible z-10">
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="card p-5 mb-6 animate-slide-down">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Min Orders</label>
-              <input type="number" placeholder="0" className="input text-xs" value={minOrders} onChange={e => setMinOrders(e.target.value)} />
+              <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-2 opacity-60">Min Orders</label>
+              <input type="number" placeholder="0" className="input text-xs bg-[#fcfbf8]" value={minOrders} onChange={e => setMinOrders(e.target.value)} />
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Max Orders</label>
-              <input type="number" placeholder="999" className="input text-xs" value={maxOrders} onChange={e => setMaxOrders(e.target.value)} />
+              <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-2 opacity-60">Max Orders</label>
+              <input type="number" placeholder="999" className="input text-xs bg-[#fcfbf8]" value={maxOrders} onChange={e => setMaxOrders(e.target.value)} />
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Last Order From</label>
-              <input type="date" className="input text-xs" value={lastOrderStart} onChange={e => setLastOrderStart(e.target.value)} />
+              <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-2 opacity-60">Last Order From</label>
+              <input type="date" className="input text-xs bg-[#fcfbf8]" value={lastOrderStart} onChange={e => setLastOrderStart(e.target.value)} />
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Last Order To</label>
-              <input type="date" className="input text-xs" value={lastOrderEnd} onChange={e => setLastOrderEnd(e.target.value)} />
+              <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-2 opacity-60">Last Order To</label>
+              <input type="date" className="input text-xs bg-[#fcfbf8]" value={lastOrderEnd} onChange={e => setLastOrderEnd(e.target.value)} />
             </div>
           </div>
-          <div className="flex justify-end mt-4 pt-4 border-t border-gray-100 gap-2">
+          <div className="flex justify-end mt-6 pt-6 border-t border-[#eceae4] gap-4">
             <button 
               onClick={() => {
                 setMinOrders("");
@@ -245,32 +276,32 @@ export default function CustomersPage() {
                 setLastOrderEnd("");
                 setSeg("all");
               }}
-              className="text-xs text-rose-500 font-bold hover:underline py-2 px-3"
+              className="text-[10px] text-rose-500 font-bold uppercase tracking-widest hover:underline"
             >
-              Reset All
+              Clear All
             </button>
             <button 
               onClick={() => {}}
-              className="btn-primary py-2 px-8 text-xs"
+              className="btn-primary py-2 px-8 text-[10px] font-bold uppercase tracking-widest"
             >
-              Apply Filters
+              Apply Filter
             </button>
           </div>
         </div>
       )}
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input type="text" placeholder="Search by name, phone or email..." className="input pl-9"
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#5f5f5d]" />
+          <input type="text" placeholder="Search by name, phone or email..." className="input pl-9 text-xs"
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1 overflow-x-auto scroller-hide">
+        <div className="flex items-center gap-1 bg-[#eceae4]/30 rounded-xl border border-[#eceae4] p-1 overflow-x-auto scroller-hide">
           {SEGS.map(s => (
             <button key={s.value} onClick={() => setSeg(s.value)}
-              className={cn("px-4 py-2 rounded-md text-xs font-bold transition-all whitespace-nowrap",
-                seg === s.value ? "bg-[#2D1E6F] text-white shadow-sm" : "text-gray-500 hover:text-[#2D1E6F]"
+              className={cn("px-5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap",
+                seg === s.value ? "bg-[#1c1c1c] text-white shadow-md" : "text-[#5f5f5d] hover:bg-[#eceae4]/50"
               )}>
               {s.label}
             </button>
@@ -279,31 +310,35 @@ export default function CustomersPage() {
       </div>
 
       {/* Segment summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-10">
         {[
-          { label: "Repeat", count: stats.repeat, color: "border-l-blue-600" },
+          { label: "Repeat", count: stats.repeat, color: "border-l-[#1c1c1c]" },
           { label: "One-time", count: stats.one_time, color: "border-l-amber-500" },
           { label: "Inactive", count: stats.inactive, color: "border-l-rose-500" },
-          { label: "RTO", count: stats.rto, color: "border-l-orange-500" },
+          { label: "RTO Flag", count: stats.rto, color: "border-l-orange-500" },
         ].map(s => (
-          <div key={s.label} className={cn("card p-4 border-l-4", s.color)}>
-            <div className="text-xl font-bold text-[#2D1E6F]">{s.count}</div>
-            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">{s.label}</div>
+          <div key={s.label} className={cn("card p-6 border-l-4", s.color)}>
+            <div className="text-3xl font-bold text-[#1c1c1c] tracking-tighter mb-2">{s.count}</div>
+            <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Table */}
-      <div className="table-container">
-        <div className="grid grid-cols-[40px_2fr_1.5fr_1fr_1fr_1fr_80px] table-header">
+      <div className="card overflow-hidden">
+        <div className="grid grid-cols-[40px_2fr_1.5fr_1fr_1fr_1fr_80px] bg-[#eceae4]/30 border-b border-[#eceae4] px-4 py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">
           <div className="flex items-center justify-center">
-            <input type="checkbox" className="checkbox w-4 h-4" 
+            <input type="checkbox" className="checkbox w-3.5 h-3.5" 
               checked={selectedIds.length === customers.length && customers.length > 0} 
               onChange={toggleSelectAll} 
             />
           </div>
-          <span>Customer</span><span>Phone / Email</span><span>Segment</span>
-          <span>Orders</span><span>Last Order</span><span>Actions</span>
+          <span>Customer</span>
+          <span>Contact</span>
+          <span>Status</span>
+          <span>Orders</span>
+          <span>Last Active</span>
+          <span>Actions</span>
         </div>
         {loading ? (
           <div className="p-12 text-center text-gray-400 text-sm">Searching...</div>
@@ -311,9 +346,9 @@ export default function CustomersPage() {
           <EmptyState icon={<Search className="w-5 h-5" />} title="No customers found" desc="Try a different search" />
         ) : (
           customers.map(c => (
-            <div key={c.id} className={cn("table-row grid grid-cols-[40px_2fr_1.5fr_1fr_1fr_1fr_80px]", selectedIds.includes(c.id) && "bg-[#2D1E6F]/5")}>
+            <div key={c.id} className={cn("grid grid-cols-[40px_2fr_1.5fr_1fr_1fr_1fr_80px] px-4 py-4 border-b border-[#eceae4]/50 group transition-colors", selectedIds.includes(c.id) ? "bg-[#eceae4]/40" : "hover:bg-[rgba(28,28,28,0.02)]")}>
               <div className="flex items-center justify-center">
-                <input type="checkbox" className="checkbox w-4 h-4" 
+                <input type="checkbox" className="checkbox w-3.5 h-3.5" 
                   checked={selectedIds.includes(c.id)} 
                   onChange={() => toggleSelect(c.id)} 
                 />
@@ -321,25 +356,25 @@ export default function CustomersPage() {
               <Link href={`/customers/${c.id}`} className="flex items-center gap-3 min-w-0">
                 <Avatar name={c.name} size="sm" />
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-[#2D1E6F] truncate hover:underline">{c.name}</div>
-                  {c.rto_flag && <div className="text-[10px] text-orange-600 font-bold flex items-center gap-0.5 mt-0.5"><AlertTriangle className="w-2.5 h-2.5" /> RTO flagged</div>}
+                  <div className="text-xs font-bold text-[#1c1c1c] truncate hover:underline">{c.name}</div>
+                  {c.rto_flag && <div className="text-[9px] text-rose-600 font-bold uppercase tracking-widest flex items-center gap-1 mt-0.5"><AlertTriangle className="w-2.5 h-2.5" /> RTO Alert</div>}
                 </div>
               </Link>
               <div className="flex flex-col justify-center min-w-0">
-                <a href={`tel:${c.phone}`} className="text-xs text-gray-700 hover:text-blue-600 transition-colors">{c.phone}</a>
+                <a href={`tel:${c.phone}`} className="text-xs font-bold text-[#1c1c1c] hover:underline">{c.phone}</a>
                 {c.email && (
-                  <a href={`mailto:${c.email}`} className="text-[11px] text-gray-400 truncate hover:text-blue-600 transition-colors">
+                  <a href={`mailto:${c.email}`} className="text-[10px] text-[#5f5f5d] font-bold truncate opacity-50">
                     {c.email}
                   </a>
                 )}
               </div>
               <div className="flex items-center"><SegmentBadge segment={c.segment} rto={c.rto_flag} /></div>
-              <div className="flex items-center text-sm text-gray-700">{c.total_orders} orders</div>
-              <div className="flex items-center text-xs text-gray-500">{c.last_order_date ? formatDate(c.last_order_date) : "—"}</div>
+              <div className="flex items-center text-xs font-bold text-[#1c1c1c]">{c.total_orders} Orders</div>
+              <div className="flex items-center text-[10px] text-[#5f5f5d] font-bold">{c.last_order_date ? formatDate(c.last_order_date) : "—"}</div>
               <div className="flex items-center gap-2">
                 <a href={`tel:${c.phone}`} 
-                  className="w-8 h-8 rounded-lg bg-[#2D1E6F]/5 hover:bg-[#2D1E6F]/10 flex items-center justify-center transition-colors">
-                  <Phone className="w-4 h-4 text-[#2D1E6F]" />
+                  className="w-7 h-7 rounded-lg bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">
+                  <Phone className="w-3.5 h-3.5" />
                 </a>
               </div>
             </div>
@@ -347,50 +382,12 @@ export default function CustomersPage() {
         )}
       </div>
       
-      {/* Pagination Controls */}
-      {totalCount > PAGE_SIZE && (
-        <div className="flex items-center justify-between mt-8 pb-4">
-          <p className="text-xs text-gray-500">
-            Showing <strong>{(page - 1) * PAGE_SIZE + 1}</strong> to <strong>{Math.min(page * PAGE_SIZE, totalCount)}</strong> of <strong>{totalCount}</strong> customers
-          </p>
-          <div className="flex items-center gap-1">
-            <button 
-              onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
-              disabled={page === 1}
-              className="btn-secondary px-3 py-1.5 disabled:opacity-50 text-xs"
-            >
-              Previous
-            </button>
-            <div className="flex items-center gap-1 mx-2">
-              {[...Array(Math.min(5, Math.ceil(totalCount / PAGE_SIZE)))].map((_, i) => {
-                const pageNum = i + 1;
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => { setPage(pageNum); window.scrollTo(0, 0); }}
-                    className={cn(
-                      "w-8 h-8 rounded-md text-xs font-bold transition-all",
-                      page === pageNum ? "bg-[#2D1E6F] text-white shadow-sm" : "hover:bg-gray-100 text-gray-500"
-                    )}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-              {Math.ceil(totalCount / PAGE_SIZE) > 5 && (
-                 <span className="text-gray-400 text-xs px-1">...</span>
-              )}
-            </div>
-            <button 
-              onClick={() => { setPage(p => Math.min(Math.ceil(totalCount / PAGE_SIZE), p + 1)); window.scrollTo(0, 0); }}
-              disabled={page >= Math.ceil(totalCount / PAGE_SIZE)}
-              className="btn-secondary px-3 py-1.5 disabled:opacity-50 text-xs"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination 
+        current={page} 
+        total={totalCount} 
+        pageSize={PAGE_SIZE} 
+        onChange={(p) => { setPage(p); window.scrollTo(0, 0); }} 
+      />
 
       <Modal open={deleteModal} onClose={() => setDeleteModal(false)} title="Confirm Bulk Deletion"
         footer={<>

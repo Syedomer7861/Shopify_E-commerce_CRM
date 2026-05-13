@@ -1,13 +1,14 @@
 "use client";
 import { cn, SEGMENT_CONFIG, DELIVERY_CONFIG, TASK_TYPE_CONFIG, TASK_STATUS_CONFIG, initials } from "@/lib/utils";
 import type { CustomerSegment, DeliveryStatus, TaskType, TaskStatus } from "@/types";
-import { Download, TrendingUp, TrendingDown, Loader2, ShoppingBag, BarChart3, ClipboardCheck, Users, Info, Sun, Moon, Clock, Truck, Zap, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Download, TrendingUp, TrendingDown, Loader2, ShoppingBag, BarChart3, ClipboardCheck, Users, Info, Sun, Moon, Clock, Truck, Zap, CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
+import Link from "next/link";
 
 export function SegmentBadge({ segment, rto }: { segment: CustomerSegment; rto?: boolean }) {
-  if (rto) return <span className="badge bg-orange-50 border-orange-200 text-orange-700 animate-in fade-in zoom-in duration-300">⚠ RTO</span>;
+  if (rto) return <span className="badge bg-amber-50 border-amber-200 text-amber-700">⚠ RTO</span>;
   const c = SEGMENT_CONFIG[segment];
-  return <span className={cn("badge animate-in fade-in zoom-in duration-300", c.bg, c.color)}>{c.label}</span>;
+  return <span className={cn("badge", c.bg, c.color)}>{c.label}</span>;
 }
 
 export function DeliveryBadge({ status }: { status: DeliveryStatus }) {
@@ -41,7 +42,10 @@ export function TaskStatusBadge({ status }: { status: TaskStatus }) {
 
 export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
   const sz = { sm: "w-7 h-7 text-[10px]", md: "w-9 h-9 text-xs", lg: "w-12 h-12 text-sm" }[size];
-  const colors = ["bg-blue-100 text-blue-700", "bg-violet-100 text-violet-700", "bg-sky-100 text-sky-700", "bg-amber-100 text-amber-700", "bg-rose-100 text-rose-700", "bg-cyan-100 text-cyan-700"];
+  const colors = [
+    "bg-[#eceae4] text-[#1c1c1c]", 
+    "bg-[#f7f4ed] border border-[#eceae4] text-[#1c1c1c]"
+  ];
   const charCode = name?.charCodeAt(0) || 0;
   const color = colors[charCode % colors.length];
   return (
@@ -51,10 +55,8 @@ export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md"
   );
 }
 
-import Link from "next/link";
-
 export function StatCard({ 
-  label, value, sub, accent, className, href, trend, trendValue, sparklineData 
+  label, value, sub, accent, className, href, trend, trendValue, sparklineData, icon, variant = "default"
 }: { 
   label: string; 
   value: string | number; 
@@ -65,65 +67,105 @@ export function StatCard({
   trend?: "up" | "down" | "neutral";
   trendValue?: string | number;
   sparklineData?: { value: number }[];
+  icon?: React.ReactNode;
+  variant?: "default" | "glass" | "gradient";
 }) {
+  const isGradient = variant === "gradient";
+  const isGlass = variant === "glass";
+
   const content = (
-    <div className="relative overflow-hidden h-full">
-      <div className="flex items-center justify-between mb-2 relative z-10">
-        <div className="text-[11px] text-gray-500 font-bold uppercase tracking-wider">{label}</div>
-        {trend && (
-          <div className={cn(
-            "flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm",
-            trend === "up" ? "bg-blue-50 text-[#2D1E6F] border-[#2D1E6F]/20" : 
-            trend === "down" ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-gray-50 text-gray-500 border-gray-100"
-          )}>
-            {trend === "up" ? <TrendingUp className="w-2.5 h-2.5" /> : 
-             trend === "down" ? <TrendingDown className="w-2.5 h-2.5" /> : null}
-            {trendValue}
-          </div>
-        )}
+    <div className="relative overflow-hidden h-full flex flex-col">
+      <div className="flex flex-col gap-2 mb-4 relative z-10">
+        <div className="flex items-center justify-between">
+          {icon && (
+            <div className={cn(
+              "w-8 h-8 rounded-xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110",
+              "bg-[#f7f4ed] border border-[#eceae4] text-[#1c1c1c]"
+            )}>
+              {icon}
+            </div>
+          )}
+          {trend && (
+            <div className={cn(
+              "flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all duration-500",
+              trend === "up" ? "bg-emerald-50 text-emerald-700 border-emerald-100" : 
+              trend === "down" ? "bg-rose-50 text-rose-700 border-rose-100" : "bg-[#f7f4ed] text-[#5f5f5d] border-[#eceae4]"
+            )}>
+              {trend === "up" ? <TrendingUp className="w-2.5 h-2.5" /> : 
+               trend === "down" ? <TrendingDown className="w-2.5 h-2.5" /> : null}
+              {trendValue}
+            </div>
+          )}
+        </div>
+        <div className={cn(
+          "text-[10px] font-black uppercase tracking-[0.15em] opacity-60",
+          "text-[#5f5f5d]"
+        )}>{label}</div>
       </div>
-      <div className={cn("relative flex items-end justify-between z-10", trend ? "mt-3" : "mt-2")}>
-        <div className="flex flex-col">
-          <div className={cn("text-3xl font-bold tracking-tight leading-none mb-1.5", accent || "text-[#2D1E6F]")}>{value}</div>
-          {sub && <div className="text-[11px] text-gray-500 font-medium flex items-center gap-1.5">
-            <div className={cn("w-1.5 h-1.5 rounded-full", accent ? accent.replace('text-', 'bg-') : "bg-[#2D1E6F]/20")} />
-            {sub}
-          </div>}
+      
+      <div className="flex-1 flex flex-col justify-end relative z-10">
+        <div className={cn(
+          "font-[900] tracking-tighter leading-none mb-1 font-display transition-all duration-500", 
+          String(value).length > 8 ? "text-xl" : "text-[32px]",
+          "text-[#1c1c1c]"
+        )}>
+          {value}
         </div>
         
-        {sparklineData && sparklineData.length > 0 && (
-          <div className="h-10 w-24 opacity-60">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={sparklineData}>
-                <Area 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke={trend === "down" ? "#ef4444" : "#2D1E6F"} 
-                  fill={trend === "down" ? "url(#colorRose)" : "url(#colorBlue)"} 
-                  strokeWidth={2} 
-                  dot={false} 
-                />
-                <defs>
-                  <linearGradient id="colorBlue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2D1E6F" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#2D1E6F" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorRose" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        )}
+        <div className="flex items-center justify-between mt-1">
+          {sub && (
+            <div className={cn(
+              "text-[10px] font-black uppercase tracking-wider opacity-60",
+              "text-[#5f5f5d]"
+            )}>
+              {sub}
+            </div>
+          )}
+          
+          {href && (
+            <div className={cn(
+              "transition-all duration-500",
+              "text-[#1c1c1c] opacity-0 group-hover:opacity-100 translate-x-1 group-hover:translate-x-0"
+            )}>
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          )}
+        </div>
       </div>
+      
+      {sparklineData && sparklineData.length > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 h-16 w-full opacity-20 pointer-events-none transition-opacity duration-500 group-hover:opacity-40">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={sparklineData}>
+              <Area 
+                type="monotone" 
+                dataKey="value" 
+                stroke={isGradient ? "rgba(255,255,255,0.4)" : accent || "#1c1c1c"} 
+                fill={isGradient ? "url(#colorWhite)" : "url(#colorAccent)"} 
+                strokeWidth={2} 
+                dot={false} 
+              />
+              <defs>
+                <linearGradient id="colorAccent" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={accent || "#1c1c1c"} stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor={accent || "#1c1c1c"} stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorWhite" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ffffff" stopOpacity={0.2}/>
+                  <stop offset="95%" stopColor="#ffffff" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 
   const containerClasses = cn(
-    "card p-6 group transition-all duration-300 relative",
-    href && "hover:border-[#2D1E6F]/30 hover:shadow-md cursor-pointer",
+    "card p-6 group transition-all duration-500 relative overflow-hidden",
+    "hover:border-[rgba(28,28,28,0.4)]",
+    href && "cursor-pointer",
     className
   );
 
@@ -145,9 +187,9 @@ export function StatCard({
 export function EmptyState({ icon, title, desc }: { icon: React.ReactNode; title: string; desc?: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center mb-4 text-gray-400 border border-gray-100">{icon}</div>
-      <div className="text-sm font-bold text-gray-900">{title}</div>
-      {desc && <div className="text-xs text-gray-500 mt-1.5 max-w-[240px] leading-relaxed">{desc}</div>}
+      <div className="w-14 h-14 rounded-2xl bg-[#eceae4] flex items-center justify-center mb-4 text-[#1c1c1c] border border-[#eceae4]">{icon}</div>
+      <div className="text-sm font-bold text-[#1c1c1c]">{title}</div>
+      {desc && <div className="text-xs text-[#5f5f5d] mt-1.5 max-w-[240px] leading-relaxed">{desc}</div>}
     </div>
   );
 }
@@ -158,18 +200,18 @@ export function AccessDenied({ title = "Access Restricted", desc = "You do not h
       <div className="w-14 h-14 rounded-2xl bg-rose-50 flex items-center justify-center mb-4 text-rose-500 border border-rose-100">
         <Info className="w-6 h-6" />
       </div>
-      <div className="text-sm font-bold text-gray-900">{title}</div>
-      <div className="text-xs text-gray-500 mt-1.5 max-w-[280px] leading-relaxed">{desc}</div>
+      <div className="text-sm font-bold text-[#1c1c1c]">{title}</div>
+      <div className="text-xs text-[#5f5f5d] mt-1.5 max-w-[280px] leading-relaxed">{desc}</div>
     </div>
   );
 }
 
 export function Modal({ 
-  open, onClose, title, children, footer, maxWidth = "max-w-md" 
+  open, onClose, title, children, footer, maxWidth = "max-w-xl" 
 }: {
   open: boolean; 
   onClose: () => void; 
-  title: string;
+  title: React.ReactNode;
   children: React.ReactNode; 
   footer?: React.ReactNode;
   maxWidth?: string;
@@ -177,14 +219,14 @@ export function Modal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#2D1E6F]/20 backdrop-blur-sm" onClick={onClose} />
-      <div className={cn("relative bg-white rounded-xl shadow-2xl w-full animate-slide-up border border-gray-100", maxWidth)}>
-        <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
-          <h3 className="font-bold text-gray-900 uppercase tracking-wider text-xs">{title}</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">✕</button>
+      <div className="absolute inset-0 bg-[#1c1c1c]/40 backdrop-blur-[2px] transition-all" onClick={onClose} />
+      <div className={cn("relative bg-[#f7f4ed] rounded-xl shadow-2xl w-full animate-slide-up border border-[#eceae4]", maxWidth)}>
+        <div className="px-6 py-5 border-b border-[#eceae4] flex items-center justify-between">
+          <h3 className="section-title text-sm">{title}</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-[#eceae4] flex items-center justify-center text-[#5f5f5d] hover:text-[#1c1c1c] transition-colors">✕</button>
         </div>
         <div className="px-6 py-6 overflow-y-auto max-h-[80vh]">{children}</div>
-        {footer && <div className="px-6 py-5 border-t border-gray-50 flex items-center justify-end gap-3 bg-gray-50/30 rounded-b-xl">{footer}</div>}
+        {footer && <div className="px-6 py-5 border-t border-[#eceae4] flex items-center justify-end gap-3 bg-[#eceae4]/20 rounded-b-xl">{footer}</div>}
       </div>
     </div>
   );
@@ -192,12 +234,12 @@ export function Modal({
 
 export function PageHeader({ title, subtitle, actions }: { title: React.ReactNode; subtitle?: React.ReactNode; actions?: React.ReactNode }) {
   return (
-    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-8">
+    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-10">
       <div>
         <h1 className="page-title">{title}</h1>
         {subtitle && <div className="page-subtitle">{subtitle}</div>}
       </div>
-      {actions && <div className="flex items-center gap-3">{actions}</div>}
+      {actions && <div className="flex items-center gap-3 pt-2">{actions}</div>}
     </div>
   );
 }
@@ -217,23 +259,23 @@ export function SyncProgressBar({
     <div className="w-full animate-in fade-in slide-in-from-top-4 duration-500">
       <div className="mb-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {!isComplete && !error && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2D1E6F]" />}
-          {isComplete && <CheckCircle className="w-3.5 h-3.5 text-blue-600 animate-in zoom-in" />}
+          {!isComplete && !error && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1c1c1c]" />}
+          {isComplete && <CheckCircle className="w-3.5 h-3.5 text-emerald-600 animate-in zoom-in" />}
           {error && <AlertCircle className="w-3.5 h-3.5 text-rose-500" />}
           <span className={cn(
-            "text-[11px] font-bold uppercase tracking-wider",
-            error ? "text-rose-500" : isComplete ? "text-blue-700" : "text-gray-500"
+            "text-[10px] font-bold uppercase tracking-widest",
+            error ? "text-rose-500" : isComplete ? "text-emerald-700" : "text-[#5f5f5d]"
           )}>
             {message || (isComplete ? "Sync Complete" : "Synchronizing...")}
           </span>
         </div>
-        <span className="text-[11px] font-bold text-[#2D1E6F] tabular-nums">{Math.round(progress)}%</span>
+        <span className="text-[10px] font-bold text-[#1c1c1c] tabular-nums">{Math.round(progress)}%</span>
       </div>
-      <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden border border-gray-200">
+      <div className="h-1.5 w-full bg-[#eceae4] rounded-full overflow-hidden">
         <div 
           className={cn(
             "h-full transition-all duration-500 ease-out relative",
-            error ? "bg-rose-500" : isComplete ? "bg-blue-600" : "bg-[#2D1E6F]"
+            error ? "bg-rose-500" : isComplete ? "bg-emerald-600" : "bg-[#1c1c1c]"
           )}
           style={{ width: `${progress}%` }}
         >
@@ -242,11 +284,6 @@ export function SyncProgressBar({
           )}
         </div>
       </div>
-      {!isComplete && !error && (
-        <div className="mt-1.5 text-[9px] text-gray-400 font-medium italic text-right">
-          Estimated: {Math.max(1, Math.round((100 - progress) / 5))}s remaining
-        </div>
-      )}
     </div>
   );
 }
@@ -258,3 +295,105 @@ const CheckCircle = ({ className }: { className?: string }) => (
 const AlertCircle = ({ className }: { className?: string }) => (
   <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
 );
+export function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <h2 className="section-title text-sm mb-4 flex items-center gap-2">{children}</h2>;
+}
+
+export function BarRow({ label, value, max, color = "bg-[#1c1c1c]", suffix = "" }: { label: string; value: number; max: number; color?: string; suffix?: string }) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  return (
+    <div className="flex items-center gap-3 text-sm">
+      <div className="w-32 text-[10px] text-[#5f5f5d] text-right flex-shrink-0 truncate">{label}</div>
+      <div className="flex-1 h-3 bg-[#eceae4] rounded-full overflow-hidden">
+        <div className={cn("h-full rounded-full transition-all duration-500", color)} style={{ width: `${pct}%` }} />
+      </div>
+      <div className="w-20 text-[10px] font-bold text-[#1c1c1c] text-right flex-shrink-0">{Math.round(value).toLocaleString()}{suffix}</div>
+    </div>
+  );
+}
+
+export function Pagination({ 
+  current, 
+  total, 
+  pageSize, 
+  onChange 
+}: { 
+  current: number; 
+  total: number; 
+  pageSize: number; 
+  onChange: (page: number) => void; 
+}) {
+  const totalPages = Math.ceil(total / pageSize);
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-between py-6 mt-6 border-t border-[#eceae4]/60">
+      <p className="text-[10px] font-black text-[#5f5f5d] uppercase tracking-[0.2em] opacity-40">
+        Showing <span className="text-[#1c1c1c]">{(current - 1) * pageSize + 1}</span> to <span className="text-[#1c1c1c]">{Math.min(current * pageSize, total)}</span> of <span className="text-[#1c1c1c]">{total}</span> entries
+      </p>
+      <div className="flex items-center gap-2">
+        <button 
+          onClick={() => onChange(Math.max(1, current - 1))}
+          disabled={current === 1}
+          className="w-9 h-9 flex items-center justify-center bg-[#f7f4ed] border border-[#eceae4] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white disabled:opacity-20 transition-all shadow-sm active:scale-95"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        
+        <div className="flex items-center gap-1.5 px-2">
+          {(() => {
+            const maxButtons = 5;
+            let startPage = Math.max(1, current - Math.floor(maxButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+            
+            if (endPage - startPage + 1 < maxButtons) {
+              startPage = Math.max(1, endPage - maxButtons + 1);
+            }
+
+            const pages = [];
+            for (let i = startPage; i <= endPage; i++) {
+              pages.push(i);
+            }
+
+            return (
+              <>
+                {startPage > 1 && (
+                  <>
+                    <button onClick={() => onChange(1)} className="w-9 h-9 rounded-xl text-[10px] font-black bg-[#f7f4ed] text-[#5f5f5d] border border-[#eceae4] hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">1</button>
+                    {startPage > 2 && <span className="text-[#5f5f5d] px-1 text-[10px] font-black opacity-30">...</span>}
+                  </>
+                )}
+                {pages.map(p => (
+                  <button
+                    key={p}
+                    onClick={() => onChange(p)}
+                    className={cn(
+                      "w-9 h-9 rounded-xl text-[10px] font-black transition-all shadow-sm",
+                      current === p ? "bg-[#1c1c1c] text-white ring-4 ring-[#1c1c1c]/10" : "bg-[#f7f4ed] text-[#5f5f5d] border border-[#eceae4] hover:border-[#1c1c1c] hover:text-[#1c1c1c]"
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))}
+                {endPage < totalPages && (
+                  <>
+                    {endPage < totalPages - 1 && <span className="text-[#5f5f5d] px-1 text-[10px] font-black opacity-30">...</span>}
+                    <button onClick={() => onChange(totalPages)} className="w-9 h-9 rounded-xl text-[10px] font-black bg-[#f7f4ed] text-[#5f5f5d] border border-[#eceae4] hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">{totalPages}</button>
+                  </>
+                )}
+              </>
+            );
+          })()}
+        </div>
+
+        <button 
+          onClick={() => onChange(Math.min(totalPages, current + 1))}
+          disabled={current === totalPages}
+          className="w-9 h-9 flex items-center justify-center bg-[#f7f4ed] border border-[#eceae4] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white disabled:opacity-20 transition-all shadow-sm active:scale-95"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}

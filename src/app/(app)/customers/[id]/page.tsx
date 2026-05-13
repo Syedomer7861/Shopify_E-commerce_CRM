@@ -3,7 +3,7 @@ import { useState, useEffect, use } from "react";
 import { ArrowLeft, Phone, Mail, ShoppingBag, PhoneCall, CheckSquare, FileText, AlertTriangle, RefreshCw, ToggleLeft, ToggleRight, MapPin, Home, Info, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Avatar, SegmentBadge, DeliveryBadge, TaskTypeBadge, TaskStatusBadge, Modal } from "@/components/ui";
+import { Avatar, SegmentBadge, DeliveryBadge, TaskTypeBadge, TaskStatusBadge, Modal, Pagination } from "@/components/ui";
 import ShiprocketOrderView from "@/components/ShiprocketOrderView";
 import { createClient } from "@/lib/supabase";
 import { cn, formatDate, formatDateTime, timeAgo, formatCurrency } from "@/lib/utils";
@@ -11,8 +11,7 @@ import toast from "react-hot-toast";
 import type { Customer, Order, Task, CallLog, AuditLog } from "@/types";
 import { logAuditEvent } from "@/lib/audit";
 
-export default function CustomerProfile({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
-  const params = use(paramsPromise);
+export default function CustomerProfile({ params }: { params: { id: string } }) {
   const id = params.id;
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -26,8 +25,14 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
   const [clearRtoModal, setClearRtoModal] = useState(false);
   const [unmasking, setUnmasking] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const supabase = createClient();
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [tab]);
 
   useEffect(() => {
     fetchCustomerData();
@@ -97,6 +102,14 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
       action: "note_update",
       summary: `Updated notes for ${customer?.name}`,
     });
+
+    // [ADMIN NOTIFY]
+    const { sendAdminNotification } = await import("@/lib/notifications");
+    await sendAdminNotification(
+      `📝 *Note Updated*\n*Agent:* ${audits[0]?.actor_email || "Agent"}\n*Customer:* ${customer?.name}\n*Note:* ${notes.slice(0, 50)}${notes.length > 50 ? "..." : ""}`,
+      "info"
+    );
+
     toast.success("Note saved");
   }
 
@@ -116,6 +129,14 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
       action: "clear_rto",
       summary: `Cleared RTO flag for ${customer?.name || "customer"}`,
     });
+
+    // [ADMIN NOTIFY]
+    const { sendAdminNotification } = await import("@/lib/notifications");
+    await sendAdminNotification(
+      `🛡️ *RTO Flag Cleared*\n*Agent:* ${audits[0]?.actor_email || "Agent"}\n*Customer:* ${customer?.name}`,
+      "alert"
+    );
+
     toast.success("RTO flag cleared");
   }
 
@@ -136,6 +157,13 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
       if (data.success && data.unmaskedCount > 0) {
         toast.success("Contact Unmasked Successfully!", { id: "single-unmask" });
         
+        // [ADMIN NOTIFY]
+        const { sendAdminNotification } = await import("@/lib/notifications");
+        await sendAdminNotification(
+          `✨ *Contact Unmasked (Healed)*\n*Agent:* ${audits[0]?.actor_email || "Agent"}\n*Customer:* ${customer?.name}`,
+          "info"
+        );
+
         // 🚀 SMART REDIRECT: If unmasking resulted in a merge, go to the new "Golden Record" ID
         if (data.redirectId && data.redirectId !== id) {
             router.push(`/customers/${data.redirectId}`);
@@ -155,7 +183,7 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
   if (loading || !customer) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
-        <RefreshCw className="w-8 h-8 text-[#2D1E6F] animate-spin" />
+        <RefreshCw className="w-8 h-8 text-[#1c1c1c] animate-spin" />
       </div>
     );
   }
@@ -201,9 +229,14 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
     })),
   ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
+  const paginatedTimeline = timeline.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const paginatedOrders = orders.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const paginatedCalls = calls.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const paginatedTasks = tasks.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
   return (
     <div className="animate-fade-in">
-      <Link href="/customers" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#2D1E6F] mb-4 transition-colors">
+      <Link href="/customers" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#1c1c1c] mb-4 transition-colors">
         <ArrowLeft className="w-4 h-4" /> Back to Customers
       </Link>
 
@@ -213,7 +246,7 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
           <Avatar name={customer.name} size="lg" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-display text-[#2D1E6F]">{customer.name}</h1>
+              <h1 className="text-xl font-display text-[#1c1c1c]">{customer.name}</h1>
               <SegmentBadge segment={customer.segment} rto={customer.rto_flag} />
               {customer.rto_flag && (
                 <button onClick={() => setClearRtoModal(true)} className="text-xs text-orange-600 hover:text-orange-800 underline">
@@ -233,7 +266,7 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
                       disabled={unmasking}
                       className={cn(
                         "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-black uppercase transition-all",
-                        unmasking ? "bg-gray-100 text-gray-400" : "bg-[#2D1E6F]/10 text-[#2D1E6F] hover:bg-[#2D1E6F] hover:text-white"
+                        unmasking ? "bg-gray-100 text-gray-400" : "bg-[#1c1c1c]/10 text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white"
                       )}
                     >
                       {unmasking ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : <Smartphone className="w-2.5 h-2.5" />}
@@ -253,7 +286,7 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
                 </a>
               )}
               {/* WhatsApp Toggle */}
-              <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
+              <div className="flex items-center gap-2 px-3 py-1 bg-[#eceae4] text-[#1c1c1c] rounded-full border border-[#eceae4]">
                 <span className="text-[10px] font-bold uppercase tracking-wider">WhatsApp Reminders</span>
                 <button 
                   onClick={async () => {
@@ -270,14 +303,22 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
                       action: "whatsapp_toggle",
                       summary: `${newValue ? "Enabled" : "Disabled"} WhatsApp reminders for ${customer.name}`,
                     });
+
+                    // [ADMIN NOTIFY]
+                    const { sendAdminNotification } = await import("@/lib/notifications");
+                    await sendAdminNotification(
+                      `🔔 *WhatsApp Reminders*\n*Agent:* ${audits[0]?.actor_email || "Agent"}\n*Customer:* ${customer.name}\n*Status:* ${newValue ? "✅ ENABLED" : "❌ DISABLED"}`,
+                      "info"
+                    );
+
                     toast.success(newValue ? "Enabled WhatsApp" : "Disabled WhatsApp");
                   }}
                   className="transition-colors"
                 >
                   {(customer as any).whatsapp_reminders_enabled === true ? (
-                    <ToggleRight className="w-5 h-5 text-blue-600" />
+                    <ToggleRight className="w-5 h-5 text-[#1c1c1c]" />
                   ) : (
-                    <ToggleLeft className="w-5 h-5 text-gray-400" />
+                    <ToggleLeft className="w-5 h-5 text-[#5f5f5d]/40" />
                   )}
                 </button>
               </div>
@@ -291,7 +332,7 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
               { label: "RTO Count", value: customer.rto_count },
             ].map(s => (
               <div key={s.label} className="text-center bg-gray-50 rounded-lg px-4 py-3">
-                <div className="text-lg font-bold text-[#2D1E6F]">{s.value}</div>
+                <div className="text-lg font-bold text-[#1c1c1c]">{s.value}</div>
                 <div className="text-[11px] text-gray-400">{s.label}</div>
               </div>
             ))}
@@ -301,9 +342,9 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
 
       {/* Customer Details Card */}
       {(customer.address || customer.city || customer.state || customer.zip) && (
-        <div className="card p-5 mb-5 border-l-4 border-l-blue-400 bg-blue-50/10 animate-fade-in shadow-sm">
+        <div className="card p-5 mb-5 border-l-4 border-l-[#1c1c1c] bg-[#eceae4]/10 animate-fade-in shadow-sm">
           <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-blue-500" /> Address & Location
+            <MapPin className="w-4 h-4 text-[#1c1c1c]" /> Address & Location
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {customer.address && (
@@ -429,13 +470,13 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key as any)}
             className={cn("flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap",
-              tab === t.key ? "border-[#2D1E6F] text-[#2D1E6F]" : "border-transparent text-gray-500 hover:text-gray-700"
+              tab === t.key ? "border-[#1c1c1c] text-[#1c1c1c]" : "border-transparent text-gray-500 hover:text-gray-700"
             )}>
             <t.icon className="w-3.5 h-3.5" />
             {t.label}
             {"count" in t && t.count > 0 && (
               <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                tab === t.key ? "bg-[#2D1E6F] text-white" : "bg-gray-100 text-gray-500"
+                tab === t.key ? "bg-[#1c1c1c] text-white" : "bg-gray-100 text-gray-500"
               )}>{t.count}</span>
             )}
           </button>
@@ -444,111 +485,123 @@ export default function CustomerProfile({ params: paramsPromise }: { params: Pro
 
       {/* Tab content */}
       {tab === "timeline" && (
-        <div className="card divide-y divide-gray-50">
-          {timeline.length === 0 && <div className="p-8 text-center text-gray-400 text-sm">No activity yet</div>}
-          {timeline.map(item => (
-            <div key={item.id} className="p-4 flex items-start gap-3">
-              <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0",
-                item.type === "order" ? "bg-blue-500" :
-                item.type === "task" ? "bg-amber-500" :
-                item.type === "call" ? "bg-blue-500" : "bg-violet-500"
-              )} />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-[#2D1E6F]">{item.title}</span>
-                  <span className="text-xs text-gray-400">{formatDateTime(item.at)}</span>
+        <div className="space-y-4">
+          <div className="card divide-y divide-gray-50">
+            {timeline.length === 0 && <div className="p-8 text-center text-gray-400 text-sm">No activity yet</div>}
+            {paginatedTimeline.map(item => (
+              <div key={item.id} className="p-4 flex items-start gap-3">
+                <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0",
+                  item.type === "order" ? "bg-[#1c1c1c]" :
+                  item.type === "task" ? "bg-amber-500" :
+                  item.type === "call" ? "bg-[#1c1c1c]/60" : "bg-violet-500"
+                )} />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-[#1c1c1c]">{item.title}</span>
+                    <span className="text-xs text-gray-400">{formatDateTime(item.at)}</span>
+                  </div>
+                  {item.detail && <div className="text-xs text-gray-600 mt-1">{item.detail}</div>}
                 </div>
-                {item.detail && <div className="text-xs text-gray-600 mt-1">{item.detail}</div>}
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <Pagination current={currentPage} total={timeline.length} pageSize={ITEMS_PER_PAGE} onChange={setCurrentPage} />
         </div>
       )}
 
       {tab === "orders" && (
-        <div className="space-y-3">
-          {orders.length === 0 && <div className="card p-8 text-center text-gray-400 text-sm">No orders yet</div>}
-          {orders.map(o => (
-            <div 
-              key={o.id} 
-              onClick={() => {
-                const oid = [o.shopify_order_id, o.order_number, o.id].find(id => id && String(id).trim().length > 0);
-                if (oid) setSelectedOrderId(String(oid));
-              }}
-              className="card p-4 cursor-pointer hover:shadow-md hover:border-r hover:border-r-gray-100 transition-all hover:scale-[1.002] active:scale-[0.998]"
-            >
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-[#2D1E6F]">{o.order_number}</span>
-                    <DeliveryBadge status={o.delivery_status} />
+        <div className="space-y-4">
+          <div className="space-y-3">
+            {orders.length === 0 && <div className="card p-8 text-center text-gray-400 text-sm">No orders yet</div>}
+            {paginatedOrders.map(o => (
+              <div 
+                key={o.id} 
+                onClick={() => {
+                  const oid = [o.shopify_order_id, o.order_number, o.id].find(id => id && String(id).trim().length > 0);
+                  if (oid) setSelectedOrderId(String(oid));
+                }}
+                className="card p-4 cursor-pointer hover:shadow-md hover:border-r hover:border-r-gray-100 transition-all hover:scale-[1.002] active:scale-[0.998]"
+              >
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm text-[#1c1c1c]">{o.order_number}</span>
+                      <DeliveryBadge status={o.delivery_status} />
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">{o.line_items.filter((i: any) => !i.__metadata).map((l: any) => `${l.name || l.title || "Unknown Product"} × ${l.qty || l.quantity || 1}`).join(", ")}</div>
+                    <div className="text-[11px] text-gray-400 mt-0.5">
+                      Ordered {formatDate(o.ordered_at)}
+                      {o.delivered_at && ` · Delivered ${formatDate(o.delivered_at)}`}
+                      {o.tracking_number && ` · AWB: ${o.tracking_number}`}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">{o.line_items.filter((i: any) => !i.__metadata).map((l: any) => `${l.name || l.title || "Unknown Product"} × ${l.qty || l.quantity || 1}`).join(", ")}</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">
-                    Ordered {formatDate(o.ordered_at)}
-                    {o.delivered_at && ` · Delivered ${formatDate(o.delivered_at)}`}
-                    {o.tracking_number && ` · AWB: ${o.tracking_number}`}
+                  <div className="text-right">
+                    <div className="font-bold text-[#1c1c1c]">{formatCurrency(Number(o.total_price) || 0)}</div>
+                    <div className="text-[11px] text-gray-400 uppercase">{o.source}</div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-[#2D1E6F]">{formatCurrency(Number(o.total_price) || 0)}</div>
-                  <div className="text-[11px] text-gray-400 uppercase">{o.source}</div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <Pagination current={currentPage} total={orders.length} pageSize={ITEMS_PER_PAGE} onChange={setCurrentPage} />
         </div>
       )}
 
       {tab === "calls" && (
-        <div className="card divide-y divide-gray-50">
-          {calls.length === 0 && <div className="p-8 text-center text-gray-400 text-sm">No call logs yet</div>}
-          {calls.map(cl => (
-            <div key={cl.id} className="p-4 flex items-start gap-3">
-              <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0",
-                cl.outcome === "done" ? "bg-blue-500" : cl.outcome === "no_answer" ? "bg-amber-500" : "bg-rose-500"
-              )} />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-[#2D1E6F] capitalize">{cl.outcome.replace("_", " ")}</span>
-                  <span className="text-xs text-gray-400">{formatDate(cl.called_at)}</span>
+        <div className="space-y-4">
+          <div className="card divide-y divide-gray-50">
+            {calls.length === 0 && <div className="p-8 text-center text-gray-400 text-sm">No call logs yet</div>}
+            {paginatedCalls.map(cl => (
+              <div key={cl.id} className="p-4 flex items-start gap-3">
+                <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0",
+                  cl.outcome === "done" ? "bg-[#1c1c1c]" : cl.outcome === "no_answer" ? "bg-amber-500" : "bg-rose-500"
+                )} />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-[#1c1c1c] capitalize">{cl.outcome.replace("_", " ")}</span>
+                    <span className="text-xs text-gray-400">{formatDate(cl.called_at)}</span>
+                  </div>
+                  {cl.note && <div className="text-xs text-gray-600 mt-1 italic">&quot;{cl.note}&quot;</div>}
+                  {(cl.disposition || cl.follow_up_action) && (
+                    <div className="text-[11px] text-gray-500 mt-1">
+                      {[cl.disposition?.replace(/_/g, " "), cl.follow_up_action].filter(Boolean).join(" · ")}
+                    </div>
+                  )}
+                  {cl.agent_name && (
+                    <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1.5">
+                      <span>by {cl.agent_name}</span>
+                      {cl.agent_name.includes("System") && (
+                        <span className="text-[9px] bg-[#eceae4] text-[#1c1c1c] px-1.5 py-0.5 rounded border border-[#eceae4] font-bold uppercase leading-none">Automated</span>
+                      )}
+                    </div>
+                  )}
                 </div>
-                {cl.note && <div className="text-xs text-gray-600 mt-1 italic">"{cl.note}"</div>}
-                {(cl.disposition || cl.follow_up_action) && (
-                  <div className="text-[11px] text-gray-500 mt-1">
-                    {[cl.disposition?.replace(/_/g, " "), cl.follow_up_action].filter(Boolean).join(" · ")}
-                  </div>
-                )}
-                {cl.agent_name && (
-                  <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1.5">
-                    <span>by {cl.agent_name}</span>
-                    {cl.agent_name.includes("System") && (
-                      <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100 font-bold uppercase leading-none">Automated</span>
-                    )}
-                  </div>
-                )}
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <Pagination current={currentPage} total={calls.length} pageSize={ITEMS_PER_PAGE} onChange={setCurrentPage} />
         </div>
       )}
 
       {tab === "tasks" && (
-        <div className="space-y-3">
-          {tasks.length === 0 && <div className="card p-8 text-center text-gray-400 text-sm">No tasks yet</div>}
-          {tasks.map(t => (
-            <div key={t.id} className="card p-4 flex items-center gap-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <TaskTypeBadge type={t.task_type} />
-                  <TaskStatusBadge status={t.status} />
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  Due: {formatDate(t.due_date)} · {t.order?.order_number || t.abandoned_cart?.cart_token?.slice(0, 8) || "Abandoned Cart"}
+        <div className="space-y-4">
+          <div className="space-y-3">
+            {tasks.length === 0 && <div className="card p-8 text-center text-gray-400 text-sm">No tasks yet</div>}
+            {paginatedTasks.map(t => (
+              <div key={t.id} className="card p-4 flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <TaskTypeBadge type={t.task_type} />
+                    <TaskStatusBadge status={t.status} />
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Due: {formatDate(t.due_date)} · {t.order?.order_number || t.abandoned_cart?.cart_token?.slice(0, 8) || "Abandoned Cart"}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <Pagination current={currentPage} total={tasks.length} pageSize={ITEMS_PER_PAGE} onChange={setCurrentPage} />
         </div>
       )}
 

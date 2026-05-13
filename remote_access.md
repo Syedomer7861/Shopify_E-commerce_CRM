@@ -20,11 +20,11 @@ This is the fastest method. No extra software is needed.
 ### Method B: Remote Agents (Different Network)
 Use this if you are not at home/office or your agents are working remotely.
 
-1.  **Install Ngrok**: (If you haven't already)
-    -   Download from [ngrok.com](https://ngrok.com).
-2.  **Start Tunnel**: Run this command in a new terminal:
-    -   `ngrok http 3000`
-3.  **Share the URL**: Ngrok will provide a "Forwarding" URL (e.g., `https://cureforever.ngrok-free.app`). Send this to your agents.
+1.  **Tailscale Funnel**: (Recommended)
+    -   Since you are already using Tailscale, you can use the **Funnel** feature to expose your local CRM to the internet securely.
+2.  **Current URL**: Your CRM is accessible at:
+    -   `https://cureforeverpc.tail1b3337.ts.net`
+3.  **Share the URL**: Simply send the above link to your agents. They can log in and even "Install" the app as a PWA from this URL.
 
 ---
 

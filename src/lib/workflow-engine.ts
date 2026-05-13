@@ -1,11 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 import { assignTaskOwner, calculateTaskPriority } from "./task-engine";
-import { sendMetaTemplate, sendWhatsApp, personaliseTemplate } from "./whatsapp";
+import { sendMetaTemplate, sendWhatsApp, personaliseTemplate, getTemplateVariables } from "./whatsapp";
+import { sendGmail } from "./gmail";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = createServerClient();
 
 export type WorkflowTrigger = "order_placed" | "order_delivered" | "order_rto" | "cart_abandoned" | "customer_tag_added" | "order_in_transit" | "customer_created" | "delivery_attempt_failed" | "out_for_delivery" | "stale_shipment" | "final_followup";
 
@@ -54,35 +52,43 @@ export class WorkflowEngine {
 
     if (!workflows || workflows.length === 0) return;
 
+    // [NEW] Negative Feedback Suppression
+    // Skip any non-critical triggers if there's an active issue_resolution task
+    const criticalTriggers: WorkflowTrigger[] = ["order_rto", "delivery_attempt_failed", "stale_shipment"];
+    if (!criticalTriggers.includes(trigger)) {
+      const { count: issueCount } = await supabase
+        .from("tasks")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_id", customerId)
+        .eq("task_type", "issue_resolution")
+        .not("status", "in", '("done","cancelled")');
+
+      if ((issueCount || 0) > 0) {
+        console.log(`🛡️ Negative Feedback Suppression: Skipping '${trigger}' for customer ${customerId} due to active issue task.`);
+        return;
+      }
+    }
+
     for (const workflow of workflows) {
-      // 2. Prevent duplicate active instances for this order (Isolation)
-      // Follow-up workflows should not overlap for the same order
+      // 2. Campaign Isolation: Prevent redundant customer engagements
+      // Check for ANY active instance of THIS specific workflow for this order or customer
+      const isolationQuery = supabase
+        .from("workflow_instances")
+        .select("id")
+        .eq("workflow_id", workflow.id)
+        .eq("status", "active");
+      
       if (payload.order_id) {
-        const { data: anyExisting } = await supabase
-          .from("workflow_instances")
-          .select("id")
-          .eq("order_id", payload.order_id)
-          .eq("status", "active")
-          .maybeSingle();
-
-        if (anyExisting) {
-          console.log(`⚠️ Order ${payload.order_id} already has an active workflow instance. Skipping '${workflow.name}'.`);
-          continue;
-        }
+        isolationQuery.eq("order_id", payload.order_id);
       } else {
-        // Fallback: Prevent duplicate active instances of the same workflow for this customer (e.g. for non-order triggers)
-        const { data: existing } = await supabase
-          .from("workflow_instances")
-          .select("id")
-          .eq("workflow_id", workflow.id)
-          .eq("customer_id", customerId)
-          .eq("status", "active")
-          .maybeSingle();
+        isolationQuery.eq("customer_id", customerId);
+      }
 
-        if (existing) {
-          console.log(`⚠️ Customer ${customerId} already has an active instance of '${workflow.name}'. Skipping.`);
-          continue;
-        }
+      const { data: existing } = await isolationQuery.maybeSingle();
+
+      if (existing) {
+        console.log(`⚠️ Isolation: Active instance of '${workflow.name}' already exists. Skipping.`);
+        continue;
       }
 
       // 3. Start a new instance
@@ -120,7 +126,7 @@ export class WorkflowEngine {
    * Called by the background cron.
    */
   static async executeStep(instance: any) {
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const supabase = createServerClient();
     
     // 1. Fetch step details
     const { data: step } = await supabase
@@ -206,18 +212,58 @@ export class WorkflowEngine {
   }
 
   private static async handleMessageAction(step: any, instance: any) {
-    const { data: customer } = await supabase.from("customers").select("phone, name").eq("id", instance.customer_id).single();
+    const { data: settings } = await supabase.from("settings").select("whatsapp_enabled").single();
+    if (!settings?.whatsapp_enabled) {
+      console.log(`[WORKFLOW] Message action skipped: WhatsApp disabled globally.`);
+      return;
+    }
+
+    const { data: customer } = await supabase.from("customers").select("*").eq("id", instance.customer_id).single();
     if (!customer) throw new Error("Customer not found for message");
 
-    const templateName = step.params?.template_name || "Review Reminder";
-    // For cloud templates, we use the customer data as the mapping base
-    const res = await sendMetaTemplate(customer.phone, templateName, { name: customer.name });
-    if (!res.ok) throw new Error(res.error || "WhatsApp template send failed");
+    const { data: order } = instance.order_id 
+      ? await supabase.from("orders").select("*").eq("id", instance.order_id).single()
+      : { data: null };
+    
+    const { data: cart } = instance.abandoned_cart_id
+      ? await supabase.from("abandoned_carts").select("*").eq("id", instance.abandoned_cart_id).single()
+      : { data: null };
+
+    // [Self-Healing] Suppression: Skip messages if an active issue task exists
+    const { count: issueCount } = await supabase
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", instance.customer_id)
+      .eq("task_type", "issue_resolution")
+      .not("status", "in", '("done","cancelled")');
+
+    if ((issueCount || 0) > 0) {
+      console.log(`🛡️ Message Suppression: Skipping step for customer ${instance.customer_id} due to active issue.`);
+      return;
+    }
+
+    const { message_text, template_name } = step.params || {};
+    const variables = getTemplateVariables(customer, order, cart);
+
+    if (message_text) {
+       // Personalise custom text
+       const personalised = personaliseTemplate(message_text, variables);
+       const res = await sendWhatsApp(customer.phone, personalised);
+       if (!res.ok) throw new Error(res.error || "WhatsApp custom message failed");
+    } else {
+       const templateName = template_name || "Review Reminder";
+       const res = await sendMetaTemplate(customer.phone, templateName, variables);
+       if (!res.ok) throw new Error(res.error || "WhatsApp template send failed");
+    }
   }
 
   private static async handleTaskAction(step: any, instance: any) {
     const { task_type, priority_bonus = 0 } = step.params;
     
+    // Fetch customer segment for strict assignment enforcement
+    const { data: customer } = await supabase.from("customers").select("segment").eq("id", instance.customer_id).single();
+    const segment = customer?.segment;
+
     // Check for product-specific priority overrides
     let isPriorityOverride = false;
     if (instance.order_id) {
@@ -234,7 +280,7 @@ export class WorkflowEngine {
       order_id: instance.order_id,
       task_type: task_type || "follow_up",
       due_date: new Date().toISOString().split("T")[0],
-      assigned_to: await assignTaskOwner(supabase),
+      assigned_to: await assignTaskOwner(supabase, task_type, segment),
       priority_score: 50 + (priority_bonus || 0) + (isPriorityOverride ? 50 : 0),
       status: "pending"
     }, { onConflict: "order_id, task_type" });
@@ -256,7 +302,7 @@ export class WorkflowEngine {
    */
   private static async processSystemAutomation(trigger: WorkflowTrigger, payload: any) {
     const { data: settings } = await supabase.from("settings").select("*").single();
-    if (!settings) return;
+    if (!settings || !settings.whatsapp_enabled) return;
 
     let flag = false;
     let template = "";
@@ -341,6 +387,65 @@ export class WorkflowEngine {
       const res = await sendWhatsApp(customer.phone, message);
       if (!res.ok) {
         console.error(`❌ Auto-WhatsApp Failed: ${res.error}`);
+      }
+    }
+
+    // --- Branded Email Automations ---
+    if (settings.gmail_refresh_token) {
+      let emailFlag = false;
+      let emailSubject = "";
+      let emailTemplate = "";
+
+      switch (trigger) {
+        case "customer_created":
+          emailFlag = settings.email_auto_welcome;
+          emailSubject = settings.email_welcome_subject;
+          emailTemplate = settings.email_welcome_template;
+          break;
+        case "order_placed":
+          emailFlag = settings.email_auto_order_placed;
+          emailSubject = settings.email_order_placed_subject;
+          emailTemplate = settings.email_order_placed_template;
+          break;
+        case "order_in_transit":
+          emailFlag = settings.email_auto_order_transit;
+          emailSubject = settings.email_order_transit_subject;
+          emailTemplate = settings.email_order_transit_template;
+          break;
+        case "order_delivered":
+          emailFlag = settings.email_auto_order_delivered;
+          emailSubject = settings.email_order_delivered_subject;
+          emailTemplate = settings.email_order_delivered_template;
+          break;
+        case "cart_abandoned":
+          emailFlag = settings.email_auto_cart_abandoned;
+          emailSubject = settings.email_cart_abandoned_subject;
+          emailTemplate = settings.email_cart_abandoned_template;
+          break;
+      }
+
+      if (emailFlag && emailTemplate && emailSubject) {
+        const { data: customer } = await supabase.from("customers").select("*").eq("id", payload.customer_id).single();
+        if (customer?.email) {
+          const { data: order } = payload.order_id 
+            ? await supabase.from("orders").select("*").eq("id", payload.order_id).maybeSingle()
+            : { data: null };
+          
+          const { data: cart } = payload.abandoned_cart_id
+            ? await supabase.from("abandoned_carts").select("*").eq("id", payload.abandoned_cart_id).maybeSingle()
+            : { data: null };
+
+          const variables = getTemplateVariables(customer, order, cart);
+          const personalisedSubject = personaliseTemplate(emailSubject, variables);
+          const personalisedBody = personaliseTemplate(emailTemplate, variables);
+
+          console.log(`📧 Auto-Email: Sending '${trigger}' branded email to ${customer.email}`);
+          try {
+            await sendGmail({ to: customer.email, subject: personalisedSubject, body: personalisedBody });
+          } catch (err: any) {
+            console.error(`❌ Auto-Email Failed: ${err.message}`);
+          }
+        }
       }
     }
   }

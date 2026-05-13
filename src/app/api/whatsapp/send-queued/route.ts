@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 import { logServerAuditEvent } from "@/lib/audit";
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  return createServerClient();
 }
 
 export async function POST(req: NextRequest) {
@@ -100,6 +100,25 @@ export async function POST(req: NextRequest) {
       summary: `Manual WhatsApp sent for ${task.task_type} task`,
       metadata: { customerId: customer.id, hasAttachment: Boolean(mediaData) },
     });
+
+    // Sync to WhatsApp_Logs Sheet
+    try {
+      const { logActivity } = await import("@/lib/activity-logger");
+      await logActivity({
+        agent_id: "System",
+        activity_type: "whatsapp_sent",
+        description: `Manual WhatsApp sent: ${message.substring(0, 50)}...`,
+        metadata: {
+          task_id: taskId,
+          customer_name: customer.name,
+          customer_phone: customer.phone,
+          message_preview: message,
+          has_attachment: Boolean(mediaData)
+        }
+      });
+    } catch (logErr) {
+      console.error("Failed to sync WhatsApp log:", logErr);
+    }
 
     return NextResponse.json({ ok: true, message: "Manual trigger successful" });
 

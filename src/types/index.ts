@@ -1,10 +1,10 @@
-export type CustomerSegment = "repeat" | "one_time" | "inactive" | "risky";
+export type CustomerSegment = "repeat" | "one_time" | "inactive" | "risky" | "whale" | "loyalist" | "bargain_hunter" | "risky_returner";
 
 export type DeliveryStatus = "pending" | "in_transit" | "out_for_delivery" | "delivered" | "rto" | "failed";
 
 export type FulfillmentStatus = "unfulfilled" | "partial" | "fulfilled";
 
-export type TaskType = "review" | "reorder" | "final_followup" | "recovery" | "issue_resolution" | "transit_update";
+export type TaskType = "review" | "reorder" | "final_followup" | "recovery" | "issue_resolution" | "transit_update" | "cod_verify" | "ndr" | "manager_audit";
 
 export type TaskStatus = "pending" | "due" | "done" | "rescheduled" | "skipped" | "cancelled" | "overdue";
 
@@ -69,6 +69,8 @@ export interface Order {
   ordered_at: string;
   delivered_at?: string;
   source: OrderSource;
+  payment_status?: string;
+  payment_gateway?: string;
   created_at: string;
   updated_at: string;
   customer?: Customer;
@@ -109,6 +111,11 @@ export interface Task {
   customer?: Customer;
   order?: Order;
   abandoned_cart?: AbandonedCart;
+  
+  // Manager Review Fields
+  manager_processed_at?: string;
+  manager_note?: string;
+  manager_action?: "approved" | "rejected" | "shiprocket_updated";
 }
 
 export interface CallLog {
@@ -148,6 +155,17 @@ export interface Settings {
   whatsapp_token?: string;
   whatsapp_bridge_url?: string;
   whatsapp_admin_phone?: string;
+  whatsapp_send_time?: string;
+  wa_auto_welcome?: boolean;
+  wa_auto_order_placed?: boolean;
+  wa_auto_order_transit?: boolean;
+  wa_auto_order_delivered?: boolean;
+  wa_auto_cart_abandoned?: boolean;
+  wa_welcome_template?: string;
+  wa_order_placed_template?: string;
+  wa_order_transit_template?: string;
+  wa_order_delivered_template?: string;
+  wa_cart_abandoned_template?: string;
   updated_at: string;
 }
 
@@ -167,16 +185,30 @@ export interface UserPermissions {
   can_import: boolean;
   can_delete: boolean;
   manage_team: boolean;
+  manage_orders: boolean;
+  manage_customers: boolean;
+  send_whatsapp: boolean;
+  audit_tasks: boolean;
+  manage_automations: boolean;
 }
 
 export interface Profile {
   id: string;
   email: string;
   name?: string;
-  role: "admin" | "agent";
+  role: "admin" | "agent" | "hr" | "manager";
   permissions: UserPermissions;
   is_active: boolean;
-  status?: "online" | "break" | "offline";
+  status?: "online" | "break" | "meeting" | "lunch" | "away" | "offline";
+  last_seen_at?: string;
+  live_state?: {
+    path: string;
+    entityId?: string;
+    action?: string;
+    timestamp: string;
+  } | null;
+  assigned_segments?: CustomerSegment[] | null;
+  assigned_task_types?: TaskType[] | null;
   created_at: string;
 }
 

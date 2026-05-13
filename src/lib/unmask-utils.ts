@@ -17,15 +17,6 @@ export async function resolveUnmaskedPhone(
   let phone = extractStandardPhone(srData);
   if (phone && !isMasked(phone)) return phone;
 
-  // 1b. [NEW] Try Shopify Direct Bypass (Feature 16)
-  if (orderId) {
-      const shopifyData = await fetchUnmaskedFromShopify(supabase, orderId);
-      if (shopifyData?.phone) {
-          console.log(`🔓 Unmasked via Shopify Bypass [Order ${orderId}]: ${shopifyData.phone}`);
-          return shopifyData.phone;
-      }
-  }
-
   // 2. Try Local Cross-Reference: Email match in Customers table
   if (email && email !== "noreply@shiprocket.com") {
     const { data: other } = await supabase
@@ -42,7 +33,6 @@ export async function resolveUnmaskedPhone(
   }
 
   // 3. Try Local Side-Channel: Abandoned Carts
-  // Match by customer_id or email
   const cartQuery = supabase.from("abandoned_carts").select("phone").not("phone", "ilike", "%x%");
   if (customerId) cartQuery.eq("customer_id", customerId);
   else if (email) cartQuery.eq("email", email);
@@ -50,6 +40,27 @@ export async function resolveUnmaskedPhone(
   const { data: cartMatches } = await cartQuery.order("abandoned_at", { ascending: false }).limit(1);
   if (cartMatches?.[0]?.phone && !isMasked(cartMatches[0].phone)) {
     return cartMatches[0].phone;
+  }
+
+  // 3b. Aggressive Address Match (Technique from #19256)
+  const address = srData ? (srData.shipping_address?.address1 || srData.billing_address?.address1 || 
+                  srData.customer_address || srData.address || "") : "";
+  if (address && address.length > 10) {
+    const searchAddr = address.substring(0, 20).trim();
+    const { data: addrMatch } = await supabase
+      .from("customers")
+      .select("phone")
+      .ilike("address", `%${searchAddr}%`)
+      .not("phone", "ilike", "%x%")
+      .not("phone", "ilike", "%_SR_%")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (addrMatch?.phone) {
+        console.log(`🔓 Unmasked via Address Match [${searchAddr}...]: ${addrMatch.phone}`);
+        return addrMatch.phone;
+    }
   }
 
   // 4. Try Deep-Mining Webhook Logs
@@ -68,7 +79,17 @@ export async function resolveUnmaskedPhone(
     }
   }
 
-  // 5. Fallback: Return original masked phone if nothing found
+  // 5. [LAST RESORT] Try Shopify Direct Bypass (Feature 16)
+  // This is the slowest step (Network call), so we do it last.
+  if (orderId) {
+      const shopifyData = await fetchUnmaskedFromShopify(supabase, orderId);
+      if (shopifyData?.phone) {
+          console.log(`🔓 Unmasked via Shopify Bypass [Order ${orderId}]: ${shopifyData.phone}`);
+          return shopifyData.phone;
+      }
+  }
+
+  // Fallback: Return original masked phone if nothing found
   return phone;
 }
 
@@ -77,6 +98,7 @@ function isMasked(phone: string): boolean {
 }
 
 function extractStandardPhone(sr: any): string | null {
+  if (!sr) return null;
   const candidates = [
     sr.billing_phone,
     sr.shipping_phone,

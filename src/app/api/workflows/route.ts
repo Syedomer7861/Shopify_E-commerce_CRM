@@ -1,16 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 
-/**
- * GET /api/workflows
- * POST /api/workflows
- */
+function getSupabase() {
+  return createServerClient();
+}
+
+async function checkAuth(req: NextRequest) {
+  const supabase = createServerClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
+
+  if (!user) return null;
+
+  const adminClient = getSupabase();
+  const { data: profile } = await adminClient
+    .from("profiles")
+    .select("role, permissions")
+    .eq("id", user.id)
+    .single();
+
+  return profile;
+}
+
+function hasPermission(profile: any, permission: string) {
+  if (!profile) return false;
+  if (profile.role === "admin") return true;
+  return profile.permissions?.[permission] === true;
+}
+
 export async function GET(req: NextRequest) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from("workflows")
     .select("*")
@@ -21,11 +40,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const profile = await checkAuth(req);
+  if (!hasPermission(profile, "manage_automations")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
 
+  const supabase = getSupabase();
   const body = await req.json();
   const { data, error } = await supabase
     .from("workflows")
@@ -38,11 +58,12 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const profile = await checkAuth(req);
+  if (!hasPermission(profile, "manage_automations")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
 
+  const supabase = getSupabase();
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 

@@ -2,8 +2,11 @@
 import { useState, useEffect } from "react";
 import { Search, Package, RefreshCw, Trash2, Download, MessageSquare, ExternalLink, Filter } from "lucide-react";
 import Link from "next/link";
-import { PageHeader, DeliveryBadge, Avatar, EmptyState, Modal } from "@/components/ui";
-import ShiprocketOrderView from "@/components/ShiprocketOrderView";
+import { PageHeader, DeliveryBadge, Avatar, EmptyState, Modal, Pagination } from "@/components/ui";
+import dynamic from 'next/dynamic';
+const ShiprocketOrderView = dynamic(() => import("@/components/ShiprocketOrderView"), { 
+  loading: () => <div className="p-8 text-center"><RefreshCw className="w-6 h-6 animate-spin mx-auto text-gray-300" /></div>
+});
 import { createClient } from "@/lib/supabase";
 import { cn, formatDate, formatCurrency } from "@/lib/utils";
 import type { Order, DeliveryStatus, Customer } from "@/types";
@@ -37,6 +40,12 @@ export default function OrdersPage() {
   const [maxAmount, setMaxAmount] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const { profile } = useCurrentProfile();
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+
+  useEffect(() => {
+    const id = searchParams?.get('id');
+    if (id) setSelectedOrderId(id);
+  }, []);
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -56,23 +65,33 @@ export default function OrdersPage() {
   }, [status, search, startDate, endDate, minAmount, maxAmount]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      // In background, we fetch without resetting anything
+    const pollInterval = setInterval(() => {
       fetchOrders(true);
-    }, 30000);
+    }, 60000); // 60s background fallback
 
+    let refreshTimeout: NodeJS.Timeout;
+    const debouncedRefresh = () => {
+      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+                           document.activeElement?.tagName === 'TEXTAREA' ||
+                           document.querySelector('[role="dialog"]');
+      if (isInteracting) return;
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => fetchOrders(true), 3000);
+    };
+
+    // ── Supabase real-time: refresh when orders are inserted or updated ──
     const channel = supabase
-      .channel('orders-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-        fetchOrders(true);
-      })
+      .channel("orders-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, debouncedRefresh)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" }, debouncedRefresh)
       .subscribe();
 
     return () => {
-      clearInterval(interval);
+      clearInterval(pollInterval);
+      clearTimeout(refreshTimeout);
       supabase.removeChannel(channel);
     };
-  }, [page, status, search, startDate, endDate, minAmount, maxAmount]); // Re-subscribe when any parameter changes to avoid stale closures
+  }, [page, status, search, startDate, endDate, minAmount, maxAmount]);
 
   async function fetchOrders(isSilent = false) {
     if (orders.length === 0 && !isSilent) setLoading(true);
@@ -364,26 +383,26 @@ export default function OrdersPage() {
       />
 
       {/* Advanced Filter Panel - Persistent */}
-      <div className="card p-4 mb-5 border-[#2D1E6F]/10 bg-white shadow-lg overflow-visible z-10 animate-fade-in">
+      <div className="card p-4 mb-5 animate-fade-in overflow-visible z-10">
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Order Date From</label>
-            <input type="date" className="input text-xs h-9" value={startDate} onChange={e => setStartDate(e.target.value)} />
+            <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1.5 opacity-60">Date From</label>
+            <input type="date" className="input text-xs h-9 bg-[#fcfbf8]" value={startDate} onChange={e => setStartDate(e.target.value)} />
           </div>
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Order Date To</label>
-            <input type="date" className="input text-xs h-9" value={endDate} onChange={e => setEndDate(e.target.value)} />
+            <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1.5 opacity-60">Date To</label>
+            <input type="date" className="input text-xs h-9 bg-[#fcfbf8]" value={endDate} onChange={e => setEndDate(e.target.value)} />
           </div>
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Min Amount (₹)</label>
-            <input type="number" placeholder="0" className="input text-xs h-9" value={minAmount} onChange={e => setMinAmount(e.target.value)} />
+            <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1.5 opacity-60">Min Amount (₹)</label>
+            <input type="number" placeholder="0" className="input text-xs h-9 bg-[#fcfbf8]" value={minAmount} onChange={e => setMinAmount(e.target.value)} />
           </div>
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Max Amount (₹)</label>
-            <input type="number" placeholder="99999" className="input text-xs h-9" value={maxAmount} onChange={e => setMaxAmount(e.target.value)} />
+            <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1.5 opacity-60">Max Amount (₹)</label>
+            <input type="number" placeholder="99999" className="input text-xs h-9 bg-[#fcfbf8]" value={maxAmount} onChange={e => setMaxAmount(e.target.value)} />
           </div>
         </div>
-        <div className="flex justify-end mt-3 pt-3 border-t border-gray-100 items-center gap-4">
+        <div className="flex justify-end mt-4 pt-4 border-t border-[#eceae4] items-center gap-4">
           <button 
             onClick={() => {
               setStartDate("");
@@ -392,24 +411,24 @@ export default function OrdersPage() {
               setMaxAmount("");
               setStatus("all");
             }}
-            className="text-[11px] text-rose-500 font-bold hover:underline"
+            className="text-[10px] text-rose-500 font-bold uppercase tracking-widest hover:underline"
           >
-            Reset All
+            Clear Filters
           </button>
-          <div className="text-[10px] text-gray-400 italic">Filters auto-apply on change</div>
+          <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest opacity-40">Live Sync Active</div>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input placeholder="Search by order or tracking..." className="input pl-9" value={search} onChange={e => setSearch(e.target.value)} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#5f5f5d]" />
+          <input placeholder="Search orders or tracking..." className="input pl-9 text-xs" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1 overflow-x-auto scroller-hide">
+        <div className="flex items-center gap-1 bg-[#eceae4]/30 rounded-xl border border-[#eceae4] p-1 overflow-x-auto scroller-hide">
           {STATUSES.map(s => (
             <button key={s.value} onClick={() => setStatus(s.value)}
-              className={cn("px-4 py-2 rounded-md text-xs font-bold transition-all whitespace-nowrap",
-                status === s.value ? "bg-[#2D1E6F] text-white shadow-sm" : "text-gray-500 hover:text-[#2D1E6F]"
+              className={cn("px-5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap",
+                status === s.value ? "bg-[#1c1c1c] text-white shadow-md" : "text-[#5f5f5d] hover:bg-[#eceae4]/50"
               )}>
               {s.label}
             </button>
@@ -418,49 +437,47 @@ export default function OrdersPage() {
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-10">
         {[
-          { label: "Delivered", value: "delivered", count: stats.delivered, color: "border-l-blue-600", active: "ring-2 ring-blue-400" },
-          { label: "In Transit", value: "in_transit", count: stats.in_transit, color: "border-l-blue-500", active: "ring-2 ring-blue-400" },
-          { label: "RTO", value: "rto", count: stats.rto, color: "border-l-rose-500", active: "ring-2 ring-rose-400" },
-          { label: "Pending", value: "pending", count: stats.pending, color: "border-l-gray-400", active: "ring-2 ring-[#2D1E6F]/20" },
+          { label: "Delivered", value: "delivered", count: stats.delivered, color: "border-l-[#1c1c1c]", active: "shadow-xl border-[#1c1c1c]" },
+          { label: "Transit", value: "in_transit", count: stats.in_transit, color: "border-l-[#eceae4]", active: "shadow-xl border-[#1c1c1c]" },
+          { label: "RTO", value: "rto", count: stats.rto, color: "border-l-rose-500", active: "shadow-xl border-[#1c1c1c]" },
+          { label: "Pending", value: "pending", count: stats.pending, color: "border-l-amber-500", active: "shadow-xl border-[#1c1c1c]" },
         ].map(s => (
           <button 
             key={s.label} 
             onClick={() => setStatus(status === s.value ? "all" : s.value)}
             className={cn(
-              "stat-card p-5 border-l-4 text-left transition-all duration-300 relative group overflow-hidden", 
+              "card p-6 border-l-4 text-left transition-all duration-300 relative group overflow-hidden hover:translate-y-[-2px]", 
               s.color,
-              status === s.value ? s.active : "bg-white/80"
+              status === s.value ? s.active : ""
             )}
           >
             {status === s.value && (
-               <div className="absolute top-0 right-0 p-2">
-                 <div className="w-2 h-2 rounded-full bg-[#2D1E6F] animate-pulse" />
-               </div>
+               <div className="absolute top-3 right-3 w-1.5 h-1.5 rounded-full bg-[#1c1c1c] animate-pulse" />
             )}
-            <div className="text-3xl font-black text-[#2D1E6F] font-display leading-none mb-1">{s.count}</div>
-            <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{s.label}</div>
+            <div className="text-3xl font-bold text-[#1c1c1c] tracking-tighter mb-2">{s.count}</div>
+            <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">{s.label}</div>
           </button>
         ))}
       </div>
 
-      <div className="table-container">
-        <div className="grid grid-cols-[40px_100px_2fr_2fr_1.5fr_1fr_1fr_1fr_120px] table-header text-[11px]">
+      <div className="card overflow-hidden">
+        <div className="grid grid-cols-[40px_100px_2fr_2fr_1.5fr_1fr_1fr_1fr_120px] bg-[#eceae4]/30 border-b border-[#eceae4] px-4 py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">
           <div className="flex items-center justify-center">
-            <input type="checkbox" className="checkbox w-4 h-4" 
+            <input type="checkbox" className="checkbox w-3.5 h-3.5" 
               checked={selectedIds.length === orders.length && orders.length > 0} 
               onChange={toggleSelectAll} 
             />
           </div>
-          <span className="font-black">ORDER #</span>
-          <span className="font-black">CUSTOMER</span>
-          <span className="font-black">PRODUCT</span>
-          <span className="font-black">STATUS</span>
-          <span className="font-black">AMOUNT</span>
-          <span className="font-black text-right pr-4">ORDERED</span>
-          <span className="font-black text-right pr-4">DELIVERED</span>
-          <span className="font-black">ACTIONS</span>
+          <span>ID</span>
+          <span>Client</span>
+          <span>Items</span>
+          <span>Status</span>
+          <span>Value</span>
+          <span className="text-right pr-4">Created</span>
+          <span className="text-right pr-4">Delivery</span>
+          <span>Actions</span>
         </div>
         {loading ? (
           <div className="p-12 text-center text-gray-400 text-sm">Loading orders...</div>
@@ -471,25 +488,20 @@ export default function OrdersPage() {
             <div className="min-h-[400px]">
               {orders.map((o) => (
                 <div key={o.id} className={cn(
-                  "table-row grid grid-cols-[40px_100px_2fr_2fr_1.5fr_1fr_1fr_1fr_120px] group",
-                  selectedIds.includes(o.id) && "bg-[#2D1E6F]/5"
+                  "grid grid-cols-[40px_100px_2fr_2fr_1.5fr_1fr_1fr_1fr_120px] px-4 py-4 border-b border-[#eceae4]/50 group transition-colors",
+                  selectedIds.includes(o.id) ? "bg-[#eceae4]/40" : "hover:bg-[rgba(28,28,28,0.02)]"
                 )}>
                   <div className="flex items-center justify-center">
-                    <input type="checkbox" className="checkbox w-4 h-4" 
+                    <input type="checkbox" className="checkbox w-3.5 h-3.5" 
                       checked={selectedIds.includes(o.id)} 
                       onChange={() => toggleSelect(o.id)} 
                       onClick={(e) => e.stopPropagation()}
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-md bg-sky-50 flex items-center justify-center p-1" title="Shopify Channel">
-                      <svg viewBox="0 0 24 24" className="w-full h-full text-[#96bf48] fill-current">
-                        <path d="M4.14 11.62c0-.18.04-.36.12-.53l.7-1.4c.08-.17.2-.3.35-.4.16-.1.34-.14.53-.14H6.5V6.75c0-.18.04-.36.12-.53l.7-1.4c.08-.17.2-.3.35-.4.16-.1.34-.14.53-.14h5.6c.18 0 .36.04.53.12l1.4.7c.17.08.3.2.4.35.1.16.14.34.14.53V9.15h.65c.18 0 .36.04.53.12l1.4.7c.17.08.3.2.4.35.1.16.14.34.14.53v3.25c0 .18-.04.36-.12.53l-.7 1.4c-.08.17-.2.3-.35.4-.16.1-.34.14-.53.14H17.5v2.4c0 .18-.04.36-.12.53l-.7 1.4c-.08.17-.2.3-.35.4-.16.1-.34.14-.53.14h-5.6c-.18 0-.36-.04-.53-.12l-1.4-.7c-.17-.08-.3-.2-.4-.35-.1-.16-.14-.34-.14-.53v-2.4h-.65c-.18 0-.36-.04-.53-.12l-1.4-.7c-.17-.08-.3-.2-.4-.35-.1-.16-.14-.34-.14-.53v-3.25z"/>
-                      </svg>
-                    </div>
                     <button 
                       onClick={() => setSelectedOrderId(o.id)}
-                      className="text-xs font-black text-[#2D1E6F] hover:underline transition-all"
+                      className="text-xs font-bold text-[#1c1c1c] hover:underline"
                     >
                       #{o.order_number}
                     </button>
@@ -500,112 +512,44 @@ export default function OrdersPage() {
                     className="flex items-center gap-2 min-w-0"
                   >
                     {o.customer && <Avatar name={o.customer.name} size="sm" />}
-                    <div className="text-xs font-bold text-[#2D1E6F] truncate hover:underline">{o.customer?.name}</div>
+                    <div className="text-xs font-bold text-[#1c1c1c] truncate hover:underline">{o.customer?.name}</div>
                   </Link>
-                  <div className="flex items-center text-[11px] text-gray-500 truncate group-hover:text-gray-700">{o.line_items.map(l => l.name || l.title || "Unknown Product").join(", ")}</div>
+                   <div className="flex items-center text-[11px] text-[#5f5f5d] font-bold truncate opacity-60">{o.line_items.map(l => l.name || l.title || "Unknown").join(", ")}</div>
                   <div className="flex items-center"><DeliveryBadge status={o.delivery_status} /></div>
-                  <span className="flex items-center text-sm font-black text-[#2D1E6F] font-display">{formatCurrency(o.total_price ?? 0)}</span>
-                  <span className="flex items-center text-xs text-gray-400 font-medium">{formatDate(o.ordered_at)}</span>
-                  <span className="flex items-center text-xs text-gray-400 font-medium">{o.delivered_at ? formatDate(o.delivered_at) : "—"}</span>
+                  <span className="flex items-center text-xs font-bold text-[#1c1c1c]">{formatCurrency(o.total_price ?? 0)}</span>
+                  <span className="flex items-center text-[10px] text-[#5f5f5d] font-bold">{formatDate(o.ordered_at)}</span>
+                  <span className="flex items-center text-[10px] text-[#5f5f5d] font-bold">{o.delivered_at ? formatDate(o.delivered_at) : "—"}</span>
                   <div className="flex items-center gap-1.5">
                     {o.customer?.phone && (
                       <Link 
                         href={`https://wa.me/${o.customer.phone.replace(/\D/g, '')}?text=Hi ${o.customer.name}, regarding your order ${o.order_number}...`}
                         target="_blank"
-                        className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all shadow-sm"
-                        title="WhatsApp Customer"
+                        className="w-7 h-7 rounded-lg bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
+                        title="WhatsApp"
                       >
-                        <MessageSquare className="w-4 h-4" />
+                        <MessageSquare className="w-3.5 h-3.5" />
                       </Link>
                     )}
                     {o.tracking_number && (
                       <Link 
                         href={`https://shiprocket.co/tracking/${o.tracking_number}`}
                         target="_blank"
-                        className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center hover:bg-sky-500 hover:text-white transition-all shadow-sm"
-                        title="Track Externally"
+                        className="w-7 h-7 rounded-lg bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
+                        title="Track"
                       >
-                        <ExternalLink className="w-4 h-4" />
+                        <ExternalLink className="w-3.5 h-3.5" />
                       </Link>
                     )}
                   </div>
                 </div>
               ))}
             </div>
-
-            {totalMatching > pageSize && (
-              <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
-                <div className="text-xs text-gray-500 font-medium font-display">
-                  Showing <span className="font-extrabold text-[#2D1E6F]">{(page - 1) * pageSize + 1}</span> to <span className="font-extrabold text-[#2D1E6F]">{Math.min(page * pageSize, totalMatching)}</span> of <span className="font-extrabold text-[#2D1E6F]">{totalMatching.toLocaleString()}</span> orders
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="w-10 h-10 flex items-center justify-center bg-white border border-gray-200 rounded-xl hover:bg-[#2D1E6F] hover:text-white disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-gray-400 transition-all active:scale-90 shadow-sm"
-                    >
-                      ←
-                    </button>
-                    
-                    <div className="flex items-center gap-1 px-2">
-                       {(() => {
-                         const totalPages = Math.ceil(totalMatching / pageSize);
-                         const maxButtons = 5;
-                         let startPage = Math.max(1, page - Math.floor(maxButtons / 2));
-                         let endPage = Math.min(totalPages, startPage + maxButtons - 1);
-                         
-                         if (endPage - startPage + 1 < maxButtons) {
-                           startPage = Math.max(1, endPage - maxButtons + 1);
-                         }
-
-                         const pages = [];
-                         for (let i = startPage; i <= endPage; i++) {
-                           pages.push(i);
-                         }
-
-                         return (
-                           <>
-                             {startPage > 1 && (
-                               <>
-                                 <button onClick={() => setPage(1)} className="w-10 h-10 rounded-xl text-xs font-black bg-white text-gray-500 border border-gray-200 hover:bg-[#2D1E6F] hover:text-white transition-all">1</button>
-                                 {startPage > 2 && <span className="text-gray-400 px-1 text-xs">...</span>}
-                               </>
-                             )}
-                             {pages.map(p => (
-                               <button
-                                 key={p}
-                                 onClick={() => setPage(p)}
-                                 className={cn(
-                                   "w-10 h-10 rounded-xl text-xs font-black transition-all active:scale-95 shadow-sm",
-                                   page === p ? "bg-[#2D1E6F] text-white" : "bg-white text-gray-500 hover:bg-gray-50 border border-gray-200"
-                                 )}
-                               >
-                                 {p}
-                               </button>
-                             ))}
-                             {endPage < totalPages && (
-                               <>
-                                 {endPage < totalPages - 1 && <span className="text-gray-400 px-1 text-xs">...</span>}
-                                 <button onClick={() => setPage(totalPages)} className="w-10 h-10 rounded-xl text-xs font-black bg-white text-gray-500 border border-gray-200 hover:bg-[#2D1E6F] hover:text-white transition-all">{totalPages}</button>
-                               </>
-                             )}
-                           </>
-                         );
-                       })()}
-                    </div>
-
-                    <button
-                      onClick={() => setPage(p => p + 1)}
-                      disabled={page >= Math.ceil(totalMatching / pageSize)}
-                      className="w-10 h-10 flex items-center justify-center bg-white border border-gray-200 rounded-xl hover:bg-[#2D1E6F] hover:text-white disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-gray-400 transition-all active:scale-90 shadow-sm"
-                    >
-                      →
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            <Pagination 
+              current={page} 
+              total={totalMatching} 
+              pageSize={pageSize} 
+              onChange={(p) => { setPage(p); window.scrollTo(0, 0); }} 
+            />
           </>
         )}
       </div>
@@ -635,37 +579,37 @@ export default function OrdersPage() {
       {/* Floating Bulk Action Bar */}
       {selectedIds.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-slide-up">
-          <div className="glass-card flex items-center gap-4 px-6 py-4 rounded-2xl border-[#2D1E6F]/10 shadow-2xl min-w-[400px]">
-            <div className="flex items-center gap-2 border-r border-gray-200 pr-4">
-              <div className="w-8 h-8 rounded-full bg-[#2D1E6F] text-white flex items-center justify-center text-xs font-black">
+          <div className="bg-[#1c1c1c] text-white flex items-center gap-6 px-6 py-3 rounded-2xl shadow-2xl min-w-[450px]">
+            <div className="flex items-center gap-3 border-r border-white/10 pr-6">
+              <div className="w-6 h-6 rounded-full bg-[#f7f4ed] text-[#1c1c1c] flex items-center justify-center text-[10px] font-bold">
                 {selectedIds.length}
               </div>
-              <span className="text-xs font-black text-[#2D1E6F] uppercase tracking-tight">Active Selection</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Selection</span>
             </div>
             
-            <div className="flex items-center gap-2 flex-1">
+            <div className="flex items-center gap-3 flex-1">
               <button 
                 onClick={handleExportCsv}
-                className="btn-secondary h-10 px-4 rounded-xl flex items-center gap-2 border-[#2D1E6F]/10"
+                className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest hover:text-[#eceae4] transition-colors"
               >
-                <Download className="w-4 h-4" />
-                <span className="text-xs font-bold font-display">Export Selected</span>
+                <Download className="w-3.5 h-3.5" />
+                Export
               </button>
               
               {canDelete && (
                 <button 
                   onClick={() => setDeleteModal(true)}
-                  className="btn-danger h-10 px-4 rounded-xl flex items-center gap-2 border-rose-100"
+                  className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-rose-400 hover:text-rose-300 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" />
-                  <span className="text-xs font-bold font-display">Delete All</span>
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
                 </button>
               )}
             </div>
             
             <button 
               onClick={() => setSelectedIds([])}
-              className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"
+              className="w-6 h-6 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/40"
             >
               ✕
             </button>

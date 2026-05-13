@@ -38,11 +38,11 @@ export const ORDERS: Order[] = [
 ];
 
 export const TASKS: Task[] = [
-  { id: "t11", order_id: "o6", customer_id: "c11", task_type: "review", due_date: fmt(addDays(today, 1)), status: "pending", created_at: fmt(subDays(today, 6)) },
-  { id: "t12", order_id: "o4", customer_id: "c1", task_type: "reorder", due_date: fmt(addDays(today, 15)), status: "pending", created_at: fmt(subDays(today, 5)) },
-  { id: "t13", order_id: "o6", customer_id: "c11", task_type: "reorder", due_date: fmt(addDays(today, 2)), status: "pending", created_at: fmt(subDays(today, 6)) },
-  { id: "t14", order_id: "o10", customer_id: "c1", task_type: "review", due_date: fmt(subDays(today, 17)), status: "done", completed_at: fmt(subDays(today, 17)), created_at: fmt(subDays(today, 22)) },
-  { id: "t15", order_id: "o7", customer_id: "c7", task_type: "review", due_date: fmt(subDays(today, 14)), status: "done", completed_at: fmt(subDays(today, 14)), created_at: fmt(subDays(today, 19)) },
+  { id: "t11", order_id: "o6", customer_id: "c11", task_type: "review", due_date: fmt(addDays(today, 1)), status: "pending", created_at: fmt(subDays(today, 6)), call_attempt_count: 0 },
+  { id: "t12", order_id: "o4", customer_id: "c1", task_type: "reorder", due_date: fmt(addDays(today, 15)), status: "pending", created_at: fmt(subDays(today, 5)), call_attempt_count: 0 },
+  { id: "t13", order_id: "o6", customer_id: "c11", task_type: "reorder", due_date: fmt(addDays(today, 2)), status: "pending", created_at: fmt(subDays(today, 6)), call_attempt_count: 0 },
+  { id: "t14", order_id: "o10", customer_id: "c1", task_type: "review", due_date: fmt(subDays(today, 17)), status: "done", completed_at: fmt(subDays(today, 17)), created_at: fmt(subDays(today, 22)), call_attempt_count: 1 },
+  { id: "t15", order_id: "o7", customer_id: "c7", task_type: "review", due_date: fmt(subDays(today, 14)), status: "done", completed_at: fmt(subDays(today, 14)), created_at: fmt(subDays(today, 19)), call_attempt_count: 1 },
 ];
 
 export const CALL_LOGS: CallLog[] = [

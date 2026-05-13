@@ -1,2 +1,32 @@
-import { redirect } from "next/navigation";
-export default function Home() { redirect("/dashboard"); }
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { Loader2 } from "lucide-react";
+
+export default function Home() {
+  const { profile, loading } = useCurrentProfile();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading) {
+      if (profile) {
+        if (profile.role === "manager" || profile.role === "admin") {
+          router.replace("/my-hub");
+        } else {
+          router.replace("/dashboard");
+        }
+      } else {
+        // No session: Supabase Auth should handle login redirect if protected, 
+        // but let's default to dashboard which likely has its own protection.
+        router.replace("/dashboard");
+      }
+    }
+  }, [profile, loading, router]);
+
+  return (
+    <div className="flex h-screen items-center justify-center bg-[#f7f4ed]">
+       <Loader2 className="w-8 h-8 animate-spin text-[#1c1c1c]" />
+    </div>
+  );
+}

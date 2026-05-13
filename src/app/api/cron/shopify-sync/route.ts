@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { isPhoneMasked } from "@/lib/utils";
@@ -15,10 +15,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const supabase = createServerClient();
 
   const report = {
     orders: { synced: 0, skipped: 0 },
@@ -41,21 +38,26 @@ export async function GET(req: NextRequest) {
       "Content-Type": "application/json",
     };
 
-    // 1. FETCH RECENT ORDERS (last 60 mins for a 15 min cron to be safe)
-    const sixtyMinsAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const ordersUrl = `https://${domain}/admin/api/2024-04/orders.json?status=any&limit=50&created_at_min=${sixtyMinsAgo}`;
-    const checkoutsUrl = `https://${domain}/admin/api/2024-04/checkouts.json?limit=50&updated_at_min=${sixtyMinsAgo}`;
+    // 1. FETCH RECENT ORDERS & CHECKOUTS
+    // Normal: 3 hours lookback
+    // Daily Deep Audit (2 AM - 3 AM): 24 hours lookback to catch any stragglers
+    const now = new Date();
+    const isAuditWindow = now.getHours() === 2; // Run deep audit during 2 AM hour
+    const lookbackHours = isAuditWindow ? 24 : 3;
+    const since = new Date(Date.now() - lookbackHours * 60 * 60 * 1000).toISOString();
+    
+    console.log(`[ShopifySync] Starting ${isAuditWindow ? "DEEP AUDIT" : "INCREMENTAL"} sync (lookback: ${lookbackHours}h)`);
 
-    const [ordersRes, checkoutsRes] = await Promise.all([
-      fetch(ordersUrl, { headers: commonHeaders }),
-      fetch(checkoutsUrl, { headers: commonHeaders })
-    ]);
+    // -- A. PROCESS ORDERS --
+    let ordersUrl: string | null = `https://${domain}/admin/api/2024-04/orders.json?status=any&limit=250&updated_at_min=${since}`;
+    
+    while (ordersUrl) {
+      const ordersRes: Response = await fetch(ordersUrl, { headers: commonHeaders });
+      if (!ordersRes.ok) break;
+      
+      const { orders } = await ordersRes.json().catch(() => ({ orders: [] }));
+      if (!orders || !Array.isArray(orders) || orders.length === 0) break;
 
-    const { orders } = await ordersRes.json().catch(() => ({ orders: [] }));
-    const { checkouts } = await checkoutsRes.json().catch(() => ({ checkouts: [] }));
-
-    // 2. PROCESS ORDERS (Prioritize Shopify Data)
-    if (orders && Array.isArray(orders)) {
       for (const order of orders) {
         const customerData = order.customer;
         const rawPhone = order.phone || customerData?.phone || order.shipping_address?.phone || "";
@@ -66,7 +68,7 @@ export async function GET(req: NextRequest) {
           continue;
         }
 
-        // Upsert Customer (SHOPIFY ALWAYS WINS/OVERWRITES)
+        // Upsert Customer
         const { data: customerArr } = await supabase.from("customers").upsert({
           name: `${customerData?.first_name || ""} ${customerData?.last_name || ""}`.trim() || "Shopify Customer",
           phone: phone,
@@ -102,10 +104,26 @@ export async function GET(req: NextRequest) {
           if (!orderErr) report.orders.synced++;
         }
       }
+
+      // Handle Pagination
+      const linkHeader = ordersRes.headers.get("Link");
+      ordersUrl = null;
+      if (linkHeader) {
+        const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
+        if (nextMatch) ordersUrl = nextMatch[1];
+      }
     }
 
-    // 3. PROCESS ABANDONED CHECKOUTS
-    if (checkouts && Array.isArray(checkouts)) {
+    // -- B. PROCESS ABANDONED CHECKOUTS --
+    let checkoutsUrl: string | null = `https://${domain}/admin/api/2024-04/checkouts.json?limit=250&updated_at_min=${since}`;
+
+    while (checkoutsUrl) {
+      const checkoutsRes: Response = await fetch(checkoutsUrl, { headers: commonHeaders });
+      if (!checkoutsRes.ok) break;
+
+      const { checkouts } = await checkoutsRes.json().catch(() => ({ checkouts: [] }));
+      if (!checkouts || !Array.isArray(checkouts) || checkouts.length === 0) break;
+
       for (const cart of checkouts) {
         const cartCustomer = cart.customer;
         const rawPhone = cart.phone || cartCustomer?.phone || cart.shipping_address?.phone || "";
@@ -126,7 +144,6 @@ export async function GET(req: NextRequest) {
         if (customer) {
           const { data: dbCartArr } = await supabase.from("abandoned_carts").upsert({
             customer_id: customer.id,
-            shopify_cart_id: String(cart.id),
             cart_token: String(cart.token || cart.id),
             phone: phone,
             total_price: parseFloat(cart.total_price || 0),
@@ -152,13 +169,29 @@ export async function GET(req: NextRequest) {
                 taskType: "recovery",
                 totalPrice: parseFloat(cart.total_price),
                 totalOrders: customer.total_orders,
-                 rtoFlag: customer.rto_flag
+                rtoFlag: customer.rto_flag
               })
             }, { onConflict: "abandoned_cart_id, task_type" });
           }
         }
       }
+
+      // Handle Pagination
+      const linkHeader = checkoutsRes.headers.get("Link");
+      checkoutsUrl = null;
+      if (linkHeader) {
+        const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
+        if (nextMatch) checkoutsUrl = nextMatch[1];
+      }
     }
+
+    // 3. LOG RESULTS
+    await supabase.from("webhook_logs").insert({
+      source: "system_sync",
+      topic: isAuditWindow ? "shopify_deep_audit" : "shopify_incremental_sync",
+      payload: report,
+      status: "processed"
+    });
 
     return NextResponse.json({ success: true, report });
   } catch (error: any) {

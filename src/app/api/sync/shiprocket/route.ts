@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
@@ -121,14 +121,15 @@ async function shiprocketFetch(url: string, token: string) {
   return res.json();
 }
 
+export async function GET(req: NextRequest) {
+  return POST(req);
+}
+
 export async function POST(req: NextRequest) {
   const { stream, send, close } = createSyncStream();
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const supabase = createServerClient();
 
   const authHeader = req.headers.get("x-sync-secret");
   const isInternal = authHeader === process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -187,8 +188,21 @@ export async function POST(req: NextRequest) {
         if (srOrders.length === 0) { hasMore = false; break; }
         report.pages_fetched++;
 
-        for (const sr of srOrders) {
+        const totalPages = orderData.meta?.pagination?.total_pages || 1;
+        const baseProgress = 5 + ((currentPage - 1) / totalPages) * 90;
+        const pageWeight = 90 / totalPages;
+
+        for (let i = 0; i < srOrders.length; i++) {
+          const sr = srOrders[i];
           try {
+            // Granular Progress Update
+            if (i % 5 === 0 || i === srOrders.length - 1) {
+              const itemProgress = baseProgress + ((i + 1) / srOrders.length) * pageWeight;
+              send({ 
+                message: `Processing page ${currentPage}... (OK: ${report.orders_processed}, ERR: ${report.orders_failed})`, 
+                progress: Math.min(99, Math.max(baseProgress + 0.1, itemProgress)) 
+              });
+            }
             const orderId = sr.channel_order_id || sr.id;
             const email = extractEmail(sr);
             let phone = extractPhone(sr);
@@ -202,7 +216,10 @@ export async function POST(req: NextRequest) {
                 }
             }
 
-            if (!phone) continue;
+            if (!phone || phone.includes("x") || phone.includes("X")) {
+                phone = `MISSING-SR-${orderId}`;
+                isMasked = true;
+            }
 
             const name = extractCustomerName(sr);
             const addressData = extractAddress(sr);
@@ -243,6 +260,13 @@ export async function POST(req: NextRequest) {
               }
             }
 
+            // ── Guard: skip order if we couldn't resolve a customer ──────────
+            if (!customerId) {
+              console.warn(`⚠️ Skipping order ${orderId}: could not resolve customer_id (masked phone + Shopify 429?)`);
+              report.orders_failed++;
+              continue;
+            }
+
             const crmStatus = mapShiprocketStatus(sr.status || "");
             const { error: upsertErr } = await supabase.from("orders").upsert({
               shopify_order_id: orderId.toString(),
@@ -254,10 +278,38 @@ export async function POST(req: NextRequest) {
               delivery_status: crmStatus,
               fulfillment_status: ["delivered", "in_transit", "out_for_delivery"].includes(crmStatus) ? "fulfilled" : "unfulfilled",
               tracking_number: sr.shipments?.[0]?.awb || sr.awb_code || null,
+              courier_name: sr.shipments?.[0]?.courier || sr.courier_name || null,
               line_items: extractLineItems(sr),
             }, { onConflict: "shopify_order_id" });
 
             if (upsertErr) throw upsertErr;
+
+            // [Self-Healing] Cancel redundant tasks if delivered
+            if (crmStatus === "delivered") {
+              const { data: orderRef } = await supabase
+                .from("orders")
+                .select("id")
+                .eq("shopify_order_id", orderId.toString())
+                .maybeSingle();
+
+              if (orderRef) {
+                const { data: cancelledTasks, error: cancelError } = await supabase
+                  .from("tasks")
+                  .update({ 
+                    status: "cancelled", 
+                    manager_note: "Auto-cancelled: Order marked as delivered by Shiprocket Sync." 
+                  })
+                  .eq("order_id", orderRef.id)
+                  .in("task_type", ["ndr", "transit_update"])
+                  .eq("status", "pending")
+                  .select("id");
+
+                if (!cancelError && cancelledTasks && cancelledTasks.length > 0) {
+                  console.log(`🧹 Self-Healing: Cancelled ${cancelledTasks.length} redundant tasks for order ${orderId}`);
+                }
+              }
+            }
+
             report.orders_processed++;
           } catch (err) {
             console.error("Order process error:", err);
@@ -265,8 +317,8 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        const totalPages = orderData.meta?.pagination?.total_pages || Math.ceil((orderData.meta?.pagination?.total || 0) / 50);
-        hasMore = currentPage < (full ? totalPages : MAX_SHALLOW_PAGES);
+        const totalCountPages = orderData.meta?.pagination?.total_pages || Math.ceil((orderData.meta?.pagination?.total || 0) / 50);
+        hasMore = currentPage < (full ? totalCountPages : MAX_SHALLOW_PAGES);
         currentPage++;
         
         if (full) await sleep(500); // Backoff for full sync

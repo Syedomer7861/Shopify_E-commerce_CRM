@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabase";
 import { getTaskProductName } from "@/lib/utils";
 import { getSystemSettings } from "@/lib/server-settings";
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  return createServerClient();
 }
 
 export async function GET(req: NextRequest) {
@@ -23,9 +23,9 @@ async function processRequest(req: NextRequest) {
     // 1. Get Settings
     const settings = await getSystemSettings(supabase);
     
-    if (!settings?.whatsapp_enabled || !settings?.whatsapp_bridge_url) {
-      console.log("⏭️ Review Cron Skipped: WhatsApp disabled or Bridge URL missing.");
-      return NextResponse.json({ skipped: true, reason: "WhatsApp disabled in settings" });
+    if (!settings?.whatsapp_enabled || !settings?.whatsapp_bridge_url || !settings?.wa_auto_order_delivered) {
+      console.log("⏭️ Review Cron Skipped: WhatsApp or Auto-Review disabled in Settings.");
+      return NextResponse.json({ skipped: true, reason: "WhatsApp or Auto-Review disabled in settings" });
     }
 
     // 2. Find "review" tasks due today
