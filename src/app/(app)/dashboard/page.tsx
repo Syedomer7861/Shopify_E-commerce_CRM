@@ -609,7 +609,7 @@ export default function Dashboard() {
       <PageHeader
         title={
           <div className="flex items-center gap-3">
-            <span>{greeting}, {profile?.name?.split(' ')[0] || "Admin"}</span>
+            <span>{greeting}, {profile?.name?.split(' ')[0]}</span>
             <Icon className={cn("w-8 h-8", iconClass)} />
           </div>
         }

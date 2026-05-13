@@ -17,9 +17,7 @@ export default function Home() {
           router.replace("/dashboard");
         }
       } else {
-        // No session: Supabase Auth should handle login redirect if protected, 
-        // but let's default to dashboard which likely has its own protection.
-        router.replace("/dashboard");
+        router.replace("/login");
       }
     }
   }, [profile, loading, router]);
