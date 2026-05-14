@@ -40,3 +40,7 @@ get-shit-done-for-antigravity/
 # Build & Tooling
 tsconfig.tsbuildinfo
 skills-lock.json
+
+# IDE & Analysis
+.vscode/
+.code-review-graph/
