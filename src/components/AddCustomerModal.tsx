@@ -36,6 +36,23 @@ export function AddCustomerModal({ open, onClose, onSuccess }: AddCustomerModalP
       return;
     }
 
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setLoading(true);
+      setTimeout(() => {
+        toast.success("Demo: Customer added successfully (local simulation)");
+        setFormData({ 
+          name: "", phone: "", email: "", notes: "", 
+          productName: "", productPrice: "", 
+          orderDate: format(new Date(), "yyyy-MM-dd") 
+        });
+        onSuccess();
+        onClose();
+        setLoading(false);
+      }, 1000);
+      return;
+    }
+
     setLoading(true);
     try {
       // 1. Insert Customer

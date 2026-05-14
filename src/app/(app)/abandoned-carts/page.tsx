@@ -33,6 +33,15 @@ export default function AbandonedCartsPage() {
   const supabase = createClient();
 
   const fetchCarts = useCallback(async () => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setLoading(true);
+      const { MOCK_ABANDONED_CARTS } = await import("@/lib/mockData");
+      setCarts(MOCK_ABANDONED_CARTS);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       let query = supabase
@@ -93,6 +102,12 @@ export default function AbandonedCartsPage() {
   }, [fetchCarts, supabase]);
 
   async function deleteCart(id: string) {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Record deleted (local only)");
+      setCarts(prev => prev.filter(c => c.id !== id));
+      return;
+    }
     if (!confirm("Are you sure you want to delete this record?")) return;
     try {
       const { error } = await supabase.from("abandoned_carts").delete().eq("id", id);

@@ -27,6 +27,18 @@ export default function MyHubPage() {
         subtitle="Manage your personal todos, private notes, and custom reminders."
       />
 
+      {document.cookie.includes("crm-demo-mode=true") && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 animate-pulse">
+          <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-amber-700" />
+          </div>
+          <div>
+            <p className="text-xs font-black text-amber-900 uppercase tracking-widest">Presentation Mode Active</p>
+            <p className="text-[11px] text-amber-700 font-medium">Personal data is sandboxed. Changes made here will not be saved to your production profile.</p>
+          </div>
+        </div>
+      )}
+
       {/* Hub Navigation */}
       <div className="flex gap-4 mb-8">
         {[

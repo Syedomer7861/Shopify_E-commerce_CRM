@@ -84,6 +84,17 @@ export default function CustomersPage() {
   }, [seg, search, minOrders, maxOrders, lastOrderStart, lastOrderEnd]);
 
   async function fetchCustomers(silent = false) {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      if (!silent) setLoading(true);
+      const { MOCK_CUSTOMERS } = await import("@/lib/mockData");
+      setCustomers(MOCK_CUSTOMERS as any);
+      setStats({ repeat: 1, one_time: 1, inactive: 0, rto: 1 });
+      setTotalCount(MOCK_CUSTOMERS.length);
+      setLoading(false);
+      return;
+    }
+
     if (!silent) setLoading(true);
     let query = supabase.from("customers").select("*", { count: "exact" });
 
@@ -150,6 +161,11 @@ export default function CustomersPage() {
   }
 
   async function handleGlobalSync() {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Customer data sync simulated!");
+      return;
+    }
     setSyncing(true);
     try {
       const res = await fetch("/api/sync/heal", { method: "POST" });
@@ -181,6 +197,14 @@ export default function CustomersPage() {
   }
 
   async function handleBulkDelete() {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success(`Demo: Deleted ${selectedIds.length} customers (local only)`);
+      setCustomers(prev => prev.filter(c => !selectedIds.includes(c.id)));
+      setSelectedIds([]);
+      setDeleteModal(false);
+      return;
+    }
     setIsDeleting(true);
     const { error } = await supabase.from("customers").delete().in("id", selectedIds);
     

@@ -19,6 +19,13 @@ export function ChatInput() {
 
   const handleSend = () => {
     if (!content.trim() || !activeChannel) return;
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Message sent (local simulation)");
+      setContent("");
+      setShowEmojis(false);
+      return;
+    }
     sendMessage(activeChannel.id, content.trim());
     setContent("");
     setShowEmojis(false);
@@ -52,6 +59,17 @@ export function ChatInput() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, forceType?: 'image' | 'file') => {
     const file = e.target.files?.[0];
     if (!file || !activeChannel) return;
+
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setUploading(true);
+      setTimeout(() => {
+        toast.success("Demo: File uploaded (local simulation)");
+        setUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }, 1000);
+      return;
+    }
 
     try {
       setUploading(true);

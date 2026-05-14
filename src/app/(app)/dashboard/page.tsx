@@ -132,8 +132,67 @@ export default function Dashboard() {
   };
 
   async function fetchDashboardData(silent = false) {
+    // Check for Demo Mode
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      if (!silent) setLoading(true);
+      const { MOCK_TASKS, MOCK_CUSTOMERS } = await import("@/lib/mockData");
+      
+      setTodayTasks(MOCK_TASKS.slice(0, 1) as any);
+      setUpcomingTasks(MOCK_TASKS.slice(1) as any);
+      setOverdueTasks([]);
+      setCounts({ today: 1, overdue: 0, upcoming: 1, doneThisWeek: 12 });
+      setEscalations({ 
+        medium: 12, 
+        high: 5, 
+        critical: 2, 
+        issues: 8, 
+        shipping: 15 
+      });
+      setRecoveryRate(45);
+      setStats({ activeNdr: 15 });
+      
+      setRecentActivity([{
+        id: "mock-log-1",
+        customer_id: "demo-cust-1",
+        customer: MOCK_CUSTOMERS[0],
+        outcome: "done",
+        note: "Customer confirmed delivery",
+        called_at: new Date().toISOString()
+      }] as any);
+
+      const { MOCK_ACTIVITY_LOGS, MOCK_ANALYTICS } = await import("@/lib/mockData");
+      setWebhookLogs(MOCK_ACTIVITY_LOGS.slice(0, 5) as any);
+      
+      setAgentMetrics({
+        agent_id: "demo-agent-1",
+        agent_name: "John Demo",
+        total_tasks: 45,
+        completed_tasks: 38,
+        conversion_rate: 12.5,
+        revenue_generated: 25000,
+        current_status: "online"
+      });
+
+      setAllAgentsMetrics([
+        { agent_id: "a1", agent_name: "Rahul S.", completed_tasks: 45, conversion_rate: 12.5, revenue_generated: 25000 },
+        { agent_id: "a2", agent_name: "Priya P.", completed_tasks: 38, conversion_rate: 10.2, revenue_generated: 18000 },
+        { agent_id: "a3", agent_name: "Amit K.", completed_tasks: 32, conversion_rate: 9.8, revenue_generated: 15000 }
+      ]);
+
+      setTrendData([
+        { date: "2024-05-10", tasks: 5, revenue: 12000 },
+        { date: "2024-05-11", tasks: 8, revenue: 15000 },
+        { date: "2024-05-12", tasks: 6, revenue: 18000 },
+        { date: "2024-05-13", tasks: 10, revenue: 14000 },
+        { date: "2024-05-14", tasks: 12, revenue: 22000 }
+      ]);
+      
+      setLoading(false);
+      return;
+    }
+
     if (!silent) setLoading(true);
-    setLastChecked(new Date());
     
     try {
       // 0. Fetch Profile Info (Optimized: use getSession() for speed)

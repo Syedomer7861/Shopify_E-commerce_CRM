@@ -15,6 +15,22 @@ export function useCurrentProfile() {
 
     async function load() {
       setLoading(true);
+      
+      // Check for Demo Mode first
+      const isDemo = document.cookie.includes("crm-demo-mode=true");
+      if (isDemo) {
+        setProfile({
+          id: "demo-presenter-id",
+          email: "demo@presentation.com",
+          name: "Demo Presenter",
+          role: "manager",
+          is_active: true,
+          created_at: new Date().toISOString(),
+        } as any);
+        setLoading(false);
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
 

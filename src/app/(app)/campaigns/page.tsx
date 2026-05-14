@@ -26,6 +26,16 @@ export default function CampaignManager() {
   const ITEMS_PER_PAGE = 10;
 
   const fetchData = async () => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setLoading(true);
+      const { MOCK_CAMPAIGNS, MOCK_TEMPLATES } = await import("@/lib/mockData");
+      setCampaigns(MOCK_CAMPAIGNS);
+      setTemplates(MOCK_TEMPLATES);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const [campRes, tplRes] = await Promise.all([
@@ -69,6 +79,12 @@ export default function CampaignManager() {
 
   const handleCreate = async () => {
     if (!formData.name || !formData.template_id) return toast.error("Name and Template are required");
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Campaign created (local simulation)");
+      setShowModal(false);
+      return;
+    }
     try {
       const res = await fetch("/api/campaigns", {
         method: "POST",
@@ -85,6 +101,12 @@ export default function CampaignManager() {
   };
 
   const handleRun = async (id: string) => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Campaign started (simulation)");
+      setCampaigns(prev => prev.map(c => c.id === id ? { ...c, status: "running" } : c));
+      return;
+    }
     try {
       const res = await fetch(`/api/campaigns?id=${id}`, { method: "PATCH" });
       if (res.ok) {

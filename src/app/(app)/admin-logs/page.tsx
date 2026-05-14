@@ -42,6 +42,21 @@ export default function AdminLogs() {
   }, [isPaused, profile, profileLoading]);
 
   async function fetchLogs() {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setLoading(true);
+      const mockLogs = [
+        { id: '1', created_at: new Date().toISOString(), actor_email: 'admin@cureforever.com', actor_id: 'admin-1', action: 'team_member_create', summary: 'Added new demo presenter account', metadata: {} },
+        { id: '2', created_at: new Date(Date.now() - 3600000).toISOString(), actor_email: 'manager@cureforever.com', actor_id: 'manager-1', action: 'order_status_update', summary: 'Updated Order #CF-1002 to Out for Delivery', metadata: {} },
+        { id: '3', created_at: new Date(Date.now() - 7200000).toISOString(), actor_email: 'system@internal.com', actor_id: 'sys', action: 'inventory_sync_complete', summary: 'Successfully synced 1,240 items from Shopify', metadata: {} },
+        { id: '4', created_at: new Date(Date.now() - 10800000).toISOString(), actor_email: 'admin@cureforever.com', actor_id: 'admin-1', action: 'campaign_launch', summary: 'Launched "Summer Sale 2024" broadcast to 5,000 customers', metadata: {} },
+        { id: '5', created_at: new Date(Date.now() - 86400000).toISOString(), actor_email: 'agent@cureforever.com', actor_id: 'agent-1', action: 'customer_delete', summary: 'Deleted customer record with ID: CUST-998 (Duplicate)', metadata: {} },
+      ];
+      setLogs(mockLogs);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase

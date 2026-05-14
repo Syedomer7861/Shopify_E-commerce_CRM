@@ -37,6 +37,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // ── Unread count ─────────────────────────────────────────────────────────────
   const updateUnreadCount = useCallback(async () => {
     if (!profile?.id) return;
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setUnreadCount(3);
+      return;
+    }
     try {
       const { data: memberships } = await supabase
         .from('channel_members')
@@ -81,7 +86,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveChannelState(updatedChannel);
     activeChannelRef.current = updatedChannel;
 
-    if (socket?.connected) {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (!isDemo && socket?.connected) {
       socket.emit('channel:join', { channelId: channel.id });
       socket.emit('message:seen', { channelId: channel.id });
       setTimeout(updateUnreadCount, 500);
@@ -209,6 +215,31 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fileUrl?: string,
     taskId?: string
   ) => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success('Demo: Message sent locally');
+      // Dispatch a custom event that MessageList can listen to
+      window.dispatchEvent(new CustomEvent('chat:demo_message', { 
+        detail: { 
+          id: 'demo-' + Date.now(),
+          channel_id: channelId, 
+          content, 
+          type, 
+          file_url: fileUrl, 
+          task_id: taskId, 
+          sender_id: profile?.id, 
+          sender_name: profile?.name || 'Demo Presenter',
+          created_at: new Date().toISOString(),
+          sender: {
+            id: profile?.id,
+            name: profile?.name || 'Demo Presenter',
+            role: profile?.role || 'agent'
+          }
+        } 
+      }));
+      return;
+    }
+
     if (!socket || !connected) {
       toast.error('Chat not connected. Retrying...');
       return;
@@ -227,7 +258,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     );
-  }, [socket, connected]);
+  }, [socket, connected, profile]);
 
   return (
     <ChatContext.Provider value={{

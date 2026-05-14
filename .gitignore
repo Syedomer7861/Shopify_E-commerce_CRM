@@ -32,3 +32,11 @@ mukesh.json
 *.log
 sync_progress.json
 .claude/
+.gemini/
+.agents/
+.planning/
+get-shit-done-for-antigravity/
+
+# Build & Tooling
+tsconfig.tsbuildinfo
+skills-lock.json

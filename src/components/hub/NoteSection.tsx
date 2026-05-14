@@ -18,6 +18,16 @@ export function NoteSection() {
   }, []);
 
   async function fetchNotes() {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setNotes([
+        { id: '1', title: 'Product Launch Ideas', content: 'Consider bundling Krill Oil with the new Wellness Kit for a 15% discount.', created_at: new Date().toISOString() },
+        { id: '2', title: 'Meeting Notes', content: 'Team sync at 4 PM. Discuss the new CRM presentation mode implementation.', created_at: new Date().toISOString() },
+      ]);
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('personal_notes')
@@ -42,6 +52,21 @@ export function NoteSection() {
 
   async function addNote() {
     if (!newNote.content.trim()) return;
+
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      const mockNote = {
+        id: Math.random().toString(36).substr(2, 9),
+        title: newNote.title.trim() || "Untitled Note",
+        content: newNote.content.trim(),
+        created_at: new Date().toISOString()
+      };
+      setNotes([mockNote, ...notes]);
+      setNewNote({ title: "", content: "" });
+      setIsAdding(false);
+      toast.success("Note saved (Demo)");
+      return;
+    }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -68,6 +93,13 @@ export function NoteSection() {
   }
 
   async function deleteNote(id: string) {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setNotes(notes.filter(n => n.id !== id));
+      toast.success("Note deleted (Demo)");
+      return;
+    }
+
     try {
       const { error } = await supabase.from('personal_notes').delete().eq('id', id);
       if (error) throw error;

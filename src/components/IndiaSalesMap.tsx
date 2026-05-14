@@ -90,6 +90,26 @@ export default function IndiaSalesMap() {
 
   // ── Fetch from API ────────────────────────────────────────────────────────
   const fetchData = useCallback(async (silent = false) => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      if (!silent) setLoading(true);
+      else setRefreshing(true);
+      setTimeout(() => {
+        setData([
+          { name: "Maharashtra", orders: 450, revenue: 1250000, rto: 12, orderPercentage: 22, revenuePercentage: 25, rtoRate: 2.6 },
+          { name: "Karnataka", orders: 380, revenue: 980000, rto: 8, orderPercentage: 18, revenuePercentage: 19, rtoRate: 2.1 },
+          { name: "Delhi", orders: 320, revenue: 850000, rto: 15, orderPercentage: 15, revenuePercentage: 16, rtoRate: 4.6 },
+          { name: "Tamil Nadu", orders: 280, revenue: 720000, rto: 5, orderPercentage: 12, revenuePercentage: 13, rtoRate: 1.7 },
+          { name: "Gujarat", orders: 250, revenue: 650000, rto: 9, orderPercentage: 10, revenuePercentage: 11, rtoRate: 3.6 },
+          { name: "Uttar Pradesh", orders: 210, revenue: 420000, rto: 25, orderPercentage: 8, revenuePercentage: 7, rtoRate: 11.9 }
+        ]);
+        setLastUpdated(new Date());
+        setLoading(false);
+        setRefreshing(false);
+      }, 800);
+      return;
+    }
+
     if (!silent) setLoading(true);
     else setRefreshing(true);
     try {

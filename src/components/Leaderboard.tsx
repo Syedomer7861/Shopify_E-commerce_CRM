@@ -51,6 +51,20 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ agents: initialAgents 
   const supabase = useMemo(() => createClient(), []);
 
   const fetchMetrics = async (range: string) => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setIsLoading(true);
+      setTimeout(() => {
+        setMetrics([
+          { agent_id: '1', name: 'Agent Rahul', revenue_recovered: 85000, tasks_resolved: 42, total_calls: 150, total_whatsapp: 200, today_work_hours: '06:45:00', today_break_hours: '00:45:00', weekly_revenue_target: 100000, current_status: 'online', last_seen_at: new Date().toISOString(), is_active: true },
+          { agent_id: '2', name: 'Agent Priya', revenue_recovered: 42000, tasks_resolved: 28, total_calls: 120, total_whatsapp: 180, today_work_hours: '05:15:00', today_break_hours: '01:15:00', weekly_revenue_target: 100000, current_status: 'break', last_seen_at: new Date(Date.now() - 300000).toISOString(), is_active: true },
+          { agent_id: '3', name: 'Agent Amit', revenue_recovered: 112000, tasks_resolved: 56, total_calls: 180, total_whatsapp: 250, today_work_hours: '07:30:00', today_break_hours: '00:30:00', weekly_revenue_target: 100000, current_status: 'online', last_seen_at: new Date().toISOString(), is_active: true },
+        ]);
+        setIsLoading(false);
+      }, 500);
+      return;
+    }
+
     setIsLoading(true);
     try {
       let url = '/api/dashboard/agent';

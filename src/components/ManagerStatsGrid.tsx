@@ -9,6 +9,16 @@ export default function ManagerStatsGrid() {
   const supabase = createClient();
 
   const fetchStats = useCallback(async () => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setStats({
+        auditQueue: 12,
+        activeAgents: 5,
+        ndrResolved: 154,
+        security: "Secured"
+      });
+      return;
+    }
     try {
       const res = await fetch("/api/manager/stats");
       if (res.ok) setStats(await res.json());

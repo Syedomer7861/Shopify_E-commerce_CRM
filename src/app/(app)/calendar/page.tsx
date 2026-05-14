@@ -66,6 +66,23 @@ export default function CalendarPage() {
   }, [currentDate, view]);
 
   const fetchTasks = useCallback(async (silent = false) => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      if (!silent) setLoading(true);
+      const { MOCK_TASKS } = await import("@/lib/mockData");
+      const { start, end } = getWindow();
+      
+      // Filter mock tasks to fit the current view range
+      const filtered = MOCK_TASKS.filter(t => {
+        const d = t.due_date;
+        return d >= start && d <= end;
+      });
+      
+      setTasks(filtered as any);
+      setLoading(false);
+      return;
+    }
+
     if (!silent) setLoading(true);
     const { start, end } = getWindow();
     const { data } = await supabase

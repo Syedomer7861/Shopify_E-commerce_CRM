@@ -31,13 +31,20 @@ export default function LoginPage() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, is_demo")
       .eq("id", data.user.id)
       .single();
 
+    if (profile?.is_demo) {
+      document.cookie = "crm-demo-mode=true; path=/; max-age=3600";
+      toast.success("Logged in to Demo Instance");
+    } else {
+      document.cookie = "crm-demo-mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      toast.success("Welcome back!");
+    }
+
     setLoading(false);
-    await sendAdminNotification(`👤 Agent Log-in: ${email}`, "info");
-    toast.success("Welcome back!");
+    await sendAdminNotification(`👤 Agent Log-in: ${email}${profile?.is_demo ? ' (Demo Mode)' : ''}`, "info");
     
     if (profile?.role === "manager") {
       router.push("/manager");
@@ -127,6 +134,7 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
         </div>
 
         {/* Footer Info */}

@@ -173,6 +173,18 @@ export default function TasksPage() {
     const requestId = ++requestIdRef.current;
     if (!profile) return; // Security boundary: must have a profile
     
+    // Check for Demo Mode
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      if (!silent) setLoading(true);
+      const { MOCK_TASKS } = await import("@/lib/mockData");
+      setTasks(MOCK_TASKS as any);
+      setTotalCount(MOCK_TASKS.length);
+      setCounts({ due: 1, overdue: 0, pending: 1, done: 12, flagged: 0 });
+      setLoading(false);
+      return;
+    }
+
     if (!silent) setLoading(true);
     const today = toDbDateString(new Date());
     let matchingCustomerIds: string[] | null = null;
@@ -364,6 +376,12 @@ export default function TasksPage() {
 
   async function handleReassign(id: string, newOwnerId: string) {
     if (!newOwnerId) return;
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Task reassigned (local only)");
+      setTasks(prev => prev.map(t => t.id === id ? { ...t, assigned_to: newOwnerId } : t));
+      return;
+    }
     if (profile?.role !== "admin" && profile?.role !== "manager") {
       return toast.error("Unauthorized: Only Admins/Managers can assign tasks.");
     }
@@ -390,6 +408,12 @@ export default function TasksPage() {
   }
 
   async function handleComplete(id: string, outcome: string, note: string, disposition?: string, followUpAction?: string) {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Task marked as completed (local only)");
+      setTasks(prev => prev.filter(t => t.id !== id));
+      return;
+    }
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user;
     if (!user) return toast.error("User session not found. Please log in again.");
@@ -475,6 +499,12 @@ export default function TasksPage() {
   }
 
   async function handleReschedule(id: string, date: string, reason: string) {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success(`Demo: Task rescheduled to ${date} (local only)`);
+      setTasks(prev => prev.map(t => t.id === id ? { ...t, due_date: date } : t));
+      return;
+    }
     try {
       const res = await fetch(`/api/tasks/${id}/reschedule`, {
         method: "PATCH",
@@ -531,6 +561,12 @@ export default function TasksPage() {
   }
 
   async function handleSkip(id: string) {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Task skipped (local only)");
+      setTasks(prev => prev.filter(t => t.id !== id));
+      return;
+    }
     try {
       const res = await fetch(`/api/tasks/${id}/skip`, {
         method: "PATCH",
@@ -584,6 +620,11 @@ export default function TasksPage() {
   }
 
   async function handleGlobalSync() {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Global system sync simulated!");
+      return;
+    }
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user;
     setSyncing(true);

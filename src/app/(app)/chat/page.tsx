@@ -53,6 +53,11 @@ export default function ChatPage() {
 
   const handleClearHistory = async () => {
     if (!activeChannel) return;
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: History cleared (local only)");
+      return;
+    }
     if (!confirm("Are you absolutely sure you want to clear this conversation history? This cannot be undone.")) return;
     
     const loadingToast = toast.loading("Clearing history...");

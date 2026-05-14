@@ -36,6 +36,15 @@ export default function WorkflowManager() {
   });
 
   const fetchWorkflows = async () => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setLoading(true);
+      const { MOCK_WORKFLOWS } = await import("@/lib/mockData");
+      setWorkflows(MOCK_WORKFLOWS);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/workflows");
@@ -84,6 +93,12 @@ export default function WorkflowManager() {
 
   const handleSave = async () => {
     if (!formData.name) return toast.error("Name is required");
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Workflow Saved");
+      setShowModal(false);
+      return;
+    }
     try {
       const res = await fetch("/api/workflows", {
         method: "POST",
@@ -110,6 +125,12 @@ export default function WorkflowManager() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this workflow?")) return;
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Workflow deleted");
+      setWorkflows(prev => prev.filter(wf => wf.id !== id));
+      return;
+    }
     try {
       const res = await fetch(`/api/workflows?id=${id}`, { method: "DELETE" });
       if (res.ok) {
@@ -120,6 +141,12 @@ export default function WorkflowManager() {
   };
 
   const handleToggleStatus = async (wf: any) => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success(`Demo: Workflow ${!wf.is_active ? 'Activated' : 'Paused'}`);
+      setWorkflows(prev => prev.map(w => w.id === wf.id ? { ...w, is_active: !w.is_active } : w));
+      return;
+    }
     try {
       const res = await fetch("/api/workflows", {
         method: "POST",

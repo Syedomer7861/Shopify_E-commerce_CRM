@@ -24,6 +24,31 @@ export default function LogisticsPulse() {
   const autoSyncStarted = useRef(false);
 
   const fetchData = async (silent = false) => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      if (!silent && !data) setLoading(true);
+      setTimeout(() => {
+        setData({
+          summary: { total: 452, delivered: 310, successRate: 68.5, inTransit: 85, ndr: 42, rto: 15, rtoRate: 3.3 },
+          couriers: [
+            { name: "Delhivery", total: 156, delivered: 120, rto: 5, successRate: 76.9 },
+            { name: "BlueDart", total: 94, delivered: 82, rto: 2, successRate: 87.2 },
+            { name: "ExpressBees", total: 112, delivered: 68, rto: 6, successRate: 60.7 },
+            { name: "Shadowfax", total: 90, delivered: 40, rto: 2, successRate: 44.4 }
+          ],
+          statusDistribution: [
+            { name: "Delivered", value: 310 },
+            { name: "In Transit", value: 85 },
+            { name: "NDR", value: 42 },
+            { name: "RTO", value: 15 }
+          ]
+        });
+        setLastUpdate(new Date().toLocaleTimeString());
+        setLoading(false);
+      }, 500);
+      return;
+    }
+
     if (!silent && !data) setLoading(true);
     try {
       const res = await fetch(`/api/analytics/couriers?t=${Date.now()}`);
@@ -62,6 +87,29 @@ export default function LogisticsPulse() {
   const lastRefreshProgress = useRef(0);
   
   const handleSync = async () => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setSyncing(true);
+      setSyncMessage("Demo: Connecting to Shiprocket...");
+      setSyncProgress(20);
+      
+      setTimeout(() => {
+        setSyncMessage("Demo: Syncing logistics intelligence...");
+        setSyncProgress(65);
+        setTimeout(() => {
+          setSyncMessage("Demo: Pipeline synchronized!");
+          setSyncProgress(100);
+          fetchData(true);
+          setTimeout(() => {
+            setSyncing(false);
+            setSyncMessage("");
+            setSyncProgress(0);
+          }, 1500);
+        }, 1500);
+      }, 1500);
+      return;
+    }
+
     setSyncing(true);
     setSyncMessage("Connecting to Shiprocket...");
     lastRefreshProgress.current = 0;

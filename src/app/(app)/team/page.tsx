@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Shield, User, Loader2, Mail, Trash2, Edit2, UserPlus, CheckCircle2, XCircle, ShoppingBag, Users, MessageSquare, Eye } from "lucide-react";
+import { Shield, User, Loader2, Mail, Trash2, Edit2, UserPlus, CheckCircle2, XCircle, ShoppingBag, Users, MessageSquare, Eye, Search, Filter } from "lucide-react";
 import { PageHeader, Avatar, EmptyState, Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,10 @@ export default function TeamPage() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   // New user state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+
+  // New user state
   const [newUser, setNewUser] = useState({ email: "", password: "", name: "", role: "agent" as "agent" | "admin" | "hr" | "manager" });
   const { profile: currentProfile, loading: profileLoading } = useCurrentProfile();
 
@@ -34,6 +38,15 @@ export default function TeamPage() {
   }, [profileLoading, currentProfile?.id]);
 
   async function fetchProfiles() {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setLoading(true);
+      const { MOCK_TEAM } = await import("@/lib/mockData");
+      setProfiles(MOCK_TEAM as Profile[]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -217,6 +230,36 @@ export default function TeamPage() {
         }
       />
 
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input 
+            type="text" 
+            placeholder="Search by name or email..." 
+            className="input pl-10 h-11 bg-white border-gray-100 shadow-sm"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex p-1 bg-gray-100 rounded-xl w-fit">
+          {["all", "admin", "manager", "hr", "agent"].map(role => (
+            <button
+              key={role}
+              onClick={() => setRoleFilter(role)}
+              className={cn(
+                "px-4 py-1.5 text-xs font-bold rounded-lg transition-all capitalize",
+                roleFilter === role 
+                  ? "bg-white text-[#1c1c1c] shadow-sm" 
+                  : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              {role}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
           <div className="col-span-full py-12 text-center text-gray-400">
@@ -228,7 +271,14 @@ export default function TeamPage() {
             <EmptyState icon={<User className="w-5 h-5" />} title="No profiles found" desc="Invite team members to get started." />
           </div>
         ) : (
-          profiles.map(p => {
+          profiles
+            .filter(p => {
+              const matchesSearch = (p.name || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                   p.email.toLowerCase().includes(searchTerm.toLowerCase());
+              const matchesRole = roleFilter === "all" || p.role === roleFilter;
+              return matchesSearch && matchesRole;
+            })
+            .map(p => {
             const lastSeen = (p as any).last_seen_at;
             const isOnline = lastSeen && (Date.now() - new Date(lastSeen).getTime()) < 60 * 1000;
             const isRecent = lastSeen && (Date.now() - new Date(lastSeen).getTime()) < 60 * 60 * 1000;
@@ -265,7 +315,13 @@ export default function TeamPage() {
                   <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white", dotColor, isOnline && "animate-pulse")} />
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${p.role === 'admin' ? 'bg-[#1c1c1c] text-white' : 'bg-gray-100 text-gray-500'}`}>
+                  <div className={cn(
+                    "text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border",
+                    p.role === 'admin' && "bg-zinc-900 text-white border-zinc-900",
+                    p.role === 'manager' && "bg-violet-50 text-violet-700 border-violet-100",
+                    p.role === 'hr' && "bg-rose-50 text-rose-700 border-rose-100",
+                    p.role === 'agent' && "bg-emerald-50 text-emerald-700 border-emerald-100"
+                  )}>
                     {p.role === 'hr' ? 'HR' : p.role}
                   </div>
                   <button onClick={() => handleRemoveMember(p.id)} className="p-1.5 text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
@@ -354,15 +410,27 @@ export default function TeamPage() {
                   <div className="text-[10px] text-gray-400">{selectedProfile?.email}</div>
                </div>
              </div>
-             <div className="flex items-center gap-2">
-                <span className="text-[10px] font-medium text-gray-400">{selectedProfile?.is_active ? "Active" : "Disabled"}</span>
-                <button 
-                  onClick={() => updateProfile({ is_active: !selectedProfile?.is_active })}
-                  disabled={isUpdating}
-                  className={`w-8 h-4 rounded-full relative transition-colors ${selectedProfile?.is_active ? 'bg-[#1c1c1c]' : 'bg-gray-200'}`}
-                >
-                  <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${selectedProfile?.is_active ? 'left-4.5' : 'left-0.5'}`} />
-                </button>
+             <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium text-gray-400">Active</span>
+                  <button 
+                    onClick={() => updateProfile({ is_active: !selectedProfile?.is_active })}
+                    disabled={isUpdating}
+                    className={`w-8 h-4 rounded-full relative transition-colors ${selectedProfile?.is_active ? 'bg-emerald-500' : 'bg-gray-200'}`}
+                  >
+                    <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${selectedProfile?.is_active ? 'left-4.5' : 'left-0.5'}`} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium text-gray-400">Demo Account</span>
+                  <button 
+                    onClick={() => updateProfile({ is_demo: !selectedProfile?.is_demo })}
+                    disabled={isUpdating}
+                    className={`w-8 h-4 rounded-full relative transition-colors ${selectedProfile?.is_demo ? 'bg-amber-500' : 'bg-gray-200'}`}
+                  >
+                    <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${selectedProfile?.is_demo ? 'left-4.5' : 'left-0.5'}`} />
+                  </button>
+                </div>
              </div>
           </div>
 

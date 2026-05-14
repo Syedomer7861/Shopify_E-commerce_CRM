@@ -47,6 +47,19 @@ export default function FloorViewPage() {
   }, []);
 
   async function fetchFloorData() {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setAgents([
+        { id: '1', name: 'Agent Rahul', email: 'rahul@cureforever.com', status: 'online', last_seen_at: new Date().toISOString(), onlineHours: '06:45', breakHours: '00:45', taskCount: 42, revenue: 85000 },
+        { id: '2', name: 'Agent Priya', email: 'priya@cureforever.com', status: 'break', last_seen_at: new Date(Date.now() - 300000).toISOString(), onlineHours: '05:15', breakHours: '01:15', taskCount: 28, revenue: 42000, lastReason: 'Lunch' },
+        { id: '3', name: 'Agent Amit', email: 'amit@cureforever.com', status: 'online', last_seen_at: new Date().toISOString(), onlineHours: '07:30', breakHours: '00:30', taskCount: 56, revenue: 112000 },
+        { id: '4', name: 'Agent Sneha', email: 'sneha@cureforever.com', status: 'meeting', last_seen_at: new Date(Date.now() - 600000).toISOString(), onlineHours: '04:45', breakHours: '00:45', taskCount: 22, revenue: 35000, lastReason: 'Weekly Sync' },
+        { id: '5', name: 'Agent Vikram', email: 'vikram@cureforever.com', status: 'offline', last_seen_at: new Date(Date.now() - 3600000).toISOString(), onlineHours: '04:00', breakHours: '00:30', taskCount: 15, revenue: 18000 },
+      ]);
+      setLoading(false);
+      return;
+    }
+
     try {
       const today = new Date();
       today.setHours(0,0,0,0);

@@ -155,6 +155,43 @@ function HRDashboardContent() {
   }, []);
 
   const fetchData = async () => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setLoading(true);
+      setTimeout(() => {
+        setData({
+          members: [
+            { id: '1', name: 'Agent Rahul', email: 'rahul@cureforever.com', role: 'agent', status: 'Online', lastSeenMinutes: 0, shiftStart: '09:00 AM', statusSince: '2h ago', productiveMinutes: 405, breakMinutes: 45, taskCount: 42, timeline: [{ status: 'online', time: '09:00 AM' }, { status: 'break', time: '01:00 PM', reason: 'Lunch' }, { status: 'online', time: '01:45 PM' }] },
+            { id: '2', name: 'Agent Priya', email: 'priya@cureforever.com', role: 'agent', status: 'Away', lastSeenMinutes: 5, shiftStart: '10:00 AM', statusSince: '15m ago', productiveMinutes: 315, breakMinutes: 75, taskCount: 28, timeline: [{ status: 'online', time: '10:00 AM' }, { status: 'break', time: '02:00 PM', reason: 'Break' }] },
+            { id: '3', name: 'Agent Amit', email: 'amit@cureforever.com', role: 'agent', status: 'Online', lastSeenMinutes: 0, shiftStart: '09:00 AM', statusSince: '4h ago', productiveMinutes: 450, breakMinutes: 30, taskCount: 56, timeline: [{ status: 'online', time: '09:00 AM' }] },
+          ],
+          leaves: [
+            { id: 'l1', agent_id: '1', start_date: '2024-06-01', end_date: '2024-06-05', reason: 'Family vacation', status: 'pending', created_at: new Date().toISOString(), profile: { name: 'Agent Rahul', email: 'rahul@cureforever.com' } },
+            { id: 'l2', agent_id: '2', start_date: '2024-05-20', end_date: '2024-05-21', reason: 'Medical appointment', status: 'approved', created_at: new Date().toISOString(), profile: { name: 'Agent Priya', email: 'priya@cureforever.com' } }
+          ],
+          stats: { totalBreak: 150, avgProductive: 390 },
+          employees: [
+            { id: 'e1', name: 'Agent Rahul', email: 'rahul@cureforever.com', role: 'Agent', status: 'active', joining_date: '2023-01-15' },
+            { id: 'e2', name: 'Agent Priya', email: 'priya@cureforever.com', role: 'Agent', status: 'active', joining_date: '2023-03-10' }
+          ],
+          announcements: [
+            { id: 'a1', title: 'New Product Launch', content: 'We are launching a new Krill Oil variant next week!', created_at: new Date().toISOString() }
+          ],
+          policies: [{ id: 'p1', title: 'Leave Policy 2024', category: 'Compliance' }],
+          revisions: [],
+          expenses: [],
+          reviews: [],
+          training: [],
+          grievances: [],
+          attendance: []
+        });
+        setLastUpdated(new Date());
+        setIsStale(false);
+        setLoading(false);
+      }, 500);
+      return;
+    }
+
     try {
       const [statusRes, hrRes] = await Promise.all([
         fetch("/api/team/status"),

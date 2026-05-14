@@ -30,9 +30,23 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
     fetchMessages();
   }, [activeChannel?.id]);
 
+  // ── Demo Event Listener ──────────────────────────────────────────────────────
+  useEffect(() => {
+    const handleDemoMsg = (e: any) => {
+      const msg = e.detail;
+      if (msg.channel_id === activeChannel?.id) {
+        setMessages(prev => [...prev, msg]);
+      }
+    };
+    window.addEventListener('chat:demo_message', handleDemoMsg);
+    return () => window.removeEventListener('chat:demo_message', handleDemoMsg);
+  }, [activeChannel?.id]);
+
   // ── Socket event listeners ────────────────────────────────────────────────────
   useEffect(() => {
     if (!socket) return;
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) return; // Ignore live socket events in demo mode
 
     const handleNewMessage = (message: any) => {
       if (message.channel_id === activeChannel?.id) {
@@ -77,8 +91,37 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
 
   const fetchMessages = async () => {
     if (!activeChannel?.id) return;
-    setLoading(true);
     const channelId = activeChannel.id;
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    
+    if (isDemo) {
+      setLoading(true);
+      // Simulate some history
+      setTimeout(() => {
+        setMessages([
+          {
+            id: 'mock-1',
+            channel_id: channelId,
+            content: 'Hey team, how is the NDR clearance going?',
+            sender_id: 'other-1',
+            created_at: new Date(Date.now() - 3600000).toISOString(),
+            sender: { name: 'Sarah Manager', role: 'manager' }
+          },
+          {
+            id: 'mock-2',
+            channel_id: channelId,
+            content: 'Clearing the high-priority ones now. 15 done.',
+            sender_id: 'other-2',
+            created_at: new Date(Date.now() - 1800000).toISOString(),
+            sender: { name: 'Agent John', role: 'agent' }
+          }
+        ]);
+        setLoading(false);
+      }, 400);
+      return;
+    }
+
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('messages')

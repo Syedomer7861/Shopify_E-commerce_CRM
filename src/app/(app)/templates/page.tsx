@@ -31,6 +31,15 @@ export default function TemplateManager() {
   });
 
   const fetchTemplates = async () => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setLoading(true);
+      const { MOCK_TEMPLATES } = await import("@/lib/mockData");
+      setTemplates(MOCK_TEMPLATES);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/templates");
@@ -68,6 +77,13 @@ export default function TemplateManager() {
   const handleSave = async () => {
     if (!formData.name || !formData.body) return toast.error("Please fill in name and body");
     
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success(editingTemplate ? "Demo: Template Updated" : "Demo: Template Created");
+      setShowModal(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/templates", {
         method: "POST",
@@ -85,6 +101,12 @@ export default function TemplateManager() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this template?")) return;
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Template Deleted");
+      setTemplates(prev => prev.filter(t => t.id !== id));
+      return;
+    }
     try {
       const res = await fetch(`/api/templates?id=${id}`, { method: "DELETE" });
       if (res.ok) {

@@ -46,6 +46,32 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
   const { profile: currentProfile } = useCurrentProfile();
 
   const fetchData = async () => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setLoading(true);
+      setTimeout(() => {
+        setData({
+          agents: [
+            { id: '1', name: 'Agent Rahul', email: 'rahul@cureforever.com', status: 'online', taskCount: 42, revenue: 85000, productivity: '6.2', onlineHours: '06:45', breakHours: '00:45', onlineSeconds: 24300 },
+            { id: '2', name: 'Agent Priya', email: 'priya@cureforever.com', status: 'break', taskCount: 28, revenue: 42000, productivity: '4.8', onlineHours: '05:15', breakHours: '01:15', lastReason: 'Lunch', onlineSeconds: 18900 },
+            { id: '3', name: 'Agent Amit', email: 'amit@cureforever.com', status: 'online', taskCount: 56, revenue: 112000, productivity: '7.5', onlineHours: '07:30', breakHours: '00:30', onlineSeconds: 27000 },
+            { id: '4', name: 'Agent Sneha', email: 'sneha@cureforever.com', status: 'offline', taskCount: 22, revenue: 35000, productivity: '4.2', onlineHours: '04:45', breakHours: '00:45', onlineSeconds: 17100 }
+          ],
+          dailyLogs: [
+            { date: '2026-05-14', name: 'Agent Rahul', email: 'rahul@cureforever.com', status: 'Present', clockIn: '09:00', clockOut: '18:00', netHours: '8.5', tasks: 42, revenue: 85000 },
+            { date: '2026-05-14', name: 'Agent Amit', email: 'amit@cureforever.com', status: 'Present', clockIn: '09:15', clockOut: '18:15', netHours: '8.2', tasks: 56, revenue: 112000 }
+          ],
+          recentActivity: [
+            { id: 'a1', profile: { name: 'Agent Rahul' }, activity_type: 'whatsapp', created_at: new Date().toISOString(), metadata: { description: 'Sent recovery message to customer' } },
+            { id: 'a2', profile: { name: 'Agent Amit' }, activity_type: 'call', created_at: new Date(Date.now() - 600000).toISOString(), metadata: { description: 'Resolved NDR exception' } },
+            { id: 'a3', profile: { name: 'Agent Priya' }, activity_type: 'login', created_at: new Date(Date.now() - 3600000).toISOString(), metadata: { description: 'Shift Started' } }
+          ]
+        });
+        setLoading(false);
+      }, 600);
+      return;
+    }
+
     setLoading(true);
     try {
       const start = startOfDay(new Date(dateRange.start)).toISOString();

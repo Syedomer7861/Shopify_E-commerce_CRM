@@ -147,7 +147,8 @@ export async function deleteTeamMemberServer(userId: string) {
 
   try {
     // 1. Delete from profiles table (Referential integrity handles logs if configured)
-    await supabaseAdmin.from("profiles").delete().eq("id", userId);
+    const { error: profileError } = await supabaseAdmin.from("profiles").delete().eq("id", userId);
+    if (profileError) throw profileError;
 
     // 2. Delete from Supabase Auth
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);

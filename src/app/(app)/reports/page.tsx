@@ -66,7 +66,9 @@ export default function ReportsPage() {
     rawCallsLogs: [],
     rawOrdersLogs: [],
     rawAbandonedData: [],
-    rawWorkflowLogs: []
+    rawWorkflowLogs: [],
+    dailyAttendanceLogs: [],
+    aovTrend: []
   });
   const [prevStats, setPrevStats] = useState<any>(null);
   const [agents, setAgents] = useState<{id: string, name: string}[]>([]);
@@ -192,6 +194,55 @@ export default function ReportsPage() {
   };
 
   async function fetchAnalytics(silent = false) {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      if (!silent) setLoading(true);
+      const { MOCK_ANALYTICS } = await import("@/lib/mockData");
+      
+      // Map mock data to the stats structure
+      setStats((prev: any) => ({
+        ...prev,
+        totalCalls: 150,
+        totalRevenue: 45000,
+        reorderRate: 35,
+        rtoRate: 5,
+        deliveryBreakdown: [
+          { label: "Delivered", value: 120, color: "bg-[#1c1c1c]" },
+          { label: "In Transit", value: 15, color: "bg-[#eceae4]" },
+          { label: "RTO", value: 8, color: "bg-rose-500" },
+          { label: "Pending", value: 7, color: "bg-gray-300" },
+        ],
+        dailyTrends: MOCK_ANALYTICS.sales.map(s => ({ date: s.date, revenue: s.amount, calls: 25, orders: 15, recovery: 5, rto: 1 })),
+        topProducts: [
+          { name: "Krill Oil Gold", count: 85, revenue: 25000 },
+          { name: "Wellness Tea", count: 120, revenue: 15000 },
+          { name: "Sleep Gummies", count: 45, revenue: 5000 },
+        ],
+        agentPerformance: MOCK_ANALYTICS.topAgents,
+        agentAttendance: MOCK_ANALYTICS.topAgents.map(a => ({
+          name: a.name,
+          onlineHours: "08:00:00",
+          breakHours: "01:00:00",
+          taskCount: a.deals,
+          productivity: a.conversion,
+          status: "online"
+        })),
+        stateDistribution: [
+          { state: "Maharashtra", revenue: 15000, share: 33 },
+          { state: "Karnataka", revenue: 12000, share: 27 },
+          { state: "Delhi", revenue: 8000, share: 18 },
+        ],
+        abandonedStats: { count: 45, potential: 12000, recovered: 4500, rate: 38 },
+        dailyAttendanceLogs: [
+          { date: new Date().toISOString(), name: "Demo Agent 1", status: "Present", clockIn: "09:00 AM", clockOut: "06:00 PM", workHours: "08:00:00", breakHours: "01:00:00", tasks: 25, revenue: 5000 },
+          { date: new Date().toISOString(), name: "Demo Agent 2", status: "Present", clockIn: "09:30 AM", clockOut: "06:30 PM", workHours: "08:00:00", breakHours: "01:00:00", tasks: 18, revenue: 3200 }
+        ],
+        aovTrend: MOCK_ANALYTICS.sales.map(s => ({ date: s.date, aov: s.amount / 15 }))
+      }));
+      setLoading(false);
+      return;
+    }
+
     if (!silent) setLoading(true);
     try {
       const start = new Date(dateRange.start).toISOString();

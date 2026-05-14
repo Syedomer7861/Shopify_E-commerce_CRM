@@ -94,6 +94,22 @@ export default function OrdersPage() {
   }, [page, status, search, startDate, endDate, minAmount, maxAmount]);
 
   async function fetchOrders(isSilent = false) {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      if (!isSilent) setLoading(true);
+      const { MOCK_ORDERS } = await import("@/lib/mockData");
+      setOrders(MOCK_ORDERS as any);
+      setStats({
+        delivered: 1,
+        in_transit: 1,
+        rto: 0,
+        pending: 0,
+      });
+      setTotalMatching(MOCK_ORDERS.length);
+      setLoading(false);
+      return;
+    }
+
     if (orders.length === 0 && !isSilent) setLoading(true);
     
     // Helper to apply advanced filters once to any query
@@ -168,6 +184,11 @@ export default function OrdersPage() {
   }
 
   async function handleShiprocketSync() {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Shiprocket sync simulated!");
+      return;
+    }
     setSyncing(true);
     try {
       const res = await fetch("/api/sync/shiprocket", { method: "POST" });
@@ -185,6 +206,11 @@ export default function OrdersPage() {
 
 
   async function handleGlobalSync() {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Internal system sync simulated!");
+      return;
+    }
     setSyncing(true);
     try {
       const res = await fetch("/api/sync/all", { method: "POST" });
@@ -328,6 +354,14 @@ export default function OrdersPage() {
   }
 
   async function handleBulkDelete() {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success(`Demo: Deleted ${selectedIds.length} orders (local only)`);
+      setOrders(prev => prev.filter(o => !selectedIds.includes(o.id)));
+      setSelectedIds([]);
+      setDeleteModal(false);
+      return;
+    }
     setIsDeleting(true);
     const { error } = await supabase.from("orders").delete().in("id", selectedIds);
     

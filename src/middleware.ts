@@ -61,13 +61,15 @@ export async function middleware(request: NextRequest) {
   const isApiRoute = request.nextUrl.pathname.startsWith('/api')
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
   const isStaticFile = request.nextUrl.pathname.includes('.')
+  
+  const isDemoMode = request.cookies.get('crm-demo-mode')?.value === 'true'
 
-  if (!session && !isLoginPage && !isApiRoute && !isAuthRoute && !isStaticFile) {
+  if (!session && !isDemoMode && !isLoginPage && !isApiRoute && !isAuthRoute && !isStaticFile) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // If user is logged in and tries to access login page, redirect to dashboard
-  if (session && isLoginPage) {
+  // If user is logged in (or demo mode) and tries to access login page, redirect to dashboard
+  if ((session || isDemoMode) && isLoginPage) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 

@@ -49,7 +49,18 @@ export function ChannelList() {
     const userId = session?.user?.id;
     if (!userId) return;
 
-    // Fetch channels user is member of
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setChannels([
+        { id: 'demo-channel-1', name: 'General', type: 'group', last_message_at: new Date().toISOString(), last_message_content: 'Sarah: Hey team, how is the NDR clearance going?' },
+        { id: 'demo-channel-2', name: 'Order Processing', type: 'group', last_message_at: new Date().toISOString(), last_message_content: 'System: 15 orders synced from Shopify' }
+      ]);
+      setDirectMessages([
+        { id: 'demo-dm-1', name: 'Sarah Manager', displayName: 'Sarah Manager', type: 'direct', last_message_at: new Date().toISOString(), last_message_content: 'Hi! Welcome to the demo.' }
+      ]);
+      return;
+    }
+
     const { data } = await supabase
       .from('channels')
       .select(`

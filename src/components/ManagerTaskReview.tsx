@@ -45,6 +45,34 @@ export default function ManagerTaskReview() {
   }, []);
 
   const fetchTasks = async (silent = false) => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      if (!silent && !tasks.length) setLoading(true);
+      setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      setTimeout(() => {
+        setStats({ pending: 8, approvedToday: 24, rejectedToday: 2, activeAgents: 5, activeNdr: 12 });
+        setTasks([
+          { 
+            id: 't1', task_type: 'ndr', status: 'done', is_processed_by_manager: false, completed_at: new Date(Date.now() - 3600000).toISOString(),
+            customer: { id: 'c1', name: 'John Doe', phone: '9876543210', city: 'Mumbai', state: 'Maharashtra' },
+            assigned_profile: { name: 'Agent Rahul' },
+            call_logs: [{ outcome: 'done', disposition: 'NDR_RESOLVED', note: 'Customer confirmed address change. Updated on Shiprocket.', called_at: new Date(Date.now() - 3600000).toISOString() }],
+            order: { order_number: '1001', total_price: 1500 }
+          },
+          { 
+            id: 't2', task_type: 'recovery', status: 'done', is_processed_by_manager: false, completed_at: new Date(Date.now() - 7200000).toISOString(),
+            customer: { id: 'c2', name: 'Jane Smith', phone: '8877665544', city: 'Delhi', state: 'Delhi' },
+            assigned_profile: { name: 'Agent Amit' },
+            call_logs: [{ outcome: 'done', disposition: 'CONVERTED', note: 'Customer completed payment via link.', called_at: new Date(Date.now() - 7200000).toISOString() }],
+            abandoned_cart: { total_price: 2400 }
+          }
+        ]);
+        setTotalTasksCount(8);
+        setLoading(false);
+      }, 500);
+      return;
+    }
+
     if (!silent && !tasks.length) setLoading(true);
     setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     try {
@@ -127,6 +155,29 @@ export default function ManagerTaskReview() {
   };
 
   const fetchNdrOrders = async (silent = false) => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      if (!silent && !ndrOrders.length) setLoading(true);
+      setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      setTimeout(() => {
+        setNdrOrders([
+          { 
+            id: 'o1', order_number: '1001', delivery_status: 'ndr', ordered_at: new Date(Date.now() - 86400000).toISOString(),
+            customer: { id: 'c1', name: 'John Doe', phone: '9876543210', city: 'Mumbai', state: 'Maharashtra' },
+            courier_name: 'Delhivery', tracking_number: 'AWB987654321', total_price: 1500, line_items: [{ payload: { status: 'Incorrect Address' } }]
+          },
+          { 
+            id: 'o2', order_number: '1002', delivery_status: 'rto', ordered_at: new Date(Date.now() - 172800000).toISOString(),
+            customer: { id: 'c2', name: 'Jane Smith', phone: '8877665544', city: 'Delhi', state: 'Delhi' },
+            courier_name: 'BlueDart', tracking_number: 'AWB11223344', total_price: 2400, line_items: [{ payload: { status: 'Refused by Customer' } }], rto_risk: true
+          }
+        ]);
+        setTotalNdrCount(12);
+        setLoading(false);
+      }, 500);
+      return;
+    }
+
     if (!silent && !ndrOrders.length) setLoading(true);
     setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     try {
@@ -178,6 +229,18 @@ export default function ManagerTaskReview() {
 
   const handleProcess = async (taskId: string, action: 'approved' | 'rejected' | 'shiprocket_updated') => {
     setProcessing(taskId);
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setTimeout(() => {
+        toast.success(action === 'approved' ? "Demo: Task Approved" : action === 'shiprocket_updated' ? "Demo: NDR Action Logged" : "Demo: Task Flagged for Revision");
+        setTasks(prev => prev.filter(t => t.id !== taskId));
+        setSelectedTask(null);
+        setReviewNote("");
+        setProcessing(null);
+      }, 800);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("tasks")

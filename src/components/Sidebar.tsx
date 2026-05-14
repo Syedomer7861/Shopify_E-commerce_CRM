@@ -185,13 +185,28 @@ export default function Sidebar() {
 
   async function fetchProfile() {
     try {
+      const isDemo = document.cookie.includes("crm-demo-mode=true");
+      if (isDemo) {
+        const demoProfile: Profile = {
+          id: "demo-presenter-id",
+          email: "demo@presentation.com",
+          name: "Demo Presenter",
+          role: "manager",
+          is_active: true,
+          permissions: DEFAULT_PERMISSIONS, // Manager role handles this usually
+          created_at: new Date().toISOString()
+        } as any;
+        setProfile(demoProfile);
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
       
       const user = session.user;
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("id, email, name, role, permissions, is_active, status, last_seen_at, created_at")
+        .select("*")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -414,7 +429,10 @@ export default function Sidebar() {
   const totalTasks = counts.due + counts.overdue;
 
   async function handleLogout() {
-    if (profile) {
+    // Clear demo mode cookie
+    document.cookie = "crm-demo-mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    
+    if (profile && profile.id !== "demo-presenter-id") {
       try {
         await supabase.from("profiles").update({ 
           status: "offline", 

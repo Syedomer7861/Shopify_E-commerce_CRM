@@ -209,6 +209,7 @@ export interface Profile {
   } | null;
   assigned_segments?: CustomerSegment[] | null;
   assigned_task_types?: TaskType[] | null;
+  is_demo?: boolean;
   created_at: string;
 }
 

@@ -18,6 +18,17 @@ export function ReminderSection() {
   }, []);
 
   async function fetchReminders() {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setReminders([
+        { id: '1', title: 'Daily Team Standup', remind_at: new Date(Date.now() + 3600000).toISOString() },
+        { id: '2', title: 'Product Inventory Check', remind_at: new Date(Date.now() + 86400000).toISOString() },
+        { id: '3', title: 'Old Reminder', remind_at: new Date(Date.now() - 3600000).toISOString() },
+      ]);
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('personal_reminders')
@@ -43,6 +54,21 @@ export function ReminderSection() {
   async function addReminder(e: React.FormEvent) {
     e.preventDefault();
     if (!newReminder.title || !newReminder.date || !newReminder.time) return;
+
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      const remindAt = new Date(`${newReminder.date}T${newReminder.time}`);
+      const mockReminder = {
+        id: Math.random().toString(36).substr(2, 9),
+        title: newReminder.title,
+        remind_at: remindAt.toISOString()
+      };
+      setReminders([...reminders, mockReminder].sort((a, b) => new Date(a.remind_at).getTime() - new Date(b.remind_at).getTime()));
+      setNewReminder({ title: "", date: "", time: "" });
+      setIsAdding(false);
+      toast.success("Reminder set! (Demo)");
+      return;
+    }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -71,6 +97,13 @@ export function ReminderSection() {
   }
 
   async function deleteReminder(id: string) {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setReminders(reminders.filter(r => r.id !== id));
+      toast.success("Reminder cancelled (Demo)");
+      return;
+    }
+
     try {
       const { error } = await supabase.from('personal_reminders').delete().eq('id', id);
       if (error) throw error;

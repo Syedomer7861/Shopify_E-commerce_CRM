@@ -214,6 +214,13 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
 
   async function handleDone() {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Task outcome logged (local only)");
+      onComplete?.(task.id, outcome, note, disposition, followUpAction);
+      setDoneModal(false);
+      return;
+    }
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user;
     
@@ -328,6 +335,13 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
   function handleReschedule() {
     if (!newDate) return toast.error("Please pick a date");
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success(`Demo: Task rescheduled to ${newDate} (local only)`);
+      onReschedule?.(task.id, newDate, reason);
+      setRescheduleModal(false);
+      return;
+    }
     
     // [ADMIN NOTIFY] Reschedule
     import("@/lib/notifications").then(({ sendAdminNotification }) => {
@@ -345,6 +359,16 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   }
 
   async function handleSendWa() {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setSendingWa(true);
+      setTimeout(() => {
+        toast.success("Demo: WhatsApp sent (simulated)");
+        setWaModal(false);
+        setSendingWa(false);
+      }, 1000);
+      return;
+    }
     setSendingWa(true);
     try {
       let imagePath = undefined;
@@ -442,6 +466,16 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
   async function handleSendEmail() {
     if (!task.customer.email) return toast.error("Customer has no email address");
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setSendingEmail(true);
+      setTimeout(() => {
+        toast.success("Demo: Email sent (simulated)");
+        setEmailModal(false);
+        setSendingEmail(false);
+      }, 1000);
+      return;
+    }
     setSendingEmail(true);
     try {
       let attachments: any[] = [];

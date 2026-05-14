@@ -9,6 +9,17 @@ export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[
   const supabase = createClient();
 
   useEffect(() => {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setLogs([
+        { id: 'm1', source: 'shopify', topic: 'order_paid', created_at: new Date(Date.now() - 60000).toISOString(), payload: { data: { customer_name: 'Rahul Kumar', total_price: '₹2,450' } } },
+        { id: 'm2', activity_type: 'call_logged', created_at: new Date(Date.now() - 300000).toISOString(), description: 'Rahul called Amit about Order #1234' },
+        { id: 'm3', source: 'shiprocket', topic: 'order_shipped', created_at: new Date(Date.now() - 600000).toISOString(), payload: { data: { customer_name: 'Priya Singh' } } },
+        { id: 'm4', activity_type: 'status_change', created_at: new Date(Date.now() - 1200000).toISOString(), description: 'Agent Amit changed status to Online' },
+      ]);
+      return;
+    }
+
     // 1. Subscribe to Webhook Logs (System Pulse)
     const webhookSub = supabase
       .channel("live_webhooks")

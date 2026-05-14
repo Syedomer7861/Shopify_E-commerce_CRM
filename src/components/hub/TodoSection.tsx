@@ -18,6 +18,17 @@ export function TodoSection() {
   }, []);
 
   async function fetchTodos() {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setTodos([
+        { id: '1', text: 'Finish monthly sales report', priority: 'high', is_completed: false, created_at: new Date().toISOString() },
+        { id: '2', text: 'Review team performance metrics', priority: 'medium', is_completed: true, created_at: new Date().toISOString() },
+        { id: '3', text: 'Update training documentation', priority: 'low', is_completed: false, created_at: new Date().toISOString() },
+      ]);
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('personal_todos')
@@ -43,6 +54,21 @@ export function TodoSection() {
   async function addTodo(e: React.FormEvent) {
     e.preventDefault();
     if (!newTodo.trim()) return;
+
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      const mockTodo = {
+        id: Math.random().toString(36).substr(2, 9),
+        text: newTodo.trim(),
+        priority: 'medium',
+        is_completed: false,
+        created_at: new Date().toISOString()
+      };
+      setTodos([mockTodo, ...todos]);
+      setNewTodo("");
+      toast.success("Task added (Demo)");
+      return;
+    }
 
     setAdding(true);
     try {
@@ -71,6 +97,13 @@ export function TodoSection() {
   }
 
   async function toggleTodo(id: string, is_completed: boolean) {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setTodos(todos.map(t => t.id === id ? { ...t, is_completed: !is_completed } : t));
+      toast.success("Status updated (Demo)");
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('personal_todos')
@@ -85,6 +118,13 @@ export function TodoSection() {
   }
 
   async function deleteTodo(id: string) {
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setTodos(todos.filter(t => t.id !== id));
+      toast.success("Task removed (Demo)");
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('personal_todos')
