@@ -818,7 +818,7 @@ export default function SettingsPage() {
         usage_notes: newOverride.usage_notes || null,
         is_priority: newOverride.is_priority || false,
         upsell_product_name: newOverride.upsell_product_name || null
-      });
+      }, { onConflict: 'shopify_product_id' });
       if (error) throw error;
       
       // Alignment also happens for overrides

@@ -7,10 +7,8 @@ build/
 node_modules/
 
 # Environment
-.env
-.env.local
-.env.production
-.env.*.local
+.env*
+!.env.example
 
 # Debug logs
 npm-debug.log*
@@ -44,3 +42,11 @@ skills-lock.json
 # IDE & Analysis
 .vscode/
 .code-review-graph/
+
+# Vercel
+.vercel/
+
+# Database & Storage
+supabase/.temp/
+public/uploads/*
+!public/uploads/.gitkeep

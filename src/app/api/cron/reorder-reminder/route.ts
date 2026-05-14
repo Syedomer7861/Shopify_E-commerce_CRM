@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 import { getTaskProductName } from "@/lib/utils";
 import { getSystemSettings } from "@/lib/server-settings";
 import { sendGmail } from "@/lib/gmail";
 import { personaliseTemplate, getTemplateVariables } from "@/lib/whatsapp";
 
 function getSupabase() {
-  return createServerClient();
+  return createAdminClient();
 }
 
 export async function GET(req: NextRequest) {
@@ -26,7 +26,8 @@ async function processRequest(req: NextRequest) {
     const settings = await getSystemSettings(supabase);
     
     if (!settings) {
-      return NextResponse.json({ error: "Settings not found" }, { status: 404 });
+      console.log("⏭️ Reorder Cron Skipped: Settings not found.");
+      return NextResponse.json({ skipped: true, reason: "Settings not found" });
     }
 
     const waEnabled = settings.whatsapp_enabled && settings.whatsapp_bridge_url && settings.wa_auto_reorder;
