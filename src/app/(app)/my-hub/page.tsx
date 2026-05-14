@@ -13,7 +13,12 @@ import LivePulseFeed from "@/components/LivePulseFeed";
 
 export default function MyHubPage() {
   const [activeTab, setActiveTab] = useState<'todos' | 'notes' | 'reminders'>('todos');
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const { profile } = useCurrentProfile();
+
+  useEffect(() => {
+    setIsDemoMode(document.cookie.includes("crm-demo-mode=true"));
+  }, []);
 
   return (
     <div className="animate-fade-in pb-10">
@@ -27,7 +32,7 @@ export default function MyHubPage() {
         subtitle="Manage your personal todos, private notes, and custom reminders."
       />
 
-      {document.cookie.includes("crm-demo-mode=true") && (
+      {isDemoMode && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 animate-pulse">
           <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
             <Sparkles className="w-5 h-5 text-amber-700" />
