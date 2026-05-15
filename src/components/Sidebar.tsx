@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { 
@@ -67,13 +67,6 @@ export default function Sidebar() {
   const { unreadCount } = useChat();
   const [profile, setProfile] = useState<Profile | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      audioRef.current = new Audio('/notification.mp3');
-      audioRef.current.load();
-    }
-  }, []);
   const [counts, setCounts] = useState({ due: 0, overdue: 0 });
   const [timers, setTimers] = useState({ workMs: 0, breakMs: 0 });
   const [showStatusModal, setShowStatusModal] = useState<{ id: string, label: string } | null>(null);
@@ -81,7 +74,6 @@ export default function Sidebar() {
   const [myLeaves, setMyLeaves] = useState<any[]>([]);
   const [leaveData, setLeaveData] = useState({ start: "", end: "", reason: "" });
   const [isSubmittingLeave, setIsSubmittingLeave] = useState(false);
-  const [reason, setReason] = useState("");
   const [lastSync, setLastSync] = useState<Date>(new Date());
 
   const formatDuration = (ms: number) => {
@@ -95,114 +87,86 @@ export default function Sidebar() {
     ].join(':');
   };
 
-  useEffect(() => {
-    if (!profile?.status || profile.status === "offline") return;
-
-    const interval = setInterval(() => {
-      setTimers(prev => {
-        const isProductive = ["online", "meeting", "training"].includes(profile.status!);
-        const isBreak = ["break", "lunch", "away"].includes(profile.status!);
-        
-        return {
-          workMs: isProductive ? prev.workMs + 1000 : prev.workMs,
-          breakMs: isBreak ? prev.breakMs + 1000 : prev.breakMs,
-        };
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [profile?.status]);
-
-  useEffect(() => {
-    fetchProfile();
-
+  const applyAgentFilters = useCallback((query: any, prof: any) => {
+    if (prof?.role !== 'agent') return query;
     
-
-    return () => {
-      
-    };
-  }, [profile?.id]);
-
-  useEffect(() => {
-    if (!profile?.id) return;
+    const segs = prof.assigned_segments || [];
+    const types = prof.assigned_task_types || [];
     
-    // Audio for notifications
-    const playNotification = () => {
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.volume = 1.0;
-        audioRef.current.play().catch(e => console.warn("Audio playback failed:", e));
-      } else {
-        const audio = new Audio('/notification.mp3');
-        audio.volume = 1.0;
-        audio.play().catch(e => console.warn("Audio playback failed:", e));
-      }
-    };
+    let filteredQuery = query.or(`assigned_to.eq.${prof.id},assigned_to.is.null`);
 
-    async function checkReminders() {
-      if (!profile?.id) return;
-      const now = new Date().toISOString();
-      const { data, error } = await supabase
-        .from('personal_reminders')
-        .select('id, title, remind_at, user_id, is_fired')
-        .eq('user_id', profile.id)
-        .eq('is_fired', false)
-        .lte('remind_at', now);
-
-      if (data && data.length > 0) {
-        // Play notification sound once for the batch
-        playNotification();
-
-        data.forEach(reminder => {
-          toast((t) => (
-            <div className="flex flex-col gap-2 p-1 min-w-[200px]">
-              <div className="flex items-center gap-2 font-black text-[#1c1c1c] text-xs">
-                <BellRing className="w-4 h-4 text-rose-500 animate-bounce" />
-                <span className="uppercase tracking-tight">Personal Reminder</span>
-              </div>
-              <p className="text-[11px] text-[#5f5f5d] font-medium leading-relaxed italic">{reminder.title}</p>
-              <div className="flex justify-end border-t border-[#eceae4] pt-2">
-                <button 
-                  onClick={() => toast.dismiss(t.id)}
-                  className="text-[9px] font-black text-emerald-600 hover:text-emerald-700 uppercase tracking-widest"
-                >
-                  Got it
-                </button>
-              </div>
-            </div>
-          ), { duration: 15000, position: 'top-right', id: `reminder-${reminder.id}` });
-
-          // Mark as fired immediately so we don't notify again
-          supabase.from('personal_reminders').update({ is_fired: true }).eq('id', reminder.id).then();
-        });
-      }
+    if (segs.length > 0) {
+      filteredQuery = filteredQuery.filter('customer.segment', 'in', `(${segs.join(",")})`);
     }
+    if (types.length > 0) {
+      filteredQuery = filteredQuery.in('task_type', types);
+    }
+    
+    return filteredQuery;
+  }, []);
 
-    const interval = setInterval(checkReminders, 60000); // Check every minute
-    checkReminders(); // Initial check
+  const fetchTaskCounts = useCallback(async (userId: string, role?: string) => {
+    try {
+      const today = toDbDateString(new Date());
+      let dueQuery = supabase.from("tasks")
+        .select("*, customer:customers!inner(id, segment)", { count: "exact", head: true })
+        .eq("due_date", today)
+        .neq("status", "done");
+      
+      let overdueQuery = supabase.from("tasks")
+        .select("*, customer:customers!inner(id, segment)", { count: "exact", head: true })
+        .lt("due_date", today)
+        .neq("status", "done");
 
-    return () => clearInterval(interval);
-  }, [profile?.id]);
+      if (role === "agent" && profile) {
+        dueQuery = applyAgentFilters(dueQuery, profile);
+        overdueQuery = applyAgentFilters(overdueQuery, profile);
+      }
 
-  useEffect(() => {
-    const hbChannel = supabase
-      .channel('global-sync-heartbeat')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'settings', 
-        filter: `id=eq.00000000-0000-0000-0000-000000000000` 
-      }, () => {
-        setLastSync(new Date());
-      })
-      .subscribe();
+      const [dueRes, overdueRes] = await Promise.all([dueQuery, overdueQuery]);
+      setCounts({
+        due: dueRes.count || 0,
+        overdue: overdueRes.count || 0
+      });
+    } catch (err) {
+      console.error("fetchTaskCounts error:", err);
+    }
+  }, [supabase, profile, applyAgentFilters]);
 
-    return () => {
-      supabase.removeChannel(hbChannel);
-    };
+  const fetchTodayAttendance = useCallback(async (userId: string) => {
+    try {
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const { data } = await supabase
+        .from("agent_attendance")
+        .select("*")
+        .eq("agent_id", userId)
+        .gte("created_at", today.toISOString())
+        .order("created_at", { ascending: true });
+
+      if (!data || data.length === 0) return;
+
+      let workMs = 0;
+      let breakMs = 0;
+      for (let i = 0; i < data.length; i++) {
+        const curr = data[i];
+        const next = data[i+1];
+        const end = next ? new Date(next.created_at).getTime() : Date.now();
+        const duration = end - new Date(curr.created_at).getTime();
+        
+        const isProductive = ["online", "meeting", "training"].includes(curr.status);
+        const isBreak = ["break", "lunch", "away"].includes(curr.status);
+
+        if (isProductive) workMs += duration;
+        else if (isBreak) breakMs += duration;
+      }
+      setTimers({ workMs, breakMs });
+    } catch (err) {
+      console.error("fetchTodayAttendance error:", err);
+    }
   }, [supabase]);
 
-  async function fetchProfile() {
+  const fetchProfile = useCallback(async () => {
     try {
       const isDemo = document.cookie.includes("crm-demo-mode=true");
       if (isDemo) {
@@ -212,7 +176,7 @@ export default function Sidebar() {
           name: "Demo Presenter",
           role: "manager",
           is_active: true,
-          permissions: DEFAULT_PERMISSIONS, // Manager role handles this usually
+          permissions: DEFAULT_PERMISSIONS,
           created_at: new Date().toISOString()
         } as any;
         setProfile(demoProfile);
@@ -244,9 +208,38 @@ export default function Sidebar() {
     } catch (err) {
       console.error("fetchProfile error:", err);
     }
-  }
+  }, [supabase, fetchTaskCounts, fetchTodayAttendance]);
 
-  const fetchMyLeaves = async () => {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      audioRef.current = new Audio('/notification.mp3');
+      audioRef.current.load();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!profile?.status || profile.status === "offline") return;
+
+    const interval = setInterval(() => {
+      setTimers(prev => {
+        const isProductive = ["online", "meeting", "training"].includes(profile.status!);
+        const isBreak = ["break", "lunch", "away"].includes(profile.status!);
+        
+        return {
+          workMs: isProductive ? prev.workMs + 1000 : prev.workMs,
+          breakMs: isBreak ? prev.breakMs + 1000 : prev.breakMs,
+        };
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [profile?.status]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const fetchMyLeaves = useCallback(async () => {
     if (!profile) return;
     const { data } = await supabase
       .from("leaves")
@@ -254,13 +247,206 @@ export default function Sidebar() {
       .eq("agent_id", profile.id)
       .order("created_at", { ascending: false });
     if (data) setMyLeaves(data);
-  };
+  }, [profile, supabase]);
 
   useEffect(() => {
     if (showLeaveModal && profile) {
       fetchMyLeaves();
     }
-  }, [showLeaveModal, profile]);
+  }, [showLeaveModal, profile, fetchMyLeaves]);
+
+  async function updateStatus(status: string, reasonCode?: string) {
+    if (!profile) return;
+    const { error } = await supabase.from("profiles").update({ 
+        status: status, 
+        last_seen_at: new Date().toISOString(),
+        live_state: status === 'offline' ? null : undefined
+    }).eq("id", profile.id);
+    
+    if (!error) {
+      try {
+        await supabase.from("agent_attendance").insert({ 
+          agent_id: profile.id, 
+          status: status,
+          reason: reasonCode || null
+        });
+      } catch (insErr) {
+        console.warn("Status update logging failed (check schema):", insErr);
+        await supabase.from("agent_attendance").insert({ 
+          agent_id: profile.id, 
+          status: status
+        });
+      }
+      await sendAdminNotification(`🔄 Status Shift: *${profile.name || profile.email}* is now *${status.toUpperCase()}* ${reasonCode ? `(${reasonCode})` : ""}`, "info");
+      setProfile({ ...profile, status: status as any });
+      fetchTodayAttendance(profile.id);
+      toast.success(`Shift: ${status.toUpperCase()}`);
+    }
+  }
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    
+    const playNotification = () => {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.volume = 1.0;
+        audioRef.current.play().catch(e => console.warn("Audio playback failed:", e));
+      } else {
+        const audio = new Audio('/notification.mp3');
+        audio.volume = 1.0;
+        audio.play().catch(e => console.warn("Audio playback failed:", e));
+      }
+    };
+
+    async function checkReminders() {
+      if (!profile?.id) return;
+      const now = new Date().toISOString();
+      const { data } = await supabase
+        .from('personal_reminders')
+        .select('id, title, remind_at, user_id, is_fired')
+        .eq('user_id', profile.id)
+        .eq('is_fired', false)
+        .lte('remind_at', now);
+
+      if (data && data.length > 0) {
+        playNotification();
+
+        data.forEach(reminder => {
+          toast((t) => (
+            <div className="flex flex-col gap-2 p-1 min-w-[200px]">
+              <div className="flex items-center gap-2 font-black text-[#1c1c1c] text-xs">
+                <BellRing className="w-4 h-4 text-rose-500 animate-bounce" />
+                <span className="uppercase tracking-tight">Personal Reminder</span>
+              </div>
+              <p className="text-[11px] text-[#5f5f5d] font-medium leading-relaxed italic">{reminder.title}</p>
+              <div className="flex justify-end border-t border-[#eceae4] pt-2">
+                <button 
+                  onClick={() => toast.dismiss(t.id)}
+                  className="text-[9px] font-black text-emerald-600 hover:text-emerald-700 uppercase tracking-widest"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          ), { duration: 15000, position: 'top-right', id: `reminder-${reminder.id}` });
+
+          supabase.from('personal_reminders').update({ is_fired: true }).eq('id', reminder.id).then();
+        });
+      }
+    }
+
+    const interval = setInterval(checkReminders, 60000);
+    checkReminders();
+
+    return () => clearInterval(interval);
+  }, [profile?.id, supabase]);
+
+  useEffect(() => {
+    const hbChannel = supabase
+      .channel('global-sync-heartbeat')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'settings', 
+        filter: `id=eq.00000000-0000-0000-0000-000000000000` 
+      }, () => {
+        setLastSync(new Date());
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(hbChannel);
+    };
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    const runHeartbeat = async () => {
+      try {
+        if (profile.status === "offline" && !path.includes("login")) {
+           await updateStatus("online", "Auto-Active");
+           return;
+        }
+
+        await supabase.from("profiles").update({ 
+          last_seen_at: new Date().toISOString() 
+        }).eq("id", profile.id);
+
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const todayKey = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+        const lockKey = `auto_clockin_${profile.id}_${todayKey}`;
+
+        if (!localStorage.getItem(lockKey)) {
+          const { count } = await supabase
+            .from("agent_attendance")
+            .select("*", { count: "exact", head: true })
+            .eq("agent_id", profile.id)
+            .gte("created_at", today.toISOString());
+
+          if (count === 0 && profile.status && profile.status !== "offline") {
+            try {
+              await supabase.from("agent_attendance").insert({
+                agent_id: profile.id,
+                status: profile.status,
+                reason: "Auto-Clock-In"
+              });
+              await sendAdminNotification(`🚀 *Auto Clock-In*: *${profile.name || profile.email}* started their shift as *${profile.status.toUpperCase()}*`, "info");
+              localStorage.setItem(lockKey, "true");
+              fetchTodayAttendance(profile.id);
+            } catch (insErr) {
+              await supabase.from("agent_attendance").insert({
+                agent_id: profile.id,
+                status: profile.status
+              });
+              localStorage.setItem(lockKey, "true");
+            }
+          } else if (count && count > 0) {
+            localStorage.setItem(lockKey, "true");
+          }
+        }
+      } catch (err) {
+        console.warn("Heartbeat failed:", err);
+      }
+    };
+
+    runHeartbeat();
+    const rtHeartbeat = setInterval(runHeartbeat, 60000);
+
+    return () => clearInterval(rtHeartbeat);
+  }, [profile?.id, profile?.status, path, supabase, fetchTodayAttendance]);
+
+  async function handleLogout() {
+    document.cookie = "crm-demo-mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    
+    if (profile && profile.id !== "demo-presenter-id") {
+      try {
+        await supabase.from("profiles").update({ 
+          status: "offline", 
+          last_seen_at: new Date().toISOString(),
+          live_state: null
+        }).eq("id", profile.id);
+        
+        await supabase.from("agent_attendance").insert({
+          agent_id: profile.id,
+          status: "offline",
+          reason: "Manual Logout"
+        });
+      } catch (err) {
+        console.warn("Logout attendance logging failed:", err);
+      }
+
+      await sendAdminNotification(`🚪 Agent Log-out: *${profile.name || profile.email}* has signed off.`, "info");
+    }
+    const { error } = await supabase.auth.signOut();
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Signed out successfully");
+      router.push("/login");
+    }
+  }
 
   async function handleRequestLeave() {
     if (!leaveData.start || !leaveData.end || !leaveData.reason) {
@@ -292,226 +478,11 @@ export default function Sidebar() {
     }
   }
 
-  // Helper to apply specialization filters
-  const applyAgentFilters = (query: any, prof: any) => {
-    if (prof?.role !== 'agent') return query;
-    
-    const segs = prof.assigned_segments || [];
-    const types = prof.assigned_task_types || [];
-    
-    // Strict Logic: Agent MUST match specialization to see ANY task
-    // AND it must be either assigned to them or unassigned
-    let filteredQuery = query.or(`assigned_to.eq.${prof.id},assigned_to.is.null`);
-
-    if (segs.length > 0) {
-      filteredQuery = filteredQuery.filter('customer.segment', 'in', `(${segs.join(",")})`);
-    }
-    if (types.length > 0) {
-      filteredQuery = filteredQuery.in('task_type', types);
-    }
-    
-    return filteredQuery;
-  };
-
-  async function fetchTaskCounts(userId: string, role?: string) {
-    try {
-      const today = toDbDateString(new Date());
-      let dueQuery = supabase.from("tasks")
-        .select("*, customer:customers!inner(id, segment)", { count: "exact", head: true })
-        .eq("due_date", today)
-        .neq("status", "done");
-      
-      let overdueQuery = supabase.from("tasks")
-        .select("*, customer:customers!inner(id, segment)", { count: "exact", head: true })
-        .lt("due_date", today)
-        .neq("status", "done");
-
-      if (role === "agent" && profile) {
-        dueQuery = applyAgentFilters(dueQuery, profile);
-        overdueQuery = applyAgentFilters(overdueQuery, profile);
-      }
-
-      const [dueRes, overdueRes] = await Promise.all([dueQuery, overdueQuery]);
-      setCounts({
-        due: dueRes.count || 0,
-        overdue: overdueRes.count || 0
-      });
-    } catch (err) {
-      console.error("fetchTaskCounts error:", err);
-    }
-  }
-  
-
-
-
-
-  // 2. Heartbeat & Auto-Clock-In
-  useEffect(() => {
-    if (!profile?.id) return;
-
-    const runHeartbeat = async () => {
-      try {
-        // 1. Automatic Online Transition
-        // If the agent is "offline" but actively viewing the dashboard, 
-        // we should transition them to "online" to start the telemetry.
-        if (profile.status === "offline" && !path.includes("login")) {
-           await updateStatus("online", "Auto-Active");
-           return; // updateStatus will trigger its own attendance record
-        }
-
-        // 2. Update Last Seen
-        await supabase.from("profiles").update({ 
-          last_seen_at: new Date().toISOString() 
-        }).eq("id", profile.id);
-
-        // 3. Check for Auto-Clock-In
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        const todayKey = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
-        const lockKey = `auto_clockin_${profile.id}_${todayKey}`;
-
-        if (!localStorage.getItem(lockKey)) {
-          const { count } = await supabase
-            .from("agent_attendance")
-            .select("*", { count: "exact", head: true })
-            .eq("agent_id", profile.id)
-            .gte("created_at", today.toISOString());
-
-          if (count === 0 && profile.status && profile.status !== "offline") {
-            try {
-              await supabase.from("agent_attendance").insert({
-                agent_id: profile.id,
-                status: profile.status,
-                reason: "Auto-Clock-In"
-              });
-              await sendAdminNotification(`🚀 *Auto Clock-In*: *${profile.name || profile.email}* started their shift as *${profile.status.toUpperCase()}*`, "info");
-              localStorage.setItem(lockKey, "true");
-              fetchTodayAttendance(profile.id);
-            } catch (insErr) {
-              console.warn("Auto-Clock-In insert failed (check schema):", insErr);
-              // Try inserting without reason if it failed (fallback for schema lag)
-              await supabase.from("agent_attendance").insert({
-                agent_id: profile.id,
-                status: profile.status
-              });
-              localStorage.setItem(lockKey, "true");
-            }
-          } else if (count && count > 0) {
-            localStorage.setItem(lockKey, "true");
-          }
-        }
-      } catch (err) {
-        console.warn("Heartbeat failed:", err);
-      }
-    };
-
-    runHeartbeat();
-    const rtHeartbeat = setInterval(runHeartbeat, 60000);
-
-    return () => clearInterval(rtHeartbeat);
-  }, [profile?.id, profile?.status, path]);
-
-  
-  async function fetchTodayAttendance(userId: string) {
-    try {
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      const { data } = await supabase
-        .from("agent_attendance")
-        .select("*")
-        .eq("agent_id", userId)
-        .gte("created_at", today.toISOString())
-        .order("created_at", { ascending: true });
-
-      if (!data || data.length === 0) return;
-
-      let workMs = 0;
-      let breakMs = 0;
-      for (let i = 0; i < data.length; i++) {
-        const curr = data[i];
-        const next = data[i+1];
-        const end = next ? new Date(next.created_at).getTime() : Date.now();
-        const duration = end - new Date(curr.created_at).getTime();
-        
-        const isProductive = ["online", "meeting", "training"].includes(curr.status);
-        const isBreak = ["break", "lunch", "away"].includes(curr.status);
-
-        if (isProductive) workMs += duration;
-        else if (isBreak) breakMs += duration;
-      }
-      setTimers({ workMs, breakMs });
-    } catch (err) {
-      console.error("fetchTodayAttendance error:", err);
-    }
-  }
-
   const totalTasks = counts.due + counts.overdue;
-
-  async function handleLogout() {
-    // Clear demo mode cookie
-    document.cookie = "crm-demo-mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    
-    if (profile && profile.id !== "demo-presenter-id") {
-      try {
-        await supabase.from("profiles").update({ 
-          status: "offline", 
-          last_seen_at: new Date().toISOString(),
-          live_state: null
-        }).eq("id", profile.id);
-        
-        await supabase.from("agent_attendance").insert({
-          agent_id: profile.id,
-          status: "offline",
-          reason: "Manual Logout"
-        });
-      } catch (err) {
-        console.warn("Logout attendance logging failed:", err);
-      }
-
-      await sendAdminNotification(`🚪 Agent Log-out: *${profile.name || profile.email}* has signed off.`, "info");
-    }
-    const { error } = await supabase.auth.signOut();
-    if (error) toast.error(error.message);
-    else {
-      toast.success("Signed out successfully");
-      router.push("/login");
-    }
-  }
-
-  async function updateStatus(status: string, reasonCode?: string) {
-    if (!profile) return;
-    const { error } = await supabase.from("profiles").update({ 
-        status: status, 
-        last_seen_at: new Date().toISOString(),
-        live_state: status === 'offline' ? null : undefined
-    }).eq("id", profile.id);
-    
-    if (!error) {
-      try {
-        await supabase.from("agent_attendance").insert({ 
-          agent_id: profile.id, 
-          status: status,
-          reason: reasonCode || null
-        });
-      } catch (insErr) {
-        console.warn("Status update logging failed (check schema):", insErr);
-        await supabase.from("agent_attendance").insert({ 
-          agent_id: profile.id, 
-          status: status
-        });
-      }
-      await sendAdminNotification(`🔄 Status Shift: *${profile.name || profile.email}* is now *${status.toUpperCase()}* ${reasonCode ? `(${reasonCode})` : ""}`, "info");
-      setProfile({ ...profile, status: status as any });
-      fetchTodayAttendance(profile.id);
-      toast.success(`Shift: ${status.toUpperCase()}`);
-    }
-  }
-
   const adminUser = isAdmin(profile);
 
   return (
     <aside className="w-64 min-w-[256px] h-screen bg-[#f7f4ed] flex flex-col border-r border-[#eceae4] sticky top-0 z-50">
-      {/* Header */}
       <div className="px-6 py-10 border-b border-[#eceae4]/50">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#1c1c1c] flex items-center justify-center shadow-lg shadow-[#1c1c1c]/10">
@@ -527,7 +498,6 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 px-4 py-8 space-y-1.5 overflow-y-auto">
         <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3">Main Menu</div>
         {nav.map(({ label, href, icon: Icon, badge }) => {
@@ -625,7 +595,6 @@ export default function Sidebar() {
         )}
       </nav>
 
-      {/* Footer / Status */}
       <div className="px-4 py-6 border-t border-[#eceae4]/50 bg-[rgba(28,28,28,0.01)]">
         <div className="mb-4 px-2">
           <label className="text-[9px] font-bold text-[#5f5f5d]/60 uppercase tracking-widest block mb-1.5">Shift Status</label>
@@ -665,7 +634,6 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Status Reason Modal */}
         <Modal 
           open={!!showStatusModal} 
           onClose={() => setShowStatusModal(null)} 
@@ -703,7 +671,6 @@ export default function Sidebar() {
            </button>
         )}
 
-        {/* Leave Request Modal */}
         <Modal 
           open={showLeaveModal} 
           onClose={() => setShowLeaveModal(false)} 

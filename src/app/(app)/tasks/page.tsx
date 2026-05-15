@@ -124,7 +124,7 @@ export default function TasksPage() {
     }
     
     return filteredQuery;
-  }, []);
+  }, [profile?.role, profile?.assigned_segments, profile?.assigned_task_types, profile?.id]);
 
   const fetchTasks = useCallback(async (silent = false) => {
     const requestId = ++requestIdRef.current;
@@ -341,7 +341,7 @@ export default function TasksPage() {
     setTasks(healedTasks);
     setCounts(c);
     setLoading(false);
-  }, [profile, debouncedSearch, typeFilter, agentFilter, dueStart, dueEnd, statusFilter, page, supabase]);
+  }, [profile, debouncedSearch, typeFilter, agentFilter, dueStart, dueEnd, statusFilter, page, supabase, applyAgentFilters]);
 
   useEffect(() => {
     if (profileLoading) return; // Wait for the security profile to establish identity before fetching tasks

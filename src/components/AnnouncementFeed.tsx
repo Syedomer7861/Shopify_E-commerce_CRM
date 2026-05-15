@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { Megaphone, Pin, Star, Info, Bell, AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -54,7 +54,7 @@ export default function AnnouncementFeed() {
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const supabase = createClient();
 
-  const fetchAnnouncements = async () => {
+  const fetchAnnouncements = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("announcements")
@@ -70,7 +70,7 @@ export default function AnnouncementFeed() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -84,7 +84,7 @@ export default function AnnouncementFeed() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchAnnouncements, supabase]);
 
   if (loading && announcements.length === 0) return null;
   if (!loading && announcements.length === 0) return null;

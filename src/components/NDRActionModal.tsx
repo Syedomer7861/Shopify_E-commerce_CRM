@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Modal } from "./ui";
 import { Zap, Truck, MapPin, MessageSquare, Image as ImageIcon, Loader2, Clock, AlertCircle, Package } from "lucide-react";
 import toast from "react-hot-toast";
@@ -34,7 +34,7 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
   });
 
   // Fetch tracking history if AWB or Shipment ID is available
-  const fetchTracking = async () => {
+  const fetchTracking = useCallback(async () => {
     const termToUse = shiprocketOrderId || initialShipmentId || awb;
     if (!termToUse || termToUse === "undefined" || termToUse === "null") return;
     
@@ -98,13 +98,13 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
     } finally {
       setHistoryLoading(false);
     }
-  };
+  }, [shiprocketOrderId, initialShipmentId, awb]);
 
   useEffect(() => {
     if (open) {
       fetchTracking();
     }
-  }, [open, shiprocketOrderId, initialShipmentId, awb]);
+  }, [open, fetchTracking]);
 
   const actions = [
     { id: "re_attempt", label: "Re-attempt Delivery", icon: Truck, description: "Standard next-day delivery attempt" },

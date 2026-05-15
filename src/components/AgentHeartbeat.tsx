@@ -35,7 +35,7 @@ export function AgentHeartbeat() {
     intervalId = setInterval(sendHeartbeat, 60_000);
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [supabase.auth]);
 
   return null; // Renders nothing — purely a side-effect component
 }

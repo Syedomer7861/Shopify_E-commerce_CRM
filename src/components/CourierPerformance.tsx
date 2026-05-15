@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, Cell, PieChart, Pie, Legend 
@@ -23,7 +23,7 @@ export default function LogisticsPulse() {
   const [lastUpdate, setLastUpdate] = useState<string>("");
   const autoSyncStarted = useRef(false);
 
-  const fetchData = async (silent = false) => {
+  const fetchData = useCallback(async (silent = false) => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       if (!silent && !data) setLoading(true);
@@ -63,7 +63,7 @@ export default function LogisticsPulse() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [data]);
 
   useEffect(() => {
     const init = async () => {
@@ -74,19 +74,11 @@ export default function LogisticsPulse() {
       }
     };
     init();
-  }, []);
-
-  // Watch for data availability to trigger auto-sync
-  useEffect(() => {
-    if (!loading && (!data || !data.summary || data.summary.total === 0) && !syncing && !autoSyncStarted.current) {
-      autoSyncStarted.current = true;
-      handleSync();
-    }
-  }, [loading, data, syncing]);
+  }, [fetchData, loading]);
 
   const lastRefreshProgress = useRef(0);
   
-  const handleSync = async () => {
+  const handleSync = useCallback(async () => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       setSyncing(true);
@@ -178,7 +170,15 @@ export default function LogisticsPulse() {
         setSyncProgress(0);
       }, 3000);
     }
-  };
+  }, [fetchData]);
+
+  // Watch for data availability to trigger auto-sync
+  useEffect(() => {
+    if (!loading && (!data || !data.summary || data.summary.total === 0) && !syncing && !autoSyncStarted.current) {
+      autoSyncStarted.current = true;
+      handleSync();
+    }
+  }, [loading, data, syncing, handleSync]);
 
   // Determine if we should show the empty state vs the dashboard
   const showEmptyState = (!data || !data.summary || data.summary.total === 0) && !syncing;

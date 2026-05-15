@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Download, TrendingUp, TrendingDown, Loader2, ShoppingBag, BarChart3, ClipboardCheck, Users, Info, RefreshCw } from "lucide-react";
 import { PageHeader, StatCard } from "@/components/ui";
 import * as XLSX from "xlsx";
@@ -81,7 +81,7 @@ export default function ReportsPage() {
     segment: "all"
   });
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { profile, loading: profileLoading } = useCurrentProfile();
 
   const formatDurationReport = (ms: number) => {
@@ -95,13 +95,13 @@ export default function ReportsPage() {
 
 
 
-  async function fetchAgentsAndStates() {
+  const fetchAgentsAndStates = useCallback(async () => {
     const { data: pData } = await supabase.from("profiles").select("id, full_name, role").order("full_name");
     if (pData) setAgents(pData.map((p: any) => ({ id: p.id, name: p.full_name || p.id })));
     
     // Static common states as fallback for faster UI
     setStates(["Karnataka", "Maharashtra", "Delhi", "Gujarat", "Tamil Nadu", "West Bengal", "Uttar Pradesh", "Telangana", "Haryana", "Rajasthan", "Madhya Pradesh", "Other"]);
-  }
+  }, [supabase]);
 
 
 
@@ -595,7 +595,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     fetchAgentsAndStates();
-  }, []);
+  }, [fetchAgentsAndStates]);
 
   // Real-time Status Sync for Reports
   useEffect(() => {
