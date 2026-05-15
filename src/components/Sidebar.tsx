@@ -111,12 +111,12 @@ export default function Sidebar() {
       let dueQuery = supabase.from("tasks")
         .select("*, customer:customers!inner(id, segment)", { count: "exact", head: true })
         .eq("due_date", today)
-        .neq("status", "done");
+        .not("status", "in", '("done","cancelled")');
       
       let overdueQuery = supabase.from("tasks")
         .select("*, customer:customers!inner(id, segment)", { count: "exact", head: true })
         .lt("due_date", today)
-        .neq("status", "done");
+        .not("status", "in", '("done","cancelled")');
 
       if (role === "agent" && profile) {
         dueQuery = applyAgentFilters(dueQuery, profile);

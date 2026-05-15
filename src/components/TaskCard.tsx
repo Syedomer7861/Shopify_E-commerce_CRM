@@ -599,7 +599,8 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   className="font-bold text-[#1c1c1c] text-sm group-hover/card:text-[#1c1c1c]/80 transition-colors flex items-center gap-2 hover:underline"
                 >
                   {task.customer.name}
-                  {isDone && <span className="badge bg-blue-50 text-blue-600 text-[10px]">DONE</span>}
+                  {task.status === "done" && <span className="badge bg-blue-50 text-blue-600 text-[10px]">DONE</span>}
+                  {task.status === "cancelled" && <span className="badge bg-gray-50 text-gray-400 text-[10px]">CANCELLED</span>}
                 </Link>
                 <div 
                   onClick={(e) => e.stopPropagation()} 

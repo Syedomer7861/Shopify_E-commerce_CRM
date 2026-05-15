@@ -239,11 +239,11 @@ export default function TasksPage() {
 
     // Status logic (Dynamic vs Static)
     if (statusFilter === "due") {
-      query = query.eq("due_date", today).neq("status", "done");
+      query = query.eq("due_date", today).not("status", "in", '("done","cancelled")');
     } else if (statusFilter === "overdue") {
-      query = query.lt("due_date", today).neq("status", "done");
+      query = query.lt("due_date", today).not("status", "in", '("done","cancelled")');
     } else if (statusFilter === "pending") {
-      query = query.gt("due_date", today).neq("status", "done");
+      query = query.gt("due_date", today).not("status", "in", '("done","cancelled")');
     } else if (statusFilter === "flagged") {
       query = query.eq("manager_action", "rejected");
     } else if (statusFilter !== "all") {
@@ -277,9 +277,9 @@ export default function TasksPage() {
       }
 
       if (status === "done") return q.eq("status", "done");
-      if (status === "overdue") return q.lt("due_date", today).neq("status", "done");
-      if (status === "due") return q.eq("due_date", today).neq("status", "done");
-      if (status === "pending") return q.gt("due_date", today).neq("status", "done");
+      if (status === "overdue") return q.lt("due_date", today).not("status", "in", '("done","cancelled")');
+      if (status === "due") return q.eq("due_date", today).not("status", "in", '("done","cancelled")');
+      if (status === "pending") return q.gt("due_date", today).not("status", "in", '("done","cancelled")');
       return q;
     };
 
