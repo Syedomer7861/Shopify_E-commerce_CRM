@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CheckCircle2, WifiOff, ShoppingBag, Zap, Mail, Check, ShieldCheck } from "lucide-react";
 import { PageHeader, Modal, SyncProgressBar } from "@/components/ui";
@@ -11,6 +11,26 @@ import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission, isAdmin } from "@/lib/permissions";
 import { logAuditEvent } from "@/lib/audit";
 import * as XLSX from "xlsx";
+import { Settings, ProductOverride } from "@/types";
+
+interface PipelineItem {
+  id: string;
+  customer: { id: string; name: string; phone?: string; whatsapp_reminders_enabled?: boolean };
+  called_at?: string;
+  note?: string;
+  type?: string;
+  isAuto?: boolean;
+  isManual?: boolean;
+  isWorkflow?: boolean;
+  task_type?: string;
+  due_date?: string;
+  workflowName?: string;
+}
+
+interface PipelineState {
+  sent: PipelineItem[];
+  waiting: PipelineItem[];
+}
 
 type Tab = "general" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database";
 
@@ -76,9 +96,10 @@ export default function SettingsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>((searchParams.get("tab") as Tab) || "general");
+  const supabase = useMemo(() => createClient(), []);
 
 
-  const [settings, setSettings] = useState<any>({
+  const [settings, setSettings] = useState<Settings>({
     id: SETTINGS_ID,
     review_offset_days: 5,
     reorder_offset_days: 20,
@@ -146,10 +167,11 @@ export default function SettingsPage() {
     email_cart_abandoned_template: "",
     email_reorder_subject: "",
     email_reorder_template: "",
+    updated_at: new Date().toISOString()
   });
-  const [pipeline, setPipeline] = useState<{ sent: any[], waiting: any[] }>({ sent: [], waiting: [] });
+  const [pipeline, setPipeline] = useState<PipelineState>({ sent: [], waiting: [] });
   const [fetchingPipeline, setFetchingPipeline] = useState(false);
-  const [overrides, setOverrides] = useState<any[]>([]);
+  const [overrides, setOverrides] = useState<ProductOverride[]>([]);
   const [availableProducts, setAvailableProducts] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -197,7 +219,7 @@ export default function SettingsPage() {
       }
     }
     fetchLastSync();
-  }, []);
+  }, [supabase]);
   const [manualWaModal, setManualWaModal] = useState(false);
   const [manualWaTaskId, setManualWaTaskId] = useState("");
   const [manualWaCustomerName, setManualWaCustomerName] = useState("");
@@ -222,7 +244,139 @@ export default function SettingsPage() {
 
   const { profile, loading: profileLoading } = useCurrentProfile();
 
-  const supabase = createClient();
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/whatsapp/status");
+      const data = await res.json();
+      if (!data.ready) {
+        try {
+          const qrRes = await fetch("/api/whatsapp/qr");
+          const qrData = await qrRes.json();
+          setWaStatus({ ...data, qr: qrData.qr || null });
+        } catch {
+          setWaStatus({ ...data, qr: null });
+        }
+      } else {
+        setWaStatus({ ...data, qr: null });
+      }
+    } catch (err) {
+      setWaStatus({ state: "DISCONNECTED", qr: null });
+    }
+  }, []);
+
+  const fetchMaskedCount = useCallback(async () => {
+    try {
+      const { count } = await supabase
+        .from("customers")
+        .select("*", { count: "exact", head: true })
+        .or('phone.ilike.%x%,phone.ilike.%_SR_%');
+      setMaskedCount(count);
+    } catch (e) {
+      console.error("Failed to fetch masked count:", e);
+    }
+  }, [supabase]);
+
+  const fetchPipelineData = useCallback(async () => {
+    setFetchingPipeline(true);
+    try {
+      const today = toDbDateString(new Date());
+      const now = new Date();
+      
+      const { data: waitingTasks } = await supabase
+        .from("tasks")
+        .select(`
+          id, task_type, 
+          customer:customers (id, name, phone, whatsapp_reminders_enabled)
+        `)
+        .eq("due_date", today)
+        .eq("status", "pending")
+        .in("task_type", ["review", "reorder", "recovery", "final_followup", "issue_resolution"])
+        .limit(15);
+
+      const { data: workflowInstances } = await supabase
+        .from("workflow_instances")
+        .select(`
+          id, next_run_at, status, 
+          customer:customers (id, name),
+          workflows (name)
+        `)
+        .eq("status", "active")
+        .lte("next_run_at", new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString())
+        .order("next_run_at", { ascending: true })
+        .limit(10);
+
+      const { data: sentLogs } = await supabase
+        .from("whatsapp_messages")
+        .select("*, customer:customers(name)")
+        .eq("direction", "outbound")
+        .gte("created_at", today + "T00:00:00Z")
+        .order("created_at", { ascending: false })
+        .limit(15);
+
+      const formattedWaiting = [
+        ...(waitingTasks || [])
+          .filter((t: any) => t.customer?.whatsapp_reminders_enabled !== false)
+          .map(t => ({ ...t, isManual: true })),
+        ...(workflowInstances || []).map((w: any) => ({
+          id: w.id,
+          isWorkflow: true,
+          task_type: "automation",
+          customer: w.customer,
+          due_date: w.next_run_at,
+          workflowName: w.workflows?.name
+        }))
+      ].sort((a: any, b: any) => {
+        const dateA = a.isWorkflow ? new Date(a.due_date).getTime() : new Date(today).getTime();
+        const dateB = b.isWorkflow ? new Date(b.due_date).getTime() : new Date(today).getTime();
+        return dateA - dateB;
+      });
+
+      setPipeline({ 
+        sent: (sentLogs || []).map((l: any) => ({
+          id: l.id,
+          customer: l.customer as { id: string, name: string },
+          called_at: l.created_at,
+          note: l.body,
+          type: l.type,
+          isAuto: !!l.meta_message_id
+        })), 
+        waiting: (formattedWaiting as any[]).map((w: any) => ({
+          ...w,
+          customer: Array.isArray(w.customer) ? w.customer[0] : w.customer
+        }))
+      });
+    } catch (err) {
+      console.error("Pipeline fetch error:", err);
+    } finally {
+      setFetchingPipeline(false);
+    }
+  }, [supabase]);
+
+  const fetchAvailableProducts = useCallback(async () => {
+    try {
+      const { data: oData } = await supabase.from("orders").select("line_items");
+      const allOrders = [...(oData || [])];
+      const productsMap = new Map();
+
+      allOrders.forEach(order => {
+        const items = Array.isArray(order.line_items) ? order.line_items : [];
+        items.forEach((item: any) => {
+          const rawId = item.product_id || item.id || item.title || item.name;
+          const name = item.title || item.name || item.product_name;
+          if (rawId && name) {
+            const id = String(rawId);
+            productsMap.set(id, name);
+          }
+        });
+      });
+
+      const products = Array.from(productsMap).map(([id, name]) => ({ id, name }));
+      setAvailableProducts(products);
+    } catch (err) {
+      console.error("Error fetching unique products:", err);
+    }
+  }, [supabase]);
 
   const startSyncStream = async (endpoint: string) => {
     setSyncStatus({ active: true, progress: 0, message: "Connecting...", isComplete: false, error: null });
@@ -283,45 +437,6 @@ export default function SettingsPage() {
     }
   };
 
-  const fetchStatus = async () => {
-    try {
-      // Fetch connection status
-      const res = await fetch("/api/whatsapp/status");
-      const data = await res.json();
-      
-      // Also fetch QR if not ready
-      if (!data.ready) {
-        try {
-          const qrRes = await fetch("/api/whatsapp/qr");
-          const qrData = await qrRes.json();
-          setWaStatus({ ...data, qr: qrData.qr || null });
-        } catch {
-          setWaStatus({ ...data, qr: null });
-        }
-      } else {
-        setWaStatus({ ...data, qr: null });
-      }
-    } catch (err) {
-      setWaStatus({ state: "DISCONNECTED", qr: null });
-    }
-  };
-
-  useEffect(() => {
-    fetchSettings();
-    fetchAvailableProducts();
-    
-    // WhatsApp status polling
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 5000);
-
-    // Auto-sync for products (Realtime)
-    
-
-    return () => {
-      clearInterval(interval);
-      
-    };
-  }, []);
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
@@ -364,7 +479,7 @@ export default function SettingsPage() {
     return () => {
       clearInterval(interval);
     };
-  }, [fetchSettings, fetchAvailableProducts]);
+  }, [fetchSettings, fetchAvailableProducts, fetchStatus]);
 
   useEffect(() => {
     const authStatus = searchParams.get("auth");
@@ -374,98 +489,15 @@ export default function SettingsPage() {
       // Clean URL
       const newParams = new URLSearchParams(searchParams.toString());
       newParams.delete("auth");
-      router.replace(`/settings?${newParams.toString()}`);
+      router.replace(`/settings?tab=${tab}&${newParams.toString()}`);
     } else if (authStatus === "error") {
       toast.error("Gmail authentication failed.");
     }
-  }, [searchParams, fetchSettings, router]);
+  }, [searchParams, fetchSettings, router, tab]);
 
-  async function fetchMaskedCount() {
-    try {
-      const { count } = await supabase
-        .from("customers")
-        .select("*", { count: "exact", head: true })
-        .or('phone.ilike.%x%,phone.ilike.%_SR_%');
-      setMaskedCount(count);
-    } catch (e) {
-      console.error("Failed to fetch masked count:", e);
-    }
-  }
 
-  async function fetchPipelineData() {
-    setFetchingPipeline(true);
-    try {
-      const today = toDbDateString(new Date());
-      const now = new Date();
-      
-      // 1. Waiting Queue (Manual Tasks + Auto Workflows)
-      const { data: waitingTasks } = await supabase
-        .from("tasks")
-        .select(`
-          id, task_type, 
-          customer:customers (id, name, phone, whatsapp_reminders_enabled)
-        `)
-        .eq("due_date", today)
-        .eq("status", "pending")
-        .in("task_type", ["review", "reorder", "recovery", "final_followup", "issue_resolution"])
-        .limit(15);
 
-      const { data: workflowInstances } = await supabase
-        .from("workflow_instances")
-        .select(`
-          id, next_run_at, status, 
-          customer:customers (id, name),
-          workflows (name)
-        `)
-        .eq("status", "active")
-        .lte("next_run_at", new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString()) // Next 24h
-        .order("next_run_at", { ascending: true })
-        .limit(10);
 
-      // 2. Recently Sent (WhatsApp Logs - includes Auto & Manual)
-      const { data: sentLogs } = await supabase
-        .from("whatsapp_messages")
-        .select("*, customer:customers(name)")
-        .eq("direction", "outbound")
-        .gte("created_at", today + "T00:00:00Z")
-        .order("created_at", { ascending: false })
-        .limit(15);
-
-      const formattedWaiting = [
-        ...(waitingTasks || [])
-          .filter((t: any) => t.customer?.whatsapp_reminders_enabled !== false)
-          .map(t => ({ ...t, isManual: true })),
-        ...(workflowInstances || []).map((w: any) => ({
-          id: w.id,
-          isWorkflow: true,
-          task_type: "automation",
-          customer: w.customer,
-          due_date: w.next_run_at,
-          workflowName: w.workflows?.name
-        }))
-      ].sort((a: any, b: any) => {
-        const dateA = a.isWorkflow ? new Date(a.due_date).getTime() : new Date(today).getTime();
-        const dateB = b.isWorkflow ? new Date(b.due_date).getTime() : new Date(today).getTime();
-        return dateA - dateB;
-      });
-
-      setPipeline({ 
-        sent: (sentLogs || []).map(l => ({
-          id: l.id,
-          customer: l.customer,
-          called_at: l.created_at,
-          note: l.body,
-          type: l.type,
-          isAuto: !!l.meta_message_id
-        })), 
-        waiting: formattedWaiting
-      });
-    } catch (err) {
-      console.error("Pipeline fetch error:", err);
-    } finally {
-      setFetchingPipeline(false);
-    }
-  }
 
   async function handleOpenManualWa(task: any) {
     setFetchingPipeline(true);
@@ -576,31 +608,7 @@ export default function SettingsPage() {
     }
   }
 
-  async function fetchAvailableProducts() {
-    try {
-      // Fetch unique products from the canonical orders table
-      const { data: oData } = await supabase.from("orders").select("line_items");
-      const allOrders = [...(oData || [])];
-      const productsMap = new Map();
 
-      allOrders.forEach(order => {
-        const items = Array.isArray(order.line_items) ? order.line_items : [];
-        items.forEach((item: any) => {
-          const rawId = item.product_id || item.id || item.title || item.name;
-          const name = item.title || item.name || item.product_name;
-          if (rawId && name) {
-            const id = String(rawId);
-            productsMap.set(id, name);
-          }
-        });
-      });
-
-      const products = Array.from(productsMap).map(([id, name]) => ({ id, name }));
-      setAvailableProducts(products);
-    } catch (err) {
-      console.error("Error fetching unique products:", err);
-    }
-  }
 
   async function recalculateTasks(currentSettings: any) {
     try {
@@ -1507,7 +1515,7 @@ export default function SettingsPage() {
                                   <span className="text-[10px] font-bold text-[#1c1c1c] truncate uppercase tracking-widest">{log.customer?.name || "Customer"}</span>
                                   {log.isAuto && <span className="text-[8px] px-1.5 py-0.5 bg-[#1c1c1c] text-white rounded font-bold uppercase tracking-tighter">Auto</span>}
                                 </div>
-                                <span className="text-[9px] text-[#5f5f5d] font-bold opacity-40 tabular-nums">{new Date(log.called_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                <span className="text-[9px] text-[#5f5f5d] font-bold opacity-40 tabular-nums">{log.called_at ? new Date(log.called_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}</span>
                              </div>
                              <div className="text-[9px] text-[#5f5f5d] font-medium truncate opacity-60 leading-relaxed">{log.note}</div>
                            </div>
@@ -1529,7 +1537,7 @@ export default function SettingsPage() {
                            let timeText = `Launch at ${settings.whatsapp_send_time || "10:00"}`;
                             
                            if (task.isWorkflow) {
-                               const runTime = new Date(task.due_date);
+                               const runTime = new Date(task.due_date || "");
                                const diff = runTime.getTime() - now.getTime();
                                if (diff < 0) {
                                   timeText = "Processing Now";
@@ -1568,7 +1576,7 @@ export default function SettingsPage() {
                                        {timeText}
                                      </span>
                                      <span className="text-[8px] px-2 py-0.5 bg-[#eceae4]/30 border border-[#eceae4] text-[#5f5f5d] rounded-lg font-bold uppercase tracking-widest">
-                                       {task.isWorkflow ? (task.workflowName || "Workflow") : task.task_type.replace("_", " ")}
+                                       {task.isWorkflow ? (task.workflowName || "Workflow") : (task.task_type || "manual").replace("_", " ")}
                                      </span>
                                    </div>
                                  </div>
@@ -2363,9 +2371,9 @@ export default function SettingsPage() {
                     setNewOverride({
                       shopify_product_id: o.shopify_product_id,
                       product_name: o.product_name,
-                      review_offset_days: o.review_offset_days,
-                      reorder_offset_days: o.reorder_offset_days,
-                      final_offset_days: o.final_offset_days,
+                      review_offset_days: o.review_offset_days || 0,
+                      reorder_offset_days: o.reorder_offset_days || 0,
+                      final_offset_days: o.final_offset_days || 0,
                       course_duration_days: o.course_duration_days || 30,
                       usage_notes: o.usage_notes || "",
                       is_priority: o.is_priority || false,

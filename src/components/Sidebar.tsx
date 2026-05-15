@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { 
@@ -63,7 +63,7 @@ export default function Sidebar() {
   const path = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { unreadCount } = useChat();
   const [profile, setProfile] = useState<Profile | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -82,6 +82,7 @@ export default function Sidebar() {
   const [leaveData, setLeaveData] = useState({ start: "", end: "", reason: "" });
   const [isSubmittingLeave, setIsSubmittingLeave] = useState(false);
   const [reason, setReason] = useState("");
+  const [lastSync, setLastSync] = useState<Date>(new Date());
 
   const formatDuration = (ms: number) => {
     const seconds = Math.floor((ms / 1000) % 60);
@@ -182,6 +183,24 @@ export default function Sidebar() {
 
     return () => clearInterval(interval);
   }, [profile?.id]);
+
+  useEffect(() => {
+    const hbChannel = supabase
+      .channel('global-sync-heartbeat')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'settings', 
+        filter: `id=eq.00000000-0000-0000-0000-000000000000` 
+      }, () => {
+        setLastSync(new Date());
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(hbChannel);
+    };
+  }, [supabase]);
 
   async function fetchProfile() {
     try {
@@ -760,7 +779,7 @@ export default function Sidebar() {
            </div>
         </Modal>
 
-        <div className="flex items-center justify-between px-2 mb-6">
+        <div className="flex items-center justify-between px-2 mb-4">
             <div className="flex flex-col">
                 <span className="text-[9px] text-[#5f5f5d] uppercase font-bold tracking-widest opacity-60">Productive</span>
                 <span className="text-xs font-bold text-[#1c1c1c]">{formatDuration(timers.workMs)}</span>
@@ -769,6 +788,10 @@ export default function Sidebar() {
                 <span className="text-[9px] text-[#5f5f5d] uppercase font-bold tracking-widest opacity-60">Break</span>
                 <span className="text-xs font-bold text-amber-700">{formatDuration(timers.breakMs)}</span>
             </div>
+        </div>
+
+        <div className="px-2 mb-6 text-center">
+            <span className="text-[8px] text-[#5f5f5d] uppercase font-bold tracking-widest opacity-40">System Freshness: {lastSync.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
         </div>
 
         <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#f7f4ed] border border-[#eceae4] group">

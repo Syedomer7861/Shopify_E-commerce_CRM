@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { 
   Search, 
   RefreshCw, 
@@ -64,12 +64,12 @@ export default function TasksPage() {
   const [dueStart, setDueStart] = useState("");
   const [dueEnd, setDueEnd] = useState("");
   const [agentFilter, setAgentFilter] = useState("all");
-  const PAGE_SIZE = 50;
+  const PAGE_SIZE = 20;
   const { profile, loading: profileLoading } = useCurrentProfile();
   const requestIdRef = useRef(0);
 
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     // Read URL parameters on mount to support incoming links from Dashboard KPI cards or Chat threads
@@ -91,6 +91,19 @@ export default function TasksPage() {
       return;
     }
   }, []); // Only run once on mount
+  
+  // 1. Debounce Search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  // 2. Reset Page on Filter Change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, typeFilter, statusFilter, agentFilter, dueStart, dueEnd]);
 
   // Helper to apply specialization filters
   const applyAgentFilters = useCallback((query: any, prof: any) => {
@@ -122,8 +135,20 @@ export default function TasksPage() {
     if (isDemo) {
       if (!silent) setLoading(true);
       const { MOCK_TASKS } = await import("@/lib/mockData");
-      setTasks(MOCK_TASKS as any);
-      setTotalCount(MOCK_TASKS.length);
+      
+      // Apply search and paging to mock data for consistent UX
+      let filtered = [...MOCK_TASKS];
+      if (debouncedSearch) {
+        const s = debouncedSearch.toLowerCase();
+        filtered = filtered.filter(t => 
+          t.customer?.name?.toLowerCase().includes(s) || 
+          t.customer?.phone?.includes(s) ||
+          t.order_id?.toLowerCase().includes(s)
+        );
+      }
+      
+      setTotalCount(filtered.length);
+      setTasks(filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) as any);
       setCounts({ due: 1, overdue: 0, pending: 1, done: 12, flagged: 0 });
       setLoading(false);
       return;

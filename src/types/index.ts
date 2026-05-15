@@ -145,6 +145,7 @@ export interface AuditLog {
 }
 
 export interface Settings {
+  [key: string]: any;
   id: string;
   review_offset_days: number;
   reorder_offset_days: number;
@@ -156,16 +157,66 @@ export interface Settings {
   whatsapp_bridge_url?: string;
   whatsapp_admin_phone?: string;
   whatsapp_send_time?: string;
+  whatsapp_review_template?: string;
+  whatsapp_reorder_template?: string;
+  whatsapp_recovery_template?: string;
+  whatsapp_final_template?: string;
+  whatsapp_app_id?: string;
+  whatsapp_app_secret?: string;
+  whatsapp_verify_token?: string;
+  meta_review_name?: string;
+  meta_reorder_name?: string;
+  meta_recovery_name?: string;
+  meta_final_name?: string;
+  recovery_delay_hours?: number;
   wa_auto_welcome?: boolean;
   wa_auto_order_placed?: boolean;
   wa_auto_order_transit?: boolean;
   wa_auto_order_delivered?: boolean;
   wa_auto_cart_abandoned?: boolean;
+  wa_auto_reorder?: boolean;
   wa_welcome_template?: string;
   wa_order_placed_template?: string;
   wa_order_transit_template?: string;
   wa_order_delivered_template?: string;
   wa_cart_abandoned_template?: string;
+  wa_reorder_template?: string;
+  shopify_store_domain?: string;
+  shopify_api_key?: string;
+  shopify_client_id?: string;
+  shopify_api_secret?: string;
+  shopify_refresh_token?: string;
+  shopify_token_expires_at?: string | null;
+  shopify_webhook_secret?: string;
+  gmail_client_id?: string;
+  gmail_client_secret?: string;
+  gmail_project_id?: string;
+  gmail_auth_uri?: string;
+  gmail_token_uri?: string;
+  gmail_auth_provider_x509_cert_url?: string;
+  gmail_redirect_uris?: string[];
+  gmail_refresh_token?: string;
+  email_auto_welcome?: boolean;
+  email_auto_order_placed?: boolean;
+  email_auto_order_transit?: boolean;
+  email_auto_order_delivered?: boolean;
+  email_auto_cart_abandoned?: boolean;
+  email_auto_reorder?: boolean;
+  email_welcome_subject?: string;
+  email_welcome_template?: string;
+  email_order_placed_subject?: string;
+  email_order_placed_template?: string;
+  email_order_transit_subject?: string;
+  email_order_transit_template?: string;
+  email_order_delivered_subject?: string;
+  email_order_delivered_template?: string;
+  email_cart_abandoned_subject?: string;
+  email_cart_abandoned_template?: string;
+  email_reorder_subject?: string;
+  email_reorder_template?: string;
+  shiprocket_email?: string;
+  shiprocket_password?: string;
+  shiprocket_webhook_secret?: string;
   updated_at: string;
 }
 
@@ -177,6 +228,9 @@ export interface ProductOverride {
   review_offset_days?: number;
   reorder_offset_days?: number;
   final_offset_days?: number;
+  usage_notes?: string;
+  is_priority?: boolean;
+  upsell_product_name?: string;
   created_at: string;
 }
 

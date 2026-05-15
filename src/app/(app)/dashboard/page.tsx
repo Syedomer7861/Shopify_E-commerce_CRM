@@ -316,6 +316,7 @@ export default function Dashboard() {
       console.error("Dashboard fetch error:", err);
     } finally {
       setLoading(false);
+      setLastChecked(new Date());
     }
   }, [supabase, profile, agents.length, todayPage, overduePage, applyAgentFilters]);
 
@@ -395,6 +396,17 @@ export default function Dashboard() {
     }
   }, [syncing, fetchDashboardData]);
 
+  const debouncedRefresh = useCallback(() => {
+    // Sentinel: Prevent refreshes during active user input or modal open
+    const isInteracting = typeof document !== 'undefined' && (
+                         document.activeElement?.tagName === 'INPUT' || 
+                         document.activeElement?.tagName === 'TEXTAREA' ||
+                         document.querySelector('[role="dialog"]'));
+    if (isInteracting) return;
+
+    fetchDashboardData(true);
+  }, [fetchDashboardData]);
+
   useEffect(() => {
     fetchDashboardData();
     const pollInterval = setInterval(() => debouncedRefresh(), 60000);
@@ -404,19 +416,6 @@ export default function Dashboard() {
     const pollTimer = setInterval(() => {
       fetchDashboardData(true); // silent fetch
     }, 60000);
-
-    let refreshTimeout: NodeJS.Timeout;
-    const debouncedRefresh = () => {
-      // Sentinel: Prevent refreshes during active user input or modal open
-      const isInteracting = typeof document !== 'undefined' && (
-                           document.activeElement?.tagName === 'INPUT' || 
-                           document.activeElement?.tagName === 'TEXTAREA' ||
-                           document.querySelector('[role="dialog"]'));
-      if (isInteracting) return;
-
-      clearTimeout(refreshTimeout);
-      refreshTimeout = setTimeout(() => fetchDashboardData(true), 3000);
-    };
 
     // REAL-TIME UPDATES: Listen for global sync heartbeat
     const settingsChannel = supabase
@@ -454,9 +453,8 @@ export default function Dashboard() {
       clearInterval(pollTimer);
       clearInterval(syncHeartbeat);
       clearInterval(countdownTimer);
-      clearTimeout(refreshTimeout);
     };
-  }, [supabase, todayPage, overduePage, fetchDashboardData, handleGlobalSync]);
+  }, [supabase, todayPage, overduePage, fetchDashboardData, handleGlobalSync, debouncedRefresh]);
 
   // Helper to apply specialization filters
 
@@ -707,10 +705,15 @@ export default function Dashboard() {
         }
         actions={
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 mt-0.5 mr-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#1c1c1c] animate-pulse" />
-              <span className="text-[#5f5f5d] text-[9px] uppercase font-bold tracking-widest opacity-60">
-                Pulse: {Math.floor(nextSyncIn / 60)}:{(nextSyncIn % 60).toString().padStart(2, '0')}
+            <div className="flex flex-col items-end gap-0.5 mt-0.5 mr-3">
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#1c1c1c] animate-pulse" />
+                <span className="text-[#5f5f5d] text-[9px] uppercase font-bold tracking-widest opacity-60">
+                  Pulse: {Math.floor(nextSyncIn / 60)}:{(nextSyncIn % 60).toString().padStart(2, '0')}
+                </span>
+              </div>
+              <span className="text-[#5f5f5d] text-[8px] uppercase font-bold tracking-widest opacity-30">
+                Last Sync: {lastChecked.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
               </span>
             </div>
             <button 

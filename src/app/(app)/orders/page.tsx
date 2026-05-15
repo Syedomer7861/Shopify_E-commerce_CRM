@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Search, Package, RefreshCw, Trash2, Download, MessageSquare, ExternalLink, Filter } from "lucide-react";
 import Link from "next/link";
 import { PageHeader, DeliveryBadge, Avatar, EmptyState, Modal, Pagination } from "@/components/ui";
@@ -51,7 +51,7 @@ export default function OrdersPage() {
   const [pageSize] = useState(50);
   const [totalMatching, setTotalMatching] = useState(0);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const fetchOrders = useCallback(async (isSilent = false) => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");

@@ -94,23 +94,6 @@ export default function ReportsPage() {
 
 
 
-  if (profileLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-[#5f5f5d] gap-3">
-        <RefreshCw className="w-8 h-8 animate-spin" />
-        <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Compiling Analytics Data...</p>
-      </div>
-    );
-  }
-
-  if (!hasPermission(profile, 'view_analytics')) {
-    return (
-      <AccessDenied 
-        title="Intelligence Access Locked" 
-        desc="Access to the Analytics Engine and Reporting Suite is restricted to authorized administrative personnel." 
-      />
-    );
-  }
 
   async function fetchAgentsAndStates() {
     const { data: pData } = await supabase.from("profiles").select("id, full_name, role").order("full_name");
@@ -660,6 +643,24 @@ export default function ReportsPage() {
 
     return () => clearInterval(interval);
   }, [loading, activeTab]);
+
+  if (profileLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-[#5f5f5d] gap-3">
+        <RefreshCw className="w-8 h-8 animate-spin" />
+        <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Compiling Analytics Data...</p>
+      </div>
+    );
+  }
+
+  if (!hasPermission(profile, 'view_analytics')) {
+    return (
+      <AccessDenied 
+        title="Intelligence Access Locked" 
+        desc="Access to the Analytics Engine and Reporting Suite is restricted to authorized administrative personnel." 
+      />
+    );
+  }
 
   async function generateMasterDataPDF() {
     setExportingMaster(true);

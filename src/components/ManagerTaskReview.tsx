@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { 
   CheckCircle, XCircle, Search, Filter, Clock, 
   MessageSquare, User, Phone, Zap, ArrowRight,
@@ -14,7 +14,7 @@ import toast from "react-hot-toast";
 import type { Task, Customer, Order, AbandonedCart } from "@/types";
 
 export default function ManagerTaskReview() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<any[]>([]);
   const [ndrOrders, setNdrOrders] = useState<any[]>([]);
@@ -44,7 +44,7 @@ export default function ManagerTaskReview() {
     setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
   }, []);
 
-  const fetchTasks = async (silent = false) => {
+  const fetchTasks = useCallback(async (silent = false) => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       if (!silent && !tasks.length) setLoading(true);
@@ -152,9 +152,9 @@ export default function ManagerTaskReview() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, currentPage, agentFilter, typeFilter, outcomeFilter, uzmaOnly, searchTerm]);
 
-  const fetchNdrOrders = async (silent = false) => {
+  const fetchNdrOrders = useCallback(async (silent = false) => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       if (!silent && !ndrOrders.length) setLoading(true);
@@ -216,18 +216,24 @@ export default function ManagerTaskReview() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, currentPage, searchTerm]);
 
   useEffect(() => {
-    supabase.from("profiles").select("id, name").eq("role", "agent").eq("is_active", true).then(({ data }) => {
-      if (data) setAgents(data);
-    });
-  }, []);
+    async function fetchAgents() {
+      try {
+        const { data } = await supabase.from("profiles").select("id, name").eq("role", "agent").eq("is_active", true);
+        if (data) setAgents(data);
+      } catch (err) {
+        console.error("Agents fetch error:", err);
+      }
+    }
+    fetchAgents();
+  }, [supabase]);
 
   useEffect(() => {
     if (viewMode === 'audit') fetchTasks();
     else fetchNdrOrders();
-  }, [currentPage, agentFilter, uzmaOnly, typeFilter, outcomeFilter, viewMode, searchTerm]);
+  }, [currentPage, agentFilter, uzmaOnly, typeFilter, outcomeFilter, viewMode, searchTerm, fetchTasks, fetchNdrOrders]);
 
   useEffect(() => {
     setCurrentPage(1);

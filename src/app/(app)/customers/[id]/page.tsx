@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, use, useCallback } from "react";
+import { useState, useEffect, use, useCallback, useMemo } from "react";
 import { ArrowLeft, Phone, Mail, ShoppingBag, PhoneCall, CheckSquare, FileText, AlertTriangle, RefreshCw, ToggleLeft, ToggleRight, MapPin, Home, Info, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -28,7 +28,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     setCurrentPage(1);

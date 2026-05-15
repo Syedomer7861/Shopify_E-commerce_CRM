@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase";
 import type { Profile } from "@/types";
 import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
@@ -8,7 +8,7 @@ import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
 export function useCurrentProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     let active = true;

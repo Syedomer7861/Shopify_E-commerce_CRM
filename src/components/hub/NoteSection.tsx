@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { StickyNote, Plus, Trash2, Loader2, Save, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -11,13 +11,11 @@ export function NoteSection() {
   const [isAdding, setIsAdding] = useState(false);
   const [tableError, setTableError] = useState(false);
   const [newNote, setNewNote] = useState({ title: "", content: "" });
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
-  useEffect(() => {
-    fetchNotes();
-  }, []);
 
-  async function fetchNotes() {
+
+  const fetchNotes = useCallback(async () => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       setNotes([
@@ -48,7 +46,11 @@ export function NoteSection() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
 
   async function addNote() {
     if (!newNote.content.trim()) return;

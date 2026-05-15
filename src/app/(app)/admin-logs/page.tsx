@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, Search, Filter, Clock, User, Activity, ArrowRight, Download, RefreshCw, Loader2 as LoaderIcon } from "lucide-react";
 import { PageHeader, Avatar, Pagination, AccessDenied } from "@/components/ui";
@@ -20,7 +20,7 @@ export default function AdminLogs() {
   const [currentPage, setCurrentPage] = useState(1);
   
   const { profile, loading: profileLoading } = useCurrentProfile();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
 
   const fetchLogs = useCallback(async () => {

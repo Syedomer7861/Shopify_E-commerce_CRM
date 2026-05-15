@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { 
   Users, UserCheck, Clock, TrendingUp, History, 
   Search, Calendar, Filter, Eye, Phone, CheckCircle, 
@@ -45,7 +45,7 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
 
   const { profile: currentProfile } = useCurrentProfile();
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       setLoading(true);
@@ -102,20 +102,16 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange.start, dateRange.end, currentProfile]);
 
   useEffect(() => {
     fetchData();
     const pollInterval = setInterval(() => fetchData(), 60000);
     
-    // Listen for Real-time profile changes (online/offline, action updates)
-    
-
     return () => {
       if (typeof pollInterval !== "undefined") clearInterval(pollInterval);
-      
     };
-  }, [dateRange]);
+  }, [fetchData]);
 
 
 

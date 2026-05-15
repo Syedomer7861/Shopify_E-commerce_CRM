@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Users, Phone, Mail, MapPin, Briefcase, Calendar, CheckCircle, Clock, Plus, Search, X, Edit3, UserPlus, UserMinus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui";
@@ -101,8 +101,8 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
   const [customCity, setCustomCity] = useState({ add: false, edit: false });
   const [customCityValue, setCustomCityValue] = useState({ add: "", edit: "" });
 
-  useEffect(() => {
-    const mapped: Employee[] = data.map(p => ({
+  const mappedEmployees = useMemo(() => {
+    return data.map(p => ({
       id: p.id,
       name: p.name || p.email.split("@")[0],
       email: p.email,
@@ -111,19 +111,24 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
       designation: p.designation || (p.role === "hr" ? "HR" : (p.role || "Agent").charAt(0).toUpperCase() + (p.role || "Agent").slice(1)),
       department: p.department || "General",
       joinDate: p.joining_date || "—",
-      status: !p.is_active ? "Offboarded" : (p.notice_period ? "Notice Period" : "Active"),
+      status: (!p.is_active ? "Offboarded" : (p.notice_period ? "Notice Period" : "Active")) as EmpStatus,
       salary: Number(p.monthly_salary) || 0,
       location: p.location || "—",
       emergencyContact: p.emergency_contact || "—",
       onboarding: (p.onboarding_progress && p.onboarding_progress.length > 0) ? p.onboarding_progress : ONBOARDING_TASKS.map(t => ({ task: t, done: false })),
       offboarding: (p.offboarding_progress && p.offboarding_progress.length > 0) ? p.offboarding_progress : OFFBOARDING_TASKS.map(t => ({ task: t, done: false })),
     }));
-    setEmployees(mapped);
-    if (selected) {
-      const updated = mapped.find(e => e.id === selected.id);
-      if (updated) setSelected(updated);
-    }
   }, [data]);
+
+  useEffect(() => {
+    setEmployees(mappedEmployees);
+    if (selected) {
+      const updated = mappedEmployees.find(e => e.id === selected.id);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(selected)) {
+        setSelected(updated);
+      }
+    }
+  }, [mappedEmployees, selected]);
 
   const handleUpdate = async (id: string, updates: any) => {
     try {

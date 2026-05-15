@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Bell, Plus, Trash2, Loader2, Clock, Calendar, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { cn, timeAgo } from "@/lib/utils";
@@ -11,13 +11,8 @@ export function ReminderSection() {
   const [isAdding, setIsAdding] = useState(false);
   const [tableError, setTableError] = useState(false);
   const [newReminder, setNewReminder] = useState({ title: "", date: "", time: "" });
-  const supabase = createClient();
-
-  useEffect(() => {
-    fetchReminders();
-  }, []);
-
-  async function fetchReminders() {
+  const supabase = useMemo(() => createClient(), []);
+  const fetchReminders = useCallback(async () => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       setReminders([
@@ -49,7 +44,11 @@ export function ReminderSection() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchReminders();
+  }, [fetchReminders]);
 
   async function addReminder(e: React.FormEvent) {
     e.preventDefault();
