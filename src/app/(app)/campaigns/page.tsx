@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Megaphone, Plus, Search, Play, Pause, BarChart3, Users, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
 import { PageHeader, Modal, StatCard, Pagination } from "@/components/ui";
 import toast from "react-hot-toast";
@@ -25,7 +25,7 @@ export default function CampaignManager() {
   });
   const ITEMS_PER_PAGE = 10;
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       setLoading(true);
@@ -51,11 +51,13 @@ export default function CampaignManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
+
+
 
   if (profileLoading) {
     return (

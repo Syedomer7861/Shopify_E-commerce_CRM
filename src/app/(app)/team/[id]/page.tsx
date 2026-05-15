@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
   BarChart2, Users, ShoppingBag, 
@@ -23,19 +23,9 @@ export default function AgentDetailPage() {
     const [profile, setProfile] = useState<any>(null);
     const [activeTasks, setActiveTasks] = useState<any[]>([]);
 
-    useEffect(() => {
-        if (!id) return;
-        fetchAgentData();
 
-        // Real-time Subscription for Live Sync
-        
 
-        return () => {
-            
-        };
-    }, [id]);
-
-    async function fetchTasks() {
+    const fetchTasks = useCallback(async () => {
         const { data } = await supabase
             .from("tasks")
             .select("*, customer:customers(name, phone)")
@@ -44,9 +34,9 @@ export default function AgentDetailPage() {
             .order("due_date", { ascending: true })
             .limit(10);
         setActiveTasks(data || []);
-    }
+    }, [id, supabase]);
 
-    async function fetchAgentData() {
+    const fetchAgentData = useCallback(async () => {
         setLoading(true);
         try {
             // Fetch Profile
@@ -82,7 +72,19 @@ export default function AgentDetailPage() {
             console.error(err);
         }
         setLoading(false);
-    }
+    }, [id, supabase, fetchTasks]);
+
+    useEffect(() => {
+        if (!id) return;
+        fetchAgentData();
+
+        // Real-time Subscription for Live Sync
+        
+
+        return () => {
+            
+        };
+    }, [id, fetchAgentData]);
 
     if (loading) return (
         <div className="h-screen flex items-center justify-center bg-[#fcfbf8]">

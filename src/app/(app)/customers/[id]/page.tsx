@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useCallback } from "react";
 import { ArrowLeft, Phone, Mail, ShoppingBag, PhoneCall, CheckSquare, FileText, AlertTriangle, RefreshCw, ToggleLeft, ToggleRight, MapPin, Home, Info, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -34,11 +34,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
     setCurrentPage(1);
   }, [tab]);
 
-  useEffect(() => {
-    fetchCustomerData();
-  }, [id]);
-
-  async function fetchCustomerData() {
+  const fetchCustomerData = useCallback(async () => {
     setLoading(true);
     
     // 1. Fetch Customer
@@ -87,7 +83,11 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
     setAudits(((auditData || []).filter((audit: any) => audit.entity_id === id || audit.metadata?.customerId === id)) as any);
     setNotes(custData.notes || "");
     setLoading(false);
-  }
+  }, [id, supabase]);
+
+  useEffect(() => {
+    fetchCustomerData();
+  }, [fetchCustomerData]);
 
   async function handleSaveNote() {
     const { error } = await supabase

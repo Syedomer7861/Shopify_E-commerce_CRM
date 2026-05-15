@@ -98,7 +98,7 @@ export default function CalendarPage() {
 
   useEffect(() => {
     fetchTasks();
-  }, [currentDate, view]);
+  }, [currentDate, view, fetchTasks]);
 
   // ── Supabase real-time ────────────────────────────────────────────────────────
   useEffect(() => {

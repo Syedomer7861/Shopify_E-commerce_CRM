@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { 
   Users, Search, Clock, Shield, 
   RefreshCcw, AlertCircle, CheckCircle2, 
@@ -35,18 +35,9 @@ export default function FloorViewPage() {
   const { profile, loading: profileLoading } = useCurrentProfile();
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchFloorData();
-    
-    // Subscribe to profile changes for real-time updates
-    
 
-    return () => {
-      
-    };
-  }, []);
 
-  async function fetchFloorData() {
+  const fetchFloorData = useCallback(async () => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       setAgents([
@@ -77,7 +68,15 @@ export default function FloorViewPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    fetchFloorData();
+    
+    return () => {
+      
+    };
+  }, [fetchFloorData]);
 
   if (profileLoading) return <div className="p-12 text-center text-[#5f5f5d]">Verifying credentials...</div>;
   if (!hasPermission(profile, "view_analytics")) {

@@ -40,12 +40,11 @@ export default function OrdersPage() {
   const [maxAmount, setMaxAmount] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const { profile } = useCurrentProfile();
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-
   useEffect(() => {
-    const id = searchParams?.get('id');
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
     if (id) setSelectedOrderId(id);
-  }, [searchParams]);
+  }, []);
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -142,7 +141,7 @@ export default function OrdersPage() {
       pending: p.count || 0,
     });
     setLoading(false);
-  }, [supabase, page, pageSize, status, search, startDate, endDate, minAmount, maxAmount, orders.length]);
+  }, [supabase, page, pageSize, status, search, startDate, endDate, minAmount, maxAmount]);
 
   useEffect(() => {
     // Initial fetch

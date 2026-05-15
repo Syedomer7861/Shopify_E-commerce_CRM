@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { 
@@ -154,7 +154,7 @@ function HRDashboardContent() {
     setMounted(true);
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       setLoading(true);
@@ -231,7 +231,7 @@ function HRDashboardContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentProfile]);
 
   const handleLeaveAction = async () => {
     if (!leaveActionModal) return;
@@ -268,7 +268,7 @@ function HRDashboardContent() {
         supabase.removeChannel(channel);
       };
     }
-  }, [profileLoading, currentProfile]);
+  }, [profileLoading, currentProfile, fetchData]);
 
   const formatMins = (mins: number) => {
     const h = Math.floor(mins / 60);

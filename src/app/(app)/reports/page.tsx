@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Download, TrendingUp, TrendingDown, Loader2, ShoppingBag, BarChart3, ClipboardCheck, Users, Info, RefreshCw } from "lucide-react";
 import { PageHeader, StatCard } from "@/components/ui";
 import * as XLSX from "xlsx";
@@ -91,60 +91,8 @@ export default function ReportsPage() {
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  useEffect(() => {
-    fetchAgentsAndStates();
-  }, []);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [dateRange, filters]);
 
-  // Real-time Status Sync for Reports
-  useEffect(() => {
-    
-    return () => {  };
-  }, []);
-
-  // Background Pulse: Silently refresh analytics every 30s
-  useEffect(() => {
-    if (activeTab !== "agents" && activeTab !== "attendance" && activeTab !== "overview") return;
-    const interval = setInterval(() => {
-      // Interaction Sentinel
-      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
-                           document.activeElement?.tagName === 'TEXTAREA' ||
-                           document.querySelector('[role="dialog"]');
-      if (isInteracting) return;
-      
-      fetchAnalytics(true);
-    }, 60000); // Throttled to 60s for reports
-    return () => clearInterval(interval);
-  }, [activeTab, dateRange, filters]);
-
-  useEffect(() => {
-    if (loading || activeTab !== "agents") return;
-
-    const interval = setInterval(() => {
-      setStats((prev: any) => ({
-        ...prev,
-        agentAttendance: prev.agentAttendance.map((a: any) => {
-          if (!a.status || a.status === "offline") return a;
-          
-          const newOnlineSeconds = a.status === "online" ? (Number(a.onlineSeconds) || 0) + 1 : (Number(a.onlineSeconds) || 0);
-          const newBreakSeconds = a.status === "break" ? (Number(a.breakSeconds) || 0) + 1 : (Number(a.breakSeconds) || 0);
-          
-          return {
-            ...a,
-            onlineSeconds: newOnlineSeconds,
-            breakSeconds: newBreakSeconds,
-            onlineHours: formatDurationReport(newOnlineSeconds * 1000),
-            breakHours: formatDurationReport(newBreakSeconds * 1000)
-          };
-        })
-      }));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [loading, activeTab]);
 
   if (profileLoading) {
     return (
@@ -172,6 +120,8 @@ export default function ReportsPage() {
     setStates(["Karnataka", "Maharashtra", "Delhi", "Gujarat", "Tamil Nadu", "West Bengal", "Uttar Pradesh", "Telangana", "Haryana", "Rajasthan", "Madhya Pradesh", "Other"]);
   }
 
+
+
   const setRangePreset = (preset: "today" | "last7" | "last30" | "mtd" | "prevMonth") => {
     const now = new Date();
     let start = startOfMonth(now);
@@ -193,7 +143,7 @@ export default function ReportsPage() {
     });
   };
 
-  async function fetchAnalytics(silent = false) {
+  const fetchAnalytics = useCallback(async (silent = false) => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       if (!silent) setLoading(true);
@@ -654,7 +604,62 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [dateRange, filters, supabase]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [dateRange, filters, fetchAnalytics]);
+
+  useEffect(() => {
+    fetchAgentsAndStates();
+  }, []);
+
+  // Real-time Status Sync for Reports
+  useEffect(() => {
+    
+    return () => {  };
+  }, []);
+
+  // Background Pulse: Silently refresh analytics every 30s
+  useEffect(() => {
+    if (activeTab !== "agents" && activeTab !== "attendance" && activeTab !== "overview") return;
+    const interval = setInterval(() => {
+      // Interaction Sentinel
+      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+                           document.activeElement?.tagName === 'TEXTAREA' ||
+                           document.querySelector('[role="dialog"]');
+      if (isInteracting) return;
+      
+      fetchAnalytics(true);
+    }, 60000); // Throttled to 60s for reports
+    return () => clearInterval(interval);
+  }, [activeTab, fetchAnalytics]);
+
+  useEffect(() => {
+    if (loading || activeTab !== "agents") return;
+
+    const interval = setInterval(() => {
+      setStats((prev: any) => ({
+        ...prev,
+        agentAttendance: prev.agentAttendance.map((a: any) => {
+          if (!a.status || a.status === "offline") return a;
+          
+          const newOnlineSeconds = a.status === "online" ? (Number(a.onlineSeconds) || 0) + 1 : (Number(a.onlineSeconds) || 0);
+          const newBreakSeconds = a.status === "break" ? (Number(a.breakSeconds) || 0) + 1 : (Number(a.breakSeconds) || 0);
+          
+          return {
+            ...a,
+            onlineSeconds: newOnlineSeconds,
+            breakSeconds: newBreakSeconds,
+            onlineHours: formatDurationReport(newOnlineSeconds * 1000),
+            breakHours: formatDurationReport(newBreakSeconds * 1000)
+          };
+        })
+      }));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [loading, activeTab]);
 
   async function generateMasterDataPDF() {
     setExportingMaster(true);

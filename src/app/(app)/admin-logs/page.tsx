@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, Search, Filter, Clock, User, Activity, ArrowRight, Download, RefreshCw, Loader2 as LoaderIcon } from "lucide-react";
 import { PageHeader, Avatar, Pagination, AccessDenied } from "@/components/ui";
@@ -23,25 +23,7 @@ export default function AdminLogs() {
   const supabase = createClient();
   const router = useRouter();
 
-  useEffect(() => {
-    if (profileLoading || !profile) return;
-    if (!isAdmin(profile)) return;
-
-    fetchLogs();
-
-    // ── Supabase real-time: new audit_logs stream in live ──
-    if (!isPaused) {
-      const channel = supabase
-        .channel("audit-logs-live")
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "audit_logs" },
-          () => fetchLogs())
-        .subscribe();
-
-      return () => { supabase.removeChannel(channel); };
-    }
-  }, [isPaused, profile, profileLoading]);
-
-  async function fetchLogs() {
+  const fetchLogs = useCallback(async () => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       setLoading(true);
@@ -72,7 +54,25 @@ export default function AdminLogs() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    if (profileLoading || !profile) return;
+    if (!isAdmin(profile)) return;
+
+    fetchLogs();
+
+    // ── Supabase real-time: new audit_logs stream in live ──
+    if (!isPaused) {
+      const channel = supabase
+        .channel("audit-logs-live")
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "audit_logs" },
+          () => fetchLogs())
+        .subscribe();
+
+      return () => { supabase.removeChannel(channel); };
+    }
+  }, [isPaused, profile, profileLoading, fetchLogs, supabase]);
 
   const filteredLogs = logs.filter(log => {
     const matchesSearch = 

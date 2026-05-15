@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CheckCircle2, WifiOff, ShoppingBag, Zap, Mail, Check, ShieldCheck } from "lucide-react";
 import { PageHeader, Modal, SyncProgressBar } from "@/components/ui";
@@ -77,19 +77,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>((searchParams.get("tab") as Tab) || "general");
 
-  useEffect(() => {
-    const authStatus = searchParams.get("auth");
-    if (authStatus === "success") {
-      toast.success("Gmail authenticated successfully!");
-      fetchSettings();
-      // Clean URL
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.delete("auth");
-      router.replace(`/settings?${newParams.toString()}`);
-    } else if (authStatus === "error") {
-      toast.error("Gmail authentication failed.");
-    }
-  }, [searchParams]);
+
   const [settings, setSettings] = useState<any>({
     id: SETTINGS_ID,
     review_offset_days: 5,
@@ -335,7 +323,7 @@ export default function SettingsPage() {
     };
   }, []);
 
-  async function fetchSettings() {
+  const fetchSettings = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch the most recently updated settings row
@@ -363,7 +351,34 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchSettings();
+    fetchAvailableProducts();
+    
+    // WhatsApp status polling
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 5000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [fetchSettings, fetchAvailableProducts]);
+
+  useEffect(() => {
+    const authStatus = searchParams.get("auth");
+    if (authStatus === "success") {
+      toast.success("Gmail authenticated successfully!");
+      fetchSettings();
+      // Clean URL
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.delete("auth");
+      router.replace(`/settings?${newParams.toString()}`);
+    } else if (authStatus === "error") {
+      toast.error("Gmail authentication failed.");
+    }
+  }, [searchParams, fetchSettings, router]);
 
   async function fetchMaskedCount() {
     try {
