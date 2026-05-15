@@ -419,7 +419,7 @@ export default function Dashboard() {
 
     // REAL-TIME UPDATES: Listen for global sync heartbeat
     const settingsChannel = supabase
-      .channel('global-sync-heartbeat')
+      .channel('dashboard-sync-heartbeat')
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 

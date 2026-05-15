@@ -344,7 +344,7 @@ export default function Sidebar() {
 
   useEffect(() => {
     const hbChannel = supabase
-      .channel('global-sync-heartbeat')
+      .channel('sidebar-sync-heartbeat')
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 
