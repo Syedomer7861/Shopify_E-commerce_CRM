@@ -151,13 +151,12 @@ export default function Dashboard() {
       const userId = session?.user?.id;
       let prof: any = profile;
       
-      if (userId && (!prof || !silent)) {
-        // Use a cached profile if possible, otherwise fetch
+      if (userId && !profile) {
         const { data: profData } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+        setProfile(profData);
         prof = profData;
-        setProfile(prof);
 
-        if (prof?.role === "admin" && agents.length === 0) {
+        if (profData?.role === "admin" && agents.length === 0) {
           const { data: agentsData } = await supabase
             .from("profiles")
             .select("id, name")
@@ -325,7 +324,7 @@ export default function Dashboard() {
       setLoading(false);
       setLastChecked(new Date());
     }
-  }, [supabase, profile, agents.length, todayPage, overduePage, applyAgentFilters]);
+  }, [supabase, agents.length, todayPage, overduePage, applyAgentFilters]);
 
   const handleGlobalSync = useCallback(async (silent = false, full = false) => {
     if (syncing) return;

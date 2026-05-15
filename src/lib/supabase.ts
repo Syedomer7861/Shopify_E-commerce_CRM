@@ -121,3 +121,18 @@ export const createAdminClient = () => {
     }
   );
 }
+
+// 4. Helper for API Routes to get a Service/Admin client if authorized by secret
+export const getServiceSupabase = (req?: any) => {
+  if (req) {
+    const syncSecret = req.headers.get("x-sync-secret");
+    const cronSecret = req.headers.get("x-cron-secret");
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const cronKey = process.env.CRON_SECRET;
+
+    if ((syncSecret && syncSecret === serviceKey) || (cronSecret && cronSecret === cronKey)) {
+      return createAdminClient();
+    }
+  }
+  return createServerClient();
+}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createServerClient, getServiceSupabase } from "@/lib/supabase";
 import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const { stream, send, close } = createSyncStream();
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
 
-  const supabase = createServerClient();
+  const supabase = getServiceSupabase(req);
 
   const authHeader = req.headers.get("x-sync-secret");
   const isInternal = authHeader === process.env.SUPABASE_SERVICE_ROLE_KEY;

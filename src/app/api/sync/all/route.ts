@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createServerClient, getServiceSupabase } from "@/lib/supabase";
 import { TaskType } from "@/types";
 import { getSystemSettings } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority, reassignOfflineAgentTasks } from "@/lib/task-engine";
 import { syncShopifyData, syncShiprocketData } from "@/lib/sync-logic";
 
-function getSupabase() {
-  return createServerClient();
+function getSupabase(req?: any) {
+  return getServiceSupabase(req);
 }
 
 function mapShiprocketStatus(status: string | number | null | undefined) {
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const { stream, send, close } = createSyncStream();
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
 
-  const supabase = getSupabase();
+  const supabase = getSupabase(req);
   const report = {
     logs: { processed: 0, failed: 0, skipped: 0 },
     tasks: { generated: 0, checked: 0 },

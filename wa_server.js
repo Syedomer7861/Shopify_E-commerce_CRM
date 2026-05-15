@@ -137,7 +137,7 @@ function initClient() {
         clientState = "QR_PENDING";
         console.log("\n[WA] QR Code ready — scan with WhatsApp on your phone:");
         qrcode.generate(qr, { small: true });
-        console.log("\n[WA] Or open http://localhost:3000/qr in a browser to see it.");
+        console.log("\n[WA] Or open http://localhost:3001/qr in a browser to see it.");
     });
 
     waClient.on("authenticated", () => {

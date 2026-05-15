@@ -66,7 +66,8 @@ export async function syncShopifyData(supabase: any, send: (data: any) => void, 
     send({ progress: 10, message: `Shopify ${full ? "FULL " : ""}Sync: Connecting...` });
     const settings = await getSystemSettings(supabase);
     if (!settings?.shopify_store_domain) {
-      throw new Error("Shopify domain not configured");
+      const hasID = settings?.id ? `(ID: ${settings.id})` : "(No settings object found)";
+      throw new Error(`Shopify domain not configured in settings ${hasID}. Check RLS or Service Role Key.`);
     }
 
     const domain = String(settings.shopify_store_domain).replace(/^https?:\/\//, "").replace(/\/$/, "");

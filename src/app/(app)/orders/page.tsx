@@ -141,7 +141,7 @@ export default function OrdersPage() {
       pending: p.count || 0,
     });
     setLoading(false);
-  }, [supabase, page, pageSize, status, search, startDate, endDate, minAmount, maxAmount, orders.length]);
+  }, [supabase, page, pageSize, status, search, startDate, endDate, minAmount, maxAmount]);
 
   useEffect(() => {
     // Initial fetch

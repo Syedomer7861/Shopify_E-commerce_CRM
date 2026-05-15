@@ -152,7 +152,7 @@ export default function ManagerTaskReview() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, currentPage, agentFilter, typeFilter, outcomeFilter, uzmaOnly, searchTerm, tasks.length]);
+  }, [supabase, currentPage, agentFilter, typeFilter, outcomeFilter, uzmaOnly, searchTerm]);
 
   const fetchNdrOrders = useCallback(async (silent = false) => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
@@ -216,7 +216,7 @@ export default function ManagerTaskReview() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, currentPage, searchTerm, ndrOrders.length]);
+  }, [supabase, currentPage, searchTerm]);
 
   useEffect(() => {
     async function fetchAgents() {
