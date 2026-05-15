@@ -95,7 +95,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ agents: initialAgents 
     } finally {
       setIsLoading(false);
     }
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     fetchMetrics(selectedRange);

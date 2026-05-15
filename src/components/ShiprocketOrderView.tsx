@@ -65,7 +65,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
     } finally {
       setLoading(false);
     }
-  }, [orderId, data, supabase]); 
+  }, [orderId, data]); 
 
   useEffect(() => {
     fetchData();
