@@ -339,7 +339,8 @@ app.listen(PORT, "0.0.0.0", () => {
 
 // ── Backup Daemon (Daily at 3 AM) ──────────────────────────────────────────────
 const BACKUP_SECRET = process.env.BACKUP_SECRET || "cureforever_sync_secret_2026";
-const BACKUP_URL = (process.env.CRM_URL || "http://127.0.0.1:3000") + "/api/backup?secret=" + BACKUP_SECRET;
+const BACKUP_BASE_URL = process.env.SYNC_BASE_URL || "http://localhost:3000";
+const BACKUP_URL = BACKUP_BASE_URL + "/api/backup?secret=" + BACKUP_SECRET;
 
 async function runBackup() {
     console.log("[BACKUP] Triggering Scheduled Daily Backup...");
@@ -359,7 +360,11 @@ async function runBackup() {
             console.error("[BACKUP] Response start:", text.substring(0, 100));
         }
     } catch (e) {
-        console.error("[BACKUP] Backup request failed:", e.message);
+        let errorMsg = e.message;
+        if (errorMsg === 'fetch failed' || e.code === 'ECONNREFUSED') {
+            errorMsg = `Main CRM server unreachable at ${BACKUP_BASE_URL}. Ensure 'npm run dev' is active.`;
+        }
+        console.error("[BACKUP] Backup request failed:", errorMsg);
     }
 }
 

@@ -347,7 +347,7 @@ async function runBackgroundSync() {
   });
 
   const syncSecret = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const baseUrl = "http://127.0.0.1:3000";
+  const baseUrl = process.env.SYNC_BASE_URL || "http://localhost:3000";
 
   try {
     // 1. Shopify Sync (Wait up to 15 mins)
@@ -392,7 +392,13 @@ async function runBackgroundSync() {
     });
 
   } catch (error) {
-    const errorMsg = error.name === 'AbortError' ? 'Sync timed out' : error.message;
+    let errorMsg = error.name === 'AbortError' ? 'Sync timed out' : error.message;
+    
+    // Provide more context for common networking errors
+    if (errorMsg === 'fetch failed' || error.code === 'ECONNREFUSED') {
+      errorMsg = `Main CRM server unreachable at ${baseUrl}. Ensure 'npm run dev' is active.`;
+    }
+
     console.error("[Sync] ❌ Background sync failed:", errorMsg);
     
     await logSyncAudit("SYNC_ERROR", `Sync failed: ${errorMsg}`);
