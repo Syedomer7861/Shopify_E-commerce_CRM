@@ -142,6 +142,14 @@ export async function GET(req: NextRequest) {
 
         const customer = customerArr?.[0];
         if (customer) {
+          // STALENESS GUARD: Skip carts abandoned more than 7 days ago
+          const cartCreatedAt = new Date(cart.created_at);
+          const ageInDays = (Date.now() - cartCreatedAt.getTime()) / (1000 * 60 * 60 * 24);
+          if (ageInDays > 7) {
+            report.abandoned.skipped++;
+            continue;
+          }
+
           const { data: dbCartArr } = await supabase.from("abandoned_carts").upsert({
             customer_id: customer.id,
             cart_token: String(cart.token || cart.id),
@@ -155,6 +163,19 @@ export async function GET(req: NextRequest) {
           const dbCart = dbCartArr?.[0];
           if (dbCart) {
             report.abandoned.synced++;
+            
+            // 1. STATUS LOCK: Check if a recovery task already exists and is finished
+            const { data: existingTask } = await supabase
+              .from("tasks")
+              .select("status")
+              .eq("abandoned_cart_id", dbCart.id)
+              .eq("task_type", "recovery")
+              .maybeSingle();
+
+            if (existingTask && (existingTask.status === "done" || existingTask.status === "cancelled")) {
+               continue; // Prevent re-opening completed recovery tasks
+            }
+
             const recoveryDate = new Date(cart.updated_at || cart.created_at);
             recoveryDate.setHours(recoveryDate.getHours() + (settings.recovery_delay_hours || 24));
 
