@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       const isFull = req.nextUrl.searchParams.get("full") === "true";
       
       send({ progress: 2, message: `Priority 1: Syncing Direct Store Data (Shopify) [${isFull ? 'FULL' : 'QUICK'}]...` });
+      const settings = await getSystemSettings(supabase);
       const shopifyReport = await syncShopifyData(supabase, send, isFull);
       console.log("Shopify Sync Report:", shopifyReport);
 
@@ -157,7 +158,6 @@ export async function POST(req: NextRequest) {
 
              if (cartDataArr && cartDataArr.length > 0 && customerId) {
                 const cartData = cartDataArr[0];
-                const { data: settings } = await supabase.from("settings").select("recovery_delay_hours").single();
                 const delayHours = settings?.recovery_delay_hours || 24;
                 const dueDate = new Date(new Date(cartData.abandoned_at).getTime() + delayHours * 60 * 60 * 1000);
 
@@ -264,7 +264,6 @@ export async function POST(req: NextRequest) {
 
     send({ progress: 30, message: "Validating task generation rules..." });
     // 2. TRIGGER TASK GENERATOR LOGIC
-    const settings = await getSystemSettings(supabase);
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
@@ -273,6 +272,8 @@ export async function POST(req: NextRequest) {
       .select("id, customer_id, delivered_at, ordered_at, line_items, delivery_status")
       .in("delivery_status", ["delivered", "Delivered"])
       .gte("updated_at", sevenDaysAgo.toISOString());
+
+    const { data: overrides } = await supabase.from("product_overrides").select("*");
 
     if (orders) {
         report.tasks.checked = orders.length;
@@ -299,10 +300,28 @@ export async function POST(req: NextRequest) {
              return r.toISOString().split("T")[0];
            };
 
+           // Find product override based on line items
+           const lineItems = order.line_items as any[] || [];
+           let activeOverride = null;
+           
+           if (overrides && overrides.length > 0) {
+             for (const item of lineItems) {
+               const match = overrides.find(o => 
+                 o.shopify_product_id === String(item.product_id) || 
+                 o.shopify_product_id === item.title ||
+                 o.product_name === item.title
+               );
+               if (match) {
+                 activeOverride = match;
+                 break;
+               }
+             }
+           }
+
            const taskTemplates = [
-             { task_type: "review",         offset: settings?.review_offset_days ?? 5 },
-             { task_type: "reorder",        offset: settings?.reorder_offset_days ?? 20 },
-             { task_type: "final_followup", offset: settings?.final_offset_days ?? 30 },
+             { task_type: "review",         offset: activeOverride?.review_offset_days ?? settings?.review_offset_days ?? 5 },
+             { task_type: "reorder",        offset: activeOverride?.reorder_offset_days ?? settings?.reorder_offset_days ?? 20 },
+             { task_type: "final_followup", offset: activeOverride?.final_offset_days ?? settings?.final_offset_days ?? 30 },
            ];
 
            const newTasks = taskTemplates.map(t => ({
