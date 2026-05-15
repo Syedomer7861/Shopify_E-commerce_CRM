@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Search, Package, RefreshCw, Trash2, Download, MessageSquare, ExternalLink, Filter } from "lucide-react";
 import Link from "next/link";
 import { PageHeader, DeliveryBadge, Avatar, EmptyState, Modal, Pagination } from "@/components/ui";
@@ -45,7 +45,7 @@ export default function OrdersPage() {
   useEffect(() => {
     const id = searchParams?.get('id');
     if (id) setSelectedOrderId(id);
-  }, []);
+  }, [searchParams]);
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -54,46 +54,7 @@ export default function OrdersPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    // Initial fetch
-    fetchOrders();
-  }, [page, status, search, startDate, endDate, minAmount, maxAmount]);
-
-  // Reset to page 1 on filter change
-  useEffect(() => {
-    setPage(1);
-  }, [status, search, startDate, endDate, minAmount, maxAmount]);
-
-  useEffect(() => {
-    const pollInterval = setInterval(() => {
-      fetchOrders(true);
-    }, 60000); // 60s background fallback
-
-    let refreshTimeout: NodeJS.Timeout;
-    const debouncedRefresh = () => {
-      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
-                           document.activeElement?.tagName === 'TEXTAREA' ||
-                           document.querySelector('[role="dialog"]');
-      if (isInteracting) return;
-      clearTimeout(refreshTimeout);
-      refreshTimeout = setTimeout(() => fetchOrders(true), 3000);
-    };
-
-    // ── Supabase real-time: refresh when orders are inserted or updated ──
-    const channel = supabase
-      .channel("orders-live")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, debouncedRefresh)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" }, debouncedRefresh)
-      .subscribe();
-
-    return () => {
-      clearInterval(pollInterval);
-      clearTimeout(refreshTimeout);
-      supabase.removeChannel(channel);
-    };
-  }, [page, status, search, startDate, endDate, minAmount, maxAmount]);
-
-  async function fetchOrders(isSilent = false) {
+  const fetchOrders = useCallback(async (isSilent = false) => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       if (!isSilent) setLoading(true);
@@ -181,7 +142,46 @@ export default function OrdersPage() {
       pending: p.count || 0,
     });
     setLoading(false);
-  }
+  }, [supabase, page, pageSize, status, search, startDate, endDate, minAmount, maxAmount, orders.length]);
+
+  useEffect(() => {
+    // Initial fetch
+    fetchOrders();
+  }, [page, status, search, startDate, endDate, minAmount, maxAmount, fetchOrders]);
+
+  // Reset to page 1 on filter change
+  useEffect(() => {
+    setPage(1);
+  }, [status, search, startDate, endDate, minAmount, maxAmount]);
+
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      fetchOrders(true);
+    }, 60000); // 60s background fallback
+
+    let refreshTimeout: NodeJS.Timeout;
+    const debouncedRefresh = () => {
+      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+                           document.activeElement?.tagName === 'TEXTAREA' ||
+                           document.querySelector('[role="dialog"]');
+      if (isInteracting) return;
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => fetchOrders(true), 3000);
+    };
+
+    // ── Supabase real-time: refresh when orders are inserted or updated ──
+    const channel = supabase
+      .channel("orders-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, debouncedRefresh)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" }, debouncedRefresh)
+      .subscribe();
+
+    return () => {
+      clearInterval(pollInterval);
+      clearTimeout(refreshTimeout);
+      supabase.removeChannel(channel);
+    };
+  }, [page, status, search, startDate, endDate, minAmount, maxAmount, fetchOrders, supabase]);
 
   async function handleShiprocketSync() {
     const isDemo = document.cookie.includes("crm-demo-mode=true");

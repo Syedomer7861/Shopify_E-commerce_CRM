@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 
 import { Search, UserPlus, Phone, AlertTriangle, RefreshCw, Trash2, CheckCircle, X, Filter } from "lucide-react";
@@ -48,42 +48,7 @@ export default function CustomersPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchCustomers();
-    const pollInterval = setInterval(() => {
-      debouncedRefresh();
-    }, 60000);
-
-    let refreshTimeout: NodeJS.Timeout;
-    const debouncedRefresh = () => {
-      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
-                           document.activeElement?.tagName === 'TEXTAREA' ||
-                           document.querySelector('[role="dialog"]');
-      if (isInteracting) return;
-      clearTimeout(refreshTimeout);
-      refreshTimeout = setTimeout(() => fetchCustomers(true), 3000);
-    };
-
-    // ── Supabase real-time: refresh when customers are inserted or updated ──
-    const channel = supabase
-      .channel("customers-live")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "customers" }, debouncedRefresh)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "customers" }, debouncedRefresh)
-      .subscribe();
-
-    return () => {
-      clearInterval(pollInterval);
-      clearTimeout(refreshTimeout);
-      supabase.removeChannel(channel);
-    };
-  }, [seg, search, page, minOrders, maxOrders, lastOrderStart, lastOrderEnd]);
-
-  // Reset page when filters change
-  useEffect(() => {
-    setPage(1);
-  }, [seg, search, minOrders, maxOrders, lastOrderStart, lastOrderEnd]);
-
-  async function fetchCustomers(silent = false) {
+  const fetchCustomers = useCallback(async (silent = false) => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       if (!silent) setLoading(true);
@@ -158,7 +123,37 @@ export default function CustomersPage() {
     setStats(s);
     setLoading(false);
     setSelectedIds([]); // Clear selection on refresh
-  }
+  }, [supabase, seg, search, page, minOrders, maxOrders, lastOrderStart, lastOrderEnd]);
+
+  useEffect(() => {
+    fetchCustomers();
+    const pollInterval = setInterval(() => {
+      debouncedRefresh();
+    }, 60000);
+
+    let refreshTimeout: NodeJS.Timeout;
+    const debouncedRefresh = () => {
+      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+                           document.activeElement?.tagName === 'TEXTAREA' ||
+                           document.querySelector('[role="dialog"]');
+      if (isInteracting) return;
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => fetchCustomers(true), 3000);
+    };
+
+    // ── Supabase real-time: refresh when customers are inserted or updated ──
+    const channel = supabase
+      .channel("customers-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "customers" }, debouncedRefresh)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "customers" }, debouncedRefresh)
+      .subscribe();
+
+    return () => {
+      clearInterval(pollInterval);
+      clearTimeout(refreshTimeout);
+      supabase.removeChannel(channel);
+    };
+  }, [fetchCustomers, supabase]);
 
   async function handleGlobalSync() {
     const isDemo = document.cookie.includes("crm-demo-mode=true");

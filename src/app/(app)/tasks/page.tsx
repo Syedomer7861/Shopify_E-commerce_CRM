@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { 
   Search, 
   RefreshCw, 
@@ -92,64 +92,8 @@ export default function TasksPage() {
     }
   }, []); // Only run once on mount
 
-  useEffect(() => {
-    if (profileLoading) return; // Wait for the security profile to establish identity before fetching tasks
-    
-    if (profile?.role === "admin" || profile?.role === "manager") {
-      supabase.from("profiles")
-        .select("id, name")
-        .eq("role", "agent") // Strictly Agents for assignment
-        .eq("is_active", true)
-        .then(({ data }) => {
-          if (data) setAgents(data);
-        });
-    }
-
-    let refreshTimeout: NodeJS.Timeout;
-    const debouncedRefresh = () => {
-      // Sentinel: Prevent jarring refreshes if agent is currently typing or has a modal open
-      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
-                           document.activeElement?.tagName === 'TEXTAREA' ||
-                           document.querySelector('[role="dialog"]'); // Modal check
-      
-      if (isInteracting) return;
-
-      clearTimeout(refreshTimeout);
-      refreshTimeout = setTimeout(() => fetchTasks(true), 3000);
-    };
-
-    fetchTasks();
-    const pollInterval = setInterval(() => debouncedRefresh(), 60000);
-
-    // ── Supabase real-time: refresh on any task mutation ──
-    const channel = supabase
-      .channel("tasks-live")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "tasks" }, debouncedRefresh)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tasks" }, debouncedRefresh)
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "tasks" }, debouncedRefresh)
-      .subscribe();
-
-    return () => {
-      if (typeof pollInterval !== "undefined") clearInterval(pollInterval);
-      clearTimeout(refreshTimeout);
-      supabase.removeChannel(channel);
-    };
-  }, [typeFilter, statusFilter, debouncedSearch, profileLoading, page, dueStart, dueEnd, agentFilter]);
-
-  // Debounce search input
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 400); // 400ms debounce
-    return () => clearTimeout(handler);
-  }, [search]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [typeFilter, statusFilter, debouncedSearch, dueStart, dueEnd, agentFilter]);
-
   // Helper to apply specialization filters
-  const applyAgentFilters = (query: any, prof: any) => {
+  const applyAgentFilters = useCallback((query: any, prof: any) => {
     if (prof?.role !== 'agent') return query;
     
     const segs = prof.assigned_segments || [];
@@ -167,9 +111,9 @@ export default function TasksPage() {
     }
     
     return filteredQuery;
-  };
+  }, []);
 
-  async function fetchTasks(silent = false) {
+  const fetchTasks = useCallback(async (silent = false) => {
     const requestId = ++requestIdRef.current;
     if (!profile) return; // Security boundary: must have a profile
     
@@ -372,7 +316,51 @@ export default function TasksPage() {
     setTasks(healedTasks);
     setCounts(c);
     setLoading(false);
-  }
+  }, [profile, debouncedSearch, typeFilter, agentFilter, dueStart, dueEnd, statusFilter, page, supabase]);
+
+  useEffect(() => {
+    if (profileLoading) return; // Wait for the security profile to establish identity before fetching tasks
+    
+    if (profile?.role === "admin" || profile?.role === "manager") {
+      supabase.from("profiles")
+        .select("id, name")
+        .eq("role", "agent") // Strictly Agents for assignment
+        .eq("is_active", true)
+        .then(({ data }) => {
+          if (data) setAgents(data);
+        });
+    }
+
+    let refreshTimeout: NodeJS.Timeout;
+    const debouncedRefresh = () => {
+      // Sentinel: Prevent jarring refreshes if agent is currently typing or has a modal open
+      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+                           document.activeElement?.tagName === 'TEXTAREA' ||
+                           document.querySelector('[role="dialog"]'); // Modal check
+      
+      if (isInteracting) return;
+
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => fetchTasks(true), 3000);
+    };
+
+    fetchTasks();
+    const pollInterval = setInterval(() => debouncedRefresh(), 60000);
+
+    // ── Supabase real-time: refresh on any task mutation ──
+    const channel = supabase
+      .channel("tasks-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "tasks" }, debouncedRefresh)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tasks" }, debouncedRefresh)
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "tasks" }, debouncedRefresh)
+      .subscribe();
+
+    return () => {
+      if (typeof pollInterval !== "undefined") clearInterval(pollInterval);
+      clearTimeout(refreshTimeout);
+      supabase.removeChannel(channel);
+    };
+  }, [profile, profileLoading, fetchTasks, supabase]);
 
   async function handleReassign(id: string, newOwnerId: string) {
     if (!newOwnerId) return;

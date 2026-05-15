@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { AlertTriangle, Clock, CheckCircle2, TrendingUp, Phone, RefreshCw, Sun, Moon, ChevronLeft, ChevronRight } from "lucide-react";
 import { StatCard, PageHeader, Avatar, Pagination } from "@/components/ui";
 import TaskCard from "@/components/TaskCard";
@@ -43,87 +43,8 @@ export default function Dashboard() {
   const supabase = createClient();
   const [LivePulseFeed, setLivePulseFeed] = useState<any>(null);
 
-  useEffect(() => {
-    import("@/components/LivePulseFeed").then(m => setLivePulseFeed(() => m.default));
-  }, []);
-
-  const formatDuration = (ms: number) => {
-    const seconds = Math.floor((ms / 1000) % 60);
-    const minutes = Math.floor((ms / (1000 * 60)) % 60);
-    const hours = Math.floor(ms / (1000 * 60 * 60));
-    return [
-      hours.toString().padStart(2, '0'),
-      minutes.toString().padStart(2, '0'),
-      seconds.toString().padStart(2, '0')
-    ].join(':');
-  };
-
-
-
-  useEffect(() => {
-    fetchDashboardData();
-    const pollInterval = setInterval(() => debouncedRefresh(), 60000);
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    
-    // HYBRID POLLING: Fallback poll every 60 seconds to ensure feed stays fresh
-    const pollTimer = setInterval(() => {
-      fetchDashboardData(true); // silent fetch
-    }, 60000);
-
-    let refreshTimeout: NodeJS.Timeout;
-    const debouncedRefresh = () => {
-      // Sentinel: Prevent refreshes during active user input or modal open
-      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
-                           document.activeElement?.tagName === 'TEXTAREA' ||
-                           document.querySelector('[role="dialog"]');
-      if (isInteracting) return;
-
-      clearTimeout(refreshTimeout);
-      refreshTimeout = setTimeout(() => fetchDashboardData(true), 3000);
-    };
-
-    // REAL-TIME UPDATES: Listen for global sync heartbeat
-    const settingsChannel = supabase
-      .channel('global-sync-heartbeat')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'settings', 
-        filter: `id=eq.00000000-0000-0000-0000-000000000000` 
-      }, (payload) => {
-        console.log("💓 Global Heartbeat Detected: Syncing UI...");
-        fetchDashboardData(true);
-        toast.success("CRM Data Updated", { icon: "🔄", duration: 2000 });
-      })
-      .subscribe();
-
-    // 15-MINUTE GLOBAL SYNC HEARTBEAT
-    const syncHeartbeat = setInterval(() => {
-      console.log("[Heartbeat] Triggering 15-minute global sync...");
-      handleGlobalSync(true, false); // Silent, Quick pulse
-    }, 15 * 60 * 1000);
-
-    // 1-SECOND COUNTDOWN TIMER
-    const countdownTimer = setInterval(() => {
-      setNextSyncIn(prev => {
-        if (prev <= 1) return 900;
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      supabase.removeChannel(settingsChannel);
-      clearInterval(pollInterval);
-      clearInterval(timer);
-      clearInterval(pollTimer);
-      clearInterval(syncHeartbeat);
-      clearInterval(countdownTimer);
-      clearTimeout(refreshTimeout);
-    };
-  }, [todayPage, overduePage]);
-
   // Helper to apply specialization filters
-  const applyAgentFilters = (query: any, prof: any) => {
+  const applyAgentFilters = useCallback((query: any, prof: any) => {
     if (prof?.role !== 'agent') return query;
     
     const segs = prof.assigned_segments || [];
@@ -141,9 +62,27 @@ export default function Dashboard() {
     }
     
     return filteredQuery;
+  }, []);
+
+  useEffect(() => {
+    import("@/components/LivePulseFeed").then(m => setLivePulseFeed(() => m.default));
+  }, []);
+
+  const formatDuration = (ms: number) => {
+    const seconds = Math.floor((ms / 1000) % 60);
+    const minutes = Math.floor((ms / (1000 * 60)) % 60);
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    return [
+      hours.toString().padStart(2, '0'),
+      minutes.toString().padStart(2, '0'),
+      seconds.toString().padStart(2, '0')
+    ].join(':');
   };
 
-  async function fetchDashboardData(silent = false) {
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [syncMessage, setSyncMessage] = useState("");
+
+  const fetchDashboardData = useCallback(async (silent = false) => {
     // Check for Demo Mode
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
@@ -378,12 +317,9 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase, profile, agents.length, todayPage, overduePage, applyAgentFilters]);
 
-  const [syncProgress, setSyncProgress] = useState(0);
-  const [syncMessage, setSyncMessage] = useState("");
-
-  async function handleGlobalSync(silent = false, full = false) {
+  const handleGlobalSync = useCallback(async (silent = false, full = false) => {
     if (syncing) return;
 
     // BLOCK DEMO USERS
@@ -454,12 +390,75 @@ export default function Dashboard() {
       if (!silent) toast.error(err.message || "Failed to sync system", { id: toastId });
     } finally {
       setSyncing(false);
-      setTimeout(() => {
-        setSyncProgress(0);
-        setSyncMessage("");
-      }, 2000);
+      setSyncProgress(100);
+      setSyncMessage("Sync completed");
     }
-  }
+  }, [syncing, fetchDashboardData]);
+
+  useEffect(() => {
+    fetchDashboardData();
+    const pollInterval = setInterval(() => debouncedRefresh(), 60000);
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    
+    // HYBRID POLLING: Fallback poll every 60 seconds to ensure feed stays fresh
+    const pollTimer = setInterval(() => {
+      fetchDashboardData(true); // silent fetch
+    }, 60000);
+
+    let refreshTimeout: NodeJS.Timeout;
+    const debouncedRefresh = () => {
+      // Sentinel: Prevent refreshes during active user input or modal open
+      const isInteracting = typeof document !== 'undefined' && (
+                           document.activeElement?.tagName === 'INPUT' || 
+                           document.activeElement?.tagName === 'TEXTAREA' ||
+                           document.querySelector('[role="dialog"]'));
+      if (isInteracting) return;
+
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => fetchDashboardData(true), 3000);
+    };
+
+    // REAL-TIME UPDATES: Listen for global sync heartbeat
+    const settingsChannel = supabase
+      .channel('global-sync-heartbeat')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'settings', 
+        filter: `id=eq.00000000-0000-0000-0000-000000000000` 
+      }, (payload) => {
+        console.log("💓 Global Heartbeat Detected: Syncing UI...");
+        fetchDashboardData(true);
+        toast.success("CRM Data Updated", { icon: "🔄", duration: 2000 });
+      })
+      .subscribe();
+
+    // 15-MINUTE GLOBAL SYNC HEARTBEAT
+    const syncHeartbeat = setInterval(() => {
+      console.log("[Heartbeat] Triggering 15-minute global sync...");
+      handleGlobalSync(true, false); // Silent, Quick pulse
+    }, 15 * 60 * 1000);
+
+    // 1-SECOND COUNTDOWN TIMER
+    const countdownTimer = setInterval(() => {
+      setNextSyncIn(prev => {
+        if (prev <= 1) return 900;
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      supabase.removeChannel(settingsChannel);
+      clearInterval(pollInterval);
+      clearInterval(timer);
+      clearInterval(pollTimer);
+      clearInterval(syncHeartbeat);
+      clearInterval(countdownTimer);
+      clearTimeout(refreshTimeout);
+    };
+  }, [supabase, todayPage, overduePage, fetchDashboardData, handleGlobalSync]);
+
+  // Helper to apply specialization filters
 
   async function handleReassign(id: string, newOwnerId: string) {
     if (!newOwnerId) return;
