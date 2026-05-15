@@ -344,6 +344,14 @@ export async function POST(req: NextRequest) {
 
            const { error: insertErr } = await supabase.from("tasks").insert(newTasks);
            if (!insertErr) report.tasks.generated += 3;
+
+           // SELF-HEALING: If delivered, cancel any pending pre-delivery tasks
+           await supabase
+             .from("tasks")
+             .update({ status: "cancelled" } as any)
+             .eq("order_id", order.id)
+             .in("task_type", ["transit_update", "issue_resolution"])
+             .not("status", "in", '("done","cancelled","skipped")');
         }
     }
 

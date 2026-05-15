@@ -70,7 +70,7 @@ export default function OrdersPage() {
       return;
     }
 
-    if (orders.length === 0 && !isSilent) setLoading(true);
+    if (!isSilent) setLoading(true);
     
     // Helper to apply advanced filters once to any query
     const applyAdvancedFilters = (q: any) => {
@@ -141,7 +141,7 @@ export default function OrdersPage() {
       pending: p.count || 0,
     });
     setLoading(false);
-  }, [supabase, page, pageSize, status, search, startDate, endDate, minAmount, maxAmount]);
+  }, [page, pageSize, status, search, startDate, endDate, minAmount, maxAmount]);
 
   useEffect(() => {
     // Initial fetch
@@ -180,7 +180,7 @@ export default function OrdersPage() {
       clearTimeout(refreshTimeout);
       supabase.removeChannel(channel);
     };
-  }, [page, status, search, startDate, endDate, minAmount, maxAmount, fetchOrders, supabase]);
+  }, [page, status, search, startDate, endDate, minAmount, maxAmount, fetchOrders]);
 
   async function handleShiprocketSync() {
     const isDemo = document.cookie.includes("crm-demo-mode=true");

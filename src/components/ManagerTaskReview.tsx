@@ -73,7 +73,7 @@ export default function ManagerTaskReview() {
       return;
     }
 
-    if (!silent && !tasks.length) setLoading(true);
+    if (!silent) setLoading(true);
     setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     try {
       // 1. Fetch Stats for Header (Silent)
@@ -152,7 +152,7 @@ export default function ManagerTaskReview() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, currentPage, agentFilter, typeFilter, outcomeFilter, uzmaOnly, searchTerm]);
+  }, [currentPage, agentFilter, typeFilter, outcomeFilter, uzmaOnly, searchTerm]);
 
   const fetchNdrOrders = useCallback(async (silent = false) => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
@@ -178,7 +178,7 @@ export default function ManagerTaskReview() {
       return;
     }
 
-    if (!silent && !ndrOrders.length) setLoading(true);
+    if (!silent) setLoading(true);
     setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     try {
       let query = supabase
@@ -216,7 +216,7 @@ export default function ManagerTaskReview() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, currentPage, searchTerm]);
+  }, [currentPage, searchTerm]);
 
   useEffect(() => {
     async function fetchAgents() {

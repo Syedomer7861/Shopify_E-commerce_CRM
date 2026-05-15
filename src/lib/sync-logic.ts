@@ -431,6 +431,8 @@ export async function syncShiprocketData(supabase: any, send: (data: any) => voi
             report.orders.failed++;
           } else {
             report.orders.synced++;
+            // Recluster customer to ensure segment is up to date
+            await reclusterCustomer(supabase, customer.id);
           }
         } catch (e: any) {
           report.errors.push(`SR Order ${sr.id}: ${e.message}`);

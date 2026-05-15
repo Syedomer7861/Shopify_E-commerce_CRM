@@ -324,7 +324,7 @@ export default function Dashboard() {
       setLoading(false);
       setLastChecked(new Date());
     }
-  }, [supabase, agents.length, todayPage, overduePage, applyAgentFilters]);
+  }, [supabase, todayPage, overduePage, applyAgentFilters, profile]);
 
   const handleGlobalSync = useCallback(async (silent = false, full = false) => {
     if (syncing) return;
