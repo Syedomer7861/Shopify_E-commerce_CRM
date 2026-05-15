@@ -240,6 +240,14 @@ export async function syncShopifyData(supabase: any, send: (data: any) => void, 
 
       for (const cart of checkouts) {
         try {
+          // 1. STALENESS GUARD: Skip checkouts older than 7 days
+          const abandonedAt = cart.updated_at || cart.created_at;
+          const ageInDays = (new Date().getTime() - new Date(abandonedAt).getTime()) / (1000 * 60 * 60 * 24);
+          
+          if (ageInDays > 7) {
+            continue; // Ignore old carts to prevent dashboard clutter
+          }
+
           const cartCustomer = cart.customer;
           const rawPhone = cart.phone || cartCustomer?.phone || cart.shipping_address?.phone || cart.billing_address?.phone || "";
           let phone = rawPhone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
@@ -313,6 +321,18 @@ export async function syncShopifyData(supabase: any, send: (data: any) => void, 
                 } catch (e) {
                   // Ignore stock fetch errors
                 }
+              }
+
+              // 2. STATUS LOCK: Don't re-open tasks that are already done or cancelled
+              const { data: existingTask } = await supabase
+                .from("tasks")
+                .select("status")
+                .eq("abandoned_cart_id", dbCart.id)
+                .eq("task_type", "recovery")
+                .maybeSingle();
+
+              if (existingTask && (existingTask.status === "done" || existingTask.status === "cancelled")) {
+                continue; // Maintain the finished/cancelled state
               }
 
               await supabase.from("tasks").upsert({

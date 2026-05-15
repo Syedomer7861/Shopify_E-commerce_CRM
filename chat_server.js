@@ -403,11 +403,14 @@ async function runBackgroundSync() {
     
     await logSyncAudit("SYNC_ERROR", `Sync failed: ${errorMsg}`);
 
-    io.emit("system:sync_alert", { 
-      message: `Background sync issue: ${errorMsg}. Data is still processing in background.`, 
-      type: "error",
-      timestamp: new Date().toISOString()
-    });
+    // Only alert users if it's a logic error, not a network/connection issue
+    if (error.name !== 'AbortError' && errorMsg !== 'fetch failed' && error.code !== 'ECONNREFUSED') {
+      io.emit("system:sync_alert", { 
+        message: `Background sync issue: ${errorMsg}.`, 
+        type: "error",
+        timestamp: new Date().toISOString()
+      });
+    }
   } finally {
     isSyncing = false;
   }
