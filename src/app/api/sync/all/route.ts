@@ -3,7 +3,7 @@ import { createServerClient } from "@/lib/supabase";
 import { TaskType } from "@/types";
 import { getSystemSettings } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority, reassignOfflineAgentTasks } from "@/lib/task-engine";
-import { syncShopifyData } from "@/lib/sync-logic";
+import { syncShopifyData, syncShiprocketData } from "@/lib/sync-logic";
 
 function getSupabase() {
   return createServerClient();
@@ -39,11 +39,17 @@ export async function POST(req: NextRequest) {
 
   const runSync = async () => {
     try {
-      send({ progress: 2, message: "Priority 1: Syncing Direct Store Data (Shopify)..." });
-      const shopifyReport = await syncShopifyData(supabase, send);
-      console.log("Shopify Priority Sync Report:", shopifyReport);
+      const isFull = req.nextUrl.searchParams.get("full") === "true";
+      
+      send({ progress: 2, message: `Priority 1: Syncing Direct Store Data (Shopify) [${isFull ? 'FULL' : 'QUICK'}]...` });
+      const shopifyReport = await syncShopifyData(supabase, send, isFull);
+      console.log("Shopify Sync Report:", shopifyReport);
 
-      send({ progress: 15, message: "Priority 2: Processing Shiprocket Webhook Queue..." });
+      send({ progress: 40, message: "Priority 2: Pulling Logistics Data (Shiprocket)..." });
+      const shiprocketReport = await syncShiprocketData(supabase, send, isFull);
+      console.log("Shiprocket Sync Report:", shiprocketReport);
+
+      send({ progress: 70, message: "Priority 3: Processing Webhook Log Backlog..." });
       // 1. PROCESS SHIPROCKET LOGS
     const { data: logs } = await supabase
       .from("webhook_logs")
@@ -51,7 +57,7 @@ export async function POST(req: NextRequest) {
       .in("source", ["shiprocket", "shiprocket_checkout"])
       .eq("status", "received")
       .order("created_at", { ascending: true })
-      .limit(50);
+      .limit(isFull ? 500 : 50);
 
     if (logs && logs.length > 0) {
       for (const log of logs) {
@@ -443,6 +449,9 @@ export async function POST(req: NextRequest) {
         summary: `Refreshed dashboard and synced ${report.logs.processed} logs.`,
       }).catch(() => {});
     } catch {}
+
+    // Update settings table with last sync timestamp to signal ALL users
+    await supabase.from("settings").update({ updated_at: new Date().toISOString() }).eq("id", "00000000-0000-0000-0000-000000000000");
 
     send({ progress: 100, message: "Sync Complete!", ...report });
     close();

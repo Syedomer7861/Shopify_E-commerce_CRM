@@ -1,52 +1,66 @@
-# Next.js
+# Build & Runtime
 .next/
 out/
 build/
+dist/
+.vercel/
+.turbo/
+tsconfig.tsbuildinfo
 
 # Dependencies
 node_modules/
+jspm_packages/
 
-# Environment
-.env*
+# Environment & Secrets (CRITICAL)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.local
 !.env.example
 
-# Debug logs
+# Debug & Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+*.log
+logs/
 
-# System files
-.DS_Store
-Thumbs.db
-
-# WhatsApp Session / Cache
+# WhatsApp / Messaging Cache
 .wa_session/
 .wwebjs_cache/
 .wwebjs_auth/
-scratch/
-shiprocket_full_order_*.json
-order_*.json
-mukesh.json
-*.log
-sync_progress.json
+wwebjs_auth/
+wwebjs_cache/
+
+# AI Agent & Planning (GSD)
+.agents/
 .claude/
 .gemini/
-.agents/
 .planning/
+.antigravity/
+.code-review-graph/
+scratch/
+brain/
 get-shit-done-for-antigravity/
-
-# Build & Tooling
-tsconfig.tsbuildinfo
 skills-lock.json
 
-# IDE & Analysis
+# IDE & OS Files
 .vscode/
-.code-review-graph/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+*.tmp
 
-# Vercel
-.vercel/
-
-# Database & Storage
+# Database & Project Specific
 supabase/.temp/
 public/uploads/*
 !public/uploads/.gitkeep
+shiprocket_full_order_*.json
+order_*.json
+mukesh.json
+sync_progress.json

@@ -82,13 +82,25 @@ export default function Dashboard() {
       refreshTimeout = setTimeout(() => fetchDashboardData(true), 3000);
     };
 
-    // REAL-TIME UPDATES: Listen for changes in tasks, orders, or logs
-    
+    // REAL-TIME UPDATES: Listen for global sync heartbeat
+    const settingsChannel = supabase
+      .channel('global-sync-heartbeat')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'settings', 
+        filter: `id=eq.00000000-0000-0000-0000-000000000000` 
+      }, (payload) => {
+        console.log("💓 Global Heartbeat Detected: Syncing UI...");
+        fetchDashboardData(true);
+        toast.success("CRM Data Updated", { icon: "🔄", duration: 2000 });
+      })
+      .subscribe();
 
-    // 15-MINUTE GLOBAL SYNC HEARTBEAT (New Requirement)
+    // 15-MINUTE GLOBAL SYNC HEARTBEAT
     const syncHeartbeat = setInterval(() => {
       console.log("[Heartbeat] Triggering 15-minute global sync...");
-      handleGlobalSync(true); // Silent pulse
+      handleGlobalSync(true, false); // Silent, Quick pulse
     }, 15 * 60 * 1000);
 
     // 1-SECOND COUNTDOWN TIMER
@@ -100,13 +112,13 @@ export default function Dashboard() {
     }, 1000);
 
     return () => {
-      if (typeof pollInterval !== "undefined") clearInterval(pollInterval);
+      supabase.removeChannel(settingsChannel);
+      clearInterval(pollInterval);
       clearInterval(timer);
       clearInterval(pollTimer);
       clearInterval(syncHeartbeat);
       clearInterval(countdownTimer);
       clearTimeout(refreshTimeout);
-      
     };
   }, [todayPage, overduePage]);
 
@@ -368,15 +380,29 @@ export default function Dashboard() {
     }
   }
 
-  async function handleGlobalSync(silent = false) {
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [syncMessage, setSyncMessage] = useState("");
+
+  async function handleGlobalSync(silent = false, full = false) {
+    if (syncing) return;
+
+    // BLOCK DEMO USERS
+    const isDemo = typeof document !== 'undefined' && document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      if (!silent) toast.error("Refresh disabled in Demo Mode");
+      return;
+    }
+
     setSyncing(true);
+    setSyncProgress(0);
+    setSyncMessage("Initializing...");
     let toastId = "global-sync";
     
     try {
-      if (!silent) toast.loading("Starting Global CRM Sync...", { id: toastId });
+      if (!silent) toast.loading("Starting Universal Refresh...", { id: toastId });
 
       // Step 1: Main Global Sync (Orders, Tasks, Self-Heal) with Streaming
-      const res = await fetch("/api/sync/all?stream=true", { method: "POST" });
+      const res = await fetch(`/api/sync/all?stream=true&full=${full}`, { method: "POST" });
       
       if (!res.ok) throw new Error("Sync API returned error status");
       if (!res.body) throw new Error("No response body from sync API");
@@ -397,43 +423,41 @@ export default function Dashboard() {
         
         for (const line of lines) {
           try {
-            // Strip SSE prefix if present
             const jsonString = line.startsWith("data: ") ? line.slice(6) : line;
             const data = JSON.parse(jsonString);
             
-            if (data.message && !silent) {
-              toast.loading(`${data.message}`, { id: toastId });
+            if (data.progress !== undefined) setSyncProgress(data.progress);
+            if (data.message) {
+              setSyncMessage(data.message);
+              if (!silent) toast.loading(`${data.message}`, { id: toastId });
             }
-            if (data.error && !silent) {
-              toast.error(`Sync Error: ${data.error}`, { id: toastId });
-            }
+
             if (data.progress === 100) {
-              if (!silent) toast.success(`Sync Complete: ${data.logs?.processed || 0} logs, ${data.tasks?.generated || 0} tasks`, { id: toastId });
-              // Refresh UI as soon as we know it's done
+              if (!silent) toast.success(`Refresh Complete! ${data.logs?.processed || 0} items updated.`, { id: toastId });
               await fetchDashboardData(true);
             }
-          } catch (e) {
-            console.error("Failed to parse sync stream chunk:", e);
-          }
+          } catch (e) {}
         }
       }
 
-      // Step 2: Auto-unmask (Non-blocking background task)
-      if (profile?.role === "admin") {
-        fetch("/api/sync/unmask", { method: "POST" }).then(async (unmaskRes) => {
-          try {
-            const unmaskData = await unmaskRes.json();
-            if (!silent && unmaskData.success && unmaskData.unmaskedCount > 0) {
-              toast.success(`🔓 Background: Unmasked ${unmaskData.unmaskedCount} contacts`);
-            }
-          } catch (e) {}
-        }).catch(() => {});
-      }
+      // Step 2: Auto-unmask (Non-blocking background task) - ALLOW FOR ALL LIVE USERS
+      fetch("/api/sync/unmask", { method: "POST" }).then(async (unmaskRes) => {
+        try {
+          const unmaskData = await unmaskRes.json();
+          if (!silent && unmaskData.success && unmaskData.unmaskedCount > 0) {
+            toast.success(`🔓 Background: Unmasked ${unmaskData.unmaskedCount} contacts`);
+          }
+        } catch (e) {}
+      }).catch(() => {});
     } catch (err: any) {
       console.error("Global Sync Error:", err);
       if (!silent) toast.error(err.message || "Failed to sync system", { id: toastId });
     } finally {
       setSyncing(false);
+      setTimeout(() => {
+        setSyncProgress(0);
+        setSyncMessage("");
+      }, 2000);
     }
   }
 
@@ -692,7 +716,7 @@ export default function Dashboard() {
             </div>
             <button 
               onClick={() => {
-                handleGlobalSync();
+                handleGlobalSync(false, true); // Silent=false, Full=true
                 setNextSyncIn(900); // Reset Pulse timer on manual refresh
               }} 
               disabled={syncing}
@@ -711,6 +735,25 @@ export default function Dashboard() {
       />
 
       <AnnouncementFeed />
+
+      {/* SYNC PROGRESS BAR (Hardened UI) */}
+      {syncing && (
+        <div className="mb-6 bg-white/50 backdrop-blur-md border border-[#1c1c1c]/10 rounded-2xl p-4 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+           <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-[#1c1c1c] animate-spin" />
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#1c1c1c]">{syncMessage || "Synchronizing CRM Data..."}</span>
+              </div>
+              <span className="text-[11px] font-black text-[#1c1c1c]">{syncProgress}%</span>
+           </div>
+           <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+              <div 
+                className="bg-[#1c1c1c] h-full transition-all duration-500 ease-out" 
+                style={{ width: `${syncProgress}%` }}
+              />
+           </div>
+        </div>
+      )}
 
 
       {/* KPI Row */}

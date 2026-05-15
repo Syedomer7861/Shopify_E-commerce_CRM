@@ -222,8 +222,14 @@ export default function ManagerTaskReview() {
     supabase.from("profiles").select("id, name").eq("role", "agent").eq("is_active", true).then(({ data }) => {
       if (data) setAgents(data);
     });
+  }, []);
+
+  useEffect(() => {
     if (viewMode === 'audit') fetchTasks();
     else fetchNdrOrders();
+  }, [currentPage, agentFilter, uzmaOnly, typeFilter, outcomeFilter, viewMode, searchTerm]);
+
+  useEffect(() => {
     setCurrentPage(1);
   }, [agentFilter, uzmaOnly, typeFilter, outcomeFilter, viewMode, searchTerm]);
 

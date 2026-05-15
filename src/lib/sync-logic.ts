@@ -1,9 +1,57 @@
-import { createClient } from "@supabase/supabase-js";
-import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
+import { getSystemSettings, getShopifyAccessToken, getShiprocketToken } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { resolveUnmaskedPhone } from "./unmask-utils";
 
+const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+function mapShiprocketStatus(status: string | number) {
+  const s = String(status).toLowerCase();
+  if (s.includes("rto") || s === "9") return "rto";
+  if (s.includes("delivered") || s === "7" || s === "10") return "delivered";
+  if (s.includes("shipped") || s === "6" || s === "12" || s.includes("transit")) return "in_transit";
+  if (s.includes("out for delivery") || s === "13") return "out_for_delivery";
+  if (s.includes("canceled") || s === "8" || s.includes("cancel")) return "failed";
+  if (s.includes("new") || s === "1" || s.includes("pickup") || s === "2" || s === "3" || s === "4" || s === "5") return "pending";
+  return "pending";
+}
+
+function parseShiprocketDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return new Date().toISOString();
+  if (dateStr.includes("-")) {
+    const parts = dateStr.split(" ")[0].split("-");
+    if (parts[0].length === 4) {
+      return new Date(dateStr).toISOString();
+    } else if (parts[2]?.length === 4) {
+      const [d, m, y] = parts;
+      const time = dateStr.split(" ")[1] || "00:00:00";
+      return new Date(`${y}-${m}-${d}T${time}`).toISOString();
+    }
+  }
+  return new Date(dateStr).toISOString();
+}
+
+function extractShiprocketName(sr: any): string {
+  const billing = [sr.billing_customer_name, sr.billing_last_name].filter(Boolean).join(" ").trim();
+  const shipping = [sr.shipping_customer_name, sr.shipping_last_name].filter(Boolean).join(" ").trim();
+  const customer = [sr.customer_first_name, sr.customer_last_name].filter(Boolean).join(" ").trim();
+  const generic = sr.customer_name?.trim();
+  return billing || shipping || customer || generic || "Shiprocket Customer";
+}
+
+function extractShiprocketLineItems(sr: any): any[] {
+  const items = sr.order_items || sr.products || sr.line_items || [];
+  if (!Array.isArray(items) || items.length === 0) {
+    return [{ name: "Order Item", qty: 1, price: parseFloat(sr.total || sr.sub_total || 0) }];
+  }
+  return items.map((item: any) => ({
+    name: item.name || item.product_name || item.title || "Product",
+    qty: parseInt(item.units || item.quantity || item.qty || 1),
+    price: parseFloat(item.selling_price || item.price || 0),
+    sku: item.sku || null,
+    product_id: item.product_id || null,
+  }));
+}
 
 export async function syncShopifyData(supabase: any, send: (data: any) => void, full: boolean = false) {
   const report = {
@@ -302,6 +350,99 @@ export async function syncShopifyData(supabase: any, send: (data: any) => void, 
     return report;
   } catch (e: any) {
     report.errors.push(`Global Sync Shopify: ${e.message}`);
+    return report;
+  }
+}
+
+/**
+ * PULL DATA FROM SHIPROCKET API
+ */
+export async function syncShiprocketData(supabase: any, send: (data: any) => void, full: boolean = false) {
+  const report = {
+    orders: { synced: 0, failed: 0 },
+    customers: { created: 0, updated: 0 },
+    errors: [] as string[]
+  };
+
+  try {
+    send({ progress: 45, message: "Shiprocket Sync: Connecting..." });
+    const token = await getShiprocketToken(supabase);
+    
+    let currentPage = 1;
+    let hasMore = true;
+    const MAX_PAGES = full ? 20 : 2; // Pull more if full sync
+
+    while (hasMore && currentPage <= MAX_PAGES) {
+      send({ progress: 45 + (currentPage * 2), message: `Shiprocket Sync: Fetching page ${currentPage}...` });
+      
+      const res = await fetch(`${SHIPROCKET_BASE_URL}/orders?per_page=50&page=${currentPage}&sort=created_at&sort_dir=desc`, {
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
+      });
+
+      if (!res.ok) throw new Error(`Shiprocket API error: ${res.status}`);
+      const orderData = await res.json();
+      const srOrders = orderData.data || [];
+      
+      if (srOrders.length === 0) break;
+
+      for (const sr of srOrders) {
+        try {
+          const orderId = String(sr.channel_order_id || sr.id);
+          const email = sr.billing_email || sr.shipping_email || sr.customer_email || null;
+          
+          // Try to resolve unmasked phone
+          const phone = await resolveUnmaskedPhone(supabase, "", email, orderId, sr, token);
+          if (!phone) continue;
+
+          const name = extractShiprocketName(sr);
+          const crmStatus = mapShiprocketStatus(sr.status || "");
+
+          // 1. Upsert Customer
+          const { data: custArr } = await supabase.from("customers").upsert({
+            name: name,
+            phone: phone,
+            email: email,
+            address: sr.shipping_address || null,
+            city: sr.shipping_city || null,
+            state: sr.shipping_state || null,
+            zip: sr.shipping_pincode || null,
+          }, { onConflict: "phone" }).select("id, segment");
+
+          const customer = custArr?.[0];
+          if (!customer) continue;
+
+          // 2. Upsert Order
+          const { error: orderErr } = await supabase.from("orders").upsert({
+            shopify_order_id: orderId,
+            order_number: sr.order_no || orderId,
+            customer_id: customer.id,
+            total_price: parseFloat(sr.total || 0),
+            ordered_at: parseShiprocketDate(sr.created_at),
+            source: "shiprocket",
+            delivery_status: crmStatus,
+            fulfillment_status: ["delivered", "in_transit", "out_for_delivery"].includes(crmStatus) ? "fulfilled" : "unfulfilled",
+            tracking_number: sr.shipments?.[0]?.awb || sr.awb_code || null,
+            courier_name: sr.shipments?.[0]?.courier || sr.courier_name || null,
+            line_items: extractShiprocketLineItems(sr),
+          }, { onConflict: "shopify_order_id" });
+
+          if (orderErr) {
+            report.orders.failed++;
+          } else {
+            report.orders.synced++;
+          }
+        } catch (e: any) {
+          report.errors.push(`SR Order ${sr.id}: ${e.message}`);
+        }
+      }
+
+      currentPage++;
+      if (full) await sleep(500); // Backoff
+    }
+
+    return report;
+  } catch (e: any) {
+    report.errors.push(`Global Sync Shiprocket: ${e.message}`);
     return report;
   }
 }
