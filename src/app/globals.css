@@ -62,27 +62,31 @@ html, body {
   }
   
   .page-title {
-    @apply text-[48px] font-[600] text-[#1c1c1c] tracking-[-1.2px] leading-[1.0] font-display;
+    @apply text-[32px] md:text-[48px] font-[600] text-[#1c1c1c] tracking-[-1.2px] leading-[1.0] font-display;
   }
   
   .page-subtitle {
-    @apply text-[16px] text-[#5f5f5d] font-[400] leading-[1.5] mt-2;
+    @apply text-[14px] md:text-[16px] text-[#5f5f5d] font-[400] leading-[1.5] mt-2;
   }
   
   .section-title {
-    @apply text-[20px] font-[600] text-[#1c1c1c] tracking-[-0.9px] font-display;
+    @apply text-[18px] md:text-[20px] font-[600] text-[#1c1c1c] tracking-[-0.9px] font-display;
   }
 
   .table-container {
-    @apply card overflow-hidden p-0;
+    @apply card overflow-x-auto p-0;
+  }
+
+  .table-responsive {
+    @apply w-full overflow-x-auto scrollbar-hide;
   }
   
   .table-header {
-    @apply text-[11px] font-bold text-[#5f5f5d] uppercase tracking-wider px-6 py-4 bg-[#f7f4ed] border-b border-[#eceae4];
+    @apply text-[10px] md:text-[11px] font-bold text-[#5f5f5d] uppercase tracking-wider px-4 md:px-6 py-3 md:py-4 bg-[#f7f4ed] border-b border-[#eceae4] whitespace-nowrap;
   }
   
   .table-row {
-    @apply flex items-center px-6 py-4 border-b border-[#eceae4] hover:bg-[rgba(28,28,28,0.03)] transition-colors cursor-pointer last:border-0;
+    @apply flex items-center px-4 md:px-6 py-3 md:py-4 border-b border-[#eceae4] hover:bg-[rgba(28,28,28,0.03)] transition-colors cursor-pointer last:border-0;
   }
 
 

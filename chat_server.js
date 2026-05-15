@@ -347,7 +347,7 @@ async function runBackgroundSync() {
   });
 
   const syncSecret = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const baseUrl = process.env.SYNC_BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.SYNC_BASE_URL || "http://127.0.0.1:3000";
 
   try {
     // 1. Shopify Sync (Wait up to 15 mins)
@@ -429,6 +429,6 @@ const PORT = process.env.CHAT_PORT || 3002;
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`\n${"=".repeat(50)}`);
   console.log(` CureForever Chat Server`);
-  console.log(` Listening on http://localhost:${PORT}`);
+  console.log(` Listening on http://127.0.0.1:${PORT}`);
   console.log(`${"=".repeat(50)}\n`);
 });

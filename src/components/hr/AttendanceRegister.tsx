@@ -41,6 +41,7 @@ const HOLIDAYS: Holiday[] = [
 interface Props { members: any[]; employees: any[]; attendanceLogs: any[]; onRefresh: () => void; }
 
 export default function AttendanceRegister({ members, employees, attendanceLogs, onRefresh }: Props) {
+  const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<"register" | "shifts" | "holidays">("register");
   const [month, setMonth] = useState(new Date().getMonth());
   const [year, setYear] = useState(new Date().getFullYear());
@@ -49,6 +50,10 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
   const [shifts, setShifts] = useState<Record<string, ShiftType>>({});
   const [newHoliday, setNewHoliday] = useState({ date: "", name: "", type: "National" as "National" | "Optional" });
   const [holidays, setHolidays] = useState<Holiday[]>(HOLIDAYS);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     // Map employees to agent names
@@ -108,7 +113,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  const monthName = new Date(year, month).toLocaleString("default", { month: "long" });
+  const monthName = mounted ? new Date(year, month).toLocaleString("default", { month: "long" }) : "---";
 
   const prevMonth = () => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); };
   const nextMonth = () => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); };
@@ -128,7 +133,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
   return (
     <div className="space-y-5">
       {/* Sub-tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-full sm:w-fit">
         {(["register", "shifts", "holidays"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={cn("px-4 py-1.5 text-xs font-bold rounded-lg capitalize transition-all",
@@ -141,9 +146,9 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
       {/* ── Monthly Attendance Register ── */}
       {tab === "register" && (
         <div className="card overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-[#fcfbf8]">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 bg-[#fcfbf8]">
             <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest">{monthName} {year}</h3>
+            <h3 className="text-xs sm:text-sm font-black text-[#1c1c1c] uppercase tracking-widest">{monthName} {year}</h3>
             <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors"><ChevronRight className="w-4 h-4" /></button>
           </div>
 
@@ -220,14 +225,14 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
           <p className="text-xs text-gray-400 mb-6">Assign shift rotations per agent. Changes reflect immediately in attendance calculations.</p>
           <div className="space-y-3">
             {agents.map(agent => (
-              <div key={agent} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-transparent hover:border-gray-200 transition-all">
+               <div key={agent} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gray-50 rounded-xl border border-transparent hover:border-gray-200 transition-all gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-[#1c1c1c] flex items-center justify-center text-white text-xs font-black">
                     {agent.split(" ").map(n => n[0]).join("")}
                   </div>
                   <div className="text-sm font-bold text-[#1c1c1c]">{agent}</div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                   {(["Morning", "Afternoon", "Night", "Off"] as ShiftType[]).map(s => (
                     <button key={s} onClick={() => setShifts(prev => ({ ...prev, [agent]: s }))}
                       className={cn("px-3 py-1.5 text-[10px] font-bold rounded-lg border transition-all flex items-center gap-1",
@@ -245,7 +250,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
           </div>
           <div className="mt-6 p-4 bg-[#1c1c1c] rounded-xl text-white">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-3">Current Shift Summary</h4>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {(["Morning", "Afternoon", "Night", "Off"] as ShiftType[]).map(s => (
                 <div key={s} className="text-center">
                   <div className="text-2xl font-black">{Object.values(shifts).filter(v => v === s).length}</div>
@@ -269,7 +274,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
                 <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                   <div>
                     <div className="text-xs font-black text-[#1c1c1c]">{h.name}</div>
-                    <div className="text-[10px] text-gray-400">{new Date(h.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</div>
+                    <div className="text-[10px] text-gray-400">{mounted ? new Date(h.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "---"}</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full", h.type === "National" ? "bg-[#1c1c1c] text-white" : "bg-sky-100 text-sky-700")}>{h.type}</span>

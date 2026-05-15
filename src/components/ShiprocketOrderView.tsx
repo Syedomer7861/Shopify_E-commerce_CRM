@@ -33,6 +33,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<"activity" | "tracking">("activity");
   const [showNDRModal, setShowNDRModal] = useState(false);
   const supabase = useMemo(() => createClient(), []);
@@ -65,12 +66,13 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
     } finally {
       setLoading(false);
     }
-  }, [orderId]); 
+  }, [orderId, data]);
 
   useEffect(() => {
+    setMounted(true);
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderId]); // Only trigger on orderId change to avoid loops
+  }, [orderId]);
 
   if (loading && !data) {
     return (
@@ -124,13 +126,13 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
   return (
     <div className="bg-[#f7f4ed] min-h-screen text-[#1c1c1c]">
       {/* Header Bar */}
-      <div className="bg-[#f7f4ed] border-b border-[#eceae4] px-6 py-6 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+      <div className="bg-[#f7f4ed] border-b border-[#eceae4] px-4 sm:px-6 py-4 sm:py-6 flex flex-col md:flex-row items-start md:items-center justify-between sticky top-0 z-20 shadow-sm gap-4">
         <div className="flex items-center gap-4">
           <div className="bg-[#eceae4] p-3 rounded-xl">
             <Package className="w-5 h-5 text-[#1c1c1c]/60" />
           </div>
           <div>
-            <h1 className="text-xl font-black flex items-center gap-2 tracking-tight">
+            <h1 className="text-lg sm:text-xl font-black flex items-center gap-2 tracking-tight flex-wrap">
               #{order.channel_order_id || order.id}
               <span className={cn(
                 "text-[10px] px-2.5 py-1 rounded-lg uppercase font-black tracking-widest",
@@ -147,7 +149,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
           </div>
         </div>
         {!data.is_local && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto justify-start md:justify-end">
             {status === "NDR" && (
               <button 
                 onClick={() => setShowNDRModal(true)}
@@ -179,7 +181,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                 <ImageIcon className="w-4 h-4 text-[#5f5f5d]" />
               </a>
             )}
-            <button className="px-5 py-2.5 bg-[#f7f4ed] border border-[#eceae4] text-[#5f5f5d] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#eceae4] transition-all shadow-sm">
+            <button className="flex-1 sm:flex-initial px-4 py-2.5 bg-[#f7f4ed] border border-[#eceae4] text-[#5f5f5d] rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#eceae4] transition-all shadow-sm">
               Cancel order
             </button>
             <button 
@@ -223,7 +225,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
       </div>
 
       {/* Premium Fulfillment Stepper */}
-      <div className="bg-[#f7f4ed] border-b border-[#eceae4] px-6 py-12">
+      <div className="bg-[#f7f4ed] border-b border-[#eceae4] px-4 sm:px-6 py-8 sm:py-12">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between relative">
             {/* Background Line */}
@@ -237,7 +239,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
               return (
                 <div key={step.label} className="relative z-10 flex flex-col items-center group">
                   <div className={cn(
-                    "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-xl border-4 border-[#f7f4ed]",
+                    "w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-xl border-4 border-[#f7f4ed]",
                     isPast ? "bg-blue-600 text-[#f7f4ed]" : 
                     isCurrent ? "bg-[#1c1c1c] text-[#f7f4ed] animate-pulse-slow ring-8 ring-[#1c1c1c]/10" : 
                     "bg-[#eceae4] text-[#5f5f5d]/40"
@@ -246,7 +248,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                   </div>
                   <div className="absolute -bottom-8 whitespace-nowrap">
                     <span className={cn(
-                      "text-[9px] font-black uppercase tracking-[0.2em] transition-colors",
+                      "text-[8px] sm:text-[9px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] transition-colors",
                       isCurrent ? "text-[#1c1c1c]" : "text-[#5f5f5d]/40"
                     )}>
                       {step.label}
@@ -532,7 +534,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                                 {step.activity}
                               </h4>
                               <span className="text-[9px] text-[#5f5f5d]/40 font-black tabular-nums whitespace-nowrap pt-0.5">
-                                {new Date(step.date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
+                                {mounted ? new Date(step.date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' }) : "—"}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 mb-2">
@@ -541,7 +543,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                                 </span>
                             </div>
                             <p className="text-[10px] font-bold text-[#5f5f5d]/40 uppercase tracking-widest flex items-center gap-1.5">
-                              <MapPin className="w-2.5 h-2.5" /> {step.location || "Central Hub"} · {new Date(step.date).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' })}
+                              <MapPin className="w-2.5 h-2.5" /> {step.location || "Central Hub"} · {mounted ? new Date(step.date).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' }) : "--:--"}
                             </p>
                             {isLatest && (
                                 <div className="mt-4 bg-[#1c1c1c] rounded-xl p-4 shadow-xl">

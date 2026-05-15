@@ -138,7 +138,7 @@ export const AgentStats: React.FC<AgentStatsProps> = ({ metrics, trendData }) =>
       </div>
 
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-[#f7f4ed] border border-[#eceae4] p-5 rounded-[24px] flex flex-col items-center justify-center text-center group hover:bg-[#eceae4] transition-all shadow-sm">
           <div className="p-3 bg-blue-50 rounded-2xl mb-3 group-hover:scale-110 transition-transform">
             <Phone className="w-5 h-5 text-blue-600" />

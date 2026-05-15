@@ -206,10 +206,10 @@ export default function IndiaSalesMap() {
     <div className="bg-[#f7f4ed] rounded-[32px] border border-[#eceae4] shadow-sm overflow-visible">
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between px-6 pt-6 pb-2 flex-wrap gap-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-4 sm:px-6 pt-6 pb-2 gap-4">
 
         {/* Left: metric + day dropdowns */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
           {/* Metric */}
           <div className="relative" ref={dropdownRef}>
             <button
@@ -254,7 +254,7 @@ export default function IndiaSalesMap() {
         </div>
 
         {/* Right: live badge + last updated + refresh + help */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between md:justify-end gap-3 sm:gap-4 w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-[#eceae4]/30">
           {/* Live indicator */}
           <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
             <span className="relative flex h-2 w-2">
@@ -293,8 +293,8 @@ export default function IndiaSalesMap() {
       >
         <svg
           viewBox={VIEWBOX}
-          className="w-full"
-          style={{ height: 460, display: "block" }}
+          className="w-full h-auto max-h-[300px] sm:max-h-[460px]"
+          style={{ display: "block" }}
           aria-label="India sales map"
         >
           {INDIA_LOCATIONS.map((loc) => {

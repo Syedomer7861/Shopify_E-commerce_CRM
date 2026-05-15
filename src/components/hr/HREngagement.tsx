@@ -27,9 +27,14 @@ function Stars({ rating, onChange }: { rating: number; onChange?: (r: number) =>
 interface Props { reviews: any[]; assignments: any[]; grievances: any[]; employees: any[]; onRefresh: () => void; }
 
 export default function HREngagement({ reviews: dbReviews, assignments: dbAssignments, grievances: dbGrievances, employees, onRefresh }: Props) {
+  const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<"reviews" | "training" | "grievances">("reviews");
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [training, setTraining] = useState<Training[]>([]);
   const [grievances, setGrievances] = useState<Grievance[]>([]);
@@ -112,7 +117,7 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
         </div>
       </div>
 
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-full sm:w-fit">
         {(["reviews", "training", "grievances"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={cn("px-4 py-1.5 text-xs font-bold rounded-lg capitalize transition-all",
@@ -234,7 +239,7 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
                     <div className={cn("text-xs font-bold", t.completed ? "text-emerald-700 line-through" : "text-[#1c1c1c]")}>{t.topic}</div>
                     <div className="text-[10px] text-gray-400">{t.agent} · Due: {t.dueDate}</div>
                   </div>
-                  {!t.completed && new Date(t.dueDate) < new Date() && (
+                  {mounted && !t.completed && new Date(t.dueDate) < new Date() && (
                     <span className="text-[9px] font-black bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-full">Overdue</span>
                   )}
                 </div>

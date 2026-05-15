@@ -176,18 +176,18 @@ export function TodoSection() {
       </div>
 
       <form onSubmit={addTodo} className="mb-8">
-        <div className="relative group">
+        <div className="relative flex flex-col sm:block gap-3">
           <input
             type="text"
             placeholder="What needs to be done?..."
-            className="w-full bg-[#f8f7f4] border-2 border-transparent focus:border-[#1c1c1c] focus:bg-white rounded-2xl px-6 py-4 text-sm font-medium transition-all outline-none"
+            className="w-full bg-[#f8f7f4] border-2 border-transparent focus:border-[#1c1c1c] focus:bg-white rounded-2xl px-6 py-4 text-sm font-medium transition-all outline-none sm:pr-32"
             value={newTodo}
             onChange={(e) => setNewTodo(e.target.value)}
           />
           <button
             type="submit"
             disabled={adding || !newTodo.trim()}
-            className="absolute right-3 top-1/2 -translate-y-1/2 btn-primary !py-2 !px-4 flex items-center gap-2"
+            className="btn-primary flex items-center justify-center gap-2 sm:absolute sm:right-2 sm:top-1/2 sm:-translate-y-1/2 !py-4 sm:!py-2.5 !px-6 sm:!px-4"
           >
             {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             Add Task

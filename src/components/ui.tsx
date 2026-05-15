@@ -106,7 +106,7 @@ export function StatCard({
       <div className="flex-1 flex flex-col justify-end relative z-10">
         <div className={cn(
           "font-[900] tracking-tighter leading-none mb-1 font-display transition-all duration-500", 
-          String(value).length > 8 ? "text-xl" : "text-[32px]",
+          String(value).length > 8 ? "text-lg md:text-xl" : "text-2xl md:text-[32px]",
           "text-[#1c1c1c]"
         )}>
           {value}
@@ -235,11 +235,11 @@ export function Modal({
 export function PageHeader({ title, subtitle, actions }: { title: React.ReactNode; subtitle?: React.ReactNode; actions?: React.ReactNode }) {
   return (
     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-10">
-      <div>
+      <div className="flex flex-col gap-2">
         <h1 className="page-title">{title}</h1>
         {subtitle && <div className="page-subtitle">{subtitle}</div>}
       </div>
-      {actions && <div className="flex items-center gap-3 pt-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2 md:gap-3 pt-2 md:pt-0">{actions}</div>}
     </div>
   );
 }

@@ -176,7 +176,7 @@ export async function sendGmail({
         <div class="footer">
           &copy; 2026 CureForever. All rights reserved.<br>
           <div style="margin-top: 15px; font-size: 9px; opacity: 0.6; text-transform: none; letter-spacing: normal;">
-            Confidence in health, naturally. India's #1 Ayurvedic & Nutraceutical brand.
+            Cureforever, a health and wellness supplement brand.
           </div>
         </div>
       </div>

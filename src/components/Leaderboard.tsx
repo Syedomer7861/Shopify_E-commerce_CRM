@@ -207,7 +207,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ agents: initialAgents 
                 )} />
               </div>
               
-              <div className="flex-none w-32 md:w-44">
+              <div className="min-w-0 flex-1 sm:flex-none sm:w-32 md:w-44">
                 <div className="flex items-center gap-2">
                   <div className="text-xs font-bold text-[#1c1c1c] truncate">{displayName}</div>
                   {badges.map((b, i) => (
@@ -272,7 +272,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ agents: initialAgents 
                 </div>
               </div>
               
-              <div className="text-right shrink-0 w-24">
+              <div className="text-right shrink-0 w-20 sm:w-24">
                 <div className="text-xs font-bold text-[#1c1c1c]">₹{agent.revenue_recovered.toLocaleString()}</div>
                 {conversionRate > 0 && <div className="text-[10px] text-blue-600 font-medium">{conversionRate}% Win Rate</div>}
               </div>

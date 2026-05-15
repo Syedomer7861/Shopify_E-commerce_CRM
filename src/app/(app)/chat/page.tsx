@@ -4,7 +4,7 @@ import { ChannelList } from '@/components/chat/ChannelList';
 import { MessageList } from '@/components/chat/MessageList';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { useChat } from '@/context/ChatContext';
-import { Hash, Settings, Info, Search, Wifi, WifiOff } from 'lucide-react';
+import { Hash, Settings, Info, Search, Wifi, WifiOff, ChevronLeft } from 'lucide-react';
 import { Avatar } from '@/components/ui';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -85,40 +85,46 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="fixed inset-0 left-64 flex flex-col bg-white overflow-hidden">
+    <div className="fixed inset-0 lg:left-64 bottom-16 lg:bottom-0 flex flex-col bg-white overflow-hidden">
       {/* Top Header */}
       <header className="h-16 border-b border-[#eceae4] bg-[#f8f7f4] flex items-center justify-between px-6 z-10">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button 
+            onClick={() => router.back()}
+            className="lg:hidden p-2 -ml-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
           {activeChannel ? (
             <>
-              <div className="w-9 h-9 rounded-xl bg-[#1c1c1c] flex items-center justify-center text-[#fcfbf8]">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#1c1c1c] flex items-center justify-center text-[#fcfbf8]">
                 {activeChannel.type === 'direct' ? (
                   <Avatar name={activeChannel.name || "User"} size="sm" />
                 ) : (
-                  <Hash className="w-4 h-4" />
+                  <Hash className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 )}
               </div>
               <div className="flex flex-col">
-                <h1 className="text-sm font-bold text-[#1c1c1c] tracking-tight">{activeChannel.name}</h1>
+                <h1 className="text-xs sm:text-sm font-bold text-[#1c1c1c] tracking-tight truncate max-w-[120px] sm:max-w-none">{activeChannel.name}</h1>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Active now</span>
+                  <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-emerald-500" />
+                  <span className="text-[8px] sm:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60 whitespace-nowrap">Active now</span>
                 </div>
               </div>
             </>
           ) : (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#eceae4] flex items-center justify-center">
-                <Hash className="w-4 h-4 text-[#5f5f5d]" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#eceae4] flex items-center justify-center">
+                <Hash className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#5f5f5d]" />
               </div>
-              <h1 className="text-sm font-bold text-[#1c1c1c] tracking-tight">Internal Communications</h1>
+              <h1 className="text-xs sm:text-sm font-bold text-[#1c1c1c] tracking-tight">Internal Communications</h1>
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {isSearchOpen && (
-            <div className="flex items-center bg-white border border-[#eceae4] rounded-lg px-2 py-1 mx-2">
+            <div className="hidden sm:flex items-center bg-white border border-[#eceae4] rounded-lg px-2 py-1 mx-2">
               <Search className="w-3 h-3 text-[#5f5f5d] mr-2" />
               <input 
                 type="text" 
@@ -128,49 +134,46 @@ export default function ChatPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 autoFocus
               />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery("")} className="text-[9px] font-bold text-gray-400 hover:text-[#1c1c1c] ml-1">✕</button>
-              )}
             </div>
           )}
 
           {/* Connection status badge */}
           <div className={cn(
-            "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all mr-2",
+            "flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1 rounded-xl border text-[8px] sm:text-[10px] font-black uppercase tracking-widest transition-all mr-1 sm:mr-2",
             connected
               ? "bg-emerald-50 border-emerald-200 text-emerald-700"
               : "bg-amber-50 border-amber-200 text-amber-700 animate-pulse"
           )}>
             {connected
-              ? <><Wifi className="w-3 h-3" /> Live</>
-              : <><WifiOff className="w-3 h-3" /> Connecting...</>
+              ? <><Wifi className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> <span className="hidden xs:inline">Live</span></>
+              : <><WifiOff className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> <span className="hidden xs:inline">Syncing...</span></>
             }
           </div>
 
           <button 
             onClick={() => setIsSearchOpen(!isSearchOpen)}
             className={cn(
-              "p-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg transition-colors",
+              "p-1.5 sm:p-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg transition-colors hidden sm:block",
               isSearchOpen && "bg-[#eceae4] text-[#1c1c1c]"
             )}
           >
-            <Search className="w-4 h-4" />
+            <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
           <button 
             onClick={() => setShowRightPanel(!showRightPanel)}
             className={cn(
-              "p-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg transition-colors",
+              "p-1.5 sm:p-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg transition-colors hidden lg:block",
               showRightPanel && "bg-[#eceae4] text-[#1c1c1c]"
             )}
           >
-            <Info className="w-4 h-4" />
+            <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
-          <div className="w-[1px] h-4 bg-[#eceae4] mx-1" />
+          <div className="w-[1px] h-4 bg-[#eceae4] mx-0.5 sm:mx-1" />
           <button 
             onClick={() => setShowSettings(true)}
-            className="p-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg transition-colors"
+            className="p-1.5 sm:p-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg transition-colors"
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </div>
       </header>

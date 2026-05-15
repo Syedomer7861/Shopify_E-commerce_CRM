@@ -179,10 +179,12 @@ export default function SettingsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [maskedCount, setMaskedCount] = useState<number | null>(null);
   const [showAddOverride, setShowAddOverride] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState(new Date());
 
   // Ticking clock for live countdowns
   useEffect(() => {
+    setMounted(true);
     const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -1523,7 +1525,7 @@ export default function SettingsPage() {
                                   <span className="text-[10px] font-bold text-[#1c1c1c] truncate uppercase tracking-widest">{log.customer?.name || "Customer"}</span>
                                   {log.isAuto && <span className="text-[8px] px-1.5 py-0.5 bg-[#1c1c1c] text-white rounded font-bold uppercase tracking-tighter">Auto</span>}
                                 </div>
-                                <span className="text-[9px] text-[#5f5f5d] font-bold opacity-40 tabular-nums">{log.called_at ? new Date(log.called_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}</span>
+                                <span className="text-[9px] text-[#5f5f5d] font-bold opacity-40 tabular-nums">{log.called_at && mounted ? new Date(log.called_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}</span>
                              </div>
                              <div className="text-[9px] text-[#5f5f5d] font-medium truncate opacity-60 leading-relaxed">{log.note}</div>
                            </div>
@@ -1538,35 +1540,37 @@ export default function SettingsPage() {
                          {pipeline.waiting.length === 0 ? (
                            <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest p-8 border border-dashed border-[#eceae4] rounded-2xl text-center opacity-30 bg-[#eceae4]/10">Queue finalized</div>
                          ) : pipeline.waiting.map(task => {
-                           const [h, m] = (settings.whatsapp_send_time || "10:00").split(":");
-                           const target = new Date();
-                           target.setHours(parseInt(h), parseInt(m), 0, 0);
-                           let isOverdue = target.getTime() - new Date().getTime() < 0;
-                           let timeText = `Launch at ${settings.whatsapp_send_time || "10:00"}`;
-                            
-                           if (task.isWorkflow) {
-                               const runTime = new Date(task.due_date || "");
-                               const diff = runTime.getTime() - now.getTime();
-                               if (diff < 0) {
-                                  timeText = "Processing Now";
-                                  isOverdue = true;
-                               } else {
-                                  const hours = Math.floor(diff / 3600000);
-                                  const mins = Math.floor((diff % 3600000) / 60000);
-                                  const secs = Math.floor((diff % 60000) / 1000);
-                                  timeText = `Auto: ${hours > 0 ? hours + "h " : ""}${mins}m ${secs}s`;
-                                  isOverdue = false;
-                               }
-                            } else if (!isOverdue) {
-                               const diffMs = target.getTime() - now.getTime();
-                               const hours = Math.floor(diffMs / 3600000);
-                               const mins = Math.floor((diffMs % 3600000) / 60000);
-                               const secs = Math.floor((diffMs % 60000) / 1000);
-                               timeText = `Wait: ${hours > 0 ? hours + "h " : ""}${mins}m ${secs}s`;
-                            } else {
-                              timeText = "Ready for execution";
-                            }
- 
+                            const [h, m] = (settings.whatsapp_send_time || "10:00").split(":");
+                            const target = new Date();
+                            target.setHours(parseInt(h), parseInt(m), 0, 0);
+                            let isOverdue = target.getTime() - new Date().getTime() < 0;
+                            let timeText = `Launch at ${settings.whatsapp_send_time || "10:00"}`;
+                             
+                            if (!mounted) {
+                               timeText = "--:--:--";
+                            } else if (task.isWorkflow) {
+                                const runTime = new Date(task.due_date || "");
+                                const diff = runTime.getTime() - now.getTime();
+                                if (diff < 0) {
+                                   timeText = "Processing Now";
+                                   isOverdue = true;
+                                } else {
+                                   const hours = Math.floor(diff / 3600000);
+                                   const mins = Math.floor((diff % 3600000) / 60000);
+                                   const secs = Math.floor((diff % 60000) / 1000);
+                                   timeText = `Auto: ${hours > 0 ? hours + "h " : ""}${mins}m ${secs}s`;
+                                   isOverdue = false;
+                                }
+                             } else if (!isOverdue) {
+                                const diffMs = target.getTime() - now.getTime();
+                                const hours = Math.floor(diffMs / 3600000);
+                                const mins = Math.floor((diffMs % 3600000) / 60000);
+                                const secs = Math.floor((diffMs % 60000) / 1000);
+                                timeText = `Wait: ${hours > 0 ? hours + "h " : ""}${mins}m ${secs}s`;
+                             } else {
+                               timeText = "Ready for execution";
+                             }
+
                            return (
                              <div key={task.id} className="p-4 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl group hover:border-[#1c1c1c]/30 transition-all shadow-sm">
                                <div className="flex justify-between items-start mb-2">

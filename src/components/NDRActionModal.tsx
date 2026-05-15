@@ -16,7 +16,12 @@ interface NDRActionModalProps {
 }
 
 export default function NDRActionModal({ open, onClose, shipmentId: initialShipmentId, orderNumber, awb, shiprocketOrderId, onSuccess }: NDRActionModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [resolvedShipmentId, setResolvedShipmentId] = useState(initialShipmentId);
   const [resolvedShiprocketOrderId, setResolvedShiprocketOrderId] = useState(shiprocketOrderId);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -153,14 +158,14 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
       onClose={onClose} 
       title={
         <div className="flex items-center justify-between w-full pr-8">
-          <span className="font-black uppercase tracking-widest text-[13px]">Shiprocket Intelligence — #{orderNumber || '???'}</span>
+          <span className="font-black uppercase tracking-widest text-[10px] sm:text-[13px]">Shiprocket Intelligence — #{orderNumber || '???'}</span>
         </div>
       }
       maxWidth="max-w-4xl"
     >
       <div className="py-4 space-y-8 bg-[#f7f4ed]">
         {/* Rapid Action Buttons */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <a 
             href={resolvedShiprocketOrderId && !String(resolvedShiprocketOrderId).startsWith("LOCAL") && String(resolvedShiprocketOrderId).length > 6
               ? `https://app.shiprocket.in/seller/orders/show/${resolvedShiprocketOrderId}`
@@ -184,8 +189,8 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
         </div>
 
         {/* Live Pulse Tracking - Dark High-Contrast Premium Section */}
-        <div className="bg-[#1c1c1c] text-[#f7f4ed] p-8 rounded-[32px] border border-[#1c1c1c] shadow-2xl overflow-hidden relative group min-h-[200px] flex flex-col">
-          <div className="flex items-center justify-between mb-8 shrink-0">
+        <div className="bg-[#1c1c1c] text-[#f7f4ed] p-4 sm:p-8 rounded-[24px] sm:rounded-[32px] border border-[#1c1c1c] shadow-2xl overflow-hidden relative group min-h-[200px] flex flex-col">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 shrink-0 gap-4">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-[#f7f4ed]/10 rounded-2xl flex items-center justify-center">
                 <Truck className="w-5 h-5 text-blue-400" />
@@ -216,19 +221,19 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
               trackingHistory.map((step, i) => {
                 const isLatest = i === 0;
                 return (
-                  <div key={i} className="flex gap-6 relative">
+                  <div key={i} className="flex gap-3 sm:gap-6 relative">
                     <div className="w-[2px] bg-[#f7f4ed]/10 absolute left-[7px] top-4 bottom-[-32px] last:hidden" />
                     <div className={cn(
                       "w-4 h-4 rounded-full border-2 border-[#1c1c1c] ring-2 z-10 mt-1 shrink-0 transition-all",
                       isLatest ? "bg-blue-500 ring-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.5)] scale-125" : "bg-[#f7f4ed]/20 ring-[#f7f4ed]/5"
                     )} />
                     <div className="flex-1">
-                      <div className="flex items-center justify-between gap-6">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-6">
                         <p className={cn("text-[11px] font-black uppercase tracking-tight leading-snug", isLatest ? "text-[#f7f4ed]" : "text-[#f7f4ed]/40")}>
                           {step.activity}
                         </p>
                         <span className="text-[9px] text-[#f7f4ed]/40 font-black tabular-nums bg-[#f7f4ed]/5 px-2.5 py-1 rounded-lg">
-                          {step.date ? new Date(step.date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : "—"}
+                          {step.date && mounted ? new Date(step.date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : "—"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mt-1.5">
@@ -310,7 +315,7 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
                 value={addressData.address}
                 onChange={e => setAddressData({...addressData, address: e.target.value})}
               />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input 
                   placeholder="City" 
                   className="bg-[#f7f4ed] border border-[#eceae4] rounded-xl px-4 py-3.5 text-xs font-black focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all" 

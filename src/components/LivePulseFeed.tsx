@@ -8,7 +8,9 @@ export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[
   const [logs, setLogs] = useState<any[]>(initialLogs);
   const supabase = createClient();
 
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    setMounted(true);
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       setLogs([
@@ -140,7 +142,7 @@ export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[
                       {details.title}
                     </span>
                     <span className="text-[9px] text-[#5f5f5d]/30 font-black uppercase whitespace-nowrap">
-                      {timeAgo(log.created_at)}
+                      {mounted ? timeAgo(log.created_at) : "—"}
                     </span>
                   </div>
                   <div className="text-[11px] text-[#5f5f5d] font-bold truncate mt-1 opacity-60 group-hover:opacity-100 transition-opacity flex items-center justify-between">

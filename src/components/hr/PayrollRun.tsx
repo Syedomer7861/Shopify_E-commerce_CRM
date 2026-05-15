@@ -11,12 +11,18 @@ interface Expense { id: string; agent: string; date: string; category: string; a
 
 
 const FMT = (n: number) => `₹${n.toLocaleString("en-IN")}`;
-const MONTH = new Date().toLocaleString("default", { month: "long", year: "numeric" });
 
 interface Props { revisions: any[]; expenses: any[]; employees: any[]; onRefresh: () => void; }
 
 export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpenses, employees, onRefresh }: Props) {
+  const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<"payroll" | "revisions" | "expenses">("payroll");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const MONTH = mounted ? new Date().toLocaleString("default", { month: "long", year: "numeric" }) : "---";
   const [revisions, setRevisions] = useState<SalaryRevision[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [newRev, setNewRev] = useState({ agent_id: "", oldSalary: "", newSalary: "", reason: "" });

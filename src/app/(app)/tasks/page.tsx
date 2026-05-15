@@ -683,25 +683,25 @@ export default function TasksPage() {
     <div className="animate-fade-in">
       <PageHeader title="All Tasks" subtitle={`${totalCount} tasks matching filters`} 
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button 
               onClick={() => setShowFilters(!showFilters)}
-              className={cn("btn-secondary flex items-center gap-1.5 py-1.5 px-3", showFilters && "bg-[#1c1c1c]/10 border-[#1c1c1c] text-[#1c1c1c]")}
+              className={cn("btn-secondary flex-1 sm:flex-none flex items-center justify-center gap-1.5 py-1.5 px-3", showFilters && "bg-[#1c1c1c]/10 border-[#1c1c1c] text-[#1c1c1c]")}
             >
               <Filter className="w-3.5 h-3.5" />
-              {showFilters ? "Hide Filters" : "Filters"}
+              <span className="text-[10px] font-black uppercase tracking-widest">{showFilters ? "Hide" : "Filters"}</span>
             </button>
 
             <button 
               onClick={handleGlobalSync} 
               disabled={syncing}
               className={cn(
-                "btn-secondary flex items-center gap-1.5 py-1.5 px-3",
+                "btn-secondary flex-1 sm:flex-none flex items-center justify-center gap-1.5 py-1.5 px-3",
                 syncing && "opacity-50 cursor-not-allowed"
               )}
             >
               <RefreshCw className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
-              {syncing ? "Syncing..." : "Sync System"}
+              <span className="text-[10px] font-black uppercase tracking-widest">{syncing ? "Syncing" : "Sync"}</span>
             </button>
           </div>
         }
@@ -755,19 +755,19 @@ export default function TasksPage() {
 
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col lg:flex-row gap-3 mb-5">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Search customer name or phone..." 
+            placeholder="Search name or phone..." 
             className="input pl-9 text-xs" 
             value={search} 
             onChange={e => setSearch(e.target.value)} 
           />
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1 overflow-x-auto scrollbar-hide">
             {/* Specialized Types Only for Agents */}
             {TYPES.filter(t => {
               if (profile?.role === 'admin' || t.value === 'all' || t.value === 'flagged') return true;
@@ -777,17 +777,17 @@ export default function TasksPage() {
                 key={t.value}
                 onClick={() => setTypeFilter(t.value)}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all",
+                  "px-4 py-2 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all uppercase tracking-tight",
                   typeFilter === t.value
-                    ? "bg-[#1c1c1c] text-white shadow-md shadow-black/10 scale-105"
-                    : "bg-white text-gray-500 hover:bg-gray-50 border border-transparent"
+                    ? "bg-[#1c1c1c] text-white shadow-md shadow-black/10"
+                    : "bg-white text-gray-500 hover:bg-gray-50"
                 )}
               >
                 {t.label}
               </button>
             ))}
           </div>
-          <select className="select w-auto text-xs" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <select className="select w-full sm:w-auto text-xs" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
             {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
         </div>

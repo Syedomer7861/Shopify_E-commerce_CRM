@@ -13,7 +13,12 @@ export function ChannelList() {
   const { activeChannel, setActiveChannel, socket, onlineUsers } = useChat();
   const { profile } = useCurrentProfile();
   const isAdmin = profile?.role === 'admin';
+  const [mounted, setMounted] = useState(false);
   const [channels, setChannels] = useState<any[]>([]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [directMessages, setDirectMessages] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
@@ -192,7 +197,7 @@ export function ChannelList() {
                   "text-[9px] font-bold uppercase tracking-tighter opacity-40 shrink-0",
                   isSelected ? "text-[#fcfbf8]" : "text-[#5f5f5d]"
                 )}>
-                  {new Date(channel.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {mounted ? new Date(channel.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
                 </span>
               )}
               {((channel.type === 'group' || channel.type === 'task') ? (isAdmin || profile?.role === 'manager') : true) && (

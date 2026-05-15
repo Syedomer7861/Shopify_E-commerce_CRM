@@ -281,7 +281,7 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col items-center">
-                         <div className="flex gap-3 mb-1">
+                         <div className="flex flex-wrap gap-2 sm:gap-3 mb-1">
                             <div className="text-center">
                                <div className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">Online</div>
                                <div className="text-[10px] font-black text-[#1c1c1c]">{agent.onlineHours}</div>

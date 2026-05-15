@@ -16,6 +16,7 @@ import AnnouncementFeed from "@/components/AnnouncementFeed";
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [todayTasks, setTodayTasks] = useState<(Task & { customer: Customer; order?: Order; abandoned_cart?: AbandonedCart })[]>([]);
   const [overdueTasks, setOverdueTasks] = useState<(Task & { customer: Customer; order?: Order; abandoned_cart?: AbandonedCart })[]>([]);
@@ -65,6 +66,7 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
+    setMounted(true);
     import("@/components/LivePulseFeed").then(m => setLivePulseFeed(() => m.default));
   }, []);
 
@@ -700,26 +702,27 @@ export default function Dashboard() {
           </div>
         }
         subtitle={
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-gray-500 font-medium">Today is {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}</span>
-            <span className="text-gray-300">|</span>
-            <div className="flex items-center gap-1.5 text-[#1c1c1c] font-bold bg-[#1c1c1c]/5 px-2.5 py-1 rounded-lg border border-[#1c1c1c]/10">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-1">
+            <span className="text-gray-500 font-medium">
+              Today is {mounted ? new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" }) : "---"}
+            </span>
+            <div className="flex items-center gap-1.5 text-[#1c1c1c] font-bold bg-[#1c1c1c]/5 px-2.5 py-1 rounded-lg border border-[#1c1c1c]/10 w-fit">
               <Clock className="w-3.5 h-3.5" />
-              <span>{currentTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}</span>
+              <span>{mounted ? currentTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "--:--"}</span>
             </div>
           </div>
         }
         actions={
-          <div className="flex items-center gap-2">
-            <div className="flex flex-col items-end gap-0.5 mt-0.5 mr-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="flex flex-col items-start sm:items-end gap-0.5 mt-0.5 mr-0 sm:mr-3">
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#1c1c1c] animate-pulse" />
-                <span className="text-[#5f5f5d] text-[9px] uppercase font-bold tracking-widest opacity-60">
+                <span className="text-[#5f5f5d] text-[8px] md:text-[9px] uppercase font-bold tracking-widest opacity-60">
                   Pulse: {Math.floor(nextSyncIn / 60)}:{(nextSyncIn % 60).toString().padStart(2, '0')}
                 </span>
               </div>
               <span className="text-[#5f5f5d] text-[8px] uppercase font-bold tracking-widest opacity-30">
-                Last Sync: {lastChecked.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                Last Sync: {mounted ? lastChecked.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "--:--:--"}
               </span>
             </div>
             <button 
@@ -729,7 +732,7 @@ export default function Dashboard() {
               }} 
               disabled={syncing}
               className={cn(
-                "btn-secondary flex items-center gap-1.5 py-1.5 px-4 bg-[#1c1c1c] text-white hover:bg-black transition-all shadow-lg",
+                "btn-secondary flex items-center justify-center gap-1.5 py-1.5 px-4 bg-[#1c1c1c] text-white hover:bg-black transition-all shadow-lg w-full sm:w-auto",
                 syncing && "opacity-50 cursor-not-allowed"
               )}
             >
@@ -765,7 +768,7 @@ export default function Dashboard() {
 
 
       {/* KPI Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
         <StatCard 
           label="Calls Today" 
           value={counts.today} 
@@ -803,7 +806,7 @@ export default function Dashboard() {
       </div>
 
       {profile?.role === "admin" && (
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6">
         <StatCard label="Esc 1d+" value={escalations.medium} sub="Follow-up" accent="text-amber-600" href="/tasks?status=overdue" />
         <StatCard label="Esc 3d+" value={escalations.high} sub="Review" accent="text-orange-600" href="/tasks?status=overdue" />
         <StatCard label="Esc 7d+" value={escalations.critical} sub="Critical" accent="text-rose-700" href="/tasks?status=overdue" />

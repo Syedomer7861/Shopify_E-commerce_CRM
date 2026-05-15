@@ -66,6 +66,8 @@ export default function Sidebar() {
   const supabase = useMemo(() => createClient(), []);
   const { unreadCount } = useChat();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [counts, setCounts] = useState({ due: 0, overdue: 0 });
   const [timers, setTimers] = useState({ workMs: 0, breakMs: 0 });
@@ -211,6 +213,7 @@ export default function Sidebar() {
   }, [supabase, fetchTaskCounts, fetchTodayAttendance]);
 
   useEffect(() => {
+    setMounted(true);
     if (typeof window !== 'undefined') {
       audioRef.current = new Audio('/notification.mp3');
       audioRef.current.load();
@@ -482,41 +485,43 @@ export default function Sidebar() {
   const adminUser = isAdmin(profile);
 
   return (
-    <aside className="w-64 min-w-[256px] h-screen bg-[#f7f4ed] flex flex-col border-r border-[#eceae4] sticky top-0 z-50">
-      <div className="px-6 py-10 border-b border-[#eceae4]/50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#1c1c1c] flex items-center justify-center shadow-lg shadow-[#1c1c1c]/10">
-            <Zap className="w-5 h-5 text-[#fcfbf8]" strokeWidth={2.5} />
+    <aside className="w-full lg:w-64 lg:min-w-[256px] h-16 lg:h-screen bg-[#f7f4ed] flex flex-row lg:flex-col border-t lg:border-r border-[#eceae4] fixed bottom-0 lg:static z-50 transition-all duration-300">
+      <div className="px-4 lg:px-6 py-4 lg:py-10 border-r lg:border-b border-[#eceae4]/50 flex items-center lg:block flex-shrink-0 bg-white lg:bg-transparent">
+        <div className="flex items-center gap-2 lg:gap-3">
+          <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-xl bg-[#1c1c1c] flex items-center justify-center shadow-lg shadow-[#1c1c1c]/10">
+            <Zap className="w-3.5 h-3.5 lg:w-5 lg:h-5 text-[#fcfbf8]" strokeWidth={2.5} />
           </div>
-          <div className="flex flex-col">
-            <div className="text-[#1c1c1c] font-black text-xl tracking-tight font-display">CureForever</div>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[#5f5f5d]/60 text-[9px] uppercase font-black tracking-widest">Live Engine</span>
+          <div className="flex flex-col lg:flex">
+            <div className="text-[#1c1c1c] font-black text-sm lg:text-xl tracking-tighter lg:tracking-tight font-display">Cure</div>
+            <div className="hidden lg:flex items-center gap-1.5 mt-0.5">
+              <div className="w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[#5f5f5d]/60 text-[8px] lg:text-[9px] uppercase font-black tracking-widest">Live Engine</span>
             </div>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-4 py-8 space-y-1.5 overflow-y-auto">
-        <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3">Main Menu</div>
+      <nav className="flex-1 px-2 lg:px-4 py-1.5 lg:py-8 space-y-0 lg:space-y-1.5 overflow-x-auto lg:overflow-y-auto flex flex-row lg:flex-col items-center lg:items-stretch gap-1.5 lg:gap-0 scrollbar-hide">
+        <div className="hidden lg:block text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3">Main Menu</div>
+        
+        {/* Core Mobile Navigation - Primary Items */}
         {nav.map(({ label, href, icon: Icon, badge }) => {
           const active = path === href || (href !== "/" && path.startsWith(href));
           const badgeValue = badge === "taskCount" ? totalTasks : (badge === "chatUnread" ? unreadCount : 0);
 
           return (
             <Link key={href} href={href} className={cn(
-              "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative",
+              "flex flex-col lg:flex-row items-center gap-0.5 lg:gap-3 px-2.5 lg:px-4 py-1 lg:py-2.5 rounded-xl lg:rounded-lg text-[9px] lg:text-sm font-bold lg:font-medium transition-all duration-200 group relative whitespace-nowrap min-w-[56px] lg:min-w-0",
               active 
                 ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" 
                 : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
             )}>
-              <Icon className={cn("w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-105", active ? "text-[#fcfbf8]" : "text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]")} />
-              <span className="flex-1">{label}</span>
+              <Icon className={cn("w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 transition-transform group-hover:scale-105", active ? "text-[#fcfbf8]" : "text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]")} />
+              <span className="lg:inline flex-1">{label}</span>
               {badgeValue > 0 && (
                 <span className={cn(
-                  "text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center", 
-                  active ? "bg-[#fcfbf8]/20 text-[#fcfbf8]" : "bg-rose-500 text-white"
+                  "text-[7px] lg:text-[10px] font-bold px-1 lg:px-1.5 py-0.5 rounded-full min-w-[14px] lg:min-w-[20px] text-center absolute top-0.5 right-0.5 lg:static", 
+                  active ? "bg-[#fcfbf8] text-[#1c1c1c] lg:bg-[#fcfbf8]/20 lg:text-[#fcfbf8]" : "bg-rose-500 text-white"
                 )}>
                   {badgeValue}
                 </span>
@@ -525,8 +530,20 @@ export default function Sidebar() {
           );
         })}
 
+        {/* Mobile 'More' Button */}
+        <button 
+          onClick={() => setShowMoreMenu(true)}
+          className="lg:hidden flex flex-col items-center gap-0.5 px-3 py-1 text-[#5f5f5d] hover:text-[#1c1c1c] rounded-xl font-bold text-[9px] whitespace-nowrap"
+        >
+          <div className="w-4 h-4 flex items-center justify-center">
+            <Settings className="w-4 h-4 text-[#5f5f5d]/60" />
+          </div>
+          <span>More</span>
+        </button>
+
+        {/* Desktop-only Secondary Menus (Hidden on mobile nav, moved to More menu) */}
         {(adminUser || profile?.role === "hr" || profile?.role === "manager" || (profile?.permissions && Object.values(profile.permissions).some(v => v))) && (
-          <>
+          <div className="hidden lg:flex flex-col border-t lg:mt-4 border-[#eceae4]">
             {(adminUser || profile?.role === "manager" || profile?.permissions?.audit_tasks) && (
               <>
                 <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Management</div>
@@ -534,10 +551,8 @@ export default function Sidebar() {
                   const active = path === item.href;
                   return (
                     <Link key={item.label} href={item.href} className={cn(
-                      "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative",
-                      active 
-                        ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" 
-                        : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
+                      "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
+                      active ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
                     )}>
                       <item.icon className={cn("w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-105", active ? "text-[#fcfbf8]" : "text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]")} />
                       <span className="flex-1">{item.label}</span>
@@ -553,16 +568,11 @@ export default function Sidebar() {
                 {hrNav.map((item) => {
                   const itemTab = item.href.includes("?") ? new URLSearchParams(item.href.split("?")[1]).get("tab") : null;
                   const currentTab = searchParams.get("tab");
-                  
-                  const active = itemTab 
-                    ? (path === "/hr" && currentTab === itemTab)
-                    : (path === "/hr" && !currentTab);
+                  const active = itemTab ? (path === "/hr" && currentTab === itemTab) : (path === "/hr" && !currentTab);
                   return (
                     <Link key={item.href} href={item.href} className={cn(
-                      "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative",
-                      active 
-                        ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" 
-                        : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
+                      "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
+                      active ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
                     )}>
                       <item.icon className={cn("w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-105", active ? "text-[#fcfbf8]" : "text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]")} />
                       <span className="flex-1">{item.label}</span>
@@ -577,25 +587,111 @@ export default function Sidebar() {
               const { label, href, icon: Icon, permission } = item;
               if (label === "Alert Logs" && !adminUser) return null;
               if (permission && !hasPermission(profile, permission as any)) return null;
-              
               const active = path === href || (href !== "/" && path.startsWith(href));
               return (
                 <Link key={href} href={href} className={cn(
-                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative",
-                  active 
-                    ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" 
-                    : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
+                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
+                  active ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
                 )}>
                   <Icon className={cn("w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-105", active ? "text-[#fcfbf8]" : "text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]")} />
                   <span className="flex-1">{label}</span>
                 </Link>
               );
             })}
-          </>
+          </div>
         )}
       </nav>
 
-      <div className="px-4 py-6 border-t border-[#eceae4]/50 bg-[rgba(28,28,28,0.01)]">
+      {/* Mobile More Menu Modal */}
+      <Modal open={showMoreMenu} onClose={() => setShowMoreMenu(false)} title="Quick Actions & Menus">
+        <div className="space-y-6 pb-8">
+           {/* Mobile Status Picker */}
+           <div>
+              <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-2 px-1">Shift Status</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: "online", label: "Online", icon: "⚡" },
+                  { id: "meeting", label: "Meeting", icon: "👥" },
+                  { id: "break", label: "Break", icon: "☕" },
+                  { id: "lunch", label: "Lunch", icon: "🍱" },
+                  { id: "away", label: "Away", icon: "🚶" },
+                  { id: "offline", label: "Offline", icon: "💤" }
+                ].map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => {
+                      if (["break", "away", "meeting"].includes(s.id)) {
+                        setShowStatusModal({ id: s.id, label: s.label });
+                        setShowMoreMenu(false);
+                      } else {
+                        updateStatus(s.id);
+                        setShowMoreMenu(false);
+                      }
+                    }}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all",
+                      profile?.status === s.id ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#1c1c1c] border-[#eceae4] hover:bg-gray-50"
+                    )}
+                  >
+                    <span>{s.icon}</span> {s.label}
+                  </button>
+                ))}
+              </div>
+           </div>
+
+           {/* Mobile Management/Admin Sections */}
+           <div className="space-y-4 pt-4 border-t border-[#eceae4]">
+              {(adminUser || profile?.role === "manager" || profile?.permissions?.audit_tasks) && (
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Management</h4>
+                  <div className="grid grid-cols-1 gap-1">
+                    {managerNav.map(item => (
+                      <Link key={item.label} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                        <item.icon className="w-4 h-4 text-[#5f5f5d]" /> {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(adminUser || profile?.role === "hr") && (
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Human Capital</h4>
+                  <div className="grid grid-cols-1 gap-1">
+                    {hrNav.map(item => (
+                      <Link key={item.label} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                        <item.icon className="w-4 h-4 text-[#5f5f5d]" /> {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Operations</h4>
+                <div className="grid grid-cols-1 gap-1 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                  {adminNav.map(item => {
+                    if (item.label === "Alert Logs" && !adminUser) return null;
+                    if (item.permission && !hasPermission(profile, item.permission as any)) return null;
+                    return (
+                      <Link key={item.label} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                        <item.icon className="w-4 h-4 text-[#5f5f5d]" /> {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+           </div>
+
+           <div className="pt-4 border-t border-[#eceae4]">
+              <button onClick={() => { handleLogout(); setShowMoreMenu(false); }} className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-rose-50 text-rose-600 text-xs font-black uppercase tracking-widest hover:bg-rose-100 transition-all">
+                <LogOut className="w-4 h-4" /> Sign Out
+              </button>
+           </div>
+        </div>
+      </Modal>
+
+      <div className="hidden lg:block px-4 py-6 border-t border-[#eceae4]/50 bg-[rgba(28,28,28,0.01)]">
         <div className="mb-4 px-2">
           <label className="text-[9px] font-bold text-[#5f5f5d]/60 uppercase tracking-widest block mb-1.5">Shift Status</label>
           <div className="relative">
@@ -758,7 +854,9 @@ export default function Sidebar() {
         </div>
 
         <div className="px-2 mb-6 text-center">
-            <span className="text-[8px] text-[#5f5f5d] uppercase font-bold tracking-widest opacity-40">System Freshness: {lastSync.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
+            <span className="text-[8px] text-[#5f5f5d] uppercase font-bold tracking-widest opacity-40">
+              System Freshness: {mounted ? lastSync.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "--:--:--"}
+            </span>
         </div>
 
         <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#f7f4ed] border border-[#eceae4] group">

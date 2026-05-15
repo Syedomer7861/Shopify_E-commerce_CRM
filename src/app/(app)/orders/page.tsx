@@ -417,21 +417,21 @@ export default function OrdersPage() {
 
       {/* Advanced Filter Panel - Persistent */}
       <div className="card p-4 mb-5 animate-fade-in overflow-visible z-10">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1.5 opacity-60">Date From</label>
+            <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-1.5 opacity-60">Date From</label>
             <input type="date" className="input text-xs h-9 bg-[#fcfbf8]" value={startDate} onChange={e => setStartDate(e.target.value)} />
           </div>
           <div>
-            <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1.5 opacity-60">Date To</label>
+            <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-1.5 opacity-60">Date To</label>
             <input type="date" className="input text-xs h-9 bg-[#fcfbf8]" value={endDate} onChange={e => setEndDate(e.target.value)} />
           </div>
           <div>
-            <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1.5 opacity-60">Min Amount (₹)</label>
+            <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-1.5 opacity-60">Min Amount (₹)</label>
             <input type="number" placeholder="0" className="input text-xs h-9 bg-[#fcfbf8]" value={minAmount} onChange={e => setMinAmount(e.target.value)} />
           </div>
           <div>
-            <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1.5 opacity-60">Max Amount (₹)</label>
+            <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-1.5 opacity-60">Max Amount (₹)</label>
             <input type="number" placeholder="99999" className="input text-xs h-9 bg-[#fcfbf8]" value={maxAmount} onChange={e => setMaxAmount(e.target.value)} />
           </div>
         </div>
@@ -452,15 +452,15 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1 w-full md:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#5f5f5d]" />
           <input placeholder="Search orders or tracking..." className="input pl-9 text-xs" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <div className="flex items-center gap-1 bg-[#eceae4]/30 rounded-xl border border-[#eceae4] p-1 overflow-x-auto scroller-hide">
           {STATUSES.map(s => (
             <button key={s.value} onClick={() => setStatus(s.value)}
-              className={cn("px-5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap",
+              className={cn("px-4 md:px-5 py-2 rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap",
                 status === s.value ? "bg-[#1c1c1c] text-white shadow-md" : "text-[#5f5f5d] hover:bg-[#eceae4]/50"
               )}>
               {s.label}
@@ -470,7 +470,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
         {[
           { label: "Delivered", value: "delivered", count: stats.delivered, color: "border-l-[#1c1c1c]", active: "shadow-xl border-[#1c1c1c]" },
           { label: "Transit", value: "in_transit", count: stats.in_transit, color: "border-l-[#eceae4]", active: "shadow-xl border-[#1c1c1c]" },
@@ -481,111 +481,113 @@ export default function OrdersPage() {
             key={s.label} 
             onClick={() => setStatus(status === s.value ? "all" : s.value)}
             className={cn(
-              "card p-6 border-l-4 text-left transition-all duration-300 relative group overflow-hidden hover:translate-y-[-2px]", 
+              "card p-4 md:p-6 border-l-4 text-left transition-all duration-300 relative group overflow-hidden hover:translate-y-[-2px]", 
               s.color,
               status === s.value ? s.active : ""
             )}
           >
             {status === s.value && (
-               <div className="absolute top-3 right-3 w-1.5 h-1.5 rounded-full bg-[#1c1c1c] animate-pulse" />
+               <div className="absolute top-2 right-2 md:top-3 md:right-3 w-1.5 h-1.5 rounded-full bg-[#1c1c1c] animate-pulse" />
             )}
-            <div className="text-3xl font-bold text-[#1c1c1c] tracking-tighter mb-2">{s.count}</div>
-            <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">{s.label}</div>
+            <div className="text-xl md:text-3xl font-bold text-[#1c1c1c] tracking-tighter mb-1 md:mb-2">{s.count}</div>
+            <div className="text-[9px] md:text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">{s.label}</div>
           </button>
         ))}
       </div>
 
-      <div className="card overflow-hidden">
-        <div className="grid grid-cols-[40px_100px_2fr_2fr_1.5fr_1fr_1fr_1fr_120px] bg-[#eceae4]/30 border-b border-[#eceae4] px-4 py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">
-          <div className="flex items-center justify-center">
-            <input type="checkbox" className="checkbox w-3.5 h-3.5" 
-              checked={selectedIds.length === orders.length && orders.length > 0} 
-              onChange={toggleSelectAll} 
-            />
-          </div>
-          <span>ID</span>
-          <span>Client</span>
-          <span>Items</span>
-          <span>Status</span>
-          <span>Value</span>
-          <span className="text-right pr-4">Created</span>
-          <span className="text-right pr-4">Delivery</span>
-          <span>Actions</span>
-        </div>
+      <div className="card overflow-hidden p-0">
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="min-w-[1000px]">
+            <div className="grid grid-cols-[40px_100px_2fr_2fr_1.5fr_1fr_1fr_1fr_120px] bg-[#eceae4]/30 border-b border-[#eceae4] px-4 py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">
+              <div className="flex items-center justify-center">
+                <input type="checkbox" className="checkbox w-3.5 h-3.5" 
+                  checked={selectedIds.length === orders.length && orders.length > 0} 
+                  onChange={toggleSelectAll} 
+                />
+              </div>
+              <span>ID</span>
+              <span>Client</span>
+              <span>Items</span>
+              <span>Status</span>
+              <span>Value</span>
+              <span className="text-right pr-4">Created</span>
+              <span className="text-right pr-4">Delivery</span>
+              <span>Actions</span>
+            </div>
         {loading ? (
           <div className="p-12 text-center text-gray-400 text-sm">Loading orders...</div>
         ) : orders.length === 0 ? (
           <EmptyState icon={<Package className="w-5 h-5" />} title="No orders found" />
         ) : (
-          <>
-            <div className="min-h-[400px]">
-              {orders.map((o) => (
-                <div key={o.id} className={cn(
-                  "grid grid-cols-[40px_100px_2fr_2fr_1.5fr_1fr_1fr_1fr_120px] px-4 py-4 border-b border-[#eceae4]/50 group transition-colors",
-                  selectedIds.includes(o.id) ? "bg-[#eceae4]/40" : "hover:bg-[rgba(28,28,28,0.02)]"
-                )}>
-                  <div className="flex items-center justify-center">
-                    <input type="checkbox" className="checkbox w-3.5 h-3.5" 
-                      checked={selectedIds.includes(o.id)} 
-                      onChange={() => toggleSelect(o.id)} 
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setSelectedOrderId(o.id)}
-                      className="text-xs font-bold text-[#1c1c1c] hover:underline"
-                    >
-                      #{o.order_number}
-                    </button>
-                  </div>
-                  <Link 
-                    href={`/customers/${o.customer_id}`} 
-                    onClick={(e) => e.stopPropagation()} 
-                    className="flex items-center gap-2 min-w-0"
-                  >
-                    {o.customer && <Avatar name={o.customer.name} size="sm" />}
-                    <div className="text-xs font-bold text-[#1c1c1c] truncate hover:underline">{o.customer?.name}</div>
-                  </Link>
-                   <div className="flex items-center text-[11px] text-[#5f5f5d] font-bold truncate opacity-60">{o.line_items.map(l => l.name || l.title || "Unknown").join(", ")}</div>
-                  <div className="flex items-center"><DeliveryBadge status={o.delivery_status} /></div>
-                  <span className="flex items-center text-xs font-bold text-[#1c1c1c]">{formatCurrency(o.total_price ?? 0)}</span>
-                  <span className="flex items-center text-[10px] text-[#5f5f5d] font-bold">{formatDate(o.ordered_at)}</span>
-                  <span className="flex items-center text-[10px] text-[#5f5f5d] font-bold">{o.delivered_at ? formatDate(o.delivered_at) : "—"}</span>
-                  <div className="flex items-center gap-1.5">
-                    {o.customer?.phone && (
-                      <Link 
-                        href={`https://wa.me/${o.customer.phone.replace(/\D/g, '')}?text=Hi ${o.customer.name}, regarding your order ${o.order_number}...`}
-                        target="_blank"
-                        className="w-7 h-7 rounded-lg bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
-                        title="WhatsApp"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                      </Link>
-                    )}
-                    {o.tracking_number && (
-                      <Link 
-                        href={`https://shiprocket.co/tracking/${o.tracking_number}`}
-                        target="_blank"
-                        className="w-7 h-7 rounded-lg bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
-                        title="Track"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </Link>
-                    )}
-                  </div>
+          <div className="min-h-[400px]">
+            {orders.map((o) => (
+              <div key={o.id} className={cn(
+                "grid grid-cols-[40px_100px_2fr_2fr_1.5fr_1fr_1fr_1fr_120px] px-4 py-4 border-b border-[#eceae4]/50 group transition-colors",
+                selectedIds.includes(o.id) ? "bg-[#eceae4]/40" : "hover:bg-[rgba(28,28,28,0.02)]"
+              )}>
+                <div className="flex items-center justify-center">
+                  <input type="checkbox" className="checkbox w-3.5 h-3.5" 
+                    checked={selectedIds.includes(o.id)} 
+                    onChange={() => toggleSelect(o.id)} 
+                    onClick={(e) => e.stopPropagation()}
+                  />
                 </div>
-              ))}
-            </div>
-            <Pagination 
-              current={page} 
-              total={totalMatching} 
-              pageSize={pageSize} 
-              onChange={(p) => { setPage(p); window.scrollTo(0, 0); }} 
-            />
-          </>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setSelectedOrderId(o.id)}
+                    className="text-xs font-bold text-[#1c1c1c] hover:underline"
+                  >
+                    #{o.order_number}
+                  </button>
+                </div>
+                <Link 
+                  href={`/customers/${o.customer_id}`} 
+                  onClick={(e) => e.stopPropagation()} 
+                  className="flex items-center gap-2 min-w-0"
+                >
+                  {o.customer && <Avatar name={o.customer.name} size="sm" />}
+                  <div className="text-xs font-bold text-[#1c1c1c] truncate hover:underline">{o.customer?.name}</div>
+                </Link>
+                  <div className="flex items-center text-[11px] text-[#5f5f5d] font-bold truncate opacity-60">{o.line_items.map(l => l.name || l.title || "Unknown").join(", ")}</div>
+                <div className="flex items-center"><DeliveryBadge status={o.delivery_status} /></div>
+                <span className="flex items-center text-xs font-bold text-[#1c1c1c]">{formatCurrency(o.total_price ?? 0)}</span>
+                <span className="flex items-center text-[10px] text-[#5f5f5d] font-bold">{formatDate(o.ordered_at)}</span>
+                <span className="flex items-center text-[10px] text-[#5f5f5d] font-bold">{o.delivered_at ? formatDate(o.delivered_at) : "—"}</span>
+                <div className="flex items-center gap-1.5">
+                  {o.customer?.phone && (
+                    <Link 
+                      href={`https://wa.me/${o.customer.phone.replace(/\D/g, '')}?text=Hi ${o.customer.name}, regarding your order ${o.order_number}...`}
+                      target="_blank"
+                      className="w-7 h-7 rounded-lg bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
+                      title="WhatsApp"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                    </Link>
+                  )}
+                  {o.tracking_number && (
+                    <Link 
+                      href={`https://shiprocket.co/tracking/${o.tracking_number}`}
+                      target="_blank"
+                      className="w-7 h-7 rounded-lg bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
+                      title="Track"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
+    </div>
+    <Pagination 
+      current={page} 
+      total={totalMatching} 
+      pageSize={pageSize} 
+      onChange={(p) => { setPage(p); window.scrollTo(0, 0); }} 
+    />
+  </div>
 
       <Modal 
         open={!!selectedOrderId} 
@@ -611,13 +613,13 @@ export default function OrdersPage() {
 
       {/* Floating Bulk Action Bar */}
       {selectedIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-slide-up">
-          <div className="bg-[#1c1c1c] text-white flex items-center gap-6 px-6 py-3 rounded-2xl shadow-2xl min-w-[450px]">
-            <div className="flex items-center gap-3 border-r border-white/10 pr-6">
-              <div className="w-6 h-6 rounded-full bg-[#f7f4ed] text-[#1c1c1c] flex items-center justify-center text-[10px] font-bold">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-slide-up w-[calc(100%-2rem)] md:w-auto">
+          <div className="bg-[#1c1c1c] text-white flex items-center gap-4 md:gap-6 px-4 md:px-6 py-3 rounded-2xl shadow-2xl min-w-0 md:min-w-[450px]">
+            <div className="flex items-center gap-2 md:gap-3 border-r border-white/10 pr-4 md:pr-6">
+              <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#f7f4ed] text-[#1c1c1c] flex items-center justify-center text-[9px] md:text-[10px] font-bold">
                 {selectedIds.length}
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Selection</span>
+              <span className="hidden xs:inline text-[9px] md:text-[10px] font-bold uppercase tracking-widest opacity-60">Selection</span>
             </div>
             
             <div className="flex items-center gap-3 flex-1">

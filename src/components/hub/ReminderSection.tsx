@@ -6,11 +6,16 @@ import { cn, timeAgo } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 export function ReminderSection() {
+  const [mounted, setMounted] = useState(false);
   const [reminders, setReminders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [tableError, setTableError] = useState(false);
   const [newReminder, setNewReminder] = useState({ title: "", date: "", time: "" });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const supabase = useMemo(() => createClient(), []);
   const fetchReminders = useCallback(async () => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
@@ -140,7 +145,7 @@ export function ReminderSection() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center">
             <Bell className="w-6 h-6 text-rose-500" />
@@ -230,7 +235,7 @@ export function ReminderSection() {
             const isPast = new Date(reminder.remind_at) < new Date();
             return (
               <div key={reminder.id} className={cn(
-                "flex items-center gap-6 p-5 rounded-2xl border transition-all group",
+                "flex items-center gap-3 sm:gap-6 p-4 sm:p-5 rounded-2xl border transition-all group",
                 isPast ? "bg-gray-50 border-gray-100 opacity-60" : "bg-white border-[#eceae4] hover:border-rose-200 hover:shadow-lg hover:shadow-rose-500/5"
               )}>
                 <div className={cn(
@@ -245,11 +250,11 @@ export function ReminderSection() {
                   <div className="flex items-center gap-3 mt-1">
                     <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                       <Calendar className="w-3 h-3" />
-                      {new Date(reminder.remind_at).toLocaleDateString()}
+                      {mounted ? new Date(reminder.remind_at).toLocaleDateString() : "---"}
                     </span>
                     <span className="w-1 h-1 rounded-full bg-gray-200" />
                     <span className="text-[10px] font-bold text-[#1c1c1c]/60 uppercase tracking-widest">
-                      {new Date(reminder.remind_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {mounted ? new Date(reminder.remind_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
                     </span>
                   </div>
                 </div>

@@ -30,7 +30,7 @@ export function AgentDetailsModal({ agent, onClose, recentActivity }: AgentDetai
            </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Lifetime Revenue</p>
               <p className="text-lg font-black text-emerald-600">{formatCurrency(agent.revenue || agent.revenue_recovered || 0)}</p>

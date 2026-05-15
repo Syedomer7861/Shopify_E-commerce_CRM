@@ -49,9 +49,14 @@ const TYPE_STYLES: Record<AnnouncementType, { bg: string; text: string; icon: an
 };
 
 export default function AnnouncementFeed() {
+  const [mounted, setMounted] = useState(false);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const supabase = createClient();
 
   const fetchAnnouncements = useCallback(async () => {
@@ -133,7 +138,7 @@ export default function AnnouncementFeed() {
                       {a.type}
                     </span>
                     <span className="text-[9px] font-bold text-gray-400">
-                      {new Date(a.created_at).toLocaleDateString()}
+                      {mounted ? new Date(a.created_at).toLocaleDateString() : "---"}
                     </span>
                   </div>
                   <h4 className="text-sm font-black text-[#1c1c1c] tracking-tight mb-1 truncate">{a.title}</h4>
@@ -209,7 +214,7 @@ export default function AnnouncementFeed() {
                   </span>
                   <span className="text-[10px] font-bold text-gray-300">|</span>
                   <span className="text-[10px] font-bold text-gray-500">
-                    {new Date(selectedAnnouncement.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+                    {mounted ? new Date(selectedAnnouncement.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "---"}
                   </span>
                 </div>
               </div>

@@ -20,7 +20,8 @@ export default function LogisticsPulse() {
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState("");
   const [syncProgress, setSyncProgress] = useState(0);
-  const [lastUpdate, setLastUpdate] = useState<string>("");
+   const [lastUpdate, setLastUpdate] = useState<string>("");
+  const [mounted, setMounted] = useState(false);
   const autoSyncStarted = useRef(false);
 
   const fetchData = useCallback(async (silent = false) => {
@@ -66,6 +67,7 @@ export default function LogisticsPulse() {
   }, [data]);
 
   useEffect(() => {
+    setMounted(true);
     const init = async () => {
       await fetchData();
       // If no data exists, trigger auto-sync
@@ -267,7 +269,7 @@ export default function LogisticsPulse() {
           </div>
           {lastUpdate && (
              <span className="text-[10px] font-black text-[#5f5f5d]/40 bg-[#eceae4] px-3 py-1 rounded-lg border border-[#eceae4]">
-                REFRESH: {lastUpdate}
+                REFRESH: {mounted ? lastUpdate : "---"}
              </span>
           )}
         </div>

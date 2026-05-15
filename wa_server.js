@@ -137,7 +137,7 @@ function initClient() {
         clientState = "QR_PENDING";
         console.log("\n[WA] QR Code ready — scan with WhatsApp on your phone:");
         qrcode.generate(qr, { small: true });
-        console.log("\n[WA] Or open http://localhost:3001/qr in a browser to see it.");
+        console.log("\n[WA] Or open http://127.0.0.1:3001/qr in a browser to see it.");
     });
 
     waClient.on("authenticated", () => {
@@ -158,7 +158,7 @@ function initClient() {
         console.log(`[WA] Incoming ${msg.type} from ${msg.from}: ${msg.body.substring(0, 20)}...`);
         try {
             // Forward to CRM Webhook
-            const crmUrl = process.env.CRM_WEBHOOK_URL || "http://localhost:3000/api/webhooks/whatsapp";
+            const crmUrl = process.env.CRM_WEBHOOK_URL || "http://127.0.0.1:3000/api/webhooks/whatsapp";
             
             const payload = {
                 from: msg.from,
@@ -332,14 +332,14 @@ app.post("/restart", async (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`\n${"=".repeat(50)}`);
     console.log(` Cureforever WhatsApp Server`);
-    console.log(` Listening on http://localhost:${PORT}`);
+    console.log(` Listening on http://127.0.0.1:${PORT}`);
     console.log(`${"=".repeat(50)}\n`);
     initClient();
 });
 
 // ── Backup Daemon (Daily at 3 AM) ──────────────────────────────────────────────
 const BACKUP_SECRET = process.env.BACKUP_SECRET || "cureforever_sync_secret_2026";
-const BACKUP_BASE_URL = process.env.SYNC_BASE_URL || "http://localhost:3000";
+const BACKUP_BASE_URL = process.env.SYNC_BASE_URL || "http://127.0.0.1:3000";
 const BACKUP_URL = BACKUP_BASE_URL + "/api/backup?secret=" + BACKUP_SECRET;
 
 async function runBackup() {

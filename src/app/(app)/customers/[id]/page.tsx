@@ -242,11 +242,12 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
 
       {/* Header */}
       <div className="card p-5 mb-5">
-        <div className="flex items-start gap-4 flex-wrap">
-          <Avatar name={customer.name} size="lg" />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-display text-[#1c1c1c]">{customer.name}</h1>
+        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6">
+          <div className="flex items-start gap-4 flex-1 min-w-0">
+            <Avatar name={customer.name} size="lg" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl md:text-2xl font-display text-[#1c1c1c] break-words line-clamp-2">{customer.name}</h1>
               <SegmentBadge segment={customer.segment} rto={customer.rto_flag} />
               {customer.rto_flag && (
                 <button onClick={() => setClearRtoModal(true)} className="text-xs text-orange-600 hover:text-orange-800 underline">
@@ -325,20 +326,21 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
             </div>
             <div className="text-xs text-gray-400 mt-1">Customer since {formatDate(customer.created_at)}</div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full lg:w-auto">
             {[
               { label: "Total Orders", value: orders.length || 0 },
               { label: "Total Spent", value: formatCurrency(totalSpent) },
               { label: "RTO Count", value: customer.rto_count },
             ].map(s => (
-              <div key={s.label} className="text-center bg-gray-50 rounded-lg px-4 py-3">
+              <div key={s.label} className="text-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-100/50">
                 <div className="text-lg font-bold text-[#1c1c1c]">{s.value}</div>
-                <div className="text-[11px] text-gray-400">{s.label}</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-1">{s.label}</div>
               </div>
             ))}
           </div>
         </div>
       </div>
+    </div>
 
       {/* Customer Details Card */}
       {(customer.address || customer.city || customer.state || customer.zip) && (

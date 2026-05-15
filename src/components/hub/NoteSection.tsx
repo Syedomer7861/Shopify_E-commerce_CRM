@@ -6,11 +6,16 @@ import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 export function NoteSection() {
+  const [mounted, setMounted] = useState(false);
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [tableError, setTableError] = useState(false);
   const [newNote, setNewNote] = useState({ title: "", content: "" });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const supabase = useMemo(() => createClient(), []);
 
 
@@ -139,7 +144,7 @@ export function NoteSection() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
             <StickyNote className="w-6 h-6 text-blue-500" />
@@ -211,7 +216,7 @@ export function NoteSection() {
                 {note.content}
               </p>
               <div className="mt-6 flex items-center justify-between text-[9px] font-bold text-gray-300 uppercase tracking-widest">
-                <span>{new Date(note.created_at).toLocaleDateString()}</span>
+                <span>{mounted ? new Date(note.created_at).toLocaleDateString() : "---"}</span>
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity">Private Note</span>
               </div>
             </div>

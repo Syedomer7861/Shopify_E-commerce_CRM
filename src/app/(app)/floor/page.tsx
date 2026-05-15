@@ -31,6 +31,7 @@ export default function FloorViewPage() {
   const [agents, setAgents] = useState<AgentStatus[]>([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [mounted, setMounted] = useState(false);
   const ITEMS_PER_PAGE = 12;
   const { profile, loading: profileLoading } = useCurrentProfile();
   const supabase = createClient();
@@ -71,6 +72,7 @@ export default function FloorViewPage() {
   }, []);
 
   useEffect(() => {
+    setMounted(true);
     fetchFloorData();
     
     return () => {
@@ -140,7 +142,7 @@ export default function FloorViewPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {paginatedAgents.map(agent => (
-          <AgentCard key={agent.id} agent={agent} />
+          <AgentCard key={agent.id} agent={agent} mounted={mounted} />
         ))}
         {filteredAgents.length === 0 && !loading && (
           <div className="col-span-full py-20 text-center bg-white rounded-2xl border border-dashed border-[#eceae4]">
@@ -163,7 +165,7 @@ export default function FloorViewPage() {
   );
 }
 
-function AgentCard({ agent }: { agent: AgentStatus }) {
+function AgentCard({ agent, mounted }: { agent: AgentStatus, mounted: boolean }) {
   const isOnline = agent.status === "online";
   const isBreak = ["break", "lunch", "away"].includes(agent.status);
   const isMeeting = agent.status === "meeting";
@@ -180,9 +182,9 @@ function AgentCard({ agent }: { agent: AgentStatus }) {
   const config = statusConfig[agent.status] || statusConfig.offline;
   const Icon = config.icon;
 
-  const lastSeenStr = agent.last_seen_at 
+  const lastSeenStr = agent.last_seen_at && mounted
     ? new Date(agent.last_seen_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : "Never";
+    : "--:--";
 
   return (
     <div className={cn(

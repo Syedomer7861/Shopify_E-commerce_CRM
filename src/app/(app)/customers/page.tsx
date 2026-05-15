@@ -267,22 +267,22 @@ export default function CustomersPage() {
 
       {/* Advanced Filter Panel */}
       {showFilters && (
-        <div className="card p-5 mb-6 animate-slide-down">
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+        <div className="card p-4 md:p-5 mb-6 animate-slide-down">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <div>
-              <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-2 opacity-60">Min Orders</label>
+              <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-2 opacity-60">Min Orders</label>
               <input type="number" placeholder="0" className="input text-xs bg-[#fcfbf8]" value={minOrders} onChange={e => setMinOrders(e.target.value)} />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-2 opacity-60">Max Orders</label>
+              <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-2 opacity-60">Max Orders</label>
               <input type="number" placeholder="999" className="input text-xs bg-[#fcfbf8]" value={maxOrders} onChange={e => setMaxOrders(e.target.value)} />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-2 opacity-60">Last Order From</label>
+              <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-2 opacity-60">Last Order From</label>
               <input type="date" className="input text-xs bg-[#fcfbf8]" value={lastOrderStart} onChange={e => setLastOrderStart(e.target.value)} />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-2 opacity-60">Last Order To</label>
+              <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-2 opacity-60">Last Order To</label>
               <input type="date" className="input text-xs bg-[#fcfbf8]" value={lastOrderEnd} onChange={e => setLastOrderEnd(e.target.value)} />
             </div>
           </div>
@@ -310,16 +310,16 @@ export default function CustomersPage() {
       )}
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1 w-full md:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#5f5f5d]" />
-          <input type="text" placeholder="Search by name, phone or email..." className="input pl-9 text-xs"
+          <input type="text" placeholder="Search customers..." className="input pl-9 text-xs"
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="flex items-center gap-1 bg-[#eceae4]/30 rounded-xl border border-[#eceae4] p-1 overflow-x-auto scroller-hide">
+        <div className="flex items-center gap-1 bg-[#eceae4]/30 rounded-xl border border-[#eceae4] p-1 overflow-x-auto scrollbar-hide">
           {SEGS.map(s => (
             <button key={s.value} onClick={() => setSeg(s.value)}
-              className={cn("px-5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap",
+              className={cn("px-4 md:px-5 py-2 rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap",
                 seg === s.value ? "bg-[#1c1c1c] text-white shadow-md" : "text-[#5f5f5d] hover:bg-[#eceae4]/50"
               )}>
               {s.label}
@@ -329,76 +329,80 @@ export default function CustomersPage() {
       </div>
 
       {/* Segment summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
         {[
           { label: "Repeat", count: stats.repeat, color: "border-l-[#1c1c1c]" },
           { label: "One-time", count: stats.one_time, color: "border-l-amber-500" },
           { label: "Inactive", count: stats.inactive, color: "border-l-rose-500" },
           { label: "RTO Flag", count: stats.rto, color: "border-l-orange-500" },
         ].map(s => (
-          <div key={s.label} className={cn("card p-6 border-l-4", s.color)}>
-            <div className="text-3xl font-bold text-[#1c1c1c] tracking-tighter mb-2">{s.count}</div>
-            <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">{s.label}</div>
+          <div key={s.label} className={cn("card p-4 md:p-6 border-l-4", s.color)}>
+            <div className="text-xl md:text-3xl font-bold text-[#1c1c1c] tracking-tighter mb-1 md:mb-2">{s.count}</div>
+            <div className="text-[9px] md:text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Table */}
-      <div className="card overflow-hidden">
-        <div className="grid grid-cols-[40px_2fr_1.5fr_1fr_1fr_1fr_80px] bg-[#eceae4]/30 border-b border-[#eceae4] px-4 py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">
-          <div className="flex items-center justify-center">
-            <input type="checkbox" className="checkbox w-3.5 h-3.5" 
-              checked={selectedIds.length === customers.length && customers.length > 0} 
-              onChange={toggleSelectAll} 
-            />
-          </div>
-          <span>Customer</span>
-          <span>Contact</span>
-          <span>Status</span>
-          <span>Orders</span>
-          <span>Last Active</span>
-          <span>Actions</span>
-        </div>
-        {loading ? (
-          <div className="p-12 text-center text-gray-400 text-sm">Searching...</div>
-        ) : customers.length === 0 ? (
-          <EmptyState icon={<Search className="w-5 h-5" />} title="No customers found" desc="Try a different search" />
-        ) : (
-          customers.map(c => (
-            <div key={c.id} className={cn("grid grid-cols-[40px_2fr_1.5fr_1fr_1fr_1fr_80px] px-4 py-4 border-b border-[#eceae4]/50 group transition-colors", selectedIds.includes(c.id) ? "bg-[#eceae4]/40" : "hover:bg-[rgba(28,28,28,0.02)]")}>
+      <div className="card overflow-hidden p-0">
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="min-w-[800px]">
+            <div className="grid grid-cols-[40px_2fr_1.5fr_1fr_1fr_1fr_80px] bg-[#eceae4]/30 border-b border-[#eceae4] px-4 py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">
               <div className="flex items-center justify-center">
                 <input type="checkbox" className="checkbox w-3.5 h-3.5" 
-                  checked={selectedIds.includes(c.id)} 
-                  onChange={() => toggleSelect(c.id)} 
+                  checked={selectedIds.length === customers.length && customers.length > 0} 
+                  onChange={toggleSelectAll} 
                 />
               </div>
-              <Link href={`/customers/${c.id}`} className="flex items-center gap-3 min-w-0">
-                <Avatar name={c.name} size="sm" />
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-[#1c1c1c] truncate hover:underline">{c.name}</div>
-                  {c.rto_flag && <div className="text-[9px] text-rose-600 font-bold uppercase tracking-widest flex items-center gap-1 mt-0.5"><AlertTriangle className="w-2.5 h-2.5" /> RTO Alert</div>}
-                </div>
-              </Link>
-              <div className="flex flex-col justify-center min-w-0">
-                <a href={`tel:${c.phone}`} className="text-xs font-bold text-[#1c1c1c] hover:underline">{c.phone}</a>
-                {c.email && (
-                  <a href={`mailto:${c.email}`} className="text-[10px] text-[#5f5f5d] font-bold truncate opacity-50">
-                    {c.email}
-                  </a>
-                )}
-              </div>
-              <div className="flex items-center"><SegmentBadge segment={c.segment} rto={c.rto_flag} /></div>
-              <div className="flex items-center text-xs font-bold text-[#1c1c1c]">{c.total_orders} Orders</div>
-              <div className="flex items-center text-[10px] text-[#5f5f5d] font-bold">{c.last_order_date ? formatDate(c.last_order_date) : "—"}</div>
-              <div className="flex items-center gap-2">
-                <a href={`tel:${c.phone}`} 
-                  className="w-7 h-7 rounded-lg bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">
-                  <Phone className="w-3.5 h-3.5" />
-                </a>
-              </div>
+              <span>Customer</span>
+              <span>Contact</span>
+              <span>Status</span>
+              <span>Orders</span>
+              <span>Last Active</span>
+              <span>Actions</span>
             </div>
-          ))
-        )}
+            {loading ? (
+              <div className="p-12 text-center text-gray-400 text-sm">Searching...</div>
+            ) : customers.length === 0 ? (
+              <EmptyState icon={<Search className="w-5 h-5" />} title="No customers found" desc="Try a different search" />
+            ) : (
+              customers.map(c => (
+                <div key={c.id} className={cn("grid grid-cols-[40px_2fr_1.5fr_1fr_1fr_1fr_80px] px-4 py-4 border-b border-[#eceae4]/50 group transition-colors", selectedIds.includes(c.id) ? "bg-[#eceae4]/40" : "hover:bg-[rgba(28,28,28,0.02)]")}>
+                  <div className="flex items-center justify-center">
+                    <input type="checkbox" className="checkbox w-3.5 h-3.5" 
+                      checked={selectedIds.includes(c.id)} 
+                      onChange={() => toggleSelect(c.id)} 
+                    />
+                  </div>
+                  <Link href={`/customers/${c.id}`} className="flex items-center gap-3 min-w-0">
+                    <Avatar name={c.name} size="sm" />
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-[#1c1c1c] truncate hover:underline">{c.name}</div>
+                      {c.rto_flag && <div className="text-[9px] text-rose-600 font-bold uppercase tracking-widest flex items-center gap-1 mt-0.5"><AlertTriangle className="w-2.5 h-2.5" /> RTO Alert</div>}
+                    </div>
+                  </Link>
+                  <div className="flex flex-col justify-center min-w-0">
+                    <a href={`tel:${c.phone}`} className="text-xs font-bold text-[#1c1c1c] hover:underline">{c.phone}</a>
+                    {c.email && (
+                      <a href={`mailto:${c.email}`} className="text-[10px] text-[#5f5f5d] font-bold truncate opacity-50">
+                        {c.email}
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex items-center"><SegmentBadge segment={c.segment} rto={c.rto_flag} /></div>
+                  <div className="flex items-center text-xs font-bold text-[#1c1c1c]">{c.total_orders} Orders</div>
+                  <div className="flex items-center text-[10px] text-[#5f5f5d] font-bold">{c.last_order_date ? formatDate(c.last_order_date) : "—"}</div>
+                  <div className="flex items-center gap-2">
+                    <a href={`tel:${c.phone}`} 
+                      className="w-7 h-7 rounded-lg bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">
+                      <Phone className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
       
       <Pagination 

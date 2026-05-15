@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Phone, CheckCircle, Clock, SkipForward, MessageSquare, Calendar, Send, Paperclip, X, Globe, Search, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -41,6 +41,9 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
 };
 
 export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWhatsApp, whatsappSettings, compact, isAdmin, agents, onReassign }: TaskCardProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  
   const supabase = useMemo(() => createClient(), []);
   const [doneModal, setDoneModal] = useState(false);
   const [rescheduleModal, setRescheduleModal] = useState(false);
@@ -89,7 +92,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     }];
   }
   
-  const daysSince = order?.delivered_at
+  const daysSince = mounted && order?.delivered_at
     ? Math.round((Date.now() - new Date(order.delivered_at).getTime()) / 86400000)
     : null;
 
@@ -636,7 +639,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
               </div>
             </div>
 
-            <div className="mt-2 text-xs text-gray-400 font-medium flex items-center min-w-0">
+            <div className="mt-2 text-[9px] md:text-xs text-gray-400 font-medium flex flex-wrap items-center gap-y-1.5 min-w-0">
               <span className="text-gray-600 flex-shrink-0 flex items-center gap-1">
                 {task.order ? (
                   <>Order: {task.order.order_number || task.order.shopify_order_id?.slice(-8)}</>
@@ -646,20 +649,20 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   "—"
                 )}
               </span> 
-              <span className="mx-1.5 flex-shrink-0">·</span> 
-              <span className="truncate flex-1 min-w-0" title={product}>{product}</span> 
-              <span className="mx-1.5 flex-shrink-0">·</span> 
-              <span className="flex-shrink-0 whitespace-nowrap">Due: {formatDate(task.due_date)}</span>
+              <span className="hidden md:inline mx-1.5 flex-shrink-0">·</span> 
+              <span className="truncate w-full md:w-auto md:max-w-[200px] min-w-0 md:px-0 order-3 md:order-none text-[#1c1c1c]/70" title={product}>{product}</span> 
+              <span className="hidden md:inline mx-1.5 flex-shrink-0">·</span> 
+              <span className="flex-shrink-0 whitespace-nowrap ml-auto md:ml-0 bg-[#eceae4] md:bg-transparent px-1.5 md:px-0 py-0.5 md:py-0 rounded-md md:rounded-none text-[#1c1c1c] md:text-gray-400 font-bold md:font-medium text-[10px] md:text-xs">Due: {mounted ? formatDate(task.due_date) : "—"}</span>
               {task.order?.delivered_at && (
                 <>
-                  <span className="mx-1.5 flex-shrink-0 text-blue-400">·</span>
-                  <span className="flex-shrink-0 whitespace-nowrap text-blue-600 font-bold">Delivered: {formatDate(task.order.delivered_at)}</span>
+                  <span className="hidden md:inline mx-1.5 flex-shrink-0 text-blue-400">·</span>
+                  <span className="flex-shrink-0 whitespace-nowrap text-blue-600 font-bold ml-1.5 md:ml-0">Delivered: {mounted ? formatDate(task.order.delivered_at) : "—"}</span>
                 </>
               )}
             </div>
 
             {!isDone && !compact && (
-              <div className="flex items-center gap-2 mt-3 flex-wrap" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2 mt-3 flex-wrap sm:flex-nowrap" onClick={(e) => e.stopPropagation()}>
                 <button onClick={() => setDoneModal(true)} className="btn-primary text-[10px] py-1 px-4 h-8 rounded-lg">
                   <CheckCircle className="w-3 h-3" /> Log Call
                 </button>
@@ -693,8 +696,8 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         )} 
         maxWidth="max-w-6xl"
         footer={(
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-4 sm:gap-0">
+            <div className="flex items-center gap-3 self-start sm:self-center">
               <div className="w-8 h-8 rounded-full bg-[#1c1c1c]/10 flex items-center justify-center text-[#1c1c1c] text-[10px] font-bold">
                 {initials((task as any).assigned_profile?.name || "U")}
               </div>
@@ -703,20 +706,20 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                 <div className="text-xs font-bold text-[#1c1c1c]">{(task as any).assigned_profile?.name || "Unassigned"}</div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => { setShowDetail(false); handleTaskChat(); }} className="btn-secondary text-xs py-2 px-6 flex items-center gap-2 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5">
-                <MessageSquare className="w-3 h-3" /> Chat with Team
+            <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+              <button onClick={() => { setShowDetail(false); handleTaskChat(); }} className="btn-secondary text-[10px] sm:text-xs py-2 px-2 sm:px-6 flex items-center justify-center gap-2 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5 w-full sm:w-auto">
+                <MessageSquare className="w-3 h-3" /> <span className="truncate">Team Chat</span>
               </button>
-              <button onClick={() => { setShowDetail(false); setDoneModal(true); }} className="btn-primary text-xs py-2 px-8">
-                Log Call Outcome
+              <button onClick={() => { setShowDetail(false); setDoneModal(true); }} className="btn-primary text-[10px] sm:text-xs py-2 px-2 sm:px-8 flex items-center justify-center w-full sm:w-auto">
+                Log Call
               </button>
-              <button onClick={() => { setShowDetail(false); openWa(); }} className="btn-secondary text-xs py-2 px-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5">
+              <button onClick={() => { setShowDetail(false); openWa(); }} className="btn-secondary text-[10px] sm:text-xs py-2 px-2 sm:px-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5 flex items-center justify-center w-full sm:w-auto">
                 WhatsApp
               </button>
-              <button onClick={() => { setShowDetail(false); openEmail(); }} className="btn-secondary text-xs py-2 px-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5">
+              <button onClick={() => { setShowDetail(false); openEmail(); }} className="btn-secondary text-[10px] sm:text-xs py-2 px-2 sm:px-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5 flex items-center justify-center w-full sm:w-auto">
                 Email
               </button>
-              <button onClick={() => setShowDetail(false)} className="btn-secondary text-xs py-2 px-6 text-gray-500">
+              <button onClick={() => setShowDetail(false)} className="btn-secondary text-[10px] sm:text-xs py-2 px-2 sm:px-6 text-gray-500 xs:col-span-2 sm:col-span-1 flex items-center justify-center w-full sm:w-auto">
                 Close
               </button>
             </div>
