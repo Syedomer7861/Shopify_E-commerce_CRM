@@ -216,7 +216,7 @@ export default function ManagerTaskReview() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, currentPage, searchTerm]);
+  }, [supabase, currentPage, searchTerm, ndrOrders.length]);
 
   useEffect(() => {
     async function fetchAgents() {

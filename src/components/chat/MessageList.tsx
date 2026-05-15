@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState, useRef } from 'react';
+import Image from 'next/image';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Paperclip, Trash2, WifiOff } from 'lucide-react';
@@ -209,11 +210,14 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
                   )}>
                     {msg.type === 'image' && msg.file_url && (
                       <div className="mb-2 -mx-1">
-                        <img
+                        <Image
                           src={msg.file_url}
                           alt="Attachment"
+                          width={400}
+                          height={300}
                           className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
                           onClick={() => window.open(msg.file_url, '_blank')}
+                          unoptimized
                         />
                       </div>
                     )}

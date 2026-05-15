@@ -158,7 +158,14 @@ export default function Dashboard() {
         setProfile(prof);
 
         if (prof?.role === "admin" && agents.length === 0) {
-          const { data: agentsData } = await supabase.from("profiles").select("id, name").eq("role", "agent").eq("is_active", true);
+          const { data: agentsData } = await supabase
+            .from("profiles")
+            .select("id, name")
+            .eq("role", "agent")
+            .eq("is_active", true)
+            .not("email", "ilike", "%demo%")
+            .not("name", "ilike", "%demo%")
+            .or('is_demo.is.null,is_demo.eq.false');
           if (agentsData) setAgents(agentsData);
         }
       }

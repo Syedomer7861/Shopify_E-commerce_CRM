@@ -1189,7 +1189,14 @@ export default function SettingsPage() {
                   <div className="p-10 text-center bg-[#eceae4]/10">
                     <p className="text-xs text-[#5f5f5d] mb-8 font-medium max-w-xs mx-auto leading-relaxed">Securely link your WhatsApp instance by scanning the cryptographic token below.</p>
                     <div className="inline-block p-6 bg-white rounded-3xl shadow-2xl border border-[#eceae4] relative group">
-                       <img src={waStatus.qr} alt="QR" className="w-52 h-52 relative z-10" />
+                        <Image 
+                          src={waStatus.qr} 
+                          alt="WhatsApp QR Code" 
+                          width={208} 
+                          height={208} 
+                          className="relative z-10"
+                          unoptimized
+                        />
                        {!waStatus.qr && <div className="w-52 h-52 flex items-center justify-center text-[#eceae4]"><Loader2 className="w-10 h-10 animate-spin" /></div>}
                     </div>
                     <div className="mt-8 flex flex-col items-center gap-3">

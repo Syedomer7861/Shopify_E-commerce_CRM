@@ -45,14 +45,24 @@ export function useCurrentProfile() {
       const { data } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
 
       if (active) {
-        setProfile((data || {
+        const finalProfile = (data || {
           id: user.id,
           email: user.email || "",
           role: "agent",
           permissions: DEFAULT_PERMISSIONS,
           is_active: true,
           created_at: new Date().toISOString(),
-        }) as Profile);
+        }) as Profile;
+
+        // Auto-enable demo mode if the profile is marked as demo in DB
+        if (finalProfile.is_demo && !isDemo) {
+          document.cookie = "crm-demo-mode=true; path=/; max-age=86400; samesite=lax";
+          // We might want to reload here to ensure all components pick up the demo mode
+          window.location.reload();
+          return;
+        }
+
+        setProfile(finalProfile);
         setLoading(false);
       }
     }

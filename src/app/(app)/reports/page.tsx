@@ -96,7 +96,13 @@ export default function ReportsPage() {
 
 
   const fetchAgentsAndStates = useCallback(async () => {
-    const { data: pData } = await supabase.from("profiles").select("id, full_name, role").order("full_name");
+    const { data: pData } = await supabase
+      .from("profiles")
+      .select("id, full_name, role")
+      .not("email", "ilike", "%demo%")
+      .not("name", "ilike", "%demo%")
+      .or('is_demo.is.null,is_demo.eq.false')
+      .order("full_name");
     if (pData) setAgents(pData.map((p: any) => ({ id: p.id, name: p.full_name || p.id })));
     
     // Static common states as fallback for faster UI

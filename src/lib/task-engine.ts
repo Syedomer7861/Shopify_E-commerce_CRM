@@ -92,7 +92,8 @@ export async function assignTaskOwner(supabase: any, taskType?: string, customer
     .select("id, name, is_active, last_seen_at, assigned_task_types, assigned_segments, status")
     .eq("is_active", true)
     .eq("role", "agent")
-    .not("email", "eq", "demo@presentation.com")
+    .not("email", "ilike", "%demo%")
+    .not("name", "ilike", "%demo%")
     .or('is_demo.is.null,is_demo.eq.false');
 
   if (!agents || agents.length === 0) {
@@ -102,7 +103,8 @@ export async function assignTaskOwner(supabase: any, taskType?: string, customer
       .select("id")
       .eq("is_active", true)
       .in("role", ["admin", "manager"])
-      .not("email", "eq", "demo@presentation.com")
+      .not("email", "ilike", "%demo%")
+      .not("name", "ilike", "%demo%")
       .or('is_demo.is.null,is_demo.eq.false')
       .limit(1);
     return staff?.[0]?.id || null;
@@ -125,6 +127,8 @@ export async function assignTaskOwner(supabase: any, taskType?: string, customer
       .select("id")
       .eq("is_active", true)
       .in("role", ["admin", "manager"])
+      .not("email", "ilike", "%demo%")
+      .not("name", "ilike", "%demo%")
       .or('is_demo.is.null,is_demo.eq.false')
       .limit(1);
     return staff?.[0]?.id || null;
@@ -188,7 +192,8 @@ export async function reassignOfflineAgentTasks(supabase: any) {
     .select("id")
     .eq("is_active", true)
     .eq("role", "agent")
-    .not("email", "eq", "demo@presentation.com")
+    .not("email", "ilike", "%demo%")
+    .not("name", "ilike", "%demo%")
     .gt("last_seen_at", fiveMinAgo)
     .or('is_demo.is.null,is_demo.eq.false');
 
@@ -201,7 +206,8 @@ export async function reassignOfflineAgentTasks(supabase: any) {
     .select("id")
     .eq("is_active", true)
     .eq("role", "agent")
-    .not("email", "eq", "demo@presentation.com")
+    .not("email", "ilike", "%demo%")
+    .not("name", "ilike", "%demo%")
     .lt("last_seen_at", thirtyMinAgo)
     .or('is_demo.is.null,is_demo.eq.false');
 
@@ -248,6 +254,8 @@ export async function triggerAuditTask(supabase: any, originalTask: any) {
     .select("id")
     .eq("is_active", true)
     .eq("role", "manager")
+    .not("email", "ilike", "%demo%")
+    .not("name", "ilike", "%demo%")
     .or('is_demo.is.null,is_demo.eq.false')
     .order("name", { ascending: true });
 

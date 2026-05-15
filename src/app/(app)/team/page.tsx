@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Shield, User, Loader2, Mail, Trash2, Edit2, UserPlus, CheckCircle2, XCircle, ShoppingBag, Users, MessageSquare, Eye, Search, Filter } from "lucide-react";
 import { PageHeader, Avatar, EmptyState, Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
@@ -31,13 +31,7 @@ export default function TeamPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    if (!profileLoading) {
-      fetchProfiles();
-    }
-  }, [profileLoading, currentProfile?.id]);
-
-  async function fetchProfiles() {
+  const fetchProfiles = useCallback(async () => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       setLoading(true);
@@ -68,7 +62,13 @@ export default function TeamPage() {
       console.error(err);
     }
     setLoading(false);
-  }
+  }, [supabase, currentProfile?.role]);
+
+  useEffect(() => {
+    if (!profileLoading) {
+      fetchProfiles();
+    }
+  }, [profileLoading, currentProfile?.id, fetchProfiles]);
 
   async function handleAddMember() {
     if (!newUser.email || !newUser.password) return toast.error("Email and Password are required");

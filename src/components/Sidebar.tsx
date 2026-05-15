@@ -416,7 +416,7 @@ export default function Sidebar() {
     const rtHeartbeat = setInterval(runHeartbeat, 60000);
 
     return () => clearInterval(rtHeartbeat);
-  }, [profile?.id, profile?.status, path, supabase, fetchTodayAttendance]);
+  }, [profile?.id, profile?.status, profile?.name, profile?.email, updateStatus, path, supabase, fetchTodayAttendance]);
 
   async function handleLogout() {
     document.cookie = "crm-demo-mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";

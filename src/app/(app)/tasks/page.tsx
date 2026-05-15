@@ -124,7 +124,7 @@ export default function TasksPage() {
     }
     
     return filteredQuery;
-  }, [profile?.role, profile?.assigned_segments, profile?.assigned_task_types, profile?.id]);
+  }, []);
 
   const fetchTasks = useCallback(async (silent = false) => {
     const requestId = ++requestIdRef.current;
@@ -351,6 +351,9 @@ export default function TasksPage() {
         .select("id, name")
         .eq("role", "agent") // Strictly Agents for assignment
         .eq("is_active", true)
+        .not("email", "ilike", "%demo%")
+        .not("name", "ilike", "%demo%")
+        .or('is_demo.is.null,is_demo.eq.false')
         .then(({ data }) => {
           if (data) setAgents(data);
         });
