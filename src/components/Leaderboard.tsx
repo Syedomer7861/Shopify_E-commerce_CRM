@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { 
   Trophy, TrendingUp, Users, Wifi, WifiOff, 
   MessageCircle, Target, Phone, Eye, Smartphone, History
@@ -50,7 +50,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ agents: initialAgents 
   
   const supabase = useMemo(() => createClient(), []);
 
-  const fetchMetrics = async (range: string) => {
+  const fetchMetrics = useCallback(async (range: string) => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       setIsLoading(true);
@@ -92,16 +92,14 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ agents: initialAgents 
         const json = await res.json();
         setMetrics(json.metrics || []);
       }
-    } catch (err) {
-      console.error("Failed to fetch leaderboard metrics:", err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
     fetchMetrics(selectedRange);
-  }, [selectedRange]);
+  }, [selectedRange, fetchMetrics]);
 
   useEffect(() => {
     async function fetchRecentActivity() {
@@ -114,7 +112,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ agents: initialAgents 
       if (data) setRecentActivity(data);
     }
     fetchRecentActivity();
-  }, [selectedAgent]);
+  }, [selectedAgent, supabase]);
 
   // Sort agents by revenue recovered (Show everyone for oversight, but hide Admins from HR)
   const sortedByRevenue = [...(metrics || [])]

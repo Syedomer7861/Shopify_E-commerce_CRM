@@ -65,11 +65,12 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
     } finally {
       setLoading(false);
     }
-  }, [orderId]); // Removed 'data' from dependencies to prevent infinite loop
+  }, [orderId, data, supabase]); 
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]); // Only trigger on orderId change to avoid loops
 
   if (loading && !data) {
     return (

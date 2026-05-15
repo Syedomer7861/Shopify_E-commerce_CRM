@@ -152,7 +152,7 @@ export default function ManagerTaskReview() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, currentPage, agentFilter, typeFilter, outcomeFilter, uzmaOnly, searchTerm]);
+  }, [supabase, currentPage, agentFilter, typeFilter, outcomeFilter, uzmaOnly, searchTerm, tasks.length]);
 
   const fetchNdrOrders = useCallback(async (silent = false) => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");

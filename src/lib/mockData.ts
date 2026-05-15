@@ -221,3 +221,30 @@ export const MOCK_ADMIN_LOGS = [
   { id: 'al4', event_type: 'config_update', description: 'Global WhatsApp template sync triggered.', created_at: new Date(Date.now() - 24 * 3600000).toISOString(), metadata: { templates: 12 } },
   { id: 'al5', event_type: 'integration_alert', description: 'Shiprocket API latency detected (2500ms). System switched to failover node.', created_at: new Date(Date.now() - 48 * 3600000).toISOString(), metadata: { node: 'AWS-Region-1' } }
 ];
+
+export const MOCK_ORDER_DETAIL = {
+  order: {
+    id: "123456789",
+    channel_order_id: "CF-1001",
+    status: "DELIVERED",
+    created_at: "2024-05-10T10:00:00Z",
+    total: "1599.00",
+    payment_method: "Prepaid",
+    customer_name: "Rahul Sharma",
+    customer_phone: "9876543210",
+    billing_address: "123, Marine Drive, Mumbai, Maharashtra - 400001",
+    order_items: [
+      { name: "Krill Oil Gold", quantity: 1, selling_price: "1599.00", total: "1599.00" }
+    ],
+    shipments: [{ id: "sh-1", awb: "SR123456789", courier: "Delhivery" }]
+  },
+  tracking: {
+    tracking_data: {
+      shipment_track_activities: [
+        { date: "2024-05-14T10:00:00Z", activity: "Delivered to customer", location: "Mumbai Hub", status: "Delivered" },
+        { date: "2024-05-13T14:00:00Z", activity: "Out for delivery", location: "Mumbai Local", status: "Out for Delivery" },
+        { date: "2024-05-12T09:00:00Z", activity: "Shipped from origin", location: "Delhi Warehouse", status: "In Transit" }
+      ]
+    }
+  }
+};

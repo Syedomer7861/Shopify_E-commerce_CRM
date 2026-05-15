@@ -79,7 +79,7 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
     if (!activeChannel) return;
     setMessages([]);
     fetchMessages();
-  }, [activeChannel?.id, fetchMessages]);
+  }, [activeChannel, fetchMessages]);
 
   // ── Demo Event Listener ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -91,7 +91,7 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
     };
     window.addEventListener('chat:demo_message', handleDemoMsg);
     return () => window.removeEventListener('chat:demo_message', handleDemoMsg);
-  }, [activeChannel?.id]);
+  }, [activeChannel]);
 
   // ── Socket event listeners ────────────────────────────────────────────────────
   useEffect(() => {
