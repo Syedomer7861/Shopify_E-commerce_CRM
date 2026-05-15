@@ -54,8 +54,9 @@ export function useCurrentProfile() {
           created_at: new Date().toISOString(),
         }) as Profile;
 
-        // Auto-enable demo mode if the profile is marked as demo in DB
-        if (finalProfile.is_demo && !isDemo) {
+        // Auto-enable demo mode if the profile is marked as demo in DB or has 'demo' in email
+        const isDemoEmail = finalProfile.email?.toLowerCase().includes("demo");
+        if ((finalProfile.is_demo || isDemoEmail) && !isDemo) {
           document.cookie = "crm-demo-mode=true; path=/; max-age=86400; samesite=lax";
           // We might want to reload here to ensure all components pick up the demo mode
           window.location.reload();
@@ -71,7 +72,7 @@ export function useCurrentProfile() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [supabase]);
 
   return { profile, loading };
 }

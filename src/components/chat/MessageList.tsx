@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -17,19 +17,69 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
   const [loading, setLoading] = useState(false);
   const [typingUsers, setTypingUsers] = useState<{ userId: string; userName: string }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const filteredMessages = messages.filter(msg => 
     msg.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     msg.sender?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const fetchMessages = useCallback(async () => {
+    if (!activeChannel?.id) return;
+    const channelId = activeChannel.id;
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    
+    if (isDemo) {
+      setLoading(true);
+      // Simulate some history
+      setTimeout(() => {
+        setMessages([
+          {
+            id: 'mock-1',
+            channel_id: channelId,
+            content: 'Hey team, how is the NDR clearance going?',
+            sender_id: 'other-1',
+            created_at: new Date(Date.now() - 3600000).toISOString(),
+            sender: { name: 'Sarah Manager', role: 'manager' }
+          },
+          {
+            id: 'mock-2',
+            channel_id: channelId,
+            content: 'Clearing the high-priority ones now. 15 done.',
+            sender_id: 'other-2',
+            created_at: new Date(Date.now() - 1800000).toISOString(),
+            sender: { name: 'Agent John', role: 'agent' }
+          }
+        ]);
+        setLoading(false);
+      }, 400);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*, sender:profiles!sender_id(id, name, email, role)')
+        .eq('channel_id', channelId)
+        .order('created_at', { ascending: true })
+        .limit(50);
+      if (error) throw error;
+      if (activeChannel?.id === channelId) setMessages(data || []);
+    } catch (err) {
+      console.error("Chat fetch error:", err);
+      toast.error("Failed to load messages");
+    } finally {
+      if (activeChannel?.id === channelId) setLoading(false);
+    }
+  }, [activeChannel, supabase]);
+
   // ── Fetch messages on channel switch ─────────────────────────────────────────
   useEffect(() => {
     if (!activeChannel) return;
     setMessages([]);
     fetchMessages();
-  }, [activeChannel?.id]);
+  }, [activeChannel?.id, fetchMessages]);
 
   // ── Demo Event Listener ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -90,55 +140,7 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
     }
   }, [messages, typingUsers]);
 
-  const fetchMessages = async () => {
-    if (!activeChannel?.id) return;
-    const channelId = activeChannel.id;
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
-    
-    if (isDemo) {
-      setLoading(true);
-      // Simulate some history
-      setTimeout(() => {
-        setMessages([
-          {
-            id: 'mock-1',
-            channel_id: channelId,
-            content: 'Hey team, how is the NDR clearance going?',
-            sender_id: 'other-1',
-            created_at: new Date(Date.now() - 3600000).toISOString(),
-            sender: { name: 'Sarah Manager', role: 'manager' }
-          },
-          {
-            id: 'mock-2',
-            channel_id: channelId,
-            content: 'Clearing the high-priority ones now. 15 done.',
-            sender_id: 'other-2',
-            created_at: new Date(Date.now() - 1800000).toISOString(),
-            sender: { name: 'Agent John', role: 'agent' }
-          }
-        ]);
-        setLoading(false);
-      }, 400);
-      return;
-    }
 
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*, sender:profiles!sender_id(id, name, email, role)')
-        .eq('channel_id', channelId)
-        .order('created_at', { ascending: true })
-        .limit(50);
-      if (error) throw error;
-      if (activeChannel?.id === channelId) setMessages(data || []);
-    } catch (err) {
-      console.error("Chat fetch error:", err);
-      toast.error("Failed to load messages");
-    } finally {
-      if (activeChannel?.id === channelId) setLoading(false);
-    }
-  };
 
   if (!activeChannel) {
     return (

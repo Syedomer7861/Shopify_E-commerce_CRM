@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Phone, CheckCircle, Clock, SkipForward, MessageSquare, Calendar, Send, Paperclip, X, Globe, Search, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -41,7 +41,7 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
 };
 
 export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWhatsApp, whatsappSettings, compact, isAdmin, agents, onReassign }: TaskCardProps) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [doneModal, setDoneModal] = useState(false);
   const [rescheduleModal, setRescheduleModal] = useState(false);
   const [waModal, setWaModal] = useState(false);

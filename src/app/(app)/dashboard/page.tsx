@@ -40,7 +40,7 @@ export default function Dashboard() {
   const [overduePage, setOverduePage] = useState(1);
   const ITEMS_PER_PAGE = 10;
   
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [LivePulseFeed, setLivePulseFeed] = useState<any>(null);
 
   // Helper to apply specialization filters

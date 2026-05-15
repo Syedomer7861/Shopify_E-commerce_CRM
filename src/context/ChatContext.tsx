@@ -205,7 +205,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSocket(null);
       setConnected(false);
     };
-  }, [profile?.id]); // ← Only profile.id — NOT activeChannel — prevents socket churn
+  }, [profile?.id, supabase, updateUnreadCount]); // ← Only profile.id — NOT activeChannel — prevents socket churn
 
   // ── Send message ─────────────────────────────────────────────────────────────
   const sendMessage = useCallback((

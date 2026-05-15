@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Hash, MessageCircle, Search, Plus, Archive, Settings, MessageSquare, UserPlus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui';
@@ -17,34 +17,9 @@ export function ChannelList() {
   const [directMessages, setDirectMessages] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
-  useEffect(() => {
-    fetchChannels();
-    const pollInterval = setInterval(fetchChannels, 60_000);
-
-    // ── Supabase real-time: channel list refreshes on new messages ──
-    let refreshTimeout: NodeJS.Timeout;
-    const debouncedFetch = () => {
-      clearTimeout(refreshTimeout);
-      refreshTimeout = setTimeout(fetchChannels, 800);
-    };
-
-    const channel = supabase
-      .channel("channel-list-live")
-      .on("postgres_changes", { event: "*",      schema: "public", table: "channels" },        debouncedFetch)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" },        debouncedFetch)
-      .on("postgres_changes", { event: "*",      schema: "public", table: "channel_members" }, debouncedFetch)
-      .subscribe();
-
-    return () => {
-      clearInterval(pollInterval);
-      clearTimeout(refreshTimeout);
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const fetchChannels = async () => {
+  const fetchChannels = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
     const userId = session?.user?.id;
     if (!userId) return;
@@ -100,9 +75,32 @@ export function ChannelList() {
       
       setDirectMessages(Array.from(uniqueDmsMap.values()));
     }
-  };
+  }, [supabase]);
 
+  useEffect(() => {
+    fetchChannels();
+    const pollInterval = setInterval(fetchChannels, 60_000);
 
+    // ── Supabase real-time: channel list refreshes on new messages ──
+    let refreshTimeout: NodeJS.Timeout;
+    const debouncedFetch = () => {
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(fetchChannels, 800);
+    };
+
+    const channel = supabase
+      .channel("channel-list-live")
+      .on("postgres_changes", { event: "*",      schema: "public", table: "channels" },        debouncedFetch)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" },        debouncedFetch)
+      .on("postgres_changes", { event: "*",      schema: "public", table: "channel_members" }, debouncedFetch)
+      .subscribe();
+
+    return () => {
+      clearInterval(pollInterval);
+      clearTimeout(refreshTimeout);
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, fetchChannels]);
   const filteredChannels = channels.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
 
   const renderChannel = (channel: any) => {

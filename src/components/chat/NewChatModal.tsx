@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, UserPlus, Hash, MessageSquare, Megaphone, Loader2 } from 'lucide-react';
 import { Modal, Avatar } from '@/components/ui';
 import { cn } from '@/lib/utils';
@@ -21,15 +21,7 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
   const { profile } = useCurrentProfile();
   const isAdmin = profile?.role === 'admin';
 
-  useEffect(() => {
-    if (open) {
-      fetchUsers();
-      setTab('dm');
-      setGroupName("");
-    }
-  }, [open]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user;
@@ -41,7 +33,16 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
     
     if (data) setUsers(data);
     setLoading(false);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    if (open) {
+      fetchUsers();
+      setTab('dm');
+      setGroupName("");
+    }
+  }, [open, fetchUsers]);
+
 
   const startDM = async (targetUser: any) => {
     if (creating) return;

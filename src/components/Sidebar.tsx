@@ -255,7 +255,7 @@ export default function Sidebar() {
     }
   }, [showLeaveModal, profile, fetchMyLeaves]);
 
-  async function updateStatus(status: string, reasonCode?: string) {
+  const updateStatus = useCallback(async (status: string, reasonCode?: string) => {
     if (!profile) return;
     const { error } = await supabase.from("profiles").update({ 
         status: status, 
@@ -282,7 +282,7 @@ export default function Sidebar() {
       fetchTodayAttendance(profile.id);
       toast.success(`Shift: ${status.toUpperCase()}`);
     }
-  }
+  }, [profile, supabase, fetchTodayAttendance]);
 
   useEffect(() => {
     if (!profile?.id) return;

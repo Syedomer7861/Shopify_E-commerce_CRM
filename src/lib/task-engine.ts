@@ -259,7 +259,13 @@ export async function triggerAuditTask(supabase: any, originalTask: any) {
     .or('is_demo.is.null,is_demo.eq.false')
     .order("name", { ascending: true });
 
-  const managerId = managers?.find((m: any) => m.id === "edb84312-ffbd-4e3b-a823-ff31477fce92")?.id || managers?.[0]?.id;
+  const realManagers = (managers || []).filter((m: any) => {
+    const isDemoEmail = m.email?.toLowerCase().includes("demo");
+    const isDemoName = m.name?.toLowerCase().includes("demo");
+    return !m.is_demo && !isDemoEmail && !isDemoName;
+  });
+
+  const managerId = realManagers?.find((m: any) => m.id === "edb84312-ffbd-4e3b-a823-ff31477fce92")?.id || realManagers?.[0]?.id;
 
   if (!managerId) return null;
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { createClient } from "@/lib/supabase";
 import { 
   Package, 
   Truck, 
@@ -34,8 +35,20 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
   const [data, setData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"activity" | "tracking">("activity");
   const [showNDRModal, setShowNDRModal] = useState(false);
+  const supabase = useMemo(() => createClient(), []);
 
-  const fetchData = async (silent = false) => {
+  const fetchData = useCallback(async (silent = false) => {
+    // Check for Demo Mode
+    const isDemo = typeof document !== 'undefined' && document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      if (!silent) setLoading(true);
+      // Simulate API delay
+      await new Promise(r => setTimeout(r, 500));
+      const { MOCK_ORDER_DETAIL } = await import("@/lib/mockData");
+      setData(MOCK_ORDER_DETAIL as any);
+      setLoading(false);
+      return;
+    }
     if (!orderId || orderId === "undefined" || orderId === "null") {
       setError("No valid Order ID was found for this task.");
       setLoading(false);
@@ -49,16 +62,14 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to fetch");
       setData(json);
-    } catch (err: any) {
-      setError(err.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId]); // Removed 'data' from dependencies to prevent infinite loop
 
   useEffect(() => {
     fetchData();
-  }, [orderId]);
+  }, [fetchData]);
 
   if (loading && !data) {
     return (
