@@ -259,10 +259,27 @@ export async function GET(
       }
     }
 
+    // 5. Fetch Detailed Order History (Activity Log)
+    let history: any[] = [];
+    if (order.id && !String(order.id).startsWith("LOCAL-")) {
+      try {
+        const historyRes = await fetch(`${SHIPROCKET_BASE_URL}/orders/history/order_id/${order.id}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (historyRes.ok) {
+          const historyData = await historyRes.json();
+          history = historyData.activities || [];
+        }
+      } catch (e) {
+        console.error("Order history fetch error:", e);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       order,
       tracking,
+      history,
       shiprocket_order_id: order.id,
       shipment_id: activeShipment.id || order.shipment_id || order.id,
       is_local: false

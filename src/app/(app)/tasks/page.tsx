@@ -28,6 +28,11 @@ import { logAuditEvent } from "@/lib/audit";
 const TYPES: { label: string; value: string }[] = [
   { label: "All Types", value: "all" },
   { label: "Recovery", value: "recovery" },
+  { label: "Welcome Call", value: "welcome_call" },
+  { label: "VIP / Whale", value: "vip_followup" },
+  { label: "Win-back", value: "win_back" },
+  { label: "COD Verify", value: "cod_verify" },
+  { label: "NDR / Issue", value: "ndr" },
   { label: "Review", value: "review" },
   { label: "Reorder", value: "reorder" },
   { label: "Flagged", value: "flagged" },
@@ -155,7 +160,17 @@ export default function TasksPage() {
     }
 
     if (!silent) setLoading(true);
-    const today = toDbDateString(new Date());
+    const todayDate = new Date();
+    const today = toDbDateString(todayDate);
+    
+    // Staleness Thresholds
+    const thirtyDaysAgoDate = new Date();
+    thirtyDaysAgoDate.setDate(todayDate.getDate() - 30);
+    const thirtyDaysAgo = toDbDateString(thirtyDaysAgoDate);
+
+    const fourteenDaysAgoDate = new Date();
+    fourteenDaysAgoDate.setDate(todayDate.getDate() - 14);
+    const fourteenDaysAgo = toDbDateString(fourteenDaysAgoDate);
     let matchingCustomerIds: string[] | null = null;
     let matchingOrderIds: string[] | null = null;
     let matchingCartIds: string[] | null = null;
@@ -193,7 +208,7 @@ export default function TasksPage() {
     // Core Tasks Query
     let query = supabase
       .from("tasks")
-      .select("*, customer:customers!inner(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email)", { count: "exact" });
+      .select("*, customer:customers!inner(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email,live_state)", { count: "exact" });
 
     if (debouncedSearch) {
       const cleanSearch = debouncedSearch.trim().replace(/^#/, "");
@@ -241,13 +256,18 @@ export default function TasksPage() {
     if (statusFilter === "due") {
       query = query.eq("due_date", today).not("status", "in", '("done","cancelled")');
     } else if (statusFilter === "overdue") {
-      query = query.lt("due_date", today).not("status", "in", '("done","cancelled")');
+      query = query.lt("due_date", today).gte("due_date", thirtyDaysAgo).not("status", "in", '("done","cancelled")');
+      // Additional safety for recovery:
+      query = query.or(`task_type.neq.recovery,due_date.gte.${fourteenDaysAgo}`);
     } else if (statusFilter === "pending") {
       query = query.gt("due_date", today).not("status", "in", '("done","cancelled")');
     } else if (statusFilter === "flagged") {
       query = query.eq("manager_action", "rejected");
     } else if (statusFilter !== "all") {
       query = query.eq("status", statusFilter);
+    } else {
+      // Default "All" view: Still apply staleness guard to prevent ghost tasks from months ago
+      query = query.gte("due_date", thirtyDaysAgo);
     }
 
     // Redundant filter removed to fix OR logic with search term
@@ -277,10 +297,11 @@ export default function TasksPage() {
       }
 
       if (status === "done") return q.eq("status", "done");
-      if (status === "overdue") return q.lt("due_date", today).not("status", "in", '("done","cancelled")');
+      if (status === "overdue") return q.lt("due_date", today).gte("due_date", thirtyDaysAgo).not("status", "in", '("done","cancelled")');
       if (status === "due") return q.eq("due_date", today).not("status", "in", '("done","cancelled")');
       if (status === "pending") return q.gt("due_date", today).not("status", "in", '("done","cancelled")');
-      return q;
+      // Global Staleness for generic counts
+      return q.gte("due_date", thirtyDaysAgo);
     };
 
     const [dueRes, overdueRes, pendingRes, doneRes, flaggedRes] = await Promise.all([
@@ -319,6 +340,26 @@ export default function TasksPage() {
       const isLogisticsTask = ["issue_resolution", "transit_update"].includes(task.task_type);
       const isDelivered = task.order && ["delivered", "Delivered"].includes(task.order.delivery_status);
       
+      const dueDate = new Date(task.due_date);
+      const now = new Date();
+      const ageInDays = (now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24);
+      const isStale = (task.task_type === "recovery" && ageInDays > 14) || ageInDays > 30;
+
+      if (isStale && ["pending", "rescheduled"].includes(task.status)) {
+        // Silently cancel stale ghost tasks
+        supabase.from("tasks").update({ status: "cancelled" } as any).eq("id", task.id).then(() => {
+            supabase.from("call_logs").insert({
+                task_id: task.id,
+                customer_id: task.customer_id,
+                outcome: "skipped",
+                note: `Auto-Archived: Task exceeded ${task.task_type === 'recovery' ? '14' : '30'}-day staleness threshold.`,
+                agent_name: "System Sentinel",
+                called_at: new Date().toISOString()
+            });
+        });
+        return false;
+      }
+
       if (isLogisticsTask && isDelivered && ["pending", "rescheduled"].includes(task.status)) {
         // Silently heal the database in the background
         const orderNum = task.order?.order_number || task.order?.shopify_order_id || "Unknown";

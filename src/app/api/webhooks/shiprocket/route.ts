@@ -5,6 +5,7 @@ import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { WorkflowEngine } from "@/lib/workflow-engine";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { notifyAdmin } from "@/lib/notifications";
+import { analyzeRTORisk } from "@/lib/risk-engine";
 
 export const dynamic = "force-dynamic";
 
@@ -288,7 +289,7 @@ export async function POST(req: NextRequest) {
 
         const { data: existingOrder } = await supabase
           .from("orders")
-          .select("id, source, delivery_status")
+          .select("id, source, delivery_status, custom_meta")
           .or(`shopify_order_id.eq.${orderIdentifier},order_number.eq.${orderIdentifier}`)
           .maybeSingle();
 
@@ -309,24 +310,31 @@ export async function POST(req: NextRequest) {
           line_items: enrichedItems.length > 0 ? enrichedItems : [{ name: "Order Content", qty: 1, price: 0 }]
         };
 
+        // --- [GOD MODE] Proactive RTO Risk Analysis ---
+        const riskAnalysis = await analyzeRTORisk(supabase, customerId!, data);
+        upsertData.custom_meta = {
+          ...(existingOrder?.custom_meta || {}),
+          risk_analysis: riskAnalysis
+        };
+
         if (existingOrder) {
           upsertData.id = existingOrder.id;
         }
 
-        const { error: orderErr } = await supabase.from("orders").upsert(upsertData);
+        const { data: savedOrder, error: orderErr } = await supabase.from("orders").upsert(upsertData).select("id").single();
+        const internalOrderId = savedOrder?.id;
 
         if (orderErr) {
             console.error("❌ Failed to persist order:", orderId, orderErr);
         } else {
             console.log("✅ Order Persisted successfully:", orderId);
-            // If we have a cartId, mark it as recovered
             if (cartId) {
                 await supabase.from("abandoned_carts")
                     .update({ recovery_status: "recovered" })
                     .eq("cart_token", cartId);
             }
 
-            // AUTO-RESOLVE RECOVERY TASKS: If this customer had a pending recovery task, mark it as DONE
+            // AUTO-RESOLVE RECOVERY TASKS
             const { data: pendingTasks } = await supabase
               .from("tasks")
               .select("id")
@@ -341,7 +349,6 @@ export async function POST(req: NextRequest) {
                 completed_at: new Date().toISOString() 
               }).in("id", taskIds);
               
-              // Log the outcome to Call History
               await supabase.from("call_logs").insert(taskIds.map(id => ({
                 task_id: id,
                 customer_id: customerId,
@@ -349,12 +356,56 @@ export async function POST(req: NextRequest) {
                 note: `Automatically resolved: Order #${orderId} placed via Shiprocket.`,
                 agent_name: "Shiprocket Sync"
               })));
-              
-              console.log(`✅ Auto-resolved ${pendingTasks.length} recovery tasks for customer.`);
+            }
+
+            // --- [NEW] Task Generation Sentinel ---
+            const orderTotal = parseFloat(data.total_price || data.cart_value || 0);
+            const paymentGateway = (data.payment_gateway || body.payment_method || "").toLowerCase();
+            const isCod = paymentGateway.includes("cod") || paymentGateway.includes("cash");
+            
+            // 1. COD & High Risk Verification (High Priority)
+            if (isCod || riskAnalysis.level === "CRITICAL" || riskAnalysis.level === "HIGH") {
+               const riskBonus = riskAnalysis.level === "CRITICAL" ? 50 : 20;
+               await supabase.from("tasks").upsert({
+                 customer_id: customerId,
+                 order_id: internalOrderId,
+                 task_type: "cod_verify",
+                 due_date: new Date().toISOString().split("T")[0],
+                 status: "pending",
+                 priority_score: 110 + riskBonus,
+                 assigned_to: await assignTaskOwner(supabase, "cod_verify"),
+                 metadata: { risk_level: riskAnalysis.level, risk_reasons: riskAnalysis.reasons } as any
+               }, { onConflict: "order_id, task_type" });
+            }
+
+            // 2. VIP / Whale Follow-up (Urgent)
+            if (orderTotal >= 25000) {
+               await supabase.from("tasks").upsert({
+                 customer_id: customerId,
+                 order_id: internalOrderId,
+                 task_type: "vip_followup",
+                 due_date: new Date().toISOString().split("T")[0],
+                 status: "pending",
+                 priority_score: 130,
+                 assigned_to: await assignTaskOwner(supabase, "vip_followup")
+               }, { onConflict: "order_id, task_type" });
+            }
+
+            // 3. Welcome Call (First-time Customer)
+            const { data: customerStats } = await supabase.from("customers").select("total_orders").eq("id", customerId).single();
+            if ((customerStats?.total_orders || 0) <= 1) {
+               await supabase.from("tasks").upsert({
+                 customer_id: customerId,
+                 order_id: internalOrderId,
+                 task_type: "welcome_call",
+                 due_date: new Date().toISOString().split("T")[0],
+                 status: "pending",
+                 priority_score: 90,
+                 assigned_to: await assignTaskOwner(supabase, "welcome_call")
+               }, { onConflict: "customer_id, task_type" });
             }
 
             // A4. High-Value Order Sentinel (Feature 19)
-            const orderTotal = parseFloat(data.total_price || data.cart_value || 0);
             if (orderTotal >= 5000) {
                 await notifyAdmin(`🚀 HIGH-VALUE ORDER! Customer ${fullName} just placed order #${orderId} for ${orderTotal} INR.`, "alert");
             }
@@ -365,7 +416,7 @@ export async function POST(req: NextRequest) {
 
         // 4. Trigger Workflow (NEW)
         await WorkflowEngine.trigger("order_placed", { 
-          order_id: orderId, 
+          order_id: (typeof internalOrderId !== 'undefined' ? internalOrderId : orderId), 
           customer_id: customerId, 
           total: data.total_price 
         });

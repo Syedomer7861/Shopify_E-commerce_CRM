@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { AlertTriangle, Clock, CheckCircle2, TrendingUp, Phone, RefreshCw, Sun, Moon, ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertTriangle, Clock, CheckCircle2, TrendingUp, Phone, RefreshCw, Sun, Moon, ChevronLeft, ChevronRight, Smartphone } from "lucide-react";
 import { StatCard, PageHeader, Avatar, Pagination } from "@/components/ui";
 import TaskCard from "@/components/TaskCard";
 import { AgentStats } from "@/components/AgentStats";
@@ -12,6 +12,8 @@ import type { Task, Customer, Order, CallLog, AbandonedCart } from "@/types";
 import { logAuditEvent } from "@/lib/audit";
 import { sendAdminNotification } from "@/lib/notifications";
 import AnnouncementFeed from "@/components/AnnouncementFeed";
+
+import { CallMonitor } from "@/components/CallMonitor";
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -178,7 +180,7 @@ export default function Dashboard() {
       // 1. Fetch Today's Tasks
       const queryToday = supabase
         .from("tasks")
-        .select("*, customer:customers(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email)", { count: "exact" })
+        .select("*, customer:customers(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email,live_state)", { count: "exact" })
         .eq("due_date", today)
         .in("status", ["pending", "due"])
         .order("priority_score", { ascending: false })
@@ -190,7 +192,7 @@ export default function Dashboard() {
       // 2. Fetch Overdue Tasks
       const queryOverdue = supabase
         .from("tasks")
-        .select("*, customer:customers(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email)", { count: "exact" })
+        .select("*, customer:customers(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email,live_state)", { count: "exact" })
         .lt("due_date", today)
         .not("status", "in", '("done","skipped","cancelled")')
         .order("priority_score", { ascending: false })
@@ -205,7 +207,7 @@ export default function Dashboard() {
       const { data: upcomingData, count: upcomingCount } = await applyAgentFilters(
         supabase
           .from("tasks")
-          .select("*, customer:customers(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email)", { count: "exact" })
+          .select("*, customer:customers(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email,live_state)", { count: "exact" })
           .gt("due_date", today)
           .lte("due_date", toDbDateString(threeDaysOut))
           .eq("status", "pending")
@@ -826,9 +828,18 @@ export default function Dashboard() {
       )}
 
       {profile?.role === "admin" && allAgentsMetrics.length > 0 && (
-        <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
-           <Leaderboard agents={allAgentsMetrics} />
-        </div>
+        <>
+          <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+             <Leaderboard agents={allAgentsMetrics} />
+          </div>
+          <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+             <h2 className="section-title flex items-center gap-2 mb-3">
+               <Smartphone className="w-4 h-4 text-[#1c1c1c]" />
+               Real-time Call Monitoring & Recordings
+             </h2>
+             <CallMonitor />
+          </div>
+        </>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">

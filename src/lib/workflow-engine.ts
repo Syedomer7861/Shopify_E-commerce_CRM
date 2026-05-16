@@ -21,7 +21,6 @@ export class WorkflowEngine {
 
     console.log(`⚡ Workflow Engine Triggered: ${trigger} for customer ${customerId}`);
 
-    // [NEW] RTO Profiling & Recovery (Feature 7 / Issue Resolution)
     if (trigger === "order_rto") {
       const { data: customer } = await supabase.from("customers").select("rto_count, segment").eq("id", customerId).single();
       if (customer) {
@@ -34,6 +33,22 @@ export class WorkflowEngine {
         
         await supabase.from("customers").update(updates).eq("id", customerId);
         console.log(`🚨 RTO Profiling: Customer ${customerId} count incremented to ${newCount}. Segment: ${updates.segment || customer.segment}`);
+      }
+
+      // [HARDENING] Clear Ghost Tasks: Cancel any pending tasks for this order immediately
+      if (payload.order_id) {
+        const { error: cleanupError } = await supabase
+          .from("tasks")
+          .update({ 
+            status: "cancelled", 
+            completed_at: new Date().toISOString() 
+          })
+          .eq("order_id", payload.order_id)
+          .not("status", "in", '("done","cancelled")');
+        
+        if (!cleanupError) {
+          console.log(`🧹 Ghost Task Cleanup: Cancelled pending tasks for RTO/Cancelled order ${payload.order_id}`);
+        }
       }
     }
     try {
@@ -309,6 +324,21 @@ export class WorkflowEngine {
     
     switch (trigger) {
       case "order_placed":
+        // [HARDENING] Dedup: Don't send order_placed message if already sent within last 1 hour
+        const { data: recent } = await supabase
+          .from("webhook_logs")
+          .select("id")
+          .eq("topic", trigger)
+          .eq("status", "processed")
+          .filter("payload->>order_id", "eq", payload.order_id)
+          .gte("created_at", new Date(Date.now() - 3600000).toISOString())
+          .maybeSingle();
+        
+        if (recent) {
+          console.log(`🛡️ Automation Hardening: Skipping '${trigger}' for order ${payload.order_id} - already processed.`);
+          return;
+        }
+
         flag = settings.wa_auto_order_placed;
         template = settings.wa_order_placed_template;
         break;

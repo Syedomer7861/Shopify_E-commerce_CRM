@@ -272,9 +272,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ agents: initialAgents 
                 </div>
               </div>
               
-              <div className="text-right shrink-0 w-20 sm:w-24">
-                <div className="text-xs font-bold text-[#1c1c1c]">₹{agent.revenue_recovered.toLocaleString()}</div>
-                {conversionRate > 0 && <div className="text-[10px] text-blue-600 font-medium">{conversionRate}% Win Rate</div>}
+              <div className="text-right shrink-0 w-24 sm:w-28">
+                <div className="text-[8px] text-gray-400 font-black uppercase tracking-widest mb-0.5">Recovered</div>
+                <div className="text-sm font-bold text-emerald-600">₹{agent.revenue_recovered.toLocaleString()}</div>
+                {conversionRate > 0 && <div className="text-[10px] text-blue-600 font-bold">{conversionRate}% Efficiency</div>}
               </div>
 
               {/* Actions */}

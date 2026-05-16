@@ -165,10 +165,48 @@ export async function POST(req: NextRequest) {
     if (!issueErr) issueTasks++;
   }
 
+  // 5. [NEW] Win-back Task Generation (Dormant Customers)
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  const sixtyDaysAgoStr = sixtyDaysAgo.toISOString();
+
+  const { data: dormantCustomers } = await supabase
+    .from("customers")
+    .select("id, name, last_order_date, segment")
+    .lt("last_order_date", sixtyDaysAgoStr)
+    .not("last_order_date", "is", null);
+
+  let winbackTasks = 0;
+  for (const cust of dormantCustomers || []) {
+     // Check if they already have an active win_back task
+     const { count: existingWinback } = await supabase
+       .from("tasks")
+       .select("id", { count: "exact", head: true })
+       .eq("customer_id", cust.id)
+       .eq("task_type", "win_back")
+       .not("status", "in", '("done","cancelled")');
+
+     if ((existingWinback || 0) > 0) continue;
+
+     // Assign to best available agent for re-engagement
+     const assignedTo = await assignTaskOwner(supabase, "win_back", cust.segment);
+     const { error: winErr } = await supabase.from("tasks").insert({
+       customer_id: cust.id,
+       assigned_to: assignedTo,
+       task_type: "win_back",
+       due_date: new Date().toISOString().split("T")[0],
+       priority_score: 60,
+       status: "pending"
+     });
+     
+     if (!winErr) winbackTasks++;
+  }
+
   return NextResponse.json({ 
     generated, 
     checked: orders.length, 
     skipped,
-    issueTasks
+    issueTasks,
+    winbackTasks
   });
 }

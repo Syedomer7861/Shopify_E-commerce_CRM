@@ -40,7 +40,7 @@ export function TaskStatusBadge({ status }: { status: TaskStatus }) {
   return <span className={cn("badge border-transparent", c.bg, c.color)}>{c.label}</span>;
 }
 
-export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
+export function Avatar({ name, size = "md", className }: { name: string; size?: "sm" | "md" | "lg"; className?: string }) {
   const sz = { sm: "w-7 h-7 text-[10px]", md: "w-9 h-9 text-xs", lg: "w-12 h-12 text-sm" }[size];
   const colors = [
     "bg-[#eceae4] text-[#1c1c1c]", 
@@ -49,7 +49,7 @@ export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md"
   const charCode = name?.charCodeAt(0) || 0;
   const color = colors[charCode % colors.length];
   return (
-    <div className={cn("rounded-full flex items-center justify-center font-semibold flex-shrink-0", sz, color)}>
+    <div className={cn("rounded-full flex items-center justify-center font-semibold flex-shrink-0", sz, color, className)}>
       {initials(name)}
     </div>
   );

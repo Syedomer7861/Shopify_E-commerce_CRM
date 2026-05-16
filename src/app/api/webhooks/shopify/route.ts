@@ -4,6 +4,7 @@ import { getSystemSettings } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { WorkflowEngine } from "@/lib/workflow-engine";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
+import { analyzeRTORisk } from "@/lib/risk-engine";
 import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
@@ -64,6 +65,11 @@ export async function POST(req: NextRequest) {
       const rawPhone = payload.phone || customerData?.phone || payload.shipping_address?.phone || "";
       let phone = rawPhone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
 
+      // Standardize to 10 digits
+      if (phone.length > 10 && phone.startsWith("91")) {
+          phone = phone.slice(phone.length - 10);
+      }
+
       // 🕵️ EXTRA EFFORT: Try to unmask/resolve phone
       const isMasked = !phone || phone.includes("x") || phone.includes("X") || phone.length < 7;
       if (isMasked) {
@@ -92,9 +98,9 @@ export async function POST(req: NextRequest) {
           state: payload.shipping_address?.province || null,
           zip: payload.shipping_address?.zip || null,
           address: payload.shipping_address?.address1 || null,
-        }, { onConflict: "phone" }).select("id, total_orders, rto_flag");
+        }, { onConflict: "phone" }).select("id, total_orders, rto_flag, segment");
 
-        const customer = customerArr?.[0];
+        const customer = customerArr?.[0] as any;
         if (customer) {
           // Sync Order
           const lineItems = (payload.line_items || []).map((item: any) => ({
@@ -119,9 +125,9 @@ export async function POST(req: NextRequest) {
 
           const { data: existingOrder } = await supabase
             .from("orders")
-            .select("id, delivery_status, source")
+            .select("id, delivery_status, source, custom_meta")
             .or(`shopify_order_id.eq.${shopifyId},order_number.eq.${orderNumber}`)
-            .maybeSingle();
+            .maybeSingle() as { data: any; error: any };
 
           const currentStatus = deliveryStatus;
           const statusToSave = (existingOrder && existingOrder.source === "shiprocket" && existingOrder.delivery_status !== "pending")
@@ -140,12 +146,50 @@ export async function POST(req: NextRequest) {
             source: existingOrder?.source || "shopify",
           };
 
+          // [GOD MODE] Proactive Risk Analysis on Order Place
+          const riskAnalysis = await analyzeRTORisk(supabase, customer.id, payload);
+          upsertData.custom_meta = {
+            ...(existingOrder?.custom_meta || {}),
+            risk_analysis: riskAnalysis
+          };
+
           if (existingOrder) {
             upsertData.id = existingOrder.id;
           }
 
           const { data: orderArr } = await supabase.from("orders").upsert(upsertData, { onConflict: "shopify_order_id" }).select("id");
           const order = orderArr?.[0];
+
+          // [NEW] Proactive Task Generation (Immediate Verification)
+          if (topic === "orders/create") {
+            // [HARDENING] Check if order was already processed to avoid duplicate tasks
+            const { data: existingTasks } = await supabase
+              .from("tasks")
+              .select("id")
+              .eq("order_id", order?.id)
+              .eq("task_type", "cod_verify");
+
+            if (existingTasks && existingTasks.length > 0) {
+              console.log(`🛡️ Webhook Hardening: cod_verify task already exists for order ${order?.id}. Skipping generation.`);
+            } else {
+              const isCod = (payload.financial_status === "pending") || 
+                            (payload.payment_gateway_names || []).some((n: string) => n.toLowerCase().includes("cod"));
+              
+              if (isCod || riskAnalysis.level === "CRITICAL" || riskAnalysis.level === "HIGH") {
+                 const riskBonus = riskAnalysis.level === "CRITICAL" ? 50 : 20;
+                 await supabase.from("tasks").upsert({
+                   customer_id: customer.id,
+                   order_id: order?.id,
+                   task_type: "cod_verify",
+                   due_date: new Date().toISOString().split("T")[0],
+                   status: "pending",
+                   priority_score: 110 + riskBonus,
+                   assigned_to: await assignTaskOwner(supabase, "cod_verify", customer.segment),
+                   metadata: { risk_level: riskAnalysis.level, risk_reasons: riskAnalysis.reasons } as any
+                 }, { onConflict: "order_id, task_type" });
+              }
+            }
+          }
 
           // Auto-resolve any abandoned cart tasks
           await supabase.from("abandoned_carts").update({ recovery_status: "recovered" }).eq("phone", phone);

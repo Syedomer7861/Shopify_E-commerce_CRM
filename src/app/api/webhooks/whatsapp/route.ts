@@ -23,11 +23,29 @@ export async function POST(req: NextRequest) {
     if (custErr) throw custErr;
 
     if (customer) {
-      // Update last activity
+      // 🕵️ SENTIMENT & URGENCY DETECTION
+      const messageBody = (body || "").toLowerCase();
+      const urgentKeywords = ["fraud", "fake", "scam", "wrong", "cancel", "refund", "cheated", "police", "consumer court", "urgent", "emergency", "missing"];
+      const isUrgent = urgentKeywords.some(kw => messageBody.includes(kw));
+      
+      // Update last activity & potentially flag as high risk if they use negative keywords
       await supabase.from("customers").update({
         last_wa_inbound_at: new Date(timestamp * 1000).toISOString(),
         updated_at: new Date().toISOString()
       }).eq("id", customer.id);
+
+      if (isUrgent) {
+          console.log(`🚨 URGENCY DETECTED: Customer ${customer.name} sent urgent message.`);
+          // Elevate ANY pending tasks for this customer
+          await supabase.from("tasks")
+            .update({ 
+                is_urgent: true, 
+                sentiment: 'negative',
+                priority_score: 150 // Jump to the absolute top
+            })
+            .eq("customer_id", customer.id)
+            .not("status", "in", '("done","cancelled")');
+      }
 
       // 3. Handle Button Clicks
       if (type === "buttons_response" && selectedButtonId) {
@@ -47,7 +65,9 @@ export async function POST(req: NextRequest) {
             customer_id: customer.id,
             task_type: "issue_resolution",
             status: "pending",
+            is_urgent: true,
             due_date: new Date().toISOString().split("T")[0],
+            priority_score: 140,
             metadata: { reason: "Customer requested reschedule via WhatsApp" }
           });
         }
@@ -61,7 +81,8 @@ export async function POST(req: NextRequest) {
           from: cleanPhone, 
           body: body.substring(0, 100),
           type,
-          selectedButtonId
+          selectedButtonId,
+          is_urgent: isUrgent
         },
         status: "processed"
       });

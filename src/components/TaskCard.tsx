@@ -1,6 +1,35 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
-import { Phone, CheckCircle, Clock, SkipForward, MessageSquare, Calendar, Send, Paperclip, X, Globe, Search, AlertCircle } from "lucide-react";
+import { 
+  Search, 
+  RefreshCw, 
+  Trash2, 
+  MoreVertical, 
+  Phone, 
+  Mail, 
+  Calendar, 
+  MessageSquare, 
+  ExternalLink, 
+  AlertTriangle, 
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  CheckSquare,
+  Truck,
+  Zap,
+  TrendingUp,
+  MapPin,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  SkipForward,
+  Send,
+  Paperclip,
+  X,
+  Globe
+} from "lucide-react";
+import { getLogisticsIntelligence, LogisticsRecommendation } from "@/lib/logistics-engine";
+import { getUpsellSuggestions, UpsellSuggestion } from "@/lib/upsell-engine";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { Avatar, TaskTypeBadge, TaskStatusBadge, Modal } from "./ui";
@@ -12,6 +41,8 @@ import { logAuditEvent } from "@/lib/audit";
 import { useChat } from "@/context/ChatContext";
 import { useRouter } from "next/navigation";
 import RTOClaimGenerator from "./RTOClaimGenerator";
+import { WhatsAppChat } from "./chat/WhatsAppChat";
+
 interface TaskCardProps {
   task: Task & { customer: Customer; order?: Order; abandoned_cart?: AbandonedCart };
   onComplete?: (id: string, outcome: string, note: string, disposition?: string, followUpAction?: string) => void;
@@ -40,12 +71,39 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
   loyalty_gift: "Hi {{name}}! 🎁 As a valued CureForever customer, we've added a special surprise to your next order of {{product}}. Just use code LOYALTY at checkout! 🌿",
 };
 
+const BATTLE_SCRIPTS: Record<string, Record<string, string>> = {
+  recovery: {
+    default: "Hi {name}, I noticed you were looking at our {product}. Is there anything I can help you with? We can offer a special 10% discount if you complete your order in the next 2 hours!",
+    whale: "Hello {name}, as one of our valued VIPs, we've reserved your {product}. I can personally ensure priority dispatch if you'd like to finalize this now. Use code VIPFREE for free shipping.",
+    bargain_hunter: "Hi {name}! Great news—the {product} you liked is currently at its best price. Grab it before the sale ends tonight!"
+  },
+  cod_verify: {
+    default: "Hi {name}, confirming your COD order for {product}. To ensure smooth delivery, could you please confirm your complete address and a landmark near your house?",
+    risky: "Hi {name}, regarding your order for {product}. We noticed some delivery issues in your area previously. Would you like to convert this to a prepaid order? We'll add a free gift as a thank you!",
+    risky_returner: "Hello {name}, calling to verify your recent order. Since this is a high-value COD, we require a quick verbal confirmation of the delivery address to proceed with dispatch."
+  },
+  welcome_call: {
+    default: "Welcome to CureForever, {name}! We're excited to have you. Your order for {product} is being packed. How did you hear about us?"
+  },
+  win_back: {
+    default: "Hi {name}, we've missed you! It's been a while since your last order of {product}. We have a new formulation you'll love. Can I send you a trial pack?"
+  }
+};
+
+const getBattleScript = (taskType: string, segment: string, name: string, product: string) => {
+  const scripts = BATTLE_SCRIPTS[taskType] || BATTLE_SCRIPTS['recovery'];
+  const template = scripts[segment] || scripts['default'];
+  return template.replace(/{name}/g, name).replace(/{product}/g, product);
+};
+
 export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWhatsApp, whatsappSettings, compact, isAdmin, agents, onReassign }: TaskCardProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   
   const supabase = useMemo(() => createClient(), []);
   const [doneModal, setDoneModal] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
+  const [activeTab, setActiveTab] = useState<'details' | 'chat'>('details');
   const [rescheduleModal, setRescheduleModal] = useState(false);
   const [waModal, setWaModal] = useState(false);
   const [emailModal, setEmailModal] = useState(false);
@@ -62,9 +120,26 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   const [emailSubject, setEmailSubject] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
   const [emailFile, setEmailFile] = useState<File | null>(null);
-  const [showDetail, setShowDetail] = useState(false);
   const [sendWaInLog, setSendWaInLog] = useState(false);
   const [logWaMessage, setLogWaMessage] = useState("");
+  const [logistics, setLogistics] = useState<LogisticsRecommendation | null>(null);
+  const [upsells, setUpsells] = useState<UpsellSuggestion[]>([]);
+
+  useEffect(() => {
+    async function fetchIntelligence() {
+      const pincode = task.customer?.zip || (task as any).order?.shipping_address?.zip;
+      if (pincode) {
+        const intelligence = await getLogisticsIntelligence(supabase, pincode);
+        setLogistics(intelligence);
+      }
+      
+      const items = (task as any).order?.line_items || [];
+      if (items.length > 0) {
+        setUpsells(getUpsellSuggestions(items));
+      }
+    }
+    fetchIntelligence();
+  }, [task, supabase]);
 
   const abandonedCart = (Array.isArray(task.abandoned_cart) ? task.abandoned_cart[0] : task.abandoned_cart) as AbandonedCart | undefined;
   const order = (Array.isArray(task.order) ? task.order[0] : task.order) as Order | undefined;
@@ -74,15 +149,55 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   const isOverdue = task.status === "overdue";
   
   const product = getTaskProductName({ ...task, abandoned_cart: abandonedCart, order: order });
+
+  const generateAiSuggestion = (type: string, disp: string, name: string, prod: string) => {
+    const firstName = name.split(" ")[0];
+    const suggestions: Record<string, Record<string, string>> = {
+      connected_interested: {
+        recovery: `Spoke with ${firstName}. They were busy during checkout but remain highly interested in ${prod}. Guided them through the payment process and sent a direct recovery link.`,
+        cod_verify: `Verified order for ${prod} with ${firstName}. They confirmed the address and promised to be available for delivery. Customer seems genuine.`,
+        welcome_call: `Had a warm welcome call with ${firstName}. They are excited to try ${prod}. Verified address and provided basic usage instructions.`,
+        vip_followup: `Conducted VIP priority call with ${firstName}. Expressed gratitude for their high-value order of ${prod}. Provided direct contact for any future needs.`,
+        reorder: `Followed up with ${firstName} for a refill. They had a great experience with the first bottle and agreed to reorder ${prod}.`,
+        review: `${firstName} reported excellent results with ${prod}. They promised to leave a positive 5-star review on the website.`,
+        win_back: `Successfully re-engaged ${firstName}. They had been busy but were happy to hear from us. Provided a loyalty discount for their next ${prod} purchase.`
+      },
+      connected_bought: {
+        all: `Confirmed with ${firstName} that they have already purchased ${prod}. Task completed as they are now back in the active customer loop.`
+      },
+      not_interested: {
+        all: `${firstName} decided not to proceed with the purchase of ${prod} at this time. Cited personal reasons or changed their mind.`
+      },
+      busy_call_later: {
+        all: `${firstName} was busy or in a meeting. Requested a callback later in the day to discuss ${prod}.`
+      },
+      no_answer_logged: {
+        all: `Attempted to reach ${firstName} multiple times. No response. Sent a follow-up WhatsApp message regarding ${prod}.`
+      },
+      wrong_number: {
+        all: `The number for ${firstName} is invalid or belongs to someone else. Flagged for data verification.`
+      }
+    };
+
+    const dispMap = suggestions[disp] || suggestions["all"];
+    if (!dispMap) return "";
+    return dispMap[type] || dispMap["all"] || "";
+  };
+
+  useEffect(() => {
+    const isNoteEmpty = !note || note.length < 10;
+    if (isNoteEmpty && disposition && disposition !== "interested") {
+      const suggestion = generateAiSuggestion(task.task_type, disposition, task.customer.name, product);
+      if (suggestion) setNote(suggestion);
+    }
+  }, [disposition, task.task_type, task.customer.name, product, note]);
   
-  // Handle line items for the details modal
   const rawItems = order?.line_items || abandonedCart?.line_items || [];
   const metaItem = rawItems.find((i: any) => i.__metadata);
   const meta = metaItem?.payload || (abandonedCart as any)?.custom_meta || (order as any)?.custom_meta;
   
   let items = Array.isArray(rawItems) ? rawItems.filter((i: any) => !i.__metadata) : [];
   
-  // VIRTUAL ITEM INJECTION: If no items found but we have a product name (from URL), inject it.
   if (items.length === 0 && product && product !== "your items" && product !== "—" && product !== "Wellness Refill") {
     items = [{
       name: product,
@@ -98,7 +213,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
   const totalAmount = order?.total_price || abandonedCart?.total_price || 0;
   
-  // Calculate subtotal from items with robust property mapping
   let subtotal = order?.subtotal || abandonedCart?.subtotal || 
     items.reduce((s: number, i: any) => {
       const price = Number(i.price || i.productPrice || i.amount || 0);
@@ -106,7 +220,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
       return s + (price * qty);
     }, 0);
 
-  // If subtotal is STILL 0 but we have a total, assume subtotal = total (for simple checkout payloads)
   if (subtotal === 0 && totalAmount > 0) subtotal = totalAmount;
 
   let discountAmount = order?.total_discounts || 
@@ -124,21 +237,17 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     Number(meta?.shipping_cost || 0) ||
     Number(task.customer?.custom_meta?.shipping_charges || 0);
 
-  // Final Inference Logic
   if (subtotal > totalAmount && discountAmount === 0) {
     discountAmount = Math.max(0, subtotal - totalAmount + shippingCharges);
   } else if (totalAmount > subtotal && shippingCharges === 0) {
     shippingCharges = Math.max(0, totalAmount - subtotal + discountAmount);
   }
 
-  // Traffic Source Detection
   const getUtm = (key: string) => {
-    // 1. Check direct meta
     if (meta?.[key]) return meta[key];
     if (meta?.cart_attributes?.[key]) return meta.cart_attributes[key];
     if (meta?.custom_attributes?.[key]) return meta.custom_attributes[key];
     
-    // 2. Check URL params
     const url = String(
       meta?.landing_page_url || 
       meta?.cart_attributes?.landing_page_url || 
@@ -158,24 +267,20 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   const utmCampaign = getUtm("utm_campaign");
   const trafficSource = utmSource ? `${utmSource} / ${utmMedium || "direct"}${utmCampaign ? ` (${utmCampaign})` : ""}` : null;
 
-  // Extraction for Action Links
   const metadataItemForLink = (abandonedCart?.line_items as any[])?.find(i => i.__metadata);
   const rawMeta = metadataItemForLink?.payload || (abandonedCart as any)?.custom_meta;
   
-  // 🚀 HIGH PRIORITY: Check if landing_page_url is actually a recovery link (Fastrr behavior)
   const landingUrl = String(rawMeta?.landing_page_url || rawMeta?.cart_attributes?.landing_page_url || "");
   let checkoutUrl = (landingUrl.includes("cart-resume-id") && landingUrl.includes("guest-abandon-payload")) 
     ? landingUrl 
     : ((abandonedCart as any)?.custom_meta?.ABANDONLINK || metadataItemForLink?.payload?.checkout_url);
   
-  // 🔗 FALLBACK: Construct link if missing or incomplete
   if (abandonedCart?.cart_token) {
     const token = abandonedCart.cart_token;
     const isFastrr = token.length > 20;
     
     if (!checkoutUrl || (isFastrr && !checkoutUrl.includes("guest-abandon-payload"))) {
       if (isFastrr) {
-        // Construct Fastrr Link with pre-fill payload
         const customer = task.customer;
         const firstName = customer.name?.split(" ")[0] || "";
         const lastName = customer.name?.split(" ").slice(1).join(" ") || "";
@@ -204,17 +309,13 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           lastName: lastName
         };
         const encodedPayload = btoa(unescape(encodeURIComponent(JSON.stringify(prefillData))));
-        // Add JWT header prefix to match Shiprocket format
         const jwtPayload = `eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.${encodedPayload}`;
         checkoutUrl = `https://cureforever.in/?cart-resume-id=${token}&type=report&guest-abandon-payload=${jwtPayload}`;
       } else if (!checkoutUrl) {
-        // Shopify Format fallback
         checkoutUrl = `https://cureforever.in/cart/${token}`;
       }
     }
   }
-
-
 
   async function handleDone() {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
@@ -247,7 +348,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         }
     }
 
-    // [ADMIN NOTIFY] Task Completion
     const { sendAdminNotification } = await import("@/lib/notifications");
     const agentName = (task as any).assigned_profile?.name || "Agent";
     const detailString = task.order ? `Order: ${task.order.order_number}` : task.abandoned_cart ? `Cart: ${task.abandoned_cart.cart_token?.slice(-8)}` : "";
@@ -277,7 +377,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
     onComplete?.(task.id, outcome, note, disposition, followUpAction);
     setDoneModal(false);
-    // Reset - Use 'done' as default which is verified allowed
     setNote(""); setOutcome("done"); setDisposition("connected_interested"); setFollowUpAction("");
     setSendWaInLog(false); setLogWaMessage("");
   }
@@ -291,7 +390,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
       const user = session?.user;
       if (!user) return toast.error("Please login to chat");
 
-      // 1. Check if task channel exists
       let { data: channel } = await supabase
         .from('channels')
         .select('*')
@@ -300,7 +398,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         .maybeSingle();
 
       if (!channel) {
-        // 2. Create task channel
         const { data: newChannel, error: createError } = await supabase
           .from('channels')
           .insert({
@@ -319,7 +416,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         if (createError) throw createError;
         channel = newChannel;
 
-        // 3. Add members (current user)
         await supabase.from('channel_members').insert({
           channel_id: channel.id,
           user_id: user.id,
@@ -327,7 +423,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         });
       }
 
-      // 4. Navigate and set active
       setActiveChannel(channel);
       router.push('/chat');
     } catch (err: any) {
@@ -346,7 +441,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
       return;
     }
     
-    // [ADMIN NOTIFY] Reschedule
     import("@/lib/notifications").then(({ sendAdminNotification }) => {
       const agentName = (task as any).assigned_profile?.name || "Agent";
       sendAdminNotification(
@@ -376,7 +470,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     try {
       let imagePath = undefined;
       
-      // 1. Upload file if present
       if (waFile) {
         const formData = new FormData();
         formData.append("file", waFile);
@@ -391,7 +484,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         imagePath = uploadData.filePath;
       }
 
-      // 2. Send WhatsApp through bridge
       const res = await fetch("/api/whatsapp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -406,7 +498,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
       if (data.ok) {
         toast.success("WhatsApp sent!");
         
-        // 3. Log to History
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user;
         const logNote = waFile ? `WhatsApp: "${waMessage}" (File: ${waFile.name})` : `WhatsApp: "${waMessage}"`;
@@ -425,9 +516,8 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           console.error("Failed to log WhatsApp sent:", logErr);
           toast.error("WhatsApp sent, but history log failed. Check DB constraints.");
         } else {
-          setWaFile(null); // Clear file after send
+          setWaFile(null); 
 
-          // 4. Log to Agent Activity (NEW)
           if (user?.id) {
             const { logActivity } = await import("@/lib/activity-logger");
             logActivity({
@@ -445,7 +535,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
             });
           }
 
-          // [ADMIN NOTIFY] WhatsApp Sent
           const { sendAdminNotification } = await import("@/lib/notifications");
           const agentName = (task as any).assigned_profile?.name || user?.email || "Agent";
           await sendAdminNotification(
@@ -515,7 +604,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         setEmailModal(false);
         setEmailFile(null);
 
-        // Log to Activity
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user;
         if (user?.id) {
@@ -544,8 +632,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
   function openWa() {
     let type = task.task_type;
-    // Smart default based on order payment status
-    if (type === "recovery" && !checkoutUrl) type = "recovery"; // keep as is
+    if (type === "recovery" && !checkoutUrl) type = "recovery";
     else if (task.order?.payment_status === "pending" || task.order?.payment_status === "unpaid") type = "cod_verify";
     
     const template = DEFAULT_TEMPLATES[type as keyof typeof DEFAULT_TEMPLATES] || DEFAULT_TEMPLATES[task.task_type as keyof typeof DEFAULT_TEMPLATES] || "";
@@ -578,6 +665,12 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     setEmailMessage(msg);
     setEmailModal(true);
   }
+  const logisticsMetrics = useMemo(() => {
+    if (!logistics) return null;
+    const successRate = 100 - logistics.rto_probability;
+    const riskLevel = logistics.rto_probability > 40 ? 'high' : logistics.rto_probability > 15 ? 'medium' : 'low';
+    return { successRate, riskLevel };
+  }, [logistics]);
 
   return (
     <>
@@ -596,6 +689,26 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 flex-wrap">
               <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={cn(
+                    "text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border",
+                    task.customer?.segment === 'whale' ? "bg-amber-50 text-amber-700 border-amber-100" :
+                    task.customer?.segment === 'risky' ? "bg-rose-50 text-rose-700 border-rose-100" :
+                    "bg-gray-50 text-gray-600 border-gray-100"
+                  )}>
+                    {task.customer?.segment?.toUpperCase() || 'STANDARD'}
+                  </div>
+                  {(task as any).is_urgent && (
+                    <div className="flex items-center gap-1 bg-rose-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-lg shadow-rose-500/20">
+                       <Zap className="w-2.5 h-2.5" /> URGENT
+                    </div>
+                  )}
+                  {(task as any).sentiment === 'negative' && (
+                    <div className="flex items-center gap-1 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                       <AlertCircle className="w-2.5 h-2.5" /> NEGATIVE SENTIMENT
+                    </div>
+                  )}
+                </div>
                 <Link 
                   href={`/customers/${task.customer_id}`} 
                   onClick={(e) => e.stopPropagation()} 
@@ -609,9 +722,14 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   onClick={(e) => e.stopPropagation()} 
                   className="inline-block"
                 >
-                  <a href={`tel:${task.customer.phone}`} className="text-[11px] text-gray-500 hover:text-[#1c1c1c] flex items-center gap-1 mt-0.5">
-                    <Phone className="w-2.5 h-2.5" /> {task.customer.phone}
-                  </a>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <a href={`tel:${task.customer.phone}`} className="text-[11px] text-gray-500 hover:text-[#1c1c1c] flex items-center gap-1">
+                      <Phone className="w-2.5 h-2.5" /> {task.customer.phone}
+                    </a>
+                    <a href={`sms:${task.customer.phone}`} className="text-[11px] text-gray-500 hover:text-[#1c1c1c] flex items-center gap-1 border-l border-gray-200 pl-2">
+                      <Mail className="w-2.5 h-2.5" /> SMS
+                    </a>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -620,7 +738,14 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   <span className="badge bg-gray-50 border-gray-200 text-gray-700">Priority {task.priority_score}</span>
                 )}
                 {(task as any).assigned_profile?.name && !isAdmin && (
-                  <span className="badge bg-sky-50 border-sky-200 text-sky-700">Owner {(task as any).assigned_profile.name}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="badge bg-sky-50 border-sky-200 text-sky-700">Owner {(task as any).assigned_profile.name}</span>
+                    {(task as any).assigned_profile?.live_state?.action === 'on_call' && (task as any).assigned_profile?.live_state?.entityId === task.id && (
+                      <span className="badge bg-rose-500 border-rose-600 text-white animate-pulse flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-white" /> LIVE CALL
+                      </span>
+                    )}
+                  </div>
                 )}
                 {isAdmin && agents && agents.length > 0 && (
                   <select 
@@ -685,293 +810,277 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         open={showDetail} 
         onClose={() => setShowDetail(false)} 
         title={(
-          <span>
-            {task.order ? 'Order Details' : 'Abandoned Cart'} — {task.customer.name} (
-            <a href={`tel:${task.customer.phone}`} className="text-blue-600 hover:underline">{task.customer.phone}</a>
-            {task.customer.email ? (
-              <> / <a href={`mailto:${task.customer.email}`} className="text-blue-600 hover:underline">{task.customer.email}</a></>
-            ) : null}
-            )
-          </span>
-        )} 
-        maxWidth="max-w-6xl"
-        footer={(
-          <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-4 sm:gap-0">
-            <div className="flex items-center gap-3 self-start sm:self-center">
-              <div className="w-8 h-8 rounded-full bg-[#1c1c1c]/10 flex items-center justify-center text-[#1c1c1c] text-[10px] font-bold">
-                {initials((task as any).assigned_profile?.name || "U")}
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Assigned Agent</div>
-                <div className="text-xs font-bold text-[#1c1c1c]">{(task as any).assigned_profile?.name || "Unassigned"}</div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0">
-              <button onClick={() => { setShowDetail(false); handleTaskChat(); }} className="btn-secondary text-[10px] sm:text-xs py-2 px-2 sm:px-6 flex items-center justify-center gap-2 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5 w-full sm:w-auto">
-                <MessageSquare className="w-3 h-3" /> <span className="truncate">Team Chat</span>
-              </button>
-              <button onClick={() => { setShowDetail(false); setDoneModal(true); }} className="btn-primary text-[10px] sm:text-xs py-2 px-2 sm:px-8 flex items-center justify-center w-full sm:w-auto">
-                Log Call
-              </button>
-              <button onClick={() => { setShowDetail(false); openWa(); }} className="btn-secondary text-[10px] sm:text-xs py-2 px-2 sm:px-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5 flex items-center justify-center w-full sm:w-auto">
-                WhatsApp
-              </button>
-              <button onClick={() => { setShowDetail(false); openEmail(); }} className="btn-secondary text-[10px] sm:text-xs py-2 px-2 sm:px-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5 flex items-center justify-center w-full sm:w-auto">
-                Email
-              </button>
-              <button onClick={() => setShowDetail(false)} className="btn-secondary text-[10px] sm:text-xs py-2 px-2 sm:px-6 text-gray-500 xs:col-span-2 sm:col-span-1 flex items-center justify-center w-full sm:w-auto">
-                Close
-              </button>
+          <div className="flex items-center gap-6">
+            <span className="font-bold">Task Details — {task.customer.name}</span>
+            <div className="flex items-center bg-gray-100 p-0.5 rounded-lg ml-2">
+               <button 
+                 onClick={() => setActiveTab('details')}
+                 className={cn(
+                   "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all",
+                   activeTab === 'details' ? "bg-white text-[#1c1c1c] shadow-sm" : "text-gray-400 hover:text-gray-600"
+                 )}
+               >
+                 Overview
+               </button>
+               <button 
+                 onClick={() => setActiveTab('chat')}
+                 className={cn(
+                   "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all flex items-center gap-1.5",
+                   activeTab === 'chat' ? "bg-white text-emerald-600 shadow-sm" : "text-gray-400 hover:text-emerald-500"
+                 )}
+               >
+                 <MessageSquare className="w-3 h-3 text-emerald-500" /> Live Chat
+               </button>
             </div>
           </div>
         )}
+        maxWidth="max-w-6xl"
       >
         <div className="flex flex-col">
-          {(() => {
-            const orderObj = Array.isArray(task.order) ? task.order[0] : task.order;
-            const abandonedObj = Array.isArray(task.abandoned_cart) ? task.abandoned_cart[0] : task.abandoned_cart;
-            
-            if (orderObj) {
-              const oId = [orderObj.shopify_order_id, orderObj.order_number, orderObj.id]
-                .find(id => id && String(id).trim().length > 0);
-              
-              if (!oId) {
-                return (
-                  <div className="flex flex-col items-center justify-center p-12 text-center">
-                    <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center text-amber-500 mb-4">
-                      <Search className="w-8 h-8" />
+          {activeTab === 'chat' ? (
+            <div className="-m-5">
+              <WhatsAppChat phone={task.customer.phone} customerName={task.customer.name} customerId={task.customer.id} />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+               <div className="md:col-span-2 space-y-6">
+                  <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Customer Profile</div>
+                      <Link href={`/customers/${task.customer_id}`} className="text-[10px] font-bold text-blue-600 hover:underline">View Full Profile</Link>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">Incomplete Order Data</h3>
-                    <p className="text-gray-500 max-w-xs mt-2">
-                      This order record is present in the CRM but is missing the necessary IDs to fetch details from Shiprocket.
-                    </p>
-                  </div>
-                );
-              }
-              
-              return (
-                <div className="bg-gray-50 -m-5 -mt-4 rounded-xl overflow-hidden min-h-[60vh]">
-                  <ShiprocketOrderView orderId={String(oId)} />
-                </div>
-              );
-            }
-            
-            return (
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-                {/* Customer Column */}
-              <div className="md:col-span-2 space-y-6">
-                <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <Avatar name={task.customer.name} size="lg" />
-                  <div>
-                    <Link href={`/customers/${task.customer_id}`} className="font-bold text-[#1c1c1c] hover:underline hover:text-[#1c1c1c]/80 transition-colors">
-                      {task.customer.name}
-                    </Link>
-                    <div className="text-xs text-gray-500 flex items-center gap-1">
-                      <span className={cn("w-2 h-2 rounded-full", isOverdue ? "bg-rose-500" : "bg-[#1c1c1c]")} />
-                      {TASK_TYPE_CONFIG[task.task_type].label}
+                    <div className="flex items-center gap-3 pb-4 border-b border-gray-50">
+                      <Avatar name={task.customer.name} className="w-10 h-10" />
+                      <div>
+                        <div className="font-bold text-gray-900">{task.customer.name}</div>
+                        <div className="text-[10px] font-medium text-gray-500 flex items-center gap-1">
+                          <MapPin className="w-2.5 h-2.5" /> {task.customer.city || "Unknown City"}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                
-                {trafficSource && (
-                  <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100/50">
-                    <div className="text-[10px] text-blue-400 uppercase font-bold tracking-wider mb-1 flex items-center gap-1">
-                      <Globe className="w-3 h-3" /> Traffic Source
-                    </div>
-                    <div className="text-xs font-semibold text-blue-700 capitalize">
-                      {trafficSource}
-                    </div>
-                  </div>
-                )}
-
-                {meta?.rtoPredict && (
-                  <div className={cn(
-                    "p-3 rounded-xl border flex flex-col gap-1",
-                    meta.rtoPredict.toLowerCase() === 'high' 
-                      ? "bg-rose-50 border-rose-100 text-rose-700" 
-                      : "bg-emerald-50 border-emerald-100 text-emerald-700"
-                  )}>
-                    <div className={cn(
-                      "text-[10px] uppercase font-bold tracking-wider flex items-center gap-1",
-                      meta.rtoPredict.toLowerCase() === 'high' ? "text-rose-400" : "text-emerald-400"
-                    )}>
-                      <CheckCircle className="w-3 h-3" /> RTO Risk Level
-                    </div>
-                    <div className="text-sm font-bold flex items-center gap-2">
-                      {meta.rtoPredict.toUpperCase()}
-                      {meta.rtoPredict.toLowerCase() === 'high' && (
-                        <span className="text-[10px] bg-rose-100 px-1.5 py-0.5 rounded-full">CAUTION</span>
+                    <div className="space-y-3">
+                      {trafficSource && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-gray-400">SOURCE</span>
+                          <span className="text-[10px] font-bold text-gray-700">{trafficSource}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-gray-400">PHONE</span>
+                        <a href={`tel:${task.customer.phone}`} className="text-[10px] font-bold text-blue-600">{task.customer.phone}</a>
+                      </div>
+                      {task.customer.email && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-gray-400">EMAIL</span>
+                          <span className="text-[10px] font-bold text-gray-700 truncate max-w-[120px]">{task.customer.email}</span>
+                        </div>
                       )}
                     </div>
                   </div>
-                )}
-
-                <div className="space-y-4 px-1">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
-                      <Phone className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Phone Number</div>
-                      <a href={`tel:${task.customer.phone}`} className="text-sm font-semibold hover:text-blue-600 transition-colors">{task.customer.phone}</a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
-                      <Search className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">
-                        {task.order ? "Shopify Order ID" : "Fastrr Cart ID"}
-                      </div>
-                      <div className="text-sm font-mono font-bold text-gray-700">
-                        {checkoutUrl ? (
-                          <a href={checkoutUrl} target="_blank" className="hover:text-blue-600 underline decoration-blue-200 hover:decoration-blue-400 transition-all">
-                            {order?.shopify_order_id || order?.order_number || abandonedCart?.cart_token || "—"}
-                          </a>
-                        ) : (
-                          order?.shopify_order_id || order?.order_number || abandonedCart?.cart_token || "—"
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
-                      <MessageSquare className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Email Address</div>
-                      {task.customer.email ? (
-                        <a href={`mailto:${task.customer.email}`} className="text-sm font-semibold truncate max-w-[180px] block hover:text-blue-600 transition-colors">
-                          {task.customer.email}
-                        </a>
-                      ) : (
-                        <div className="text-sm font-semibold text-gray-400 italic">No email provided</div>
-                      )}
-                    </div>
-                  </div>
-
-                  {task.customer.address && (
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 flex-shrink-0 mt-0.5">
-                        <Calendar className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Shipping Address</div>
-                        <div className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-                          {task.customer.address}
-                          {(task.customer.city || task.customer.state || task.customer.zip) && (
-                            <div className="mt-1 pb-1 text-[11px] font-medium text-gray-500 border-t border-gray-100 pt-1">
-                              {[task.customer.city, task.customer.state, task.customer.zip].filter(Boolean).join(", ")}
+                  {(task as any).metadata?.risk_level && (
+                     <div className={cn(
+                       "p-4 rounded-2xl border-2 space-y-3",
+                       (task as any).metadata.risk_level === 'CRITICAL' ? "bg-rose-50 border-rose-200 shadow-rose-100" : "bg-amber-50 border-amber-200 shadow-amber-100"
+                     )}>
+                        <div className="flex items-center justify-between">
+                           <div className={cn(
+                             "text-[10px] font-black uppercase tracking-widest flex items-center gap-2",
+                             (task as any).metadata.risk_level === 'CRITICAL' ? "text-rose-600" : "text-amber-600"
+                           )}>
+                              <AlertCircle className="w-4 h-4" /> {(task as any).metadata.risk_level} RISK
+                           </div>
+                           <div className="text-[10px] font-bold text-gray-400">SCORE: {((task.priority_score || 0) - 110)}%</div>
+                        </div>
+                        <div className="space-y-1.5">
+                          {(task as any).metadata.risk_reasons?.map((reason: string, i: number) => (
+                            <div key={i} className="text-[10px] font-bold text-gray-700 flex items-start gap-2 leading-tight">
+                              <span className="text-rose-400 flex-shrink-0 mt-0.5">•</span> {reason}
                             </div>
-                          )}
+                          ))}
+                        </div>
+                     </div>
+                  )}
+                  {logistics && logisticsMetrics && (
+                    <div className="bg-sky-50 border border-sky-100 p-5 rounded-2xl space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="text-[10px] font-black text-sky-600 uppercase tracking-widest flex items-center gap-2">
+                          <Truck className="w-4 h-4" /> Logistics Intel
+                        </div>
+                        <div className={cn(
+                          "text-[9px] font-black px-2 py-0.5 rounded-full",
+                          logisticsMetrics.riskLevel === 'low' ? "bg-emerald-100 text-emerald-700" : 
+                          logisticsMetrics.riskLevel === 'medium' ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"
+                        )}>
+                          {logisticsMetrics.riskLevel.toUpperCase()} RTO RISK
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-gray-500 font-medium">Historical Success Rate</span>
+                          <span className="font-black text-sky-700">{logisticsMetrics.successRate}%</span>
+                        </div>
+                        <div className="pt-3 border-t border-sky-200/50">
+                          <div className="text-[9px] font-black text-sky-400 uppercase mb-2">Recommended Carrier</div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                              <Truck className="w-4 h-4 text-sky-600" />
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-sky-900">{logistics.best_carrier}</div>
+                              <div className="text-[9px] font-medium text-sky-600">Based on {logistics.rto_probability}% probability</div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   )}
-                </div>
-              </div>
-
-              {/* Transaction Column */}
-              <div className="md:col-span-3 space-y-5">
-                <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
-                  <div className="px-4 py-2.5 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
-                    <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">
-                      Abandoned Cart
-                    </h4>
-                    <div className="text-[10px] font-mono text-gray-400 uppercase leading-none">
-                      ID: {task.abandoned_cart?.cart_token?.slice(0, 10)}
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    {/* Date Row */}
-                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-50">
-                      <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
-                        Abandoned At
+                  {upsells.length > 0 && (
+                    <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl space-y-4">
+                      <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4" /> Perfect Pair Upsell
                       </div>
-                      <div className="text-xs font-semibold text-gray-700">
-                        {formatDate(abandonedCart?.abandoned_at || task.created_at)} 
-                        <span className="text-gray-400 font-normal ml-1">
-                          ({timeAgo(abandonedCart?.abandoned_at || task.created_at)})
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      {items.map((item: any, idx: number) => (
-                        <div key={idx} className="flex items-center gap-3 justify-between pb-3 last:pb-0 border-b border-gray-50 last:border-0">
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs font-semibold text-gray-800 line-clamp-1">{item.name || item.title}</div>
-                            <div className="text-[10px] text-gray-400 mt-0.5">
-                              {item.variant || item.productVariant || "Default Variant"}
+                      <div className="space-y-3">
+                        {upsells.map((upsell, i) => (
+                          <div key={i} className="bg-white p-3 rounded-xl border border-emerald-100 shadow-sm space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="text-xs font-bold text-gray-900">{upsell.product_name}</div>
+                              <div className="text-[10px] font-black text-emerald-600">₹{upsell.price}</div>
+                            </div>
+                            <div className="text-[10px] text-gray-500 font-medium leading-relaxed italic">
+                              &ldquo;{upsell.script}&rdquo;
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-xs font-bold text-[#1c1c1c]">₹{item.price || item.productPrice || item.amount}</div>
-                            <div className="text-[10px] text-gray-400 font-medium">Qty: {item.quantity || item.qty || item.productQuantity || 1}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-5 pt-4 border-t border-gray-100 space-y-2">
-                      <div className="flex justify-between text-xs text-gray-500 px-1">
-                        <span>Subtotal</span>
-                        <span>₹{subtotal}</span>
-                      </div>
-                      {discountAmount > 0 && (
-                        <div className="flex justify-between text-xs text-rose-500 px-1 font-medium italic">
-                          <span>Discount Applied</span>
-                          <span>-₹{discountAmount}</span>
-                        </div>
-                      )}
-                      {shippingCharges > 0 && (
-                        <div className="flex justify-between text-xs text-gray-500 px-1">
-                          <span>Shipping</span>
-                          <span>₹{shippingCharges}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between text-sm font-bold text-[#1c1c1c] px-1 pt-1">
-                        <span>Total Amount</span>
-                        <span className="text-[#1c1c1c] underline decoration-[#1c1c1c]/20 decoration-2 underline-offset-4">₹{totalAmount}</span>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                {checkoutUrl && (
-                  <a 
-                    href={checkoutUrl} 
-                    target="_blank" 
-                    className="btn-secondary w-full justify-center bg-blue-50 border-blue-100 text-blue-700 font-bold hover:bg-blue-100"
-                  >
-                    Open Abandoned Cart 🛒
-                  </a>
-                )}
-                
-                {task.manager_action === 'rejected' && (
-                  <div className="bg-rose-50 border border-rose-100 p-4 rounded-xl mt-4 animate-pulse-slow">
-                    <div className="flex items-center gap-2 text-rose-700 font-black text-[10px] uppercase tracking-widest mb-1">
-                      <AlertCircle className="w-3.5 h-3.5" /> Flagged for Revision
+                  )}
+                  <div className="bg-[#1c1c1c] text-white p-5 rounded-2xl shadow-xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                      <Zap className="w-12 h-12" />
                     </div>
-                    <p className="text-xs font-bold text-rose-900 leading-relaxed italic">
-                      &ldquo;{task.manager_note || "Manager requested a revision of this task resolution."}&rdquo;
+                    <div className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                      <Zap className="w-3 h-3 fill-current" /> Tactical Script
+                    </div>
+                    <p className="text-xs font-bold leading-relaxed italic text-gray-100 mb-4">
+                      &ldquo;{getBattleScript(
+                        task.task_type, 
+                        task.customer.segment, 
+                        task.customer.name.split(' ')[0], 
+                        product
+                      )}&rdquo;
                     </p>
+                    <button 
+                      onClick={() => {
+                        const script = getBattleScript(task.task_type, task.customer.segment, task.customer.name.split(' ')[0], product);
+                        navigator.clipboard.writeText(script);
+                        toast.success("Script copied!");
+                      }}
+                      className="w-full text-[9px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 px-3 py-2.5 rounded-lg transition-all"
+                    >
+                      Copy Battle Script
+                    </button>
                   </div>
-                )}
-                
-
-                {order?.delivery_status === 'rto' && (
-                  <div className="mt-4">
+               </div>
+               <div className="md:col-span-3 space-y-6">
+                  {(() => {
+                    const orderObj = Array.isArray(task.order) ? task.order[0] : task.order;
+                    if (orderObj) {
+                      const oId = [orderObj.shopify_order_id, orderObj.order_number, orderObj.id].find(id => id && String(id).trim().length > 0);
+                      if (oId) {
+                        return (
+                          <div className="bg-gray-50 -m-5 md:-m-0 rounded-2xl overflow-hidden min-h-[50vh] border border-gray-100 shadow-sm">
+                            <ShiprocketOrderView orderId={String(oId)} />
+                          </div>
+                        );
+                      }
+                    }
+                    return (
+                      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                        <div className="px-5 py-4 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+                               <CheckSquare className="w-4 h-4" />
+                            </div>
+                            <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">Abandoned Cart Detail</h4>
+                          </div>
+                          <div className="text-[10px] font-bold text-gray-400">ID: {abandonedCart?.cart_token?.slice(-12) || "—"}</div>
+                        </div>
+                        <div className="p-6">
+                           <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-50">
+                              <div>
+                                <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Abandoned At</div>
+                                <div className="text-xs font-bold text-gray-900">{formatDate(abandonedCart?.abandoned_at || task.created_at)}</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Status</div>
+                                <div className="text-[10px] bg-rose-50 text-rose-600 px-2 py-0.5 rounded-full font-black">ABANDONED</div>
+                              </div>
+                           </div>
+                           <div className="space-y-4">
+                              {items.map((item: any, idx: number) => (
+                                <div key={idx} className="flex items-center gap-4 group">
+                                  <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0 group-hover:bg-blue-50 transition-colors">
+                                    <Paperclip className="w-5 h-5" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-bold text-gray-900 truncate">{item.name || item.title}</div>
+                                    <div className="text-[10px] font-medium text-gray-500">{item.variant || "Default Variant"}</div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-sm font-black text-gray-900">₹{item.price || 0}</div>
+                                    <div className="text-[10px] font-bold text-gray-400">Qty: {item.quantity || 1}</div>
+                                  </div>
+                                </div>
+                              ))}
+                           </div>
+                           <div className="mt-8 pt-6 border-t border-gray-100 space-y-2">
+                              <div className="flex justify-between text-xs font-medium text-gray-500">
+                                <span>Subtotal</span>
+                                <span>₹{subtotal}</span>
+                              </div>
+                              {discountAmount > 0 && (
+                                <div className="flex justify-between text-xs font-bold text-rose-500 italic">
+                                  <span>Discount Applied</span>
+                                  <span>-₹{discountAmount}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between text-base font-black text-gray-900 pt-2">
+                                <span>Total Recoverable</span>
+                                <span className="text-blue-600">₹{totalAmount}</span>
+                              </div>
+                           </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     {checkoutUrl && (
+                        <a href={checkoutUrl} target="_blank" className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20 group">
+                           <ExternalLink className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                           <span className="text-xs font-black uppercase tracking-widest">Open Recovery Link</span>
+                        </a>
+                     )}
+                     <button onClick={() => setWaModal(true)} className="bg-[#25D366] hover:bg-[#128C7E] text-white p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20 group">
+                        <MessageSquare className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-black uppercase tracking-widest">WhatsApp Customer</span>
+                     </button>
+                  </div>
+                  {task.manager_action === 'rejected' && (
+                    <div className="bg-rose-50 border-2 border-rose-100 p-5 rounded-2xl">
+                      <div className="flex items-center gap-2 text-rose-700 font-black text-[10px] uppercase tracking-widest mb-2">
+                        <AlertTriangle className="w-4 h-4" /> Manager Revision Requested
+                      </div>
+                      <p className="text-sm font-bold text-rose-900 leading-relaxed italic bg-white/50 p-3 rounded-xl">
+                        &ldquo;{task.manager_note}&rdquo;
+                      </p>
+                    </div>
+                  )}
+                  {order?.delivery_status === 'rto' && (
                     <RTOClaimGenerator order={order} customer={task.customer} />
-                  </div>
-                )}
-              </div>
+                  )}
+               </div>
             </div>
-          );
-        })()}
+          )}
         </div>
       </Modal>
 
@@ -1011,7 +1120,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   onClick={() => {
                     let msg = tpl.replace("{{name}}", task.customer.name || "there").replace("{{product}}", product);
                     if (msg.includes("{{abandon_link}}")) {
-                      const abandonLink = checkoutUrl || meta?.ABANDONLINK || task.customer.custom_meta?.ABANDONLINK || "https://cureforever.in/cart";
+                      const abandonLink = checkoutUrl || "https://cureforever.in/cart";
                       msg = msg.replace("{{abandon_link}}", abandonLink);
                     }
                     setWaMessage(msg);
@@ -1088,7 +1197,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   onClick={() => {
                     let msg = tpl.replace("{{name}}", task.customer.name || "there").replace("{{product}}", product);
                     if (msg.includes("{{abandon_link}}")) {
-                      const abandonLink = checkoutUrl || meta?.ABANDONLINK || task.customer.custom_meta?.ABANDONLINK || "https://cureforever.in/cart";
+                      const abandonLink = checkoutUrl || "https://cureforever.in/cart";
                       msg = msg.replace("{{abandon_link}}", abandonLink);
                     }
                     setEmailMessage(msg);
@@ -1146,7 +1255,6 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         </>}
       >
         <div className="space-y-4">
-          {/* QUICK ACTIONS GALLERY */}
           <div>
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">⚡ Quick Actions</label>
             <div className="flex flex-wrap gap-2">

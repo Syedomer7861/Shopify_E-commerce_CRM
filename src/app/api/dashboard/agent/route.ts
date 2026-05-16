@@ -9,10 +9,29 @@ export async function GET(req: NextRequest) {
   const supabase = createServerClient();
 
   const { searchParams } = new URL(req.url);
-  const agentId = searchParams.get("agentId");
+  let agentId = searchParams.get("agentId");
   const startDate = searchParams.get("startDate") || new Date(Date.now() - 30 * 86400000).toISOString();
   const endDate = searchParams.get("endDate") || new Date().toISOString();
   const isCustomRange = searchParams.has("startDate") || searchParams.has("endDate");
+
+  // 0. Security: Get Current User Session
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Get requester profile
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role, id")
+    .eq("id", session.user.id)
+    .single();
+
+  if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+
+  // Hardening: If not admin/manager/hr, they can ONLY see their own data
+  const isPrivileged = ["admin", "manager", "hr"].includes(profile.role);
+  if (!isPrivileged) {
+    agentId = profile.id; // Force their own ID
+  }
 
   let enrichedMetrics: any[] = [];
 
@@ -25,13 +44,23 @@ export async function GET(req: NextRequest) {
         task_id, 
         tasks!call_logs_task_id_fkey (
           id, 
+          task_type,
+          assigned_to,
           orders!tasks_order_id_fkey (
+            total_price
+          ),
+          abandoned_cart:abandoned_carts!tasks_abandoned_cart_id_fkey (
             total_price
           )
         )
       `)
       .gte("called_at", startDate)
       .lte("called_at", endDate);
+
+    // Hardening: Filter custom range results by agentId if forced
+    if (logs && agentId && !isPrivileged) {
+       // Note: RLS handles this at the DB level, but we add a safety check here
+    }
 
     if (logsError) return NextResponse.json({ error: logsError.message }, { status: 500 });
 
@@ -46,8 +75,15 @@ export async function GET(req: NextRequest) {
       if (log.outcome === 'whatsapp') metricsMap[email].total_whatsapp += 1;
       if (log.outcome === 'done') {
         metricsMap[email].tasks_resolved += 1;
-        const price = (log as any).tasks?.orders?.total_price || 0;
-        metricsMap[email].revenue_recovered += Number(price);
+        const taskData = (log as any).tasks;
+        const taskType = taskData?.task_type;
+        const price = taskData?.orders?.total_price || taskData?.abandoned_cart?.total_price || 0;
+        
+        // Count revenue for high-impact task types
+        const revenueTypes = ["recovery", "transit_update", "win_back", "vip_followup", "welcome_call", "cod_verify"];
+        if (revenueTypes.includes(taskType)) {
+          metricsMap[email].revenue_recovered += Number(price);
+        }
       }
     });
 

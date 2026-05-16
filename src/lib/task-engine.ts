@@ -15,8 +15,13 @@ export function calculateTaskPriority(input: {
 
   // 1. Base Task Type Weighting (Criticality)
   const taskWeights: Record<string, number> = {
+    vip_followup: 130,     // Critical: High-value customer retention
     issue_resolution: 120, // Highest priority: problem solving
+    cod_verify: 110,       // Critical: Confirm COD before shipping
+    ndr: 100,              // High: Fix delivery failures
+    welcome_call: 90,      // High: New customer experience
     recovery: 80,         // High value: capturing lost revenue
+    win_back: 60,         // Medium: Re-engaging dormant customers
     reorder: 50,          // Medium: nurturing repeat customers
     transit_update: 40,   // Medium-Low: proactive support
     final_followup: 30,    // Low: last touch

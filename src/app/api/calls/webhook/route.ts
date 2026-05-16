@@ -1,0 +1,93 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@/lib/supabase";
+
+/**
+ * Poor Man's Cloud Telephony Webhook
+ * Receives signals from MacroDroid (Android) or other automation bridges.
+ */
+export async function POST(req: NextRequest) {
+  const supabase = createServerClient();
+
+  try {
+    const payload = await req.json();
+    const { 
+      event, // 'started', 'ended'
+      agent_email, 
+      customer_phone, 
+      task_id, 
+      duration, 
+      recording_url 
+    } = payload;
+
+    // 1. Resolve Agent
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", agent_email)
+      .single();
+
+    if (!profile) {
+      return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+    }
+
+    // 2. Standardize Phone
+    let phone = customer_phone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
+    if (phone.length > 10) phone = phone.slice(-10);
+
+    // 3. Handle Events
+    if (event === "started") {
+      // Upsert a new raw call log
+      await supabase.from("raw_call_logs").upsert({
+        agent_id: profile.id,
+        customer_phone: phone,
+        task_id: task_id || null,
+        status: "in_progress",
+        start_time: new Date().toISOString()
+      }, { onConflict: "agent_id, status" }); // Simple logic: one active call per agent
+
+      // Update Profile Live State
+      await supabase.from("profiles").update({
+        live_state: {
+          path: "/tasks",
+          action: "on_call",
+          entityId: task_id || null,
+          timestamp: new Date().toISOString()
+        }
+      }).eq("id", profile.id);
+
+    } else if (event === "ended") {
+      // Update the call log
+      const { data: activeCall } = await supabase
+        .from("raw_call_logs")
+        .select("id, start_time")
+        .eq("agent_id", profile.id)
+        .eq("status", "in_progress")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (activeCall) {
+        const startTime = new Date(activeCall.start_time);
+        const endTime = new Date();
+        const durationSec = duration || Math.round((endTime.getTime() - startTime.getTime()) / 1000);
+
+        await supabase.from("raw_call_logs").update({
+          status: "completed",
+          end_time: endTime.toISOString(),
+          duration_seconds: durationSec,
+          recording_url: recording_url || null
+        }).eq("id", activeCall.id);
+      }
+
+      // Clear Profile Live State
+      await supabase.from("profiles").update({
+        live_state: null
+      }).eq("id", profile.id);
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err: any) {
+    console.error("[CALL-WEBHOOK] Error:", err.message);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}

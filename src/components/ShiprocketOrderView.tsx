@@ -108,10 +108,30 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
   const status = order.status?.toUpperCase() || "PENDING";
   const shipment = order.shipments?.[0] || {};
   const trackingData = tracking?.tracking_data || {};
+  const history = data.history || [];
   const trackingHistory = trackingData.shipment_track_activities || [];
   
+  // Merge and Normalize Activities
+  const combinedPulse = [
+    ...trackingHistory.map((h: any) => ({
+      date: h.date,
+      activity: h.activity,
+      location: h.location || "Logistics Hub",
+      status: h.status || "TRANSIT",
+      isHistory: false
+    })),
+    ...history.map((h: any) => ({
+      date: h.created_at,
+      activity: h.activity,
+      location: "System",
+      status: "ORDER",
+      isHistory: true,
+      description: h.description
+    }))
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
   // Guard: If no AWB and no Activity, cap UI status at "PENDING"
-  const hasShippingActive = order.awb_code || trackingHistory.length > 0;
+  const hasShippingActive = order.awb_code || combinedPulse.length > 0;
   const uiStatus = !hasShippingActive && (status === "DELIVERED" || status === "IN TRANSIT" || status === "SHIPPED") 
     ? "PENDING" 
     : status;
@@ -519,8 +539,8 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                 <div className="absolute left-[7px] top-2 bottom-2 w-[2px] bg-[#eceae4]"></div>
                 
                 <div className="space-y-10 relative">
-                  {activeTab === "activity" && trackingHistory.length > 0 ? (
-                    trackingHistory.map((step: any, i: number) => {
+                  {activeTab === "activity" && combinedPulse.length > 0 ? (
+                    combinedPulse.map((step: any, i: number) => {
                        const isLatest = i === 0;
                        return (
                         <div key={i} className="flex gap-5 group">
@@ -538,7 +558,10 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                               </span>
                             </div>
                             <div className="flex items-center gap-2 mb-2">
-                                <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 uppercase tracking-tighter">
+                                <span className={cn(
+                                    "text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-tighter",
+                                    step.isHistory ? "text-amber-600 bg-amber-50 border-amber-100" : "text-blue-600 bg-blue-50 border-blue-100"
+                                )}>
                                     {step.status || step.hub_code || "HUB SCAN"}
                                 </span>
                             </div>
@@ -548,7 +571,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                             {isLatest && (
                                 <div className="mt-4 bg-[#1c1c1c] rounded-xl p-4 shadow-xl">
                                    <p className="text-[10px] text-[#f7f4ed] font-bold italic leading-relaxed">
-                                      &ldquo;{step.activity}&rdquo;
+                                      &ldquo;{step.description || step.activity}&rdquo;
                                    </p>
                                 </div>
                             )}
