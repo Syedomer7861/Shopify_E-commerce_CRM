@@ -77,6 +77,14 @@ const BATTLE_SCRIPTS: Record<string, Record<string, string>> = {
     whale: "Hello {name}, as one of our valued VIPs, we've reserved your {product}. I can personally ensure priority dispatch if you'd like to finalize this now. Use code VIPFREE for free shipping.",
     bargain_hunter: "Hi {name}! Great news—the {product} you liked is currently at its best price. Grab it before the sale ends tonight!"
   },
+  ndr_resolution: {
+    default: "Hi {name}, regarding your order for {product}. We noticed a delivery attempt failed. Could you please confirm your alternate number and any landmark? I'll personally ensure the rider reaches you tomorrow.",
+    risky: "Hello {name}, our delivery partner reported they couldn't find your location for the {product} delivery. Should I share an alternate address or a specific instruction with the courier hub for you?"
+  },
+  transit_update: {
+    default: "Hi {name}! Your order for {product} is currently moving through our logistics network. I'm monitoring it closely to ensure it reaches you on time. Any specific delivery time preference?",
+    delayed: "Hello {name}, I noticed a slight delay in the transit of your {product}. I've already escalated this with the courier hub to prioritize your package. Appreciate your patience!"
+  },
   cod_verify: {
     default: "Hi {name}, confirming your COD order for {product}. To ensure smooth delivery, could you please confirm your complete address and a landmark near your house?",
     risky: "Hi {name}, regarding your order for {product}. We noticed some delivery issues in your area previously. Would you like to convert this to a prepaid order? We'll add a free gift as a thank you!",
