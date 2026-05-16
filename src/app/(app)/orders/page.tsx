@@ -141,7 +141,7 @@ export default function OrdersPage() {
       pending: p.count || 0,
     });
     setLoading(false);
-  }, [page, pageSize, status, search, startDate, endDate, minAmount, maxAmount]);
+  }, [page, pageSize, status, search, startDate, endDate, minAmount, maxAmount, supabase]);
 
   useEffect(() => {
     // Initial fetch
@@ -180,7 +180,7 @@ export default function OrdersPage() {
       clearTimeout(refreshTimeout);
       supabase.removeChannel(channel);
     };
-  }, [page, status, search, startDate, endDate, minAmount, maxAmount, fetchOrders]);
+  }, [page, status, search, startDate, endDate, minAmount, maxAmount, fetchOrders, supabase]);
 
   async function handleShiprocketSync() {
     const isDemo = document.cookie.includes("crm-demo-mode=true");

@@ -38,11 +38,11 @@ export const ORDERS: Order[] = [
 ];
 
 export const TASKS: Task[] = [
-  { id: "t11", order_id: "o6", customer_id: "c11", task_type: "review", due_date: fmt(addDays(today, 1)), status: "pending", created_at: fmt(subDays(today, 6)), call_attempt_count: 0 },
-  { id: "t12", order_id: "o4", customer_id: "c1", task_type: "reorder", due_date: fmt(addDays(today, 15)), status: "pending", created_at: fmt(subDays(today, 5)), call_attempt_count: 0 },
-  { id: "t13", order_id: "o6", customer_id: "c11", task_type: "reorder", due_date: fmt(addDays(today, 2)), status: "pending", created_at: fmt(subDays(today, 6)), call_attempt_count: 0 },
-  { id: "t14", order_id: "o10", customer_id: "c1", task_type: "review", due_date: fmt(subDays(today, 17)), status: "done", completed_at: fmt(subDays(today, 17)), created_at: fmt(subDays(today, 22)), call_attempt_count: 1 },
-  { id: "t15", order_id: "o7", customer_id: "c7", task_type: "review", due_date: fmt(subDays(today, 14)), status: "done", completed_at: fmt(subDays(today, 14)), created_at: fmt(subDays(today, 19)), call_attempt_count: 1 },
+  { id: "t11", order_id: "o6", customer_id: "c11", assigned_to: "a1", task_type: "review", due_date: fmt(addDays(today, 1)), status: "pending", created_at: fmt(subDays(today, 6)), call_attempt_count: 0 },
+  { id: "t12", order_id: "o4", customer_id: "c1", assigned_to: "a2", task_type: "reorder", due_date: fmt(addDays(today, 15)), status: "pending", created_at: fmt(subDays(today, 5)), call_attempt_count: 0 },
+  { id: "t13", order_id: "o6", customer_id: "c11", assigned_to: "a3", task_type: "reorder", due_date: fmt(addDays(today, 2)), status: "pending", created_at: fmt(subDays(today, 6)), call_attempt_count: 0 },
+  { id: "t14", order_id: "o10", customer_id: "c1", assigned_to: "a1", task_type: "review", due_date: fmt(subDays(today, 17)), status: "done", completed_at: fmt(subDays(today, 17)), created_at: fmt(subDays(today, 22)), call_attempt_count: 1 },
+  { id: "t15", order_id: "o7", customer_id: "c7", assigned_to: "a1", task_type: "review", due_date: fmt(subDays(today, 14)), status: "done", completed_at: fmt(subDays(today, 14)), created_at: fmt(subDays(today, 19)), call_attempt_count: 1 },
 ];
 
 export const CALL_LOGS: CallLog[] = [
@@ -66,32 +66,79 @@ export const PRODUCT_OVERRIDES: ProductOverride[] = [
   { id: "po2", shopify_product_id: "p1", product_name: "Ashwagandha 500mg", reorder_offset_days: 18, created_at: fmt(subDays(today, 20)) },
 ];
 
+export const MOCK_RAW_CALLS = [
+  {
+    id: "rc1",
+    agent_id: "a1",
+    customer_phone: "9876543210",
+    status: "in_progress",
+    start_time: new Date(Date.now() - 120000).toISOString(),
+    agent: { name: "Agent Rahul", avatar_url: null },
+    task: { task_type: "cod_verify" }
+  },
+  {
+    id: "rc2",
+    agent_id: "a2",
+    customer_phone: "8765432109",
+    status: "completed",
+    start_time: new Date(Date.now() - 600000).toISOString(),
+    end_time: new Date(Date.now() - 300000).toISOString(),
+    duration_seconds: 300,
+    recording_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    agent: { name: "Agent Priya", avatar_url: null },
+    task: { task_type: "recovery" }
+  },
+  {
+    id: "rc3",
+    agent_id: "a3",
+    customer_phone: "7654321098",
+    status: "completed",
+    start_time: new Date(Date.now() - 1200000).toISOString(),
+    end_time: new Date(Date.now() - 1000000).toISOString(),
+    duration_seconds: 200,
+    recording_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+    agent: { name: "Agent Amit", avatar_url: null },
+    task: { task_type: "review" }
+  }
+];
+
 // Enrich tasks with customer+order
 export function getEnrichedTasks(tasks: Task[]) {
-  return tasks.map(t => ({
-    ...t,
-    customer: CUSTOMERS.find(c => c.id === t.customer_id)!,
-    order: ORDERS.find(o => o.id === t.order_id)!,
-  }));
+  return tasks.map(t => {
+    const cust = CUSTOMERS.find(c => c.id === t.customer_id);
+    const ord = ORDERS.find(o => o.id === t.order_id);
+    
+    // Add fake live state for Demo presentation
+    const assigned_profile = t.assigned_to === 'a1' ? {
+      name: "Agent Rahul",
+      live_state: { action: 'on_call', entityId: t.id, timestamp: new Date().toISOString() }
+    } : null;
+
+    return {
+      ...t,
+      customer: cust!,
+      order: ord!,
+      assigned_profile
+    };
+  });
 }
 
 export function getDashboardData(): DashboardData {
   const enriched = getEnrichedTasks(TASKS);
-  const todayStr = fmt(today);
-
+  
   return {
-    todayTasks: enriched.filter(t => t.status === "due") as any,
+    todayTasks: enriched.filter(t => t.status === "due" || t.id === 't11') as any, // Force t11 for demo visibility
     overdueTasks: enriched.filter(t => t.status === "overdue") as any,
-    upcomingTasks: enriched.filter(t => t.status === "pending") as any,
+    upcomingTasks: enriched.filter(t => t.status === "pending" && t.id !== 't11') as any,
     recentActivity: CALL_LOGS.map(cl => ({
       ...cl,
       customer: CUSTOMERS.find(c => c.id === cl.customer_id)!,
     })),
     counts: {
-      today: TASKS.filter(t => t.status === "due").length,
-      overdue: TASKS.filter(t => t.status === "overdue").length,
-      upcoming: TASKS.filter(t => t.status === "pending").length,
-      doneThisWeek: TASKS.filter(t => t.status === "done").length,
+      today: 12,
+      overdue: 4,
+      upcoming: 45,
+      doneThisWeek: 156,
     },
   };
 }

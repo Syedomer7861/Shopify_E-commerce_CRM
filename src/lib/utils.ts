@@ -66,6 +66,10 @@ export const TASK_TYPE_CONFIG: Record<TaskType, { label: string; color: string; 
   ndr:            { label: "NDR Resolution", color: "text-amber-700", bg: "bg-amber-50",     accent: "border-l-amber-500" },
   cod_verify:     { label: "COD Verify",     color: "text-[#1c1c1c]",    bg: "bg-[#1c1c1c]/5",   accent: "border-l-[#1c1c1c]" },
   manager_audit:  { label: "Manager Audit",  color: "text-indigo-700", bg: "bg-indigo-50",     accent: "border-l-indigo-500" },
+  welcome_call:   { label: "Welcome Call",   color: "text-blue-700",   bg: "bg-blue-50",       accent: "border-l-blue-500" },
+  win_back:       { label: "Win-Back Call",  color: "text-orange-700", bg: "bg-orange-50",     accent: "border-l-orange-500" },
+  vip_followup:   { label: "VIP Follow-up",  color: "text-amber-700",  bg: "bg-amber-50",      accent: "border-l-amber-500" },
+  flagged:        { label: "Flagged Task",   color: "text-red-700",    bg: "bg-red-50",        accent: "border-l-red-500" },
 };
 
 export const TASK_STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; bg: string }> = {

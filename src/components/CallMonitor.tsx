@@ -14,6 +14,16 @@ export function CallMonitor() {
   const supabase = useMemo(() => createClient(), []);
 
   const fetchCalls = useCallback(async () => {
+    const isDemo = typeof document !== 'undefined' && document.cookie.includes("crm-demo-mode=true");
+    
+    if (isDemo) {
+      const { MOCK_RAW_CALLS } = require('@/lib/mock-data');
+      setActiveCalls(MOCK_RAW_CALLS.filter((c: any) => c.status === 'in_progress'));
+      setRecentCalls(MOCK_RAW_CALLS.filter((c: any) => c.status === 'completed'));
+      setLoading(false);
+      return;
+    }
+
     try {
       // 1. Fetch In-Progress Calls
       const { data: active } = await supabase

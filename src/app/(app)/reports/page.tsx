@@ -593,7 +593,7 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [dateRange, filters]);
+  }, [dateRange, filters, supabase]);
 
   useEffect(() => {
     fetchAnalytics();

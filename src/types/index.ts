@@ -4,7 +4,7 @@ export type DeliveryStatus = "pending" | "in_transit" | "out_for_delivery" | "de
 
 export type FulfillmentStatus = "unfulfilled" | "partial" | "fulfilled";
 
-export type TaskType = "review" | "reorder" | "final_followup" | "recovery" | "issue_resolution" | "transit_update" | "cod_verify" | "ndr" | "manager_audit" | "welcome_call" | "win_back" | "vip_followup";
+export type TaskType = "review" | "reorder" | "final_followup" | "recovery" | "issue_resolution" | "transit_update" | "cod_verify" | "ndr" | "manager_audit" | "welcome_call" | "win_back" | "vip_followup" | "flagged";
 
 export type TaskStatus = "pending" | "due" | "done" | "rescheduled" | "skipped" | "cancelled" | "overdue";
 
