@@ -2,7 +2,23 @@ const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 
 export { SETTINGS_ID };
 
+/**
+ * Reads system settings from the DB.
+ * Tries the provided client first (supports RLS-aware authenticated routes).
+ * If no settings row is found (e.g. RLS blocks anon access), automatically retries
+ * with the service-role admin client so webhooks, crons, and public routes always work.
+ */
 export async function getSystemSettings(supabase: any) {
+  // Helper to get admin client lazily (avoid importing at top-level to prevent circular deps)
+  const getAdminClient = () => {
+    const { createClient } = require("@supabase/supabase-js");
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!serviceKey || !url) return null;
+    return createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  };
+
+  // Attempt 1: Use the provided client (session/anon with RLS)
   const { data: fixed } = await supabase
     .from("settings")
     .select("*")
@@ -11,6 +27,7 @@ export async function getSystemSettings(supabase: any) {
 
   if (fixed) return fixed;
 
+  // Attempt 2: Try latest row via provided client
   const { data: latest } = await supabase
     .from("settings")
     .select("*")
@@ -20,13 +37,37 @@ export async function getSystemSettings(supabase: any) {
 
   if (latest) return latest;
 
-  const { data: created } = await supabase
-    .from("settings")
-    .insert({ id: SETTINGS_ID })
-    .select("*")
-    .single();
+  // Attempt 3: RLS may be blocking — retry with admin client (service role bypasses RLS)
+  const adminClient = getAdminClient();
+  if (adminClient) {
+    const { data: adminFixed } = await adminClient
+      .from("settings")
+      .select("*")
+      .eq("id", SETTINGS_ID)
+      .maybeSingle();
 
-  return created ?? null;
+    if (adminFixed) return adminFixed;
+
+    const { data: adminLatest } = await adminClient
+      .from("settings")
+      .select("*")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (adminLatest) return adminLatest;
+
+    // Create the canonical settings row if it doesn't exist at all
+    const { data: created } = await adminClient
+      .from("settings")
+      .insert({ id: SETTINGS_ID })
+      .select("*")
+      .single();
+
+    return created ?? null;
+  }
+
+  return null;
 }
 
 export async function getShiprocketToken(supabase: any) {

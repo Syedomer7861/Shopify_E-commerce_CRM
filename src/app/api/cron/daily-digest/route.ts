@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
   const reorderTasksCount = (todayTasks || []).filter(t => t.task_type === 'reorder').length;
 
   // 🏥 SYSTEM CHECK
-  const bridgeUrl = settings.whatsapp_bridge_url || "http://localhost:3001";
+  // Priority: env var (most reliable locally) → settings DB → localhost default
+  const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings.whatsapp_bridge_url || "http://localhost:3001";
   let bridgeStatus = "OFFLINE ❌";
   try {
     const bRes = await fetch(`${bridgeUrl}/status`);
@@ -103,16 +104,32 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone: settings.whatsapp_admin_phone, message }),
+      signal: AbortSignal.timeout(10000),
     });
 
-    const result = await res.json();
-    if (!res.ok || !result.ok) throw new Error(result.error);
+    const result = await res.json().catch(() => ({ ok: false, error: `HTTP ${res.status}` }));
+
+    if (!res.ok || !result.ok) {
+      // WA bridge is running but WA session is not ready — not a server error
+      const reason = result.error || `Bridge responded with ${res.status}`;
+      console.warn(`[DailyDigest] WA send skipped: ${reason}`);
+      return NextResponse.json({ 
+        sent: false,
+        skipped: true,
+        reason,
+        totalRevenue,
+        waRevenue
+      });
+    }
 
     return NextResponse.json({ sent: true, totalRevenue, waRevenue });
   } catch (err: any) {
-    return NextResponse.json({ 
-      sent: false, 
-      error: err.message 
-    }, { status: 500 });
+    // Network error (bridge unreachable) — log but return 200
+    const isNetworkError = err.name === "AbortError" || err.message?.includes("fetch failed") || err.message?.includes("ECONNREFUSED");
+    if (isNetworkError) {
+      console.warn(`[DailyDigest] WA bridge unreachable: ${err.message}`);
+      return NextResponse.json({ sent: false, skipped: true, reason: "WA bridge unreachable", totalRevenue, waRevenue });
+    }
+    return NextResponse.json({ sent: false, error: err.message }, { status: 500 });
   }
 }

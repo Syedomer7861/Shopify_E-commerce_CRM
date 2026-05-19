@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 import { getTaskProductName } from "@/lib/utils";
 import { getSystemSettings } from "@/lib/server-settings";
 
 function getSupabase() {
-  return createServerClient();
+  return createAdminClient();
 }
 
 export async function GET(req: NextRequest) {
@@ -23,7 +23,8 @@ async function processRequest(req: NextRequest) {
     // 1. Get Settings
     const settings = await getSystemSettings(supabase);
     
-    if (!settings?.whatsapp_enabled || !settings?.whatsapp_bridge_url || !settings?.wa_auto_order_delivered) {
+    const effectiveBridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings?.whatsapp_bridge_url;
+    if (!settings?.whatsapp_enabled || !effectiveBridgeUrl || !settings?.wa_auto_order_delivered) {
       console.log("⏭️ Review Cron Skipped: WhatsApp or Auto-Review disabled in Settings.");
       return NextResponse.json({ skipped: true, reason: "WhatsApp or Auto-Review disabled in settings" });
     }
@@ -55,7 +56,7 @@ async function processRequest(req: NextRequest) {
     if (!tasks?.length) return NextResponse.json({ sent: 0, reason: "No review tasks due today" });
 
     let sentCount = 0;
-    const bridgeUrl = settings.whatsapp_bridge_url;
+    const bridgeUrl = effectiveBridgeUrl;
 
     for (const task of tasks) {
       const customer = task.customer as any;

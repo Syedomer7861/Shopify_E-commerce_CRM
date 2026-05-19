@@ -21,8 +21,8 @@ export async function GET(req: NextRequest) {
     .select(`
       id, status, due_date, task_type, customer_id, order_id, assigned_to, priority_score, created_at,
       customer:customers(id, name, phone, email, segment, rto_flag, address, city, state, zip),
-      order:orders(id, order_number, shopify_order_id, total_price, line_items, delivered_at, payment_status, delivery_status),
-      abandoned_cart:abandoned_carts(id, cart_token, total_price, line_items, abandoned_at, custom_meta)
+      order:orders(id, order_number, shopify_order_id, total_price, line_items, delivered_at, fulfillment_status, delivery_status),
+      abandoned_cart:abandoned_carts(id, cart_token, total_price, line_items, abandoned_at)
     `)
     .order("due_date", { ascending: true });
 

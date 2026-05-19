@@ -5,6 +5,8 @@
 [![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind%20CSS-blue?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/Status-Production%20Hardened-rose?style=flat-square)](https://github.com/)
 
+**🟢 Live Production:** [https://cureforever-crm.vercel.app/](https://cureforever-crm.vercel.app/)
+
 > **The Ultimate Operations Engine** for CureForever. High-fidelity task automation, "Poor Man's" cloud telephony, and real-time customer engagement.
 
 ---

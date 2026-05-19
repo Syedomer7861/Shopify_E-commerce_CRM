@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
-  const supabase = createServerClient();
+  const supabase = createAdminClient();
   
-  // Get Bridge URL from settings
-  const { data: settings } = await supabase.from("settings").select("whatsapp_bridge_url").single();
-  const bridgeUrl = settings?.whatsapp_bridge_url || "http://127.0.0.1:3001";
+  // Get Bridge URL: env var takes priority (always correct for local dev),
+  // then settings DB (for production where Tailscale URL may be set)
+  const { data: settings } = await supabase.from("settings").select("whatsapp_bridge_url").maybeSingle();
+  const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings?.whatsapp_bridge_url || "http://127.0.0.1:3001";
 
   try {
     const res = await fetch(`${bridgeUrl}/status`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       // Set a short timeout
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(3000),
     });
 
     if (!res.ok) throw new Error("Bridge responded with error");

@@ -56,7 +56,8 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
      .single();
      
   // 1. Legacy wa_server.js Local Bridge (Primary Route if configured)
-  const bridgeUrl = settings?.whatsapp_bridge_url;
+  // Prefer env var (local dev uses localhost) over settings DB (may be Tailscale/remote URL)
+  const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings?.whatsapp_bridge_url;
   if (bridgeUrl) {
     try {
       const res = await fetch(`${bridgeUrl}/send`, {

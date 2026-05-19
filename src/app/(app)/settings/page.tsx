@@ -33,7 +33,7 @@ interface PipelineState {
   waiting: PipelineItem[];
 }
 
-type Tab = "general" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database";
+type Tab = "general" | "telephony" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -992,6 +992,7 @@ export default function SettingsPage() {
       <div className="flex border-b border-[#eceae4] mb-8 gap-0 overflow-x-auto scroller-hide">
         {[
           { key: "general", label: "Preferences", icon: Sliders },
+          { key: "telephony", label: "Telephony", icon: Smartphone },
           { key: "notifications", label: "WhatsApp Hub", icon: Bell },
           { key: "email", label: "Email API", icon: Mail },
           { key: "overrides", label: "Product Rules", icon: Package },
@@ -1046,6 +1047,81 @@ export default function SettingsPage() {
              <button onClick={handleSave} disabled={saving} className="btn-primary py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest min-w-[140px]">
                 {saving ? "Processing..." : "Commit Changes"}
              </button>
+          </div>
+        </div>
+      )}
+
+      {/* TELEPHONY */}
+      {tab === "telephony" && (
+        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+          <div className="card p-6">
+            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 opacity-60">"Poor Man's" Cloud Telephony</h3>
+            <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Establish a cost-free cloud telephony alternative by turning an agent's Android handset into a webhook bridge via MacroDroid.</p>
+            
+            <div className="space-y-8">
+              <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-6 space-y-6">
+                  <div className="flex items-start gap-4">
+                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">1</div>
+                     <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
+                       Install <strong>MacroDroid</strong> from the Play Store on your agent's Android handset.
+                     </p>
+                  </div>
+                  <div className="flex items-start gap-4">
+                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">2</div>
+                     <div className="flex-1">
+                        <p className="text-[11px] text-[#1c1c1c] font-medium">Create a Macro that triggers on "Outgoing Call Started" or "Ended", and set the Action to an HTTP POST request to this endpoint:</p>
+                        <div className="mt-3 flex items-center gap-3 bg-[#f7f4ed] border border-[#eceae4] rounded-xl p-3">
+                           <code className="text-[10px] text-[#1c1c1c] font-mono flex-1 break-all opacity-70">
+                             {typeof window !== 'undefined' ? window.location.origin : ''}/api/calls/webhook
+                           </code>
+                           <button 
+                             onClick={() => {
+                               const url = `${window.location.origin}/api/calls/webhook`;
+                               navigator.clipboard.writeText(url);
+                               toast.success("Webhook URL Copied");
+                             }}
+                             className="w-8 h-8 flex items-center justify-center border border-[#eceae4] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] rounded-lg text-[#5f5f5d] transition-all"
+                           >
+                              <Paperclip className="w-3.5 h-3.5" />
+                           </button>
+                        </div>
+                     </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">3</div>
+                     <div className="flex-1">
+                       <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium mb-2">
+                         Set the JSON Payload to include your agent's email and the customer's phone number. Example:
+                       </p>
+                       <pre className="text-[9px] font-mono bg-[#1c1c1c] text-[#f7f4ed] p-4 rounded-xl overflow-x-auto shadow-inner">
+{`{
+  "event": "started",
+  "agent_email": "{agent_email_from_macrodroid}",
+  "customer_phone": "{call_number}"
+}`}
+                       </pre>
+                     </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">4</div>
+                     <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
+                       <strong>Auto-Recording (Optional):</strong> Enable "Auto-record calls" in the phone's native settings. Set MacroDroid to upload the recording file to the CRM upon call completion.
+                     </p>
+                  </div>
+              </div>
+
+              <div className="bg-[#1c1c1c] border border-white/10 rounded-2xl p-6 shadow-2xl">
+                <div className="flex gap-4">
+                  <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-2">Manager Live Monitor</h4>
+                    <p className="text-[11px] text-[#f7f4ed] leading-relaxed font-medium opacity-90">
+                      Once configured, whenever an agent initiates a call, their status will instantly update to <span className="bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">ON CALL</span> across the CRM. Managers can listen to recorded calls directly from the Audit Queue.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

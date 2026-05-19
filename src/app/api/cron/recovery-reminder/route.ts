@@ -29,7 +29,8 @@ async function processRequest() {
       return NextResponse.json({ skipped: true, reason: "Settings not found" });
     }
 
-    const waEnabled = settings.whatsapp_enabled && settings.whatsapp_bridge_url && settings.wa_auto_cart_abandoned;
+    const effectiveBridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings.whatsapp_bridge_url;
+    const waEnabled = settings.whatsapp_enabled && effectiveBridgeUrl && settings.wa_auto_cart_abandoned;
     const emailEnabled = settings.gmail_refresh_token && settings.email_auto_cart_abandoned;
 
     if (!waEnabled && !emailEnabled) {
@@ -88,7 +89,7 @@ async function processRequest() {
         const message = personaliseTemplate(template, variables);
 
         try {
-          const res = await fetch(`${settings.whatsapp_bridge_url}/send`, {
+          const res = await fetch(`${effectiveBridgeUrl}/send`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ phone: customer.phone, message }),

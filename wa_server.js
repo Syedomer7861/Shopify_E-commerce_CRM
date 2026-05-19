@@ -22,8 +22,11 @@ require("dotenv").config({ path: ".env.local" });
 const app  = express();
 const PORT = 3001;
 
-// 1. Security Headers
-app.use(helmet());
+// 1. Security Headers (configured for local HTTP service — no HTTPS enforcement)
+app.use(helmet({
+  hsts: false,                     // No Strict-Transport-Security (local HTTP)
+  contentSecurityPolicy: false,    // No CSP for API server
+}));
 
 // 2. Rate Limiting (Prevent API abuse)
 const limiter = rateLimit({
