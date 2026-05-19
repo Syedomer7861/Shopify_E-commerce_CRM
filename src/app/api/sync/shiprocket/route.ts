@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
       const full = req.nextUrl.searchParams.get("full") === "true";
       let currentPage = 1;
       let hasMore = true;
-      const MAX_SHALLOW_PAGES = 40;
+      const MAX_SHALLOW_PAGES = 5;
 
       while (hasMore) {
         if (!full && currentPage > MAX_SHALLOW_PAGES) break;

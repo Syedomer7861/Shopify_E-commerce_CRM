@@ -16,6 +16,15 @@ const VARIABLES = [
   { key: "{{order_no}}", label: "Order Number" },
 ];
 
+const PRESET_TEMPLATES = [
+  { name: "Abandoned Cart Recovery", category: "recovery", body: "Hi {{name}} 👋, we noticed you left some amazing wellness products in your cart! 🛒 Click here to complete your purchase: {{abandon_link}}" },
+  { name: "30-Day Refill Reminder", category: "reorder", body: "Hi {{name}}! It's been about a month since your last CureForever order. Is it time for a refill to keep your wellness routine going? 💊" },
+  { name: "COD Order Verification", category: "marketing", body: "Hi {{name}} 👋, thanks for ordering {{product}} from CureForever! Just a quick check to confirm your COD order before we ship it out. Should we go ahead? ✅" },
+  { name: "VIP Exclusive Offer", category: "marketing", body: "Hi {{name}}! 🎉 As one of our most valued customers, we're giving you early access to our massive Festive Sale! Get 20% off all supplements this week using code FESTIVE20. Stay healthy! 🌿" },
+  { name: "Post-Purchase Feedback", category: "feedback", body: "Hi {{name}} 👋, thank you for your recent order! How was your experience with CureForever? We'd love to hear your honest feedback so we can continue improving. 🌿" },
+  { name: "Delivery Exception (NDR)", category: "custom", body: "Hi {{name}}, our delivery partner tried to deliver your package (Order {{order_no}}) but couldn't reach you. Please let us know when we can re-attempt! 📦" }
+];
+
 export default function TemplateManager() {
   const { profile, loading: profileLoading } = useCurrentProfile();
   const [templates, setTemplates] = useState<any[]>([]);
@@ -77,6 +86,10 @@ export default function TemplateManager() {
   const handleSave = async () => {
     if (!formData.name || !formData.body) return toast.error("Please fill in name and body");
     
+    // Auto-extract variables before saving
+    const extractedVars = formData.body.match(/\{\{([^}]+)\}\}/g)?.map(v => v.replace(/[{}]/g, '')) || [];
+    const finalData = { ...formData, variables: Array.from(new Set(extractedVars)) };
+    
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       toast.success(editingTemplate ? "Demo: Template Updated" : "Demo: Template Created");
@@ -85,14 +98,19 @@ export default function TemplateManager() {
     }
 
     try {
+      const payload = editingTemplate ? { ...finalData, id: editingTemplate.id } : finalData;
       const res = await fetch("/api/templates", {
         method: "POST",
-        body: JSON.stringify(editingTemplate ? { ...formData, id: editingTemplate.id } : formData)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
         toast.success(editingTemplate ? "Template Updated" : "Template Created");
         setShowModal(false);
         fetchTemplates();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to save template");
       }
     } catch (e) {
       toast.error("Save failed");
@@ -194,6 +212,22 @@ export default function TemplateManager() {
         </>}
       >
         <div className="space-y-4">
+          {!editingTemplate && (
+            <div className="mb-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Load Quick Preset</label>
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                {PRESET_TEMPLATES.map((p, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setFormData({ ...formData, name: p.name, category: p.category, body: p.body })}
+                    className="shrink-0 px-3 py-1.5 bg-[#f7f4ed] border border-[#eceae4] rounded-lg text-[10px] font-bold text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] transition-colors"
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
             <label className="text-xs font-bold text-gray-700 block mb-1">Template Name</label>
             <input 

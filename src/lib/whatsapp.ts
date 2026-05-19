@@ -48,88 +48,157 @@ async function saveMessageToHistory({
   });
 }
 
+class MessageQueue {
+  private queue: (() => Promise<any>)[] = [];
+  private processing = false;
+
+  async enqueue<T>(task: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      this.queue.push(async () => {
+        try {
+          const result = await task();
+          resolve(result);
+        } catch (err) {
+          reject(err);
+        }
+      });
+      this.processNext();
+    });
+  }
+
+  private async processNext() {
+    if (this.processing || this.queue.length === 0) return;
+    this.processing = true;
+
+    const nextTask = this.queue.shift();
+    if (nextTask) {
+      try {
+        await nextTask();
+      } catch (err) {
+        console.error("Queue execution error:", err);
+      }
+    }
+
+    this.processing = false;
+    this.processNext();
+  }
+}
+
+const sendQueue = new MessageQueue();
+let lastSentTime = 0;
+
+async function enforceSafeguardDelay(supabase: any) {
+  try {
+    const { data: settings } = await supabase.from("settings")
+       .select("wa_min_delay, wa_max_delay")
+       .single();
+       
+    const minDelay = settings?.wa_min_delay ?? 30;
+    const maxDelay = settings?.wa_max_delay ?? 90;
+    
+    const now = Date.now();
+    const elapsedSeconds = (now - lastSentTime) / 1000;
+    
+    // Choose a random safe delay in seconds
+    const targetDelaySeconds = Math.floor(Math.random() * (maxDelay - minDelay + 1) + minDelay);
+    
+    if (lastSentTime > 0 && elapsedSeconds < targetDelaySeconds) {
+      const waitMs = Math.floor((targetDelaySeconds - elapsedSeconds) * 1000);
+      console.log(`[Anti-Ban Safeguard] Spacing active. Waiting ${waitMs / 1000}s before next send...`);
+      await new Promise(resolve => setTimeout(resolve, waitMs));
+    }
+  } catch (err) {
+    console.error("[Anti-Ban Safeguard] Failed to fetch settings delay, skipping sleep:", err);
+  } finally {
+    lastSentTime = Date.now();
+  }
+}
+
 export async function sendWhatsApp(phone: string, message: string, imagePath?: string): Promise<WhatsAppResponse> {
-  const supabase = createServerClient();
-  
-  const { data: settings } = await supabase.from("settings")
-     .select("whatsapp_bridge_url, whatsapp_token, whatsapp_phone_id")
-     .single();
-     
-  // 1. Legacy wa_server.js Local Bridge (Primary Route if configured)
-  // Prefer env var (local dev uses localhost) over settings DB (may be Tailscale/remote URL)
-  const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings?.whatsapp_bridge_url;
-  if (bridgeUrl) {
-    try {
-      const res = await fetch(`${bridgeUrl}/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, message, imagePath }),
-      });
+  return sendQueue.enqueue(async () => {
+    const supabase = createServerClient();
+    await enforceSafeguardDelay(supabase);
+    
+    const { data: settings } = await supabase.from("settings")
+       .select("whatsapp_bridge_url, whatsapp_token, whatsapp_phone_id")
+       .single();
+       
+    // 1. Legacy wa_server.js Local Bridge (Primary Route if configured)
+    // Prefer env var (local dev uses localhost) over settings DB (may be Tailscale/remote URL)
+    const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings?.whatsapp_bridge_url;
+    if (bridgeUrl) {
+      try {
+        const res = await fetch(`${bridgeUrl}/send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, message, imagePath }),
+        });
 
-      const data = await res.json();
-      if (data.ok) {
-         await saveMessageToHistory({
-           phone,
-           body: message,
-           type: "text",
-           direction: "outbound",
-           metadata: { gateway: "local_bridge" }
-         });
-         return { ok: true };
-      }
-      // If bridge failed but Meta credentials exist, we can fall through to Meta
-      if (!settings?.whatsapp_token || !settings?.whatsapp_phone_id) {
-        return { ok: false, error: data.error || "Bridge failed and no Meta fallback" };
-      }
-    } catch (err: any) {
-      console.error("Bridge failed, checking for Meta fallback:", err.message);
-      if (!settings?.whatsapp_token || !settings?.whatsapp_phone_id) {
-        return { ok: false, error: err.message || "Failed to reach WhatsApp bridge" };
+        const data = await res.json();
+        if (data.ok) {
+           await saveMessageToHistory({
+             phone,
+             body: message,
+             type: "text",
+             direction: "outbound",
+             metadata: { gateway: "local_bridge" }
+           });
+           return { ok: true };
+        }
+        // If bridge failed but Meta credentials exist, we can fall through to Meta
+        if (!settings?.whatsapp_token || !settings?.whatsapp_phone_id) {
+          return { ok: false, error: data.error || "Bridge failed and no Meta fallback" };
+        }
+      } catch (err: any) {
+        console.error("Bridge failed, checking for Meta fallback:", err.message);
+        if (!settings?.whatsapp_token || !settings?.whatsapp_phone_id) {
+          return { ok: false, error: err.message || "Failed to reach WhatsApp bridge" };
+        }
       }
     }
-  }
 
-  // 2. Official Meta Cloud API (Secondary Route)
-  if (settings?.whatsapp_token && settings?.whatsapp_phone_id) {
-    try {
-      const payload = {
-        messaging_product: "whatsapp",
-        recipient_type: "individual",
-        to: phone.replace(/[^0-9]/g, ""),
-        type: "text",
-        text: { preview_url: true, body: message }
-      };
+    // 2. Official Meta Cloud API (Secondary Route)
+    if (settings?.whatsapp_token && settings?.whatsapp_phone_id) {
+      try {
+        const payload = {
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: phone.replace(/[^0-9]/g, ""),
+          type: "text",
+          text: { preview_url: true, body: message }
+        };
 
-      const res = await fetch(`https://graph.facebook.com/v20.0/${settings.whatsapp_phone_id}/messages`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${settings.whatsapp_token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      const data = await res.json();
-      if (!res.ok || data.error) {
-         return { ok: false, error: data.error?.message || "Meta API Rejected Message" };
+        const res = await fetch(`https://graph.facebook.com/v20.0/${settings.whatsapp_phone_id}/messages`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${settings.whatsapp_token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        if (!res.ok || data.error) {
+           return { ok: false, error: data.error?.message || "Meta API Rejected Message" };
+        }
+
+        await saveMessageToHistory({
+          phone,
+          body: message,
+          type: "text",
+          direction: "outbound",
+          metaId: data.messages?.[0]?.id,
+          metadata: { gateway: "meta" }
+        });
+
+        return { ok: true, messageId: data.messages?.[0]?.id };
+      } catch (err: any) {
+        return { ok: false, error: err.message || "Failed to reach Meta API" };
       }
-
-      await saveMessageToHistory({
-        phone,
-        body: message,
-        type: "text",
-        direction: "outbound",
-        metaId: data.messages?.[0]?.id,
-        metadata: { gateway: "meta" }
-      });
-
-      return { ok: true, messageId: data.messages?.[0]?.id };
-    } catch (err: any) {
-      return { ok: false, error: err.message || "Failed to reach Meta API" };
     }
-  }
 
-  return { ok: false, error: "No WhatsApp messaging gateway configured (Bridge or Meta)" };
+    return { ok: false, error: "No WhatsApp messaging gateway configured (Bridge or Meta)" };
+  });
 }
 
 export async function sendMetaTemplate(
@@ -137,86 +206,89 @@ export async function sendMetaTemplate(
   templateName: string, 
   data: Record<string, any>
 ): Promise<WhatsAppResponse> {
-  const supabase = createServerClient();
-  
-  // 1. Resolve Template Mapping from DB
-  const { data: template } = await supabase
-    .from("campaign_templates")
-    .select("meta_template_name, meta_variable_mapping, body")
-    .eq("name", templateName)
-    .single();
-
-  const { data: settings } = await supabase.from("settings")
-     .select("whatsapp_token, whatsapp_phone_id, meta_review_name, meta_reorder_name, meta_recovery_name, meta_final_name")
-     .single();
-
-  let metaName = template?.meta_template_name;
-
-  // Fallback to global settings if not explicitly mapped in the template record
-  if (!metaName) {
-    if (templateName === "Review Reminder") metaName = settings?.meta_review_name;
-    else if (templateName === "Reorder Reminder") metaName = settings?.meta_reorder_name;
-    else if (templateName === "Abandoned Checkout Strategy" || templateName === "Abandoned Cart") metaName = settings?.meta_recovery_name;
-    else if (templateName === "Final Follow-up") metaName = settings?.meta_final_name;
+  return sendQueue.enqueue(async () => {
+    const supabase = createServerClient();
+    await enforceSafeguardDelay(supabase);
     
-    // Default to a slugified version if still nothing
-    if (!metaName) metaName = templateName.toLowerCase().replace(/\s+/g, "_");
-  }
+    // 1. Resolve Template Mapping from DB
+    const { data: template } = await supabase
+      .from("campaign_templates")
+      .select("meta_template_name, meta_variable_mapping, body")
+      .eq("name", templateName)
+      .single();
 
-  const mapping = (template?.meta_variable_mapping as string[]) || [];
+    const { data: settings } = await supabase.from("settings")
+       .select("whatsapp_token, whatsapp_phone_id, meta_review_name, meta_reorder_name, meta_recovery_name, meta_final_name")
+       .single();
 
-  // 2. Build Parameters List Based on Mapping
-  // If mapping exists, we use it to cherry-pick values from 'data' in order
-  const parameters = mapping.length > 0 
-    ? mapping.map(key => ({ type: "text", text: data[key]?.toString() || "" }))
-    : Object.values(data).map(val => ({ type: "text", text: val?.toString() || "" }));
-     
-  if (!settings?.whatsapp_token || !settings?.whatsapp_phone_id) {
-     return { ok: false, error: "Meta API credentials missing" };
-  }
-  
-  const payload = {
-    messaging_product: "whatsapp",
-    recipient_type: "individual",
-    to: phone.replace(/[^0-9]/g, ""),
-    type: "template",
-    template: {
-      name: metaName,
-      language: { code: "en" },
-      components: parameters.length > 0 ? [{
-        type: "body",
-        parameters: parameters
-      }] : []
+    let metaName = template?.meta_template_name;
+
+    // Fallback to global settings if not explicitly mapped in the template record
+    if (!metaName) {
+      if (templateName === "Review Reminder") metaName = settings?.meta_review_name;
+      else if (templateName === "Reorder Reminder") metaName = settings?.meta_reorder_name;
+      else if (templateName === "Abandoned Checkout Strategy" || templateName === "Abandoned Cart") metaName = settings?.meta_recovery_name;
+      else if (templateName === "Final Follow-up") metaName = settings?.meta_final_name;
+      
+      // Default to a slugified version if still nothing
+      if (!metaName) metaName = templateName.toLowerCase().replace(/\s+/g, "_");
     }
-  };
 
-  try {
-     const res = await fetch(`https://graph.facebook.com/v20.0/${settings.whatsapp_phone_id}/messages`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${settings.whatsapp_token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-     });
-     
-     const resData = await res.json();
-     if (!res.ok || resData.error) return { ok: false, error: resData.error?.message || "Template execution failed" };
+    const mapping = (template?.meta_variable_mapping as string[]) || [];
 
-     // Log to history
-     await saveMessageToHistory({
-        phone,
-        body: `[Template] ${metaName}`,
-        type: "template",
-        direction: "outbound",
-        metaId: resData.messages?.[0]?.id,
-        metadata: { template_name: metaName, params: parameters }
-     });
+    // 2. Build Parameters List Based on Mapping
+    // If mapping exists, we use it to cherry-pick values from 'data' in order
+    const parameters = mapping.length > 0 
+      ? mapping.map(key => ({ type: "text", text: data[key]?.toString() || "" }))
+      : Object.values(data).map(val => ({ type: "text", text: val?.toString() || "" }));
+       
+    if (!settings?.whatsapp_token || !settings?.whatsapp_phone_id) {
+       return { ok: false, error: "Meta API credentials missing" };
+    }
+    
+    const payload = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: phone.replace(/[^0-9]/g, ""),
+      type: "template",
+      template: {
+        name: metaName,
+        language: { code: "en" },
+        components: parameters.length > 0 ? [{
+          type: "body",
+          parameters: parameters
+        }] : []
+      }
+    };
 
-     return { ok: true, messageId: resData.messages?.[0]?.id };
-  } catch (err: any) {
-     return { ok: false, error: err.message || "Failed to reach Meta API" };
-  }
+    try {
+       const res = await fetch(`https://graph.facebook.com/v20.0/${settings.whatsapp_phone_id}/messages`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${settings.whatsapp_token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+       });
+       
+       const resData = await res.json();
+       if (!res.ok || resData.error) return { ok: false, error: resData.error?.message || "Template execution failed" };
+
+       // Log to history
+       await saveMessageToHistory({
+          phone,
+          body: `[Template] ${metaName}`,
+          type: "template",
+          direction: "outbound",
+          metaId: resData.messages?.[0]?.id,
+          metadata: { template_name: metaName, params: parameters }
+       });
+
+       return { ok: true, messageId: resData.messages?.[0]?.id };
+    } catch (err: any) {
+       return { ok: false, error: err.message || "Failed to reach Meta API" };
+    }
+  });
 }
 
 export function cleanPhone(phone: string): string {

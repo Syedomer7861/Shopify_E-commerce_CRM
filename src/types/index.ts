@@ -190,6 +190,9 @@ export interface Settings {
   wa_auto_order_delivered?: boolean;
   wa_auto_cart_abandoned?: boolean;
   wa_auto_reorder?: boolean;
+  wa_speed_preset?: string;
+  wa_min_delay?: number;
+  wa_max_delay?: number;
   wa_welcome_template?: string;
   wa_order_placed_template?: string;
   wa_order_transit_template?: string;

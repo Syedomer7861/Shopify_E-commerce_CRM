@@ -25,6 +25,13 @@ import { formatDate, cn } from "@/lib/utils";
 
 import NDRActionModal from "./NDRActionModal";
 
+const ShiprocketIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 32 32" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 8.5C8 6.29086 10.4214 4.94939 12.2323 6.09633L25.482 14.489C27.1422 15.5407 27.1422 17.9593 25.482 19.011L12.2323 27.4037C10.4214 28.5506 8 27.2091 8 25V8.5Z" stroke="#391b70" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M12.5 11.5C12.5 10 14 9 15.5 10L21 13.5C22.5 14.5 22.5 16.5 21 17.5L15.5 21C14 22 12.5 21 12.5 19.5V11.5Z" fill="#03d443"/>
+  </svg>
+);
+
 interface ShiprocketOrderViewProps {
   orderId: string;
 }
@@ -195,10 +202,10 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                   : `https://app.shiprocket.in/seller/orders?search=${order.channel_order_id || order.id}`
                 }
                 target="_blank"
-                className="p-3 bg-[#f7f4ed] border border-[#eceae4] rounded-xl hover:bg-[#eceae4] transition-all active:scale-95 shadow-sm"
+                className="p-2.5 bg-[#f7f4ed] border border-[#eceae4] rounded-xl hover:bg-[#eceae4] transition-all active:scale-95 shadow-sm flex items-center justify-center"
                 title="Open in Shiprocket Seller Panel"
               >
-                <ImageIcon className="w-4 h-4 text-[#5f5f5d]" />
+                <ShiprocketIcon className="w-5 h-5" />
               </a>
             )}
             <button className="flex-1 sm:flex-initial px-4 py-2.5 bg-[#f7f4ed] border border-[#eceae4] text-[#5f5f5d] rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#eceae4] transition-all shadow-sm">
@@ -285,9 +292,9 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
         </div>
       </div>
 
-      <div className="p-8 grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-[1400px] mx-auto">
+      <div className="p-4 lg:p-6 xl:p-8 grid grid-cols-1 lg:grid-cols-3 gap-6 xl:gap-8 max-w-[1400px] mx-auto min-w-0">
         {/* Left Column: Details */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-8 min-w-0">
           
           {/* Order Details Card */}
           <section className="card bg-[#f7f4ed] border-[#eceae4] rounded-2xl overflow-hidden shadow-sm">
@@ -303,7 +310,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                 RTO Risk: {order.risk_factor || "LOW"} <AlertCircle className="w-2.5 h-2.5" />
               </div>
             </div>
-            <div className="p-8 grid grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="p-6 lg:p-8 grid grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-8">
               <div>
                 <label className="text-[9px] text-[#5f5f5d]/40 font-black uppercase tracking-widest block mb-1.5">Booking Date</label>
                 <div className="text-sm font-bold text-[#1c1c1c]">{formatDate(order.created_at)}</div>
@@ -339,7 +346,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
               <Truck className="w-4 h-4 text-[#1c1c1c]/40" />
               <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1c1c1c]/60">Transit Parameters</h2>
             </div>
-            <div className="p-8 grid grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="p-6 lg:p-8 grid grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-8">
               <div>
                 <label className="text-[9px] text-[#5f5f5d]/40 font-black uppercase tracking-widest block mb-1.5">Logistics Partner</label>
                 <div className="text-sm font-bold text-[#1c1c1c]">{shipment.courier || order.courier_name || "Unassigned"}</div>
@@ -368,7 +375,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
               <Box className="w-4 h-4 text-[#1c1c1c]/40" />
               <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1c1c1c]/60">Physical Metrics</h2>
             </div>
-            <div className="p-8 grid grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="p-6 lg:p-8 grid grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-8">
               <div>
                 <label className="text-[9px] text-[#5f5f5d]/40 font-black uppercase tracking-widest block mb-1.5">Dead Weight (Kg)</label>
                 <div className="text-sm font-bold text-[#1c1c1c]">{order.weight || shipment.weight || "0.00"}</div>
@@ -400,8 +407,8 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
               <User className="w-4 h-4 text-[#1c1c1c]/40" />
               <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1c1c1c]/60">Customer Profile</h2>
             </div>
-            <div className="p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-1 space-y-6">
+            <div className="p-6 lg:p-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
+              <div className="md:col-span-1 space-y-6">
                 <div>
                   <label className="text-[9px] text-[#5f5f5d]/40 font-black uppercase tracking-widest block mb-1.5">Recipient Name</label>
                   <div className="text-sm font-bold text-[#1c1c1c]">{order.customer_name || order.billing_customer_name}</div>
@@ -422,7 +429,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                   </div>
                 </div>
               </div>
-              <div className="lg:col-span-2 relative">
+              <div className="md:col-span-1 xl:col-span-2 relative">
                 <label className="text-[9px] text-[#5f5f5d]/40 font-black uppercase tracking-widest block mb-1.5">Destination Address</label>
                 <div className="text-sm font-bold text-[#1c1c1c] leading-relaxed pr-24">
                   {order.billing_address || "—"}
@@ -495,14 +502,14 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                 </tbody>
               </table>
             </div>
-            <div className="bg-[#eceae4]/20 p-8 flex flex-col items-end gap-2 border-t border-[#eceae4] uppercase">
-              <div className="flex items-center gap-12 text-[10px] font-bold text-[#5f5f5d]/40">
+            <div className="bg-[#eceae4]/20 p-6 lg:p-8 flex flex-col items-stretch gap-2 border-t border-[#eceae4] uppercase">
+              <div className="flex items-center justify-between text-[10px] font-bold text-[#5f5f5d]/40">
                 <span>Gross Value ({ (order.order_items || order.products || []).length } SKUs)</span>
-                <span className="text-[#1c1c1c] w-20 text-right tabular-nums">₹{order.sub_total || order.total}</span>
+                <span className="text-[#1c1c1c] text-right tabular-nums">₹{order.sub_total || order.total}</span>
               </div>
-              <div className="flex items-center gap-12 text-sm font-black text-[#1c1c1c] pt-1">
+              <div className="flex items-center justify-between text-sm font-black text-[#1c1c1c] pt-1">
                 <span className="tracking-tighter">Order Settlement Total</span>
-                <span className="text-[#1c1c1c] w-20 text-right tabular-nums text-lg tracking-tighter">₹{order.total}</span>
+                <span className="text-[#1c1c1c] text-right tabular-nums text-lg tracking-tighter">₹{order.total}</span>
               </div>
             </div>
           </section>
@@ -510,7 +517,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
         </div>
 
         {/* Right Column: Execution Timeline */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 min-w-0">
           <div className="card bg-[#f7f4ed] border-[#eceae4] rounded-2xl p-0 shadow-xl sticky top-24 overflow-hidden">
             <div className="flex border-b border-[#eceae4]">
               <button 
@@ -533,7 +540,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
               </button>
             </div>
             
-            <div className="p-8">
+            <div className="p-5 lg:p-6">
               <div className="relative">
                 {/* Vertical Line */}
                 <div className="absolute left-[7px] top-2 bottom-2 w-[2px] bg-[#eceae4]"></div>
@@ -549,11 +556,11 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                             isLatest ? "bg-[#1c1c1c] ring-[#1c1c1c]/20" : "bg-[#eceae4] ring-[#eceae4]/40"
                           )}></div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-3 mb-1.5">
-                              <h4 className={cn("text-[11px] font-black uppercase tracking-tight leading-snug", isLatest ? "text-[#1c1c1c]" : "text-[#5f5f5d]/60")}>
+                            <div className="flex flex-col 2xl:flex-row 2xl:items-start 2xl:justify-between gap-1 2xl:gap-3 mb-1.5">
+                              <h4 className={cn("text-[11px] font-black uppercase tracking-tight leading-snug break-words", isLatest ? "text-[#1c1c1c]" : "text-[#5f5f5d]/60")}>
                                 {step.activity}
                               </h4>
-                              <span className="text-[9px] text-[#5f5f5d]/40 font-black tabular-nums whitespace-nowrap pt-0.5">
+                              <span className="text-[9px] text-[#5f5f5d]/40 font-black tabular-nums whitespace-nowrap 2xl:pt-0.5">
                                 {mounted ? new Date(step.date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' }) : "—"}
                               </span>
                             </div>
@@ -565,12 +572,12 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                                     {step.status || step.hub_code || "HUB SCAN"}
                                 </span>
                             </div>
-                            <p className="text-[10px] font-bold text-[#5f5f5d]/40 uppercase tracking-widest flex items-center gap-1.5">
-                              <MapPin className="w-2.5 h-2.5" /> {step.location || "Central Hub"} · {mounted ? new Date(step.date).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' }) : "--:--"}
+                            <p className="text-[10px] font-bold text-[#5f5f5d]/40 uppercase tracking-widest flex items-start gap-1.5 flex-wrap break-words min-w-0 mt-1">
+                              <MapPin className="w-2.5 h-2.5 flex-shrink-0 mt-0.5" /> <span className="break-words flex-1 leading-snug">{step.location || "Central Hub"}</span> <span className="whitespace-nowrap ml-auto">· {mounted ? new Date(step.date).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' }) : "--:--"}</span>
                             </p>
                             {isLatest && (
                                 <div className="mt-4 bg-[#1c1c1c] rounded-xl p-4 shadow-xl">
-                                   <p className="text-[10px] text-[#f7f4ed] font-bold italic leading-relaxed">
+                                   <p className="text-[10px] text-[#f7f4ed] font-bold italic leading-relaxed break-words whitespace-normal">
                                       &ldquo;{step.description || step.activity}&rdquo;
                                    </p>
                                 </div>

@@ -9,28 +9,90 @@ export interface UpsellSuggestion {
 }
 
 const UPSELL_RULES: Record<string, UpsellSuggestion[]> = {
-  "face wash": [
+  "biotin": [
     {
-      product_name: "Advanced Vitamin C Serum",
+      product_name: "Korean Marine Collagen",
+      price: 899,
+      reason: "Ultimate Hair & Skin pairing.",
+      script: "Since you're taking the Biotin for your hair and skin, our Korean Marine Collagen is the perfect pair. It boosts your skin's natural glow from within. Shall I include it?"
+    }
+  ],
+  "cuplift": [
+    {
+      product_name: "Everyday Essentials for Women",
+      price: 699,
+      reason: "Complete women's wellness support.",
+      script: "For the Cuplift tablets, it's highly recommended to maintain overall hormonal balance. Our Everyday Essentials for Women pairs perfectly with it. Should I add it to your order?"
+    }
+  ],
+  "shilajit": [
+    {
+      product_name: "Testosterone Booster",
+      price: 799,
+      reason: "Maximizes energy, stamina, and muscle gain.",
+      script: "I see you ordered Shilajit! Many of our male customers pair this with our Testosterone Booster for 2x stamina and energy results. Would you like to try it at a special discount?"
+    },
+    {
+      product_name: "M-Power Power Capsules",
+      price: 649,
+      reason: "Synergistic stamina boost.",
+      script: "Shilajit works incredibly well when paired with M-Power Capsules for peak performance and stress relief. Should I add a bottle for you?"
+    }
+  ],
+  "whey": [
+    {
+      product_name: "Micronised Creatine",
       price: 599,
-      reason: "Commonly bought with face wash for 2x glow results.",
-      script: "Sir/Ma'am, since you're starting the Face Wash, I highly recommend our Vitamin C Serum. Most of our customers use them together for 2x faster glow. Should I add it to your order for just ₹599 extra?"
+      reason: "Essential muscle building stack.",
+      script: "Sir/Ma'am, since you're getting the Whey Protein, I highly recommend adding our Micronised Creatine. It's the ultimate stack for muscle gain and recovery. Shall I include it?"
     }
   ],
-  "hair oil": [
+  "creatine": [
     {
-      product_name: "Anti-Dandruff Shampoo",
-      price: 449,
-      reason: "Oil users often need a mild shampoo to prevent buildup.",
-      script: "I see you've ordered the Hair Oil. Many customers also take our mild shampoo to ensure the oil works perfectly without causing buildup. It's only ₹449 today, shall I include it?"
+      product_name: "Omega-3 Duo",
+      price: 499,
+      reason: "Joint support and muscle recovery.",
+      script: "To help your muscles recover faster while using Creatine, our Omega-3 Duo is highly recommended. Should I add it to your order today?"
     }
   ],
-  "shampoo": [
+  "glutathione": [
     {
-       product_name: "Silk Conditioner",
-       price: 399,
-       reason: "Conditioner is essential after our clarifying shampoo.",
-       script: "Our shampoo works best when followed by the Silk Conditioner to lock in moisture. It's on a special offer right now for ₹399. Would you like to try it?"
+      product_name: "Korean Marine Collagen",
+      price: 899,
+      reason: "Anti-aging and skin health.",
+      script: "Since you ordered Glutathione for your skin, you should definitely pair it with our Marine Collagen. They are our #1 bestseller combo for a radiant glow. Shall I add it?"
+    }
+  ],
+  "menopause": [
+    {
+      product_name: "Vitamin D3 + K2 MK7",
+      price: 499,
+      reason: "Bone health and hormonal balance.",
+      script: "Alongside the Menopause Care, Vitamin D3 + K2 is essential for maintaining bone density and longevity. Shall I add a month's supply for you?"
+    }
+  ],
+  "curcumin": [
+    {
+      product_name: "Pre & Probiotics",
+      price: 549,
+      reason: "Gut health and immunity.",
+      script: "Curcumin is great for immunity, and pairing it with our Pre & Probiotics ensures maximum absorption and gut health. Would you like to add it to your order?"
+    }
+  ],
+  "ashwagandha": [
+    {
+      product_name: "Magnesium Glycinate",
+      price: 599,
+      reason: "Ultimate stress relief and sleep stack.",
+      script: "You've chosen Ashwagandha for stress relief! Pairing it with Magnesium Glycinate before bed provides the deepest, most restorative sleep. Should I add it?"
+    }
+  ],
+  "berberine": [
+    {
+      product_name: "Omega-3 Duo",
+      price: 499,
+      reason: "Metabolism and longevity.",
+      script: "Berberine is excellent for metabolism. Adding Omega-3 Duo will further support your longevity and cardiovascular health. Shall I include it today?"
     }
   ]
 };
@@ -53,10 +115,10 @@ export function getUpsellSuggestions(items: any[]): UpsellSuggestion[] {
   // Global default if no specific match
   if (suggestions.length === 0) {
     suggestions.push({
-      product_name: "Mystery Gift Box (Trial Pack)",
-      price: 299,
-      reason: "High conversion impulse add-on.",
-      script: "We also have a special 'Discovery Box' with 3 trial samples for just ₹299. It's our best seller this month. Should I add one for you?"
+      product_name: "Omega-3 Duo",
+      price: 499,
+      reason: "High conversion everyday essential.",
+      script: "We're currently offering a special discount on our Omega-3 Duo, which is essential for daily energy, brain health, and immunity. It's our best seller this month. Should I add one for you?"
     });
   }
 

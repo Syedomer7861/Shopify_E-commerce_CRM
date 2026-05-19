@@ -243,7 +243,7 @@ export default function TeamPage() {
           />
         </div>
         <div className="flex p-1 bg-gray-100 rounded-xl w-fit">
-          {["all", "admin", "manager", "hr", "agent"].map(role => (
+          {["all", "admin", "manager", "hr", "agent", "demo"].map(role => (
             <button
               key={role}
               onClick={() => setRoleFilter(role)}
@@ -254,7 +254,7 @@ export default function TeamPage() {
                   : "text-gray-500 hover:text-gray-700"
               )}
             >
-              {role}
+              {role === "demo" ? "Demo Accounts" : role}
             </button>
           ))}
         </div>
@@ -275,7 +275,8 @@ export default function TeamPage() {
             .filter(p => {
               const matchesSearch = (p.name || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
                                    p.email.toLowerCase().includes(searchTerm.toLowerCase());
-              const matchesRole = roleFilter === "all" || p.role === roleFilter;
+              const matchesRole = roleFilter === "all" || 
+                                  (roleFilter === "demo" ? p.is_demo : p.role === roleFilter);
               return matchesSearch && matchesRole;
             })
             .map(p => {
@@ -314,9 +315,14 @@ export default function TeamPage() {
                   <Avatar name={p.name || p.email} size="md" />
                   <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white", dotColor, isOnline && "animate-pulse")} />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  {p.is_demo && (
+                    <div className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-700 border-amber-500/20 shadow-sm animate-fade-in">
+                      Demo
+                    </div>
+                  )}
                   <div className={cn(
-                    "text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border",
+                    "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border",
                     p.role === 'admin' && "bg-zinc-900 text-white border-zinc-900",
                     p.role === 'manager' && "bg-violet-50 text-violet-700 border-violet-100",
                     p.role === 'hr' && "bg-rose-50 text-rose-700 border-rose-100",
@@ -518,7 +524,7 @@ export default function TeamPage() {
              <div className="space-y-3">
                <div className="text-[10px] font-medium text-gray-500">Target Customer Segments</div>
                <div className="flex flex-wrap gap-2">
-                 {["repeat", "one_time", "inactive", "risky"].map(segment => {
+                 {["repeat", "one_time", "inactive", "risky", "whale", "loyalist", "bargain_hunter", "risky_returner"].map(segment => {
                    const isSelected = selectedProfile?.assigned_segments?.includes(segment as any);
                    return (
                      <button 
@@ -542,7 +548,7 @@ export default function TeamPage() {
              <div className="space-y-3">
                <div className="text-[10px] font-medium text-gray-500">Priority Task Types</div>
                <div className="flex flex-wrap gap-2">
-                 {["review", "reorder", "recovery", "issue_resolution", "transit_update", "final_followup"].map(type => {
+                 {["review", "reorder", "recovery", "issue_resolution", "transit_update", "final_followup", "cod_verify", "ndr", "manager_audit", "welcome_call", "win_back", "vip_followup", "flagged"].map(type => {
                    const isSelected = selectedProfile?.assigned_task_types?.includes(type as any);
                    return (
                      <button 

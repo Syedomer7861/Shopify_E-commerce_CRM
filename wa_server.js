@@ -161,7 +161,7 @@ function initClient() {
         console.log(`[WA] Incoming ${msg.type} from ${msg.from}: ${msg.body.substring(0, 20)}...`);
         try {
             // Forward to CRM Webhook
-            const crmUrl = process.env.CRM_WEBHOOK_URL || "http://127.0.0.1:3000/api/webhooks/whatsapp";
+            const crmUrl = process.env.CRM_WEBHOOK_URL || "http://localhost:3000/api/webhooks/whatsapp";
             
             const payload = {
                 from: msg.from,

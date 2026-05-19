@@ -136,6 +136,9 @@ export default function SettingsPage() {
     wa_auto_order_delivered: false,
     wa_auto_cart_abandoned: false,
     wa_auto_reorder: false,
+    wa_speed_preset: "safe",
+    wa_min_delay: 30,
+    wa_max_delay: 90,
     wa_welcome_template: "",
     wa_order_placed_template: "",
     wa_order_transit_template: "",
@@ -748,6 +751,7 @@ export default function SettingsPage() {
           "whatsapp_admin_phone", "meta_review_name", "meta_reorder_name", "meta_recovery_name", "meta_final_name",
           "wa_auto_welcome", "wa_auto_order_placed", "wa_auto_order_transit", "wa_auto_order_delivered",
           "wa_auto_cart_abandoned", "wa_auto_reorder", "wa_welcome_template", "wa_order_placed_template",
+          "wa_speed_preset", "wa_min_delay", "wa_max_delay",
           "wa_order_transit_template", "wa_order_delivered_template", "wa_cart_abandoned_template", "wa_reorder_template",
           "gmail_client_id", "gmail_client_secret", "gmail_project_id", "gmail_auth_uri", "gmail_token_uri",
           "gmail_auth_provider_x509_cert_url", "gmail_redirect_uris", "gmail_refresh_token",
@@ -1427,6 +1431,64 @@ export default function SettingsPage() {
                 <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Automation Rules</h4>
                 <p className="text-[10px] text-gray-400 mb-6 italic">Enable these to send WhatsApp messages automatically when certain events occur. <strong>These will be sent instantly via the active bridge.</strong></p>
                 
+                {/* Anti-Ban Safeguard Speed Config */}
+                <div className="border border-[#eceae4] rounded-lg p-3 bg-[#f7f4ed]/30 space-y-3 mb-6">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#1c1c1c]">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                    Anti-Ban Sending Speed Safeguard
+                  </div>
+                  <p className="text-[10px] text-gray-500 leading-relaxed">
+                    Standardizing random time delays between messages mimics natural human behaviour, significantly reducing the risk of your phone number being flagged or banned by WhatsApp/Meta.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-700 block mb-1">Speed Preset</label>
+                      <select 
+                        className="select text-xs bg-white"
+                        value={settings.wa_speed_preset || "safe"}
+                        onChange={e => {
+                          const val = e.target.value;
+                          let min = 30;
+                          let max = 90;
+                          if (val === "fast") { min = 10; max = 20; }
+                          else if (val === "max_safe") { min = 60; max = 120; }
+                          setSettings({ ...settings, wa_speed_preset: val, wa_min_delay: min, wa_max_delay: max });
+                        }}
+                      >
+                        <option value="safe">Safe (30s - 90s delay) — Recommended</option>
+                        <option value="fast">Fast (10s - 20s delay) — Aggressive</option>
+                        <option value="max_safe">Max Safe (60s - 120s delay) — New Numbers</option>
+                        <option value="custom">Custom delays...</option>
+                      </select>
+                    </div>
+                    {(settings.wa_speed_preset === "custom" || !settings.wa_speed_preset) && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-700 block mb-0.5">Min Delay (s)</label>
+                          <input 
+                            type="number" 
+                            className="input text-xs bg-white" 
+                            min={5}
+                            value={settings.wa_min_delay || 30}
+                            onChange={e => setSettings({ ...settings, wa_min_delay: Number(e.target.value) })}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-700 block mb-0.5">Max Delay (s)</label>
+                          <input 
+                            type="number" 
+                            className="input text-xs bg-white" 
+                            min={settings.wa_min_delay || 5}
+                            value={settings.wa_max_delay || 90}
+                            onChange={e => setSettings({ ...settings, wa_max_delay: Number(e.target.value) })}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div className="space-y-4">
                   {[
                     { label: "Auto Welcome", field: "wa_auto_welcome", templateField: "wa_welcome_template", desc: "Sent when a new customer is added to CRM" },

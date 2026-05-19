@@ -26,7 +26,8 @@ import {
   Send,
   Paperclip,
   X,
-  Globe
+  Globe,
+  Loader2
 } from "lucide-react";
 import { getLogisticsIntelligence, LogisticsRecommendation } from "@/lib/logistics-engine";
 import { getUpsellSuggestions, UpsellSuggestion } from "@/lib/upsell-engine";
@@ -34,6 +35,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { Avatar, TaskTypeBadge, TaskStatusBadge, Modal } from "./ui";
 import ShiprocketOrderView from "./ShiprocketOrderView";
+import NDRActionModal from "./NDRActionModal";
 import { createClient } from "@/lib/supabase";
 import { formatDate, TASK_TYPE_CONFIG, cn, getTaskProductName, initials, timeAgo } from "@/lib/utils";
 import type { Task, Customer, Order, AbandonedCart } from "@/types";
@@ -73,35 +75,77 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
 
 const BATTLE_SCRIPTS: Record<string, Record<string, string>> = {
   recovery: {
-    default: "Hi {name}, I noticed you were looking at our {product}. Is there anything I can help you with? We can offer a special 10% discount if you complete your order in the next 2 hours!",
-    whale: "Hello {name}, as one of our valued VIPs, we've reserved your {product}. I can personally ensure priority dispatch if you'd like to finalize this now. Use code VIPFREE for free shipping.",
-    bargain_hunter: "Hi {name}! Great news—the {product} you liked is currently at its best price. Grab it before the sale ends tonight!"
+    default: "{greeting} {name} 👋, I noticed you were looking at our {product}. Is there anything I can help you with? We can offer a special 10% discount if you complete your order in the next 2 hours!",
+    whale: "{greeting} {name}, as one of our valued VIPs, we've reserved your {product}. I can personally ensure priority dispatch if you'd like to finalize this now. Use code VIPFREE for free shipping.",
+    bargain_hunter: "{greeting} {name}! Great news—the {product} you liked is currently at its best price. Grab it before the sale ends tonight!"
   },
   ndr_resolution: {
-    default: "Hi {name}, regarding your order for {product}. We noticed a delivery attempt failed. Could you please confirm your alternate number and any landmark? I'll personally ensure the rider reaches you tomorrow.",
-    risky: "Hello {name}, our delivery partner reported they couldn't find your location for the {product} delivery. Should I share an alternate address or a specific instruction with the courier hub for you?"
+    default: "{greeting} {name}, regarding your order for {product}. We noticed a delivery attempt failed. Could you please confirm your alternate number and any landmark? I'll personally ensure the rider reaches you tomorrow.",
+    risky: "{greeting} {name}, our delivery partner reported they couldn't find your location for the {product} delivery. Should I share an alternate address or a specific instruction with the courier hub for you?"
   },
   transit_update: {
-    default: "Hi {name}! Your order for {product} is currently moving through our logistics network. I'm monitoring it closely to ensure it reaches you on time. Any specific delivery time preference?",
-    delayed: "Hello {name}, I noticed a slight delay in the transit of your {product}. I've already escalated this with the courier hub to prioritize your package. Appreciate your patience!"
+    default: "{greeting} {name}! Your order for {product} is currently moving through our logistics network. I'm monitoring it closely to ensure it reaches you on time. Any specific delivery time preference?",
+    delayed: "{greeting} {name}, I noticed a slight delay in the transit of your {product}. I've already escalated this with the courier hub to prioritize your package. Appreciate your patience!"
   },
   cod_verify: {
-    default: "Hi {name}, confirming your COD order for {product}. To ensure smooth delivery, could you please confirm your complete address and a landmark near your house?",
-    risky: "Hi {name}, regarding your order for {product}. We noticed some delivery issues in your area previously. Would you like to convert this to a prepaid order? We'll add a free gift as a thank you!",
-    risky_returner: "Hello {name}, calling to verify your recent order. Since this is a high-value COD, we require a quick verbal confirmation of the delivery address to proceed with dispatch."
+    default: "{greeting} {name}, confirming your COD order for {product}. To ensure smooth delivery, could you please confirm your complete address and a landmark near your house?",
+    risky: "{greeting} {name}, regarding your order for {product}. We noticed some delivery issues in your area previously. Would you like to convert this to a prepaid order? We'll add a free gift as a thank you!",
+    risky_returner: "{greeting} {name}, calling to verify your recent order. Since this is a high-value COD, we require a quick verbal confirmation of the delivery address to proceed with dispatch."
   },
   welcome_call: {
     default: "Welcome to CureForever, {name}! We're excited to have you. Your order for {product} is being packed. How did you hear about us?"
   },
   win_back: {
-    default: "Hi {name}, we've missed you! It's been a while since your last order of {product}. We have a new formulation you'll love. Can I send you a trial pack?"
+    default: "{greeting} {name}, we've missed you! It's been a while since your last order of {product}. We have a new formulation you'll love. Can I send you a trial pack?"
   }
 };
 
-const getBattleScript = (taskType: string, segment: string, name: string, product: string) => {
-  const scripts = BATTLE_SCRIPTS[taskType] || BATTLE_SCRIPTS['recovery'];
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+};
+
+const getBattleScript = (
+  taskType: string, 
+  segment: string, 
+  name: string, 
+  product: string, 
+  orderStatus?: string,
+  sentiment?: string,
+  isUrgent?: boolean,
+  rtoProbability?: number
+) => {
+  let effectiveTaskType = taskType;
+  // If the task is a recovery task but they actually placed an order, switch to a more relevant script
+  if (taskType === 'recovery' && orderStatus && orderStatus !== 'pending') {
+    if (orderStatus === 'out_for_delivery' || orderStatus === 'in_transit') effectiveTaskType = 'transit_update';
+    else if (orderStatus === 'delivered') effectiveTaskType = 'review';
+    else if (orderStatus === 'rto' || orderStatus === 'failed') effectiveTaskType = 'ndr_resolution';
+  }
+  
+  if (sentiment === 'negative') {
+    return `${getGreeting()} ${name} 👋, I'm reaching out personally from CureForever Care. I saw your feedback regarding ${product} and want to make sure we resolve any concerns you have with priority care. How can we support you best? 🌿`;
+  }
+  
+  const scripts = BATTLE_SCRIPTS[effectiveTaskType] || BATTLE_SCRIPTS['recovery'];
   const template = scripts[segment] || scripts['default'];
-  return template.replace(/{name}/g, name).replace(/{product}/g, product);
+  
+  let finalScript = template
+    .replace(/{greeting}/g, getGreeting())
+    .replace(/{name}/g, name)
+    .replace(/{product}/g, product);
+    
+  if (isUrgent) {
+    finalScript += " ⚡ P.S. I have marked this request as High Priority with our shipping desk for instant fulfillment!";
+  }
+  
+  if (taskType === 'cod_verify' && rtoProbability && rtoProbability > 30) {
+    finalScript += " 💡 Tip: Convert this to prepaid online and get a flat ₹50 discount + a free natural supplement booster! Shall I share the payment link?";
+  }
+  
+  return finalScript;
 };
 
 export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWhatsApp, whatsappSettings, compact, isAdmin, agents, onReassign }: TaskCardProps) {
@@ -111,6 +155,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   const supabase = useMemo(() => createClient(), []);
   const [doneModal, setDoneModal] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
+  const [showNDRModal, setShowNDRModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'chat'>('details');
   const [rescheduleModal, setRescheduleModal] = useState(false);
   const [waModal, setWaModal] = useState(false);
@@ -130,6 +175,31 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   const [emailFile, setEmailFile] = useState<File | null>(null);
   const [sendWaInLog, setSendWaInLog] = useState(false);
   const [logWaMessage, setLogWaMessage] = useState("");
+  const [processingManager, setProcessingManager] = useState(false);
+
+  const handleManagerAction = async (e: React.MouseEvent, action: 'approved' | 'rejected') => {
+    e.stopPropagation();
+    if (processingManager) return;
+    setProcessingManager(true);
+    try {
+      const { error } = await supabase.from("tasks").update({
+        is_processed_by_manager: action !== 'rejected', 
+        manager_processed_at: new Date().toISOString(),
+        manager_action: action,
+        status: action === 'rejected' ? 'due' : 'done' 
+      }).eq("id", task.id);
+      
+      if (error) throw error;
+      toast.success(action === 'approved' ? "Task Approved" : "Task Flagged for Revision");
+      if (showDetail) setShowDetail(false);
+      window.location.reload();
+    } catch (err) {
+      toast.error("Failed to process manager action");
+    } finally {
+      setProcessingManager(false);
+    }
+  };
+
   const [logistics, setLogistics] = useState<LogisticsRecommendation | null>(null);
   const [upsells, setUpsells] = useState<UpsellSuggestion[]>([]);
 
@@ -796,18 +866,36 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
             {!isDone && !compact && (
               <div className="flex items-center gap-2 mt-3 flex-wrap sm:flex-nowrap" onClick={(e) => e.stopPropagation()}>
-                <button onClick={() => setDoneModal(true)} className="btn-primary text-[10px] py-1 px-4 h-8 rounded-lg">
-                  <CheckCircle className="w-3 h-3" /> Log Call
-                </button>
-                <button onClick={openWa} className="btn-secondary text-[10px] py-1 px-4 h-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5">
-                  <Send className="w-3 h-3" /> WhatsApp
-                </button>
-                <button onClick={openEmail} className="btn-secondary text-[10px] py-1 px-4 h-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5">
-                  <MessageSquare className="w-3 h-3" /> Email
-                </button>
-                <button onClick={() => setRescheduleModal(true)} className="btn-secondary text-[10px] py-1 px-4 h-8">
-                  <Calendar className="w-3 h-3" /> Reschedule
-                </button>
+                {task.task_type === 'manager_audit' ? (
+                  <>
+                    <button onClick={(e) => handleManagerAction(e, 'rejected')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-[#f7f4ed] border border-rose-100 text-rose-500 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm">
+                      <AlertCircle className="w-3 h-3" /> Flag Revision
+                    </button>
+                    <button onClick={(e) => handleManagerAction(e, 'approved')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-[#1c1c1c] text-[#f7f4ed] rounded-lg text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50" style={{ boxShadow: "rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px" }}>
+                      {processingManager ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve Resolution
+                    </button>
+                    {(task.order || task.order_id) && (
+                      <button onClick={(e) => { e.stopPropagation(); setShowNDRModal(true); }} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-amber-500 text-[#f7f4ed] rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all active:scale-[0.98] shadow-sm shadow-amber-100">
+                        <Zap className="w-3 h-3 fill-current" /> Trigger Shiprocket Action
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => setDoneModal(true)} className="btn-primary text-[10px] py-1 px-4 h-8 rounded-lg">
+                      <CheckCircle className="w-3 h-3" /> Log Call
+                    </button>
+                    <button onClick={openWa} className="btn-secondary text-[10px] py-1 px-4 h-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5">
+                      <Send className="w-3 h-3" /> WhatsApp
+                    </button>
+                    <button onClick={openEmail} className="btn-secondary text-[10px] py-1 px-4 h-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5">
+                      <MessageSquare className="w-3 h-3" /> Email
+                    </button>
+                    <button onClick={() => setRescheduleModal(true)} className="btn-secondary text-[10px] py-1 px-4 h-8">
+                      <Calendar className="w-3 h-3" /> Reschedule
+                    </button>
+                  </>
+                )}
               </div>
             )}
         </div>
@@ -818,27 +906,64 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         open={showDetail} 
         onClose={() => setShowDetail(false)} 
         title={(
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 flex-wrap">
             <span className="font-bold">Task Details — {task.customer.name}</span>
-            <div className="flex items-center bg-gray-100 p-0.5 rounded-lg ml-2">
-               <button 
-                 onClick={() => setActiveTab('details')}
-                 className={cn(
-                   "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all",
-                   activeTab === 'details' ? "bg-white text-[#1c1c1c] shadow-sm" : "text-gray-400 hover:text-gray-600"
-                 )}
-               >
-                 Overview
-               </button>
-               <button 
-                 onClick={() => setActiveTab('chat')}
-                 className={cn(
-                   "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all flex items-center gap-1.5",
-                   activeTab === 'chat' ? "bg-white text-emerald-600 shadow-sm" : "text-gray-400 hover:text-emerald-500"
-                 )}
-               >
-                 <MessageSquare className="w-3 h-3 text-emerald-500" /> Live Chat
-               </button>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center bg-gray-100 p-0.5 rounded-lg">
+                 <button 
+                   onClick={() => setActiveTab('details')}
+                   className={cn(
+                     "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all",
+                     activeTab === 'details' ? "bg-white text-[#1c1c1c] shadow-sm" : "text-gray-400 hover:text-gray-600"
+                   )}
+                 >
+                   Overview
+                 </button>
+                 <button 
+                   onClick={() => setActiveTab('chat')}
+                   className={cn(
+                     "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all flex items-center gap-1.5",
+                     activeTab === 'chat' ? "bg-white text-emerald-600 shadow-sm" : "text-gray-400 hover:text-emerald-500"
+                   )}
+                 >
+                   <MessageSquare className="w-3 h-3 text-emerald-500" /> Live Chat
+                 </button>
+              </div>
+
+              {!isDone && (
+                <div className="flex items-center gap-2 border-l pl-4 border-gray-200">
+                  {task.task_type === 'manager_audit' ? (
+                    <>
+                      <button onClick={(e) => handleManagerAction(e, 'rejected')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f7f4ed] border border-rose-100 text-rose-500 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm">
+                        <AlertCircle className="w-3 h-3" /> Flag Revision
+                      </button>
+                      <button onClick={(e) => handleManagerAction(e, 'approved')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#1c1c1c] text-[#f7f4ed] rounded-lg text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50" style={{ boxShadow: "rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px" }}>
+                        {processingManager ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve Resolution
+                      </button>
+                      {(task.order || task.order_id) && (
+                        <button onClick={(e) => { e.stopPropagation(); setShowNDRModal(true); }} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-500 text-[#f7f4ed] rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all active:scale-[0.98] shadow-sm shadow-amber-100">
+                          <Zap className="w-3 h-3 fill-current" /> Trigger Shiprocket Action
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => setDoneModal(true)} className="btn-primary text-[10px] py-1 px-3 h-7 rounded-md">
+                        <CheckCircle className="w-3 h-3" /> Log Call
+                      </button>
+                      <button onClick={openWa} className="btn-secondary text-[10px] py-1 px-3 h-7 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5 bg-white shadow-sm">
+                        <Send className="w-3 h-3" /> WhatsApp
+                      </button>
+                      <button onClick={openEmail} className="btn-secondary text-[10px] py-1 px-3 h-7 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5 bg-white shadow-sm">
+                        <MessageSquare className="w-3 h-3" /> Email
+                      </button>
+                      <button onClick={() => setRescheduleModal(true)} className="btn-secondary text-[10px] py-1 px-3 h-7 bg-white shadow-sm">
+                        <Calendar className="w-3 h-3" /> Reschedule
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -850,9 +975,9 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
               <WhatsAppChat phone={task.customer.phone} customerName={task.customer.name} customerId={task.customer.id} />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-               <div className="md:col-span-2 space-y-6">
-                  <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+            <div className="flex flex-col gap-6 lg:gap-8 pb-8">
+               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
+                  <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4 h-full">
                     <div className="flex items-center justify-between">
                       <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Customer Profile</div>
                       <Link href={`/customers/${task.customer_id}`} className="text-[10px] font-bold text-blue-600 hover:underline">View Full Profile</Link>
@@ -887,7 +1012,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   </div>
                   {(task as any).metadata?.risk_level && (
                      <div className={cn(
-                       "p-4 rounded-2xl border-2 space-y-3",
+                       "p-4 rounded-2xl border-2 space-y-3 h-full",
                        (task as any).metadata.risk_level === 'CRITICAL' ? "bg-rose-50 border-rose-200 shadow-rose-100" : "bg-amber-50 border-amber-200 shadow-amber-100"
                      )}>
                         <div className="flex items-center justify-between">
@@ -909,7 +1034,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                      </div>
                   )}
                   {logistics && logisticsMetrics && (
-                    <div className="bg-sky-50 border border-sky-100 p-5 rounded-2xl space-y-4">
+                    <div className="bg-sky-50 border border-sky-100 p-5 rounded-2xl space-y-4 h-full">
                       <div className="flex items-center justify-between">
                         <div className="text-[10px] font-black text-sky-600 uppercase tracking-widest flex items-center gap-2">
                           <Truck className="w-4 h-4" /> Logistics Intel
@@ -943,7 +1068,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                     </div>
                   )}
                   {upsells.length > 0 && (
-                    <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl space-y-4">
+                    <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl space-y-4 h-full">
                       <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
                         <TrendingUp className="w-4 h-4" /> Perfect Pair Upsell
                       </div>
@@ -962,34 +1087,92 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                       </div>
                     </div>
                   )}
-                  <div className="bg-[#1c1c1c] text-white p-5 rounded-2xl shadow-xl relative overflow-hidden group">
+                  <div className="bg-gradient-to-br from-[#111] via-[#1a1a1a] to-[#242424] text-white p-5 rounded-2xl border border-gray-800 shadow-2xl relative overflow-hidden group flex flex-col h-full">
                     <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                      <Zap className="w-12 h-12" />
+                      <Zap className="w-12 h-12 text-blue-400" />
                     </div>
-                    <div className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                      <Zap className="w-3 h-3 fill-current" /> Tactical Script
+                    
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="text-[10px] font-black text-blue-400 uppercase tracking-[0.25em] flex items-center gap-2">
+                        <Zap className="w-3.5 h-3.5 fill-current animate-pulse text-blue-400" /> Advanced AI Script
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-blue-950/40 border border-blue-900/30 px-2 py-0.5 rounded-md">
+                        <div className="w-1 h-1 rounded-full bg-emerald-500 animate-ping" />
+                        <span className="text-[8px] font-black text-blue-300 uppercase tracking-widest">Compiler Live</span>
+                      </div>
                     </div>
-                    <p className="text-xs font-bold leading-relaxed italic text-gray-100 mb-4">
-                      &ldquo;{getBattleScript(
-                        task.task_type, 
-                        task.customer.segment, 
-                        task.customer.name.split(' ')[0], 
-                        product
-                      )}&rdquo;
-                    </p>
+
+                    {/* Active dynamic indicators */}
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {/* Greeting indicator */}
+                      <span className="text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded bg-white/5 border border-white/10 text-gray-300 flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5 text-blue-400" /> 
+                        {new Date().getHours() < 12 ? "Morning" : new Date().getHours() < 17 ? "Afternoon" : "Evening"} Active
+                      </span>
+
+                      {/* Sentiment indicator */}
+                      {((task as any).sentiment === 'negative') ? (
+                        <span className="text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded bg-rose-950/40 border border-rose-900/30 text-rose-300 flex items-center gap-1">
+                          <AlertCircle className="w-2.5 h-2.5 text-rose-400" /> Empathy Mode Engaged
+                        </span>
+                      ) : (
+                        <span className="text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded bg-emerald-950/40 border border-emerald-900/30 text-emerald-300 flex items-center gap-1">
+                          <CheckCircle className="w-2.5 h-2.5 text-emerald-400" /> Positive Tone Active
+                        </span>
+                      )}
+
+                      {/* Urgency indicator */}
+                      {(task as any).is_urgent && (
+                        <span className="text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded bg-amber-950/40 border border-amber-900/30 text-amber-300 flex items-center gap-1 animate-pulse">
+                          <Zap className="w-2.5 h-2.5 fill-amber-400 text-amber-400" /> Priority Hook Applied
+                        </span>
+                      )}
+
+                      {/* Logistics indicator */}
+                      {task.task_type === 'cod_verify' && logistics?.rto_probability && logistics.rto_probability > 30 && (
+                        <span className="text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded bg-indigo-950/40 border border-indigo-900/30 text-indigo-300 flex items-center gap-1">
+                          <TrendingUp className="w-2.5 h-2.5 text-indigo-400" /> Prepaid Conversion Up
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="bg-[#0b0b0b]/60 border border-[#222] p-4 rounded-xl mb-4 flex-1 flex flex-col justify-center">
+                      <p className="text-xs font-bold leading-relaxed italic text-gray-200">
+                        &ldquo;{getBattleScript(
+                          task.task_type, 
+                          task.customer.segment, 
+                          task.customer.name.split(' ')[0], 
+                          product,
+                          order?.delivery_status,
+                          (task as any).sentiment,
+                          (task as any).is_urgent,
+                          logistics?.rto_probability
+                        )}&rdquo;
+                      </p>
+                    </div>
+
                     <button 
                       onClick={() => {
-                        const script = getBattleScript(task.task_type, task.customer.segment, task.customer.name.split(' ')[0], product);
+                        const script = getBattleScript(
+                          task.task_type, 
+                          task.customer.segment, 
+                          task.customer.name.split(' ')[0], 
+                          product, 
+                          order?.delivery_status,
+                          (task as any).sentiment,
+                          (task as any).is_urgent,
+                          logistics?.rto_probability
+                        );
                         navigator.clipboard.writeText(script);
                         toast.success("Script copied!");
                       }}
-                      className="w-full text-[9px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 px-3 py-2.5 rounded-lg transition-all"
+                      className="w-full text-[9px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 hover:scale-[1.01] active:scale-[0.99] border border-white/5 px-3 py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
                     >
-                      Copy Battle Script
+                      <Zap className="w-3.5 h-3.5 fill-current" /> Copy AI Battle Script
                     </button>
                   </div>
                </div>
-               <div className="md:col-span-3 space-y-6">
+               <div className="space-y-6 min-w-0 w-full">
                   {(() => {
                     const orderObj = Array.isArray(task.order) ? task.order[0] : task.order;
                     if (orderObj) {
@@ -1061,15 +1244,15 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                       </div>
                     );
                   })()}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-wrap gap-4">
                      {checkoutUrl && (
-                        <a href={checkoutUrl} target="_blank" className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20 group">
-                           <ExternalLink className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                        <a href={checkoutUrl} target="_blank" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20 group w-fit">
+                           <ExternalLink className="w-5 h-5 group-hover:scale-110 transition-transform" />
                            <span className="text-xs font-black uppercase tracking-widest">Open Recovery Link</span>
                         </a>
                      )}
-                     <button onClick={() => setWaModal(true)} className="bg-[#25D366] hover:bg-[#128C7E] text-white p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20 group">
-                        <MessageSquare className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                     <button onClick={() => setWaModal(true)} className="bg-[#25D366] hover:bg-[#128C7E] text-white px-6 py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20 group w-fit">
+                        <MessageSquare className="w-5 h-5 group-hover:scale-110 transition-transform" />
                         <span className="text-xs font-black uppercase tracking-widest">WhatsApp Customer</span>
                      </button>
                   </div>
@@ -1106,6 +1289,27 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           
           {/* Quick Presets */}
           <div className="flex flex-wrap gap-2">
+            <button 
+              className={cn(
+                "text-[10px] px-2.5 py-1 rounded bg-blue-600 text-white font-black uppercase tracking-wider hover:bg-blue-700 transition-all flex items-center gap-1 shadow-sm",
+                waMessage === getBattleScript(task.task_type, task.customer.segment, task.customer.name.split(' ')[0], product, order?.delivery_status, (task as any).sentiment, (task as any).is_urgent, logistics?.rto_probability) && "ring-2 ring-blue-400"
+              )} 
+              onClick={() => {
+                const msg = getBattleScript(
+                  task.task_type, 
+                  task.customer.segment, 
+                  task.customer.name.split(' ')[0], 
+                  product, 
+                  order?.delivery_status,
+                  (task as any).sentiment,
+                  (task as any).is_urgent,
+                  logistics?.rto_probability
+                );
+                setWaMessage(msg);
+              }}
+            >
+              🚀 AI Tactical Script
+            </button>
             {Object.entries(DEFAULT_TEMPLATES).map(([key, defaultTpl]) => {
               const customTpl = whatsappSettings ? (
                 key === "review" ? whatsappSettings.whatsapp_review_template :
@@ -1184,6 +1388,28 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           
           {/* Quick Presets */}
           <div className="flex flex-wrap gap-2">
+            <button 
+              className={cn(
+                "text-[10px] px-2.5 py-1 rounded bg-blue-600 text-white font-black uppercase tracking-wider hover:bg-blue-700 transition-all flex items-center gap-1 shadow-sm",
+                emailMessage === getBattleScript(task.task_type, task.customer.segment, task.customer.name.split(' ')[0], product, order?.delivery_status, (task as any).sentiment, (task as any).is_urgent, logistics?.rto_probability) && "ring-2 ring-blue-400"
+              )} 
+              onClick={() => {
+                const msg = getBattleScript(
+                  task.task_type, 
+                  task.customer.segment, 
+                  task.customer.name.split(' ')[0], 
+                  product, 
+                  order?.delivery_status,
+                  (task as any).sentiment,
+                  (task as any).is_urgent,
+                  logistics?.rto_probability
+                );
+                setEmailMessage(msg);
+                setEmailSubject(`AI Tactical Script - CureForever`);
+              }}
+            >
+              🚀 AI Tactical Script
+            </button>
             {Object.entries(DEFAULT_TEMPLATES).map(([key, defaultTpl]) => {
               const customTpl = whatsappSettings ? (
                 key === "review" ? whatsappSettings.whatsapp_review_template :
@@ -1478,6 +1704,21 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           </div>
         </div>
       </Modal>
+
+      {showNDRModal && (
+        <NDRActionModal 
+          open={showNDRModal}
+          onClose={() => setShowNDRModal(false)}
+          shipmentId={((task.order as any)?.shiprocket_order_id || task.order?.tracking_number) || ""}
+          orderNumber={task.order?.order_number || ""}
+          awb={task.order?.tracking_number || ""}
+          shiprocketOrderId={(task.order as any)?.shiprocket_order_id || ""}
+          onSuccess={() => {
+             setShowNDRModal(false);
+             window.location.reload();
+          }}
+        />
+      )}
     </>
   );
 }

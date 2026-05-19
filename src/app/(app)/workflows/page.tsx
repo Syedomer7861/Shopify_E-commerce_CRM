@@ -76,7 +76,7 @@ export default function WorkflowManager() {
       ...formData,
       actions: [...formData.actions, { 
         type: "create_task", 
-        params: { task_type: "feedback", delay_days: 5, priority_bonus: 10 } 
+        params: { task_type: "review", delay_days: 5, priority_bonus: 10 } 
       }]
     });
   };
@@ -312,23 +312,32 @@ export default function WorkflowManager() {
                     <div className="space-y-3">
                        {action.type === "create_task" && (
                          <>
-                           <div className="flex items-center justify-between gap-2 border-b border-[#eceae4]/50 pb-2">
-                              <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Task Type</span>
-                              <select 
-                                className="bg-transparent text-[10px] font-bold text-[#1c1c1c] focus:outline-none appearance-none cursor-pointer"
-                                value={action.params?.task_type || "feedback"}
-                                onChange={e => {
-                                  const newActions = [...formData.actions];
-                                  newActions[idx].params.task_type = e.target.value;
-                                  setFormData({ ...formData, actions: newActions });
-                                }}
-                              >
-                                 <option value="review">Review</option>
-                                 <option value="feedback">Feedback</option>
-                                 <option value="reorder">Reorder</option>
-                                 <option value="escalation">Escalation</option>
-                              </select>
-                           </div>
+                            <div className="flex items-center justify-between gap-2 border-b border-[#eceae4]/50 pb-2">
+                               <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Task Type</span>
+                               <select 
+                                 className="bg-[#fcfbf8] border border-[#eceae4] rounded-lg px-2.5 py-1 text-[10px] font-bold text-[#1c1c1c] focus:outline-none focus:border-[#1c1c1c]/30 hover:border-[#1c1c1c]/20 transition-all cursor-pointer shadow-sm text-right max-w-[150px]"
+                                 value={action.params?.task_type || "review"}
+                                 onChange={e => {
+                                   const newActions = [...formData.actions];
+                                   newActions[idx].params.task_type = e.target.value;
+                                   setFormData({ ...formData, actions: newActions });
+                                 }}
+                               >
+                                  <option value="review" className="bg-[#fcfbf8] text-[#1c1c1c]">Review</option>
+                                  <option value="reorder" className="bg-[#fcfbf8] text-[#1c1c1c]">Reorder</option>
+                                  <option value="final_followup" className="bg-[#fcfbf8] text-[#1c1c1c]">Final Followup</option>
+                                  <option value="recovery" className="bg-[#fcfbf8] text-[#1c1c1c]">Recovery</option>
+                                  <option value="issue_resolution" className="bg-[#fcfbf8] text-[#1c1c1c]">Issue Resolution</option>
+                                  <option value="transit_update" className="bg-[#fcfbf8] text-[#1c1c1c]">Transit Update</option>
+                                  <option value="cod_verify" className="bg-[#fcfbf8] text-[#1c1c1c]">COD Verify</option>
+                                  <option value="ndr" className="bg-[#fcfbf8] text-[#1c1c1c]">NDR</option>
+                                  <option value="manager_audit" className="bg-[#fcfbf8] text-[#1c1c1c]">Manager Audit</option>
+                                  <option value="welcome_call" className="bg-[#fcfbf8] text-[#1c1c1c]">Welcome Call</option>
+                                  <option value="win_back" className="bg-[#fcfbf8] text-[#1c1c1c]">Win Back</option>
+                                  <option value="vip_followup" className="bg-[#fcfbf8] text-[#1c1c1c]">VIP Followup</option>
+                                  <option value="flagged" className="bg-[#fcfbf8] text-[#1c1c1c]">Flagged</option>
+                               </select>
+                            </div>
                            <div className="flex items-center justify-between gap-2 border-b border-[#eceae4]/50 pb-2">
                               <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Delay (Days)</span>
                               <input 
@@ -363,7 +372,7 @@ export default function WorkflowManager() {
                            <div className="flex flex-col gap-2 border-b border-[#eceae4]/50 pb-2">
                               <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Template Reference</span>
                               <select 
-                                className="bg-transparent text-[10px] font-bold text-[#1c1c1c] focus:outline-none cursor-pointer"
+                                className="w-full bg-[#fcfbf8] border border-[#eceae4] rounded-lg px-3 py-2 text-[10px] font-bold text-[#1c1c1c] focus:outline-none focus:border-[#1c1c1c]/30 hover:border-[#1c1c1c]/20 transition-all cursor-pointer shadow-sm mt-1"
                                 value={action.params?.template_name || "Review Reminder"}
                                 onChange={e => {
                                   const newActions = [...formData.actions];
@@ -371,10 +380,10 @@ export default function WorkflowManager() {
                                   setFormData({ ...formData, actions: newActions });
                                 }}
                               >
-                                 <option value="Review Reminder">Review Reminder</option>
-                                 <option value="Reorder Reminder">Reorder Reminder</option>
-                                 <option value="Abandoned Checkout Strategy">Abandoned Checkout</option>
-                                 <option value="Final Follow-up">Final Follow-up</option>
+                                 <option value="Review Reminder" className="bg-[#fcfbf8] text-[#1c1c1c]">Review Reminder</option>
+                                 <option value="Reorder Reminder" className="bg-[#fcfbf8] text-[#1c1c1c]">Reorder Reminder</option>
+                                 <option value="Abandoned Checkout Strategy" className="bg-[#fcfbf8] text-[#1c1c1c]">Abandoned Checkout</option>
+                                 <option value="Final Follow-up" className="bg-[#fcfbf8] text-[#1c1c1c]">Final Follow-up</option>
                               </select>
                            </div>
                            <div className="flex flex-col gap-2">

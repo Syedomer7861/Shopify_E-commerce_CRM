@@ -72,6 +72,17 @@ export default function TasksPage() {
   const PAGE_SIZE = 20;
   const { profile, loading: profileLoading } = useCurrentProfile();
   const requestIdRef = useRef(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollTabs = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      const scrollAmount = 300;
+      scrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth"
+      });
+    }
+  };
 
 
   const supabase = useMemo(() => createClient(), []);
@@ -796,20 +807,36 @@ export default function TasksPage() {
 
 
       {/* Filters */}
-      <div className="flex flex-col lg:flex-row gap-3 mb-5">
-        <div className="relative flex-1">
+      <div className="flex flex-col lg:flex-row gap-3 mb-5 lg:items-center w-full">
+        {/* Search */}
+        <div className="relative w-full lg:w-64 flex-shrink-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input 
             type="text" 
             placeholder="Search name or phone..." 
-            className="input pl-9 text-xs" 
+            className="input pl-9 text-xs w-full" 
             value={search} 
             onChange={e => setSearch(e.target.value)} 
           />
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1 overflow-x-auto scrollbar-hide">
-            {/* Specialized Types Only for Agents */}
+        
+        {/* Scrollable Tabs Wrapper */}
+        <div className="flex-1 min-w-0 w-full relative group bg-white rounded-lg border border-gray-200 flex items-center">
+          
+          {/* Left Scroll Trigger */}
+          <button 
+            onClick={() => scrollTabs("left")}
+            className="absolute left-0 z-10 h-full px-1 bg-gradient-to-r from-white via-white to-transparent text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-auto"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          {/* Scrollable Tabs */}
+          <div 
+            ref={scrollRef}
+            className="flex items-center gap-1 p-1 overflow-x-auto scrollbar-hide flex-1 min-w-0 w-full [&::-webkit-scrollbar]:hidden scroll-smooth"
+          >
             {TYPES.filter(t => {
               if (profile?.role === 'admin' || t.value === 'all' || t.value === 'flagged') return true;
               return profile?.assigned_task_types?.includes(t.value as any);
@@ -818,17 +845,30 @@ export default function TasksPage() {
                 key={t.value}
                 onClick={() => setTypeFilter(t.value)}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all uppercase tracking-tight",
+                  "px-4 py-2 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all uppercase tracking-widest flex-shrink-0",
                   typeFilter === t.value
                     ? "bg-[#1c1c1c] text-white shadow-md shadow-black/10"
-                    : "bg-white text-gray-500 hover:bg-gray-50"
+                    : "bg-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                 )}
               >
                 {t.label}
               </button>
             ))}
           </div>
-          <select className="select w-full sm:w-auto text-xs" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+
+          {/* Right Scroll Trigger */}
+          <button 
+            onClick={() => scrollTabs("right")}
+            className="absolute right-0 z-10 h-full px-1 bg-gradient-to-l from-white via-white to-transparent text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-auto"
+            aria-label="Scroll right"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+        
+        {/* Statuses */}
+        <div className="flex-shrink-0 w-full lg:w-auto">
+          <select className="select w-full text-xs h-[38px] bg-white border-gray-200" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
             {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
         </div>

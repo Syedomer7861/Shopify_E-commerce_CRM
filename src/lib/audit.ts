@@ -40,7 +40,7 @@ export async function logAuditEvent(input: AuditInput) {
       metadata: input.metadata
     };
 
-    const baseUrl = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000');
+    const baseUrl = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
     
     fetch(`${baseUrl}/api/activity-logs`, {
       method: "POST",
@@ -84,7 +84,7 @@ export async function logServerAuditEvent(input: AuditInput & { actorId?: string
     if (error) throw error;
 
     // Use fetch to sync to Google Sheets via the API route
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     fetch(`${baseUrl}/api/activity-logs`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

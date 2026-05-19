@@ -302,9 +302,8 @@ export async function syncShopifyData(supabase: any, send: (data: any) => void, 
             const recoveryDate = new Date(cart.updated_at || cart.created_at);
             recoveryDate.setHours(recoveryDate.getHours() + (settings.recovery_delay_hours || 24));
 
-            // Protection: Don't create tasks for the deep past
-            const now = new Date();
-            const finalDueDate = recoveryDate < now ? now : recoveryDate;
+            // Use the strict recovery date. If it's in the past, let it naturally fall into the "Overdue" bucket.
+            const finalDueDate = recoveryDate;
 
             if (phone && !phone.startsWith("GUEST-")) {
               const { data: customerDetails } = await supabase.from("customers").select("segment").eq("id", customer.id).single();

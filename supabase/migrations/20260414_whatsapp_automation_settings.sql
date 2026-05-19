@@ -14,4 +14,9 @@ ALTER TABLE settings ADD COLUMN IF NOT EXISTS wa_welcome_template TEXT DEFAULT '
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS wa_order_placed_template TEXT DEFAULT 'Hi {{name}} 👋, your order #{{order_no}} has been placed successfully! 🛒 We will notify you when it ships.';
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS wa_order_transit_template TEXT DEFAULT 'Hi {{name}} 👋, your order #{{order_no}} is now in transit! 🚚 You can track it here: {{tracking_link}}';
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS wa_order_delivered_template TEXT DEFAULT 'Hi {{name}} 👋, your order #{{order_no}} has been delivered! 🎁 How was your experience? We would love to hear your feedback.';
-ALTER TABLE settings ADD COLUMN IF NOT EXISTS wa_cart_abandoned_template TEXT DEFAULT 'Hi {{name}} 👋, you left some items in your cart! 🛒 Use code RECOVER10 for 10% off. {{abandon_link}}';
+
+-- 3. Anti-Ban Speed Settings
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS wa_speed_preset TEXT DEFAULT 'safe';
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS wa_min_delay INTEGER DEFAULT 30;
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS wa_max_delay INTEGER DEFAULT 90;
+

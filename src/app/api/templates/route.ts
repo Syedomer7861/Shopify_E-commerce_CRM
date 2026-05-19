@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 
 /**
  * GET /api/templates
  * POST /api/templates
  */
 export async function GET(req: NextRequest) {
-  const supabase = createServerClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("campaign_templates")
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = createServerClient();
+  const supabase = createAdminClient();
 
   const body = await req.json();
   const { data, error } = await supabase
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const supabase = createServerClient();
+  const supabase = createAdminClient();
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");

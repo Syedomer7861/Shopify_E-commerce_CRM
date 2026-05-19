@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Poor Man's Cloud Telephony Webhook
  * Receives signals from MacroDroid (Android) or other automation bridges.

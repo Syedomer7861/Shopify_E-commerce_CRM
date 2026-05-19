@@ -116,17 +116,38 @@ export async function assignTaskOwner(supabase: any, taskType?: string, customer
   }
 
   // 2. Filter pool by specialization (Strict Enforcement)
-  let specializedPool = agents;
+  let specializedPool: any[] = [];
+  let generalPool: any[] = [];
+
   if (taskType || customerSegment) {
-    specializedPool = agents.filter((a: any) => {
-      const typeMatch = !a.assigned_task_types || a.assigned_task_types.length === 0 || a.assigned_task_types.includes(taskType);
-      const segmentMatch = !a.assigned_segments || a.assigned_segments.length === 0 || a.assigned_segments.includes(customerSegment);
-      return typeMatch && segmentMatch;
+    agents.forEach((a: any) => {
+      const isGeneralType = !a.assigned_task_types || a.assigned_task_types.length === 0;
+      const isGeneralSegment = !a.assigned_segments || a.assigned_segments.length === 0;
+      
+      const typeMatch = isGeneralType || a.assigned_task_types.includes(taskType);
+      const segmentMatch = isGeneralSegment || a.assigned_segments.includes(customerSegment);
+      
+      if (typeMatch && segmentMatch) {
+        // Did they explicitly match either the type or segment?
+        const explicitType = !isGeneralType && a.assigned_task_types.includes(taskType);
+        const explicitSegment = !isGeneralSegment && a.assigned_segments.includes(customerSegment);
+        
+        if (explicitType || explicitSegment) {
+          specializedPool.push(a);
+        } else {
+          generalPool.push(a);
+        }
+      }
     });
+  } else {
+    generalPool = agents;
   }
 
-  // If no specialized agent exists, fallback to managers/admins
-  if (specializedPool.length === 0) {
+  // If we have specialized agents, use them exclusively. Otherwise fallback to general matching agents.
+  let activePool = specializedPool.length > 0 ? specializedPool : generalPool;
+
+  // If no one matches (not even general agents), fallback to managers/admins
+  if (activePool.length === 0) {
     const { data: staff } = await supabase
       .from("profiles")
       .select("id")
@@ -144,11 +165,11 @@ export async function assignTaskOwner(supabase: any, taskType?: string, customer
   const fiveMinAgo = now - 5 * 60 * 1000;
   const oneHourAgo = now - 60 * 60 * 1000;
 
-  const onlineAgents = specializedPool.filter((a: any) => a.last_seen_at && new Date(a.last_seen_at).getTime() > fiveMinAgo);
-  const recentAgents = specializedPool.filter((a: any) => a.last_seen_at && new Date(a.last_seen_at).getTime() > oneHourAgo);
+  const onlineAgents = activePool.filter((a: any) => a.last_seen_at && new Date(a.last_seen_at).getTime() > fiveMinAgo);
+  const recentAgents = activePool.filter((a: any) => a.last_seen_at && new Date(a.last_seen_at).getTime() > oneHourAgo);
 
-  // Pick the best pool: online > recent > all active in specialized pool
-  const pool = onlineAgents.length > 0 ? onlineAgents : recentAgents.length > 0 ? recentAgents : specializedPool;
+  // Pick the best pool: online > recent > all active in activePool
+  const pool = onlineAgents.length > 0 ? onlineAgents : recentAgents.length > 0 ? recentAgents : activePool;
 
   // 4. Get current active task counts for each agent in the pool
   const { data: workloads, error } = await supabase

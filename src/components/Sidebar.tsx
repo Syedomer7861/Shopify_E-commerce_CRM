@@ -7,7 +7,7 @@ import {
   Megaphone, Shield, Settings, Sparkles, 
   LogOut, Zap, Calendar, BarChart2, Upload, CheckSquare, Plus, Loader2,
   UserCheck, Clock, FileText, ShieldCheck, Calculator, BellRing,
-  Activity, ShoppingCart, MessageSquare
+  Activity, ShoppingCart, MessageSquare, Headphones
 } from "lucide-react";
 import { cn, toDbDateString } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
@@ -33,6 +33,7 @@ const adminNav = [
   { label: "Analytics",   href: "/reports",     icon: BarChart2, permission: "view_analytics" },
   { label: "Abandoned Carts", href: "/abandoned-carts", icon: ShoppingCart, permission: "view_analytics" },
   { label: "Alert Logs",  href: "/admin-logs",  icon: ShieldCheck, permission: "view_analytics" },
+  { label: "Recordings",  href: "/recordings",  icon: Headphones,  permission: "view_analytics" },
   { label: "Import",      href: "/import",      icon: Upload,    permission: "can_import" },
   { label: "Campaigns",   href: "/campaigns",   icon: Megaphone,  permission: "manage_team" },
   { label: "Templates",   href: "/templates",   icon: Sparkles,   permission: "manage_team" },

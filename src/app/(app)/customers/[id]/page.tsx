@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, use, useCallback, useMemo } from "react";
-import { ArrowLeft, Phone, Mail, ShoppingBag, PhoneCall, CheckSquare, FileText, AlertTriangle, RefreshCw, ToggleLeft, ToggleRight, MapPin, Home, Info, Smartphone } from "lucide-react";
+import { ArrowLeft, Phone, Mail, ShoppingBag, PhoneCall, CheckSquare, FileText, AlertTriangle, RefreshCw, ToggleLeft, ToggleRight, MapPin, Home, Info, Smartphone, Headphones } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, SegmentBadge, DeliveryBadge, TaskTypeBadge, TaskStatusBadge, Modal, Pagination } from "@/components/ui";
@@ -8,7 +8,7 @@ import ShiprocketOrderView from "@/components/ShiprocketOrderView";
 import { createClient } from "@/lib/supabase";
 import { cn, formatDate, formatDateTime, timeAgo, formatCurrency } from "@/lib/utils";
 import toast from "react-hot-toast";
-import type { Customer, Order, Task, CallLog, AuditLog } from "@/types";
+import type { Customer, Order, Task, CallLog, AuditLog, RawCallLog } from "@/types";
 import { logAuditEvent } from "@/lib/audit";
 
 export default function CustomerProfile({ params }: { params: { id: string } }) {
@@ -20,7 +20,8 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
   const [tasks, setTasks] = useState<(Task & { order: Order })[]>([]);
   const [calls, setCalls] = useState<CallLog[]>([]);
   const [audits, setAudits] = useState<AuditLog[]>([]);
-  const [tab, setTab] = useState<"timeline" | "orders" | "calls" | "tasks" | "notes">("timeline");
+  const [recordings, setRecordings] = useState<RawCallLog[]>([]);
+  const [tab, setTab] = useState<"timeline" | "orders" | "calls" | "recordings" | "tasks" | "notes">("timeline");
   const [notes, setNotes] = useState("");
   const [clearRtoModal, setClearRtoModal] = useState(false);
   const [unmasking, setUnmasking] = useState(false);
@@ -76,11 +77,33 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
       .order("created_at", { ascending: false })
       .limit(200);
 
+    const isDemo = typeof document !== 'undefined' && document.cookie.includes("crm-demo-mode=true");
+    
+    let recordingsData: any[] = [];
+    if (isDemo) {
+      const { MOCK_RAW_CALLS } = await import('@/lib/mock-data');
+      recordingsData = MOCK_RAW_CALLS.filter((c: any) => c.recording_url); 
+    } else {
+      const { data, error } = await supabase
+        .from("raw_call_logs")
+        .select("*, agent:profiles(name, email)")
+        .in("customer_phone", [custData.phone, custData.alt_phone].filter(Boolean))
+        .not("recording_url", "is", null)
+        .order("created_at", { ascending: false });
+        
+      if (!error) {
+        recordingsData = data || [];
+      } else {
+        console.warn("Could not fetch recordings, table may be missing:", error);
+      }
+    }
+
     setCustomer(custData as any);
     setOrders((ordersData || []) as any);
     setTasks((tasksData || []) as any);
     setCalls((callsData || []) as any);
     setAudits(((auditData || []).filter((audit: any) => audit.entity_id === id || audit.metadata?.customerId === id)) as any);
+    setRecordings((recordingsData || []) as any);
     setNotes(custData.notes || "");
     setLoading(false);
   }, [id, supabase]);
@@ -194,6 +217,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
     { key: "timeline", label: "Timeline", icon: Info, count: orders.length + calls.length + tasks.length + audits.length },
     { key: "orders", label: "Orders", icon: ShoppingBag, count: orders.length },
     { key: "calls", label: "Call Logs", icon: PhoneCall, count: calls.length },
+    { key: "recordings", label: "Recordings", icon: Headphones, count: recordings.length },
     { key: "tasks", label: "Tasks", icon: CheckSquare, count: tasks.length },
     { key: "notes", label: "Notes", icon: FileText },
   ] as const;
@@ -582,6 +606,44 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
             ))}
           </div>
           <Pagination current={currentPage} total={calls.length} pageSize={ITEMS_PER_PAGE} onChange={setCurrentPage} />
+        </div>
+      )}
+
+      {tab === "recordings" && (
+        <div className="space-y-4">
+          <div className="card divide-y divide-[#eceae4]/60">
+            {recordings.length === 0 && <div className="p-8 text-center text-[#5f5f5d] text-sm">No recordings found for this customer.</div>}
+            {recordings.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(rec => (
+              <div key={rec.id} className="p-4 flex items-start gap-4 hover:bg-[#fcfbf8] transition-colors group">
+                <div className="w-8 h-8 rounded-xl bg-[#1c1c1c] flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <Headphones className="w-3.5 h-3.5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
+                    <div>
+                      <div className="text-sm font-bold text-[#1c1c1c]">{rec.agent?.name || "Unknown Agent"}</div>
+                      <div className="text-[10px] font-black text-[#5f5f5d] uppercase tracking-widest">{formatDateTime(rec.created_at)}</div>
+                    </div>
+                    {rec.duration_seconds && (
+                      <span className="text-[10px] font-black tabular-nums text-[#1c1c1c] px-2 py-1 bg-[#eceae4]/50 rounded-md uppercase tracking-wider self-start md:self-auto">
+                        Duration: {Math.floor(rec.duration_seconds / 60)}:{String(rec.duration_seconds % 60).padStart(2, "0")}
+                      </span>
+                    )}
+                  </div>
+                  {rec.recording_url && (
+                    <div className="mt-2 p-2 bg-[#eceae4]/30 rounded-xl border border-[#eceae4] group-hover:border-[#1c1c1c]/20 transition-all inline-block">
+                      <audio 
+                        controls 
+                        src={rec.recording_url} 
+                        className="h-8 max-w-full [&::-webkit-media-controls-panel]:bg-transparent [&::-webkit-media-controls-panel]:px-0" 
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <Pagination current={currentPage} total={recordings.length} pageSize={ITEMS_PER_PAGE} onChange={setCurrentPage} />
         </div>
       )}
 

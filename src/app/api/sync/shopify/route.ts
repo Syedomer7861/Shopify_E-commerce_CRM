@@ -40,11 +40,15 @@ export async function POST(req: NextRequest) {
     runSync();
     return new NextResponse(stream, { headers: syncHeaders });
   } else {
-    const isFull = req.nextUrl.searchParams.get("full") === "true";
-    const finalReport = await syncShopifyData(supabase, () => {}, isFull);
-    const reviewTasksCreated = await syncReviewTasks(supabase);
-    finalReport.tasks.created += reviewTasksCreated;
-    
-    return NextResponse.json({ success: true, report: finalReport });
+    try {
+      const isFull = req.nextUrl.searchParams.get("full") === "true";
+      const finalReport = await syncShopifyData(supabase, () => {}, isFull);
+      const reviewTasksCreated = await syncReviewTasks(supabase);
+      finalReport.tasks.created += reviewTasksCreated;
+      
+      return NextResponse.json({ success: true, report: finalReport });
+    } catch (e: any) {
+      return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+    }
   }
 }
