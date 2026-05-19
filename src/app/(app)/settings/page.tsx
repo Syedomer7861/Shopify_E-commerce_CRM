@@ -1055,21 +1055,21 @@ export default function SettingsPage() {
       {tab === "telephony" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
           <div className="card p-6">
-            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 opacity-60">"Poor Man's" Cloud Telephony</h3>
-            <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Establish a cost-free cloud telephony alternative by turning an agent's Android handset into a webhook bridge via MacroDroid.</p>
+            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 opacity-60">&quot;Poor Man&apos;s&quot; Cloud Telephony</h3>
+            <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Establish a cost-free cloud telephony alternative by turning an agent&apos;s Android handset into a webhook bridge via MacroDroid.</p>
             
             <div className="space-y-8">
               <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-6 space-y-6">
                   <div className="flex items-start gap-4">
                      <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">1</div>
                      <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
-                       Install <strong>MacroDroid</strong> from the Play Store on your agent's Android handset.
+                       Install <strong>MacroDroid</strong> from the Play Store on your agent&apos;s Android handset.
                      </p>
                   </div>
                   <div className="flex items-start gap-4">
                      <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">2</div>
                      <div className="flex-1">
-                        <p className="text-[11px] text-[#1c1c1c] font-medium">Create a Macro that triggers on "Outgoing Call Started" or "Ended", and set the Action to an HTTP POST request to this endpoint:</p>
+                        <p className="text-[11px] text-[#1c1c1c] font-medium">Create a Macro that triggers on &quot;Outgoing Call Started&quot; or &quot;Ended&quot;, and set the Action to an HTTP POST request to this endpoint:</p>
                         <div className="mt-3 flex items-center gap-3 bg-[#f7f4ed] border border-[#eceae4] rounded-xl p-3">
                            <code className="text-[10px] text-[#1c1c1c] font-mono flex-1 break-all opacity-70">
                              {typeof window !== 'undefined' ? window.location.origin : ''}/api/calls/webhook
@@ -1091,7 +1091,7 @@ export default function SettingsPage() {
                      <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">3</div>
                      <div className="flex-1">
                        <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium mb-2">
-                         Set the JSON Payload to include your agent's email and the customer's phone number. Example:
+                         Set the JSON Payload to include your agent&apos;s email and the customer&apos;s phone number. Example:
                        </p>
                        <pre className="text-[9px] font-mono bg-[#1c1c1c] text-[#f7f4ed] p-4 rounded-xl overflow-x-auto shadow-inner">
 {`{
@@ -1105,7 +1105,7 @@ export default function SettingsPage() {
                   <div className="flex items-start gap-4">
                      <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">4</div>
                      <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
-                       <strong>Auto-Recording (Optional):</strong> Enable "Auto-record calls" in the phone's native settings. Set MacroDroid to upload the recording file to the CRM upon call completion.
+                       <strong>Auto-Recording (Optional):</strong> Enable &quot;Auto-record calls&quot; in the phone&apos;s native settings. Set MacroDroid to upload the recording file to the CRM upon call completion.
                      </p>
                   </div>
               </div>
