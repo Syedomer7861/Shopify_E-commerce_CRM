@@ -325,3 +325,48 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
+-- ── pincode_metrics ───────────────────────────────────────
+CREATE TABLE IF NOT EXISTS pincode_metrics (
+  pincode      VARCHAR(20) PRIMARY KEY,
+  avg_rto_rate INTEGER NOT NULL DEFAULT 0,
+  best_carrier VARCHAR(100) DEFAULT 'Delhivery',
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE pincode_metrics ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Authenticated users can do everything
+CREATE POLICY "auth_all" ON pincode_metrics FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- ── raw_call_logs ────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.raw_call_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agent_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  customer_phone VARCHAR(20) NOT NULL,
+  task_id UUID REFERENCES public.tasks(id) ON DELETE SET NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed', 'failed')),
+  start_time TIMESTAMPTZ NOT NULL DEFAULT now(),
+  end_time TIMESTAMPTZ,
+  duration_seconds INTEGER DEFAULT 0,
+  recording_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.raw_call_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "admin_manager_all_call_logs" ON public.raw_call_logs 
+FOR ALL TO authenticated 
+USING (public.is_admin() OR (SELECT role FROM profiles WHERE id = auth.uid()) = 'manager');
+
+CREATE POLICY "agent_own_call_logs" ON public.raw_call_logs 
+FOR SELECT TO authenticated 
+USING (agent_id = auth.uid());
+
+CREATE POLICY "agent_insert_own_call_logs" ON public.raw_call_logs 
+FOR INSERT TO authenticated 
+WITH CHECK (agent_id = auth.uid());
+
+CREATE INDEX IF NOT EXISTS idx_raw_call_logs_agent_phone ON public.raw_call_logs(agent_id, customer_phone);

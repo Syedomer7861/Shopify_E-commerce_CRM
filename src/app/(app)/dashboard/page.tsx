@@ -232,7 +232,7 @@ export default function Dashboard() {
         .from("tasks")
         .select("id", { count: "exact", head: true })
         .eq("status", "done")
-        .gte("updated_at", startOfWeekISO);
+        .gte("completed_at", startOfWeekISO);
       
       if (prof?.role === "agent") queryDone = queryDone.eq("assigned_to", prof.id);
       const { count: doneCount } = await queryDone;

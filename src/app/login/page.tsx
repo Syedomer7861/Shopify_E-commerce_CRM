@@ -44,13 +44,10 @@ export default function LoginPage() {
     }
 
     setLoading(false);
-    await sendAdminNotification(`👤 Agent Log-in: ${email}${profile?.is_demo ? ' (Demo Mode)' : ''}`, "info");
+    sendAdminNotification(`👤 Agent Log-in: ${email}${profile?.is_demo ? ' (Demo Mode)' : ''}`, "info").catch(console.error);
     
-    if (profile?.role === "manager") {
-      router.push("/manager");
-    } else {
-      router.push("/dashboard");
-    }
+    // Force a clean hard-redirect to guarantee cookies sync with Next.js SSR middleware
+    window.location.href = profile?.role === "manager" ? "/manager" : "/dashboard";
   }
 
   return (

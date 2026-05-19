@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
       .select("*", { count: "exact", head: true })
       .eq("task_type", "ndr")
       .eq("status", "done")
-      .gte("updated_at", `${today}T00:00:00Z`);
+      .gte("completed_at", `${today}T00:00:00Z`);
 
     return NextResponse.json({
       auditQueue: auditCount || 0,

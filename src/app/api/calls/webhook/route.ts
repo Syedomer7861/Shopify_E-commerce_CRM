@@ -38,14 +38,20 @@ export async function POST(req: NextRequest) {
 
     // 3. Handle Events
     if (event === "started") {
-      // Upsert a new raw call log
-      await supabase.from("raw_call_logs").upsert({
+      // Clear any stale in_progress calls
+      await supabase.from("raw_call_logs")
+        .delete()
+        .eq("agent_id", profile.id)
+        .eq("status", "in_progress");
+
+      // Insert a new raw call log
+      await supabase.from("raw_call_logs").insert({
         agent_id: profile.id,
         customer_phone: phone,
         task_id: task_id || null,
         status: "in_progress",
         start_time: new Date().toISOString()
-      }, { onConflict: "agent_id, status" }); // Simple logic: one active call per agent
+      }); // Simple logic: one active call per agent
 
       // Update Profile Live State
       await supabase.from("profiles").update({
