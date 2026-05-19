@@ -516,7 +516,7 @@ export default function CampaignManager() {
           
           <div className="bg-rose-50/50 border border-rose-100 rounded-2xl p-4 space-y-2 mt-2">
             <p className="text-xs text-rose-900 leading-relaxed">
-              Are you sure you want to permanently delete the campaign <strong className="font-extrabold">"{campaignToDelete?.name}"</strong>?
+              Are you sure you want to permanently delete the campaign <strong className="font-extrabold">&ldquo;{campaignToDelete?.name}&rdquo;</strong>?
             </p>
             <p className="text-[10px] text-rose-700 leading-relaxed">
               This will remove all associated database records, settings, and historical logs permanently from the active workspace.

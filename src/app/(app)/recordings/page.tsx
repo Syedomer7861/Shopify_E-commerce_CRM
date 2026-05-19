@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { PageHeader, EmptyState, Modal, Avatar } from "@/components/ui";
 import { Headphones, Play, PhoneCall, Clock, CheckCircle2, User, Search, Loader2, Calendar } from "lucide-react";
@@ -14,7 +14,7 @@ export default function CallRecordingsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
       const isDemo = typeof document !== 'undefined' && document.cookie.includes("crm-demo-mode=true");
@@ -46,11 +46,11 @@ export default function CallRecordingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
     fetchLogs();
-  }, []);
+  }, [fetchLogs]);
 
   const formatDuration = (seconds?: number) => {
     if (!seconds) return "0:00";
