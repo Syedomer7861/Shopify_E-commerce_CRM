@@ -1,641 +1,375 @@
-# CureForever CRM Documentation
-
-This document serves as the central reference for the CureForever High-Fidelity Sync CRM architecture and design.
-
-## 1. System Architecture
-A complete structural and data flow graph is available here:
-[CRM_GRAPH.md](file:///C:/Users/new/.gemini/antigravity/brain/ece89a25-0c56-446f-ad3e-9ffd64e77b5c/crm_graph.md)
-
-## 2. UI/UX Wireframe
-The dashboard design mockup can be viewed here:
-![CRM Dashboard](file:///C:/Users/new/.gemini/antigravity/brain/ece89a25-0c56-446f-ad3e-9ffd64e77b5c/crm_dashboard_wireframe_1777550733996.png)
-
-## 3. Core Synchronization Modules
-
-# CureForever CRM - Technical Documentation
-
-## Overview
-
-**CureForever CRM** is a specialized e-commerce operations CRM built for Shopify + Shiprocket ecosystems, targeting wellness/supplement DTC (Direct-to-Consumer) brands in India. Its primary purpose is post-purchase customer engagement automation — including abandoned cart recovery, order follow-ups, delivery tracking, and team productivity management.
+# CureForever CRM: Master Technical & System Documentation
+*Version 3.0.0 (Omnichannel Telephony & Intelligent Fallback Production Release)*
 
 ---
 
-## What Kind of CRM Is This?
+## 1. Executive Summary
 
-CureForever is NOT a generic CRM. It is a **task-centric, e-commerce-focused operations CRM** designed specifically for:
-
-- **Industry**: Health/Wellness supplement brands selling online in India
-- **Platform**: Shopify (store) + Shiprocket (logistics) + WhatsApp (communication)
-- **Business Model**: Post-purchase follow-up automation for customer retention and order recovery
-
-### Core Business Problem It Solves
-
-After a customer places an order, most brands lose touch until delivery. CureForever bridges this gap by:
-
-1. **Recovering abandoned carts** before the order is even placed
-2. **Following up after delivery** to collect reviews and trigger reorders
-3. **Tracking deliveries** proactively and handling RTO (Return to Origin) issues
-4. **Managing a team of agents** who handle these follow-ups with clear task assignment
+**CureForever CRM** is an enterprise-grade, task-centric e-commerce operations platform designed specifically for high-growth wellness, nutraceutical, and Direct-to-Consumer (DTC) brands in the Indian market. Unlike generic pipeline-style CRMs, CureForever is custom-engineered to automate and manage **post-purchase operations** at scale. By bridging Shopify order profiles, Shiprocket logistics tracking, active cloud telephony networks, and multi-layered automated WhatsApp/SMS communications into a unified agent workflow, the platform maximizes customer retention, recovers abandoned checkouts, coordinates Non-Delivery Reports (NDR), and streamlines team operations.
 
 ---
 
-## Technology Stack
+## 2. Integrated System Architecture
 
-### Frontend
-| Layer | Technology |
-|-------|------------|
-| Framework | Next.js 14 (App Router) |
-| Language | TypeScript |
-| Styling | Tailwind CSS |
-| Charts | Recharts |
-| Icons | Lucide React |
-| Auth UI | Supabase Auth (PKCE flow) |
+The following diagram maps the high-fidelity flow of events, background cron processes, self-healing queues, and communication channels:
 
-### Backend & Infrastructure
-| Layer | Technology |
-|-------|------------|
-| API | Next.js API Routes (serverless) |
-| Real-time | Socket.IO (separate `chat_server.js`) |
-| WhatsApp Bridge | whatsapp-web.js + Meta Cloud API |
-| Database | Supabase (PostgreSQL) |
-| Auth | Supabase Auth + Row Level Security |
-| Deployment | Vercel (with cron jobs) |
+```mermaid
+graph TB
+    subgraph E-Commerce & Shipping Events
+        A1[Shopify Checkout Abandoned] -->|Meta Webhook| B1[API Webhook: /api/webhooks/shopify]
+        A2[Shopify Order Placed / Paid] -->|OAuth Refresh| B1
+        A3[Shiprocket Waybill Update] -->|REST Webhook| B2[API Webhook: /api/webhooks/shiprocket]
+    end
 
-### External Integrations
-| Service | Purpose |
-|---------|---------|
-| Shopify Admin REST API 2024-01 | Orders, customers, webhooks |
-| Shiprocket API | Delivery tracking, webhooks |
-| Meta WhatsApp Cloud API v18 | Templated WhatsApp messages |
-| Google Sheets | Audit logging, transparency |
+    subgraph Core CRM Logic Engines
+        B1 & B2 -->|Data Ingest & Unmasking| C1[(PostgreSQL Database)]
+        C2[Cron Jobs / Vercel Scheduler] -->|Daily Midnight| C3[Daily Task Generator]
+        C3 -->|Calculate priority_score| C4[Task Engine]
+        C4 -->|Min Workload Routing| C5[Active Agent Assignment]
+    end
 
----
+    subgraph Outbound Communication Layers
+        C1 -->|Trigger Automation| D1{Workflow Coordinator}
+        D1 -->|Meta Cloud WA API| E1[Primary WhatsApp Channel]
+        E1 -->|Delivery Failed / Timeout| E2[SMS Fallback Bridge]
+        E2 -->|Twilio SMS Gateway| E3[Customer SMS Receipt]
+        
+        C5 -->|Click-to-Call Trigger| F1{Telephony Selector}
+        F1 -->|Twilio Cloud Gateway| F2[Agent Outbound Dial -> Customer Bridge]
+        F1 -->|Exotel Voice Gateway| F3[Indian Virtual Number Bridge]
+        F1 -->|None / Handset Mode| F4[MacroDroid Webhook Gateway]
+    end
 
-## Directory Structure
-
-```
-crm/
-├── src/
-│   ├── app/
-│   │   ├── (app)/              # Authenticated routes (with Sidebar)
-│   │   │   ├── dashboard/       # Main dashboard
-│   │   │   ├── tasks/          # Task management
-│   │   │   ├── customers/      # Customer list + profiles
-│   │   │   ├── orders/         # Order grid with tracking
-│   │   │   ├── reports/        # Analytics
-│   │   │   ├── team/           # Agent management
-│   │   │   ├── hr/             # HR suite (attendance, payroll, etc.)
-│   │   │   ├── campaigns/      # WhatsApp campaigns
-│   │   │   ├── workflows/       # Workflow builder
-│   │   │   ├── templates/      # Message templates
-│   │   │   ├── import/         # Excel bulk import
-│   │   │   ├── calendar/       # Calendar view
-│   │   │   ├── abandoned-carts/ # Cart recovery
-│   │   │   ├── my-hub/         # Personal agent hub
-│   │   │   ├── manager/        # Manager dashboard
-│   │   │   ├── floor/          # Floor operations
-│   │   │   ├── admin-logs/     # Audit logs
-│   │   │   ├── chat/           # Team chat
-│   │   │   └── settings/       # System settings
-│   │   ├── api/                # API routes
-│   │   │   ├── webhooks/       # shopify/, shiprocket/
-│   │   │   ├── cron/           # Scheduled jobs
-│   │   │   ├── dashboard/
-│   │   │   ├── tasks/
-│   │   │   ├── customers/
-│   │   │   ├── orders/
-│   │   │   ├── sync/           # Full data sync
-│   │   │   ├── whatsapp/
-│   │   │   ├── hr/
-│   │   │   ├── leaves/
-│   │   │   └── campaigns/
-│   │   └── login/              # Auth page
-│   ├── components/
-│   │   ├── ui.tsx              # Shared UI (badges, cards, modals)
-│   │   ├── Sidebar.tsx         # Navigation
-│   │   ├── TaskCard.tsx        # Task with actions
-│   │   ├── AddCustomerModal.tsx
-│   │   ├── AdminNotifier.tsx
-│   │   ├── AgentStats.tsx
-│   │   ├── AgentHeartbeat.tsx
-│   │   ├── Leaderboard.tsx
-│   │   ├── ManagerTaskReview.tsx
-│   │   ├── NDRActionModal.tsx
-│   │   ├── ShiprocketOrderView.tsx
-│   │   ├── chat/               # Chat components
-│   │   ├── hub/                # Personal hub widgets
-│   │   └── hr/                 # HR components
-│   ├── lib/
-│   │   ├── supabase.ts         # Supabase client initialization
-│   │   ├── task-engine.ts      # Priority calculation + assignment
-│   │   ├── workflow-engine.ts  # Automation engine
-│   │   ├── whatsapp.ts         # WA messaging logic
-│   │   ├── mock-data.ts        # Development data
-│   │   ├── utils.ts            # Helpers + config maps
-│   │   ├── permissions.ts      # RBAC logic
-│   │   ├── audit.ts            # Logging
-│   │   ├── notifications.ts    # Admin alerts
-│   │   ├── google-sheets.ts    # Sync to sheets
-│   │   ├── sync-logic.ts       # Data sync
-│   │   └── unmask-utils.ts    # Phone resolution
-│   ├── types/
-│   │   └── index.ts            # TypeScript interfaces
-│   ├── hooks/
-│   │   └── useCurrentProfile.ts
-│   └── context/
-│       └── ChatContext.tsx
-├── supabase/
-│   └── schema.sql              # Full PostgreSQL schema
-├── chat_server.js              # Socket.IO chat server
-├── wa_server.js                # WhatsApp bridge server
-├── package.json
-├── tailwind.config.ts
-└── next.config.js
+    subgraph Internal CRM Modules
+        C1 -->|Live Heartbeat| G1[Agent Floor Presence & HR Suite]
+        C1 -->|Audit Events| G2[Google Sheets Live Mirror]
+    end
 ```
 
 ---
 
-## Database Schema (Core Tables)
+## 3. Core Modules Deep-Dive
 
-### `customers` — E-commerce Customers
-Stores Shopify customer data enriched with CRM metadata.
+### Module A: The Executive Dashboard (`/dashboard`)
+The command center loads global operational KPIs in real-time, pulling aggregated data from tasks, orders, checkouts, and agent tracking.
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| `id` | UUID | Primary key |
-| `shopify_customer_id` | VARCHAR(50) | Shopify reference |
-| `name`, `phone`, `email` | TEXT | Contact info |
-| `alt_phone` | TEXT | Alternative contact |
-| `segment` | ENUM | `repeat`, `one_time`, `inactive`, `risky` |
-| `rto_flag`, `rto_count` | BOOL/INT | RTO history |
-| `total_orders` | INT | Order count |
-| `last_order_date` | TIMESTAMP | For segment calculation |
-| `whatsapp_reminders_enabled` | BOOL | Opt-in status |
+#### Visual Wireframe Blueprint
+```
++-----------------------------------------------------------------------------------+
+|  [CUREFOREVER CRM]  Dashboard  Tasks  Carts  HR  Chat  Settings      [Agent Info] |
++-----------------------------------------------------------------------------------+
+|  DAILY PERFORMANCE OVERVIEW                                                       |
+|  +-------------------+  +-------------------+  +-------------------+  +---------+ |
+|  | PENDING TASKS     |  | OVERDUE (4-DAYS)  |  | RECOVERED REVENUE |  | STATUS  | |
+|  | 42 Tasks          |  | 8 Urgent          |  | ₹1,42,850         |  | ONLINE  | |
+|  +-------------------+  +-------------------+  +-------------------+  +---------+ |
+|                                                                                   |
+|  REAL-TIME LOGISTICS & TELEPHONY ENGAGEMENT                                       |
+|  +--------------------------------------------+  +------------------------------+ |
+|  | OUTSTANDING WORKLOAD BY TYPE (RECHARTS)    |  | TOP PERFORMING AGENTS        | |
+|  |   [Issue Resolution] ================== 40%|  | 1. Rajesh Kumar (98% Done)   | |
+|  |   [Abandoned Cart]   ============ 30%      |  | 2. Priya Sharma (95% Done)   | |
+|  |   [COD Verification] ========= 20%         |  | 3. Amit Singh   (92% Done)   | |
+|  +--------------------------------------------+  +------------------------------+ |
++-----------------------------------------------------------------------------------+
+```
 
-### `orders` — Synced from Shopify
-Enriched with Shiprocket tracking data.
-
-| Column | Type | Purpose |
-|--------|------|---------|
-| `id` | UUID | Primary key |
-| `customer_id` | UUID | FK to customers |
-| `shopify_order_id` | VARCHAR(50) | Shopify reference |
-| `order_number` | TEXT | Display number |
-| `line_items` | JSONB | Product details |
-| `total_price` | NUMERIC | Order value |
-| `fulfillment_status` | ENUM | `unfulfilled`, `partial`, `fulfilled` |
-| `delivery_status` | ENUM | `pending`, `in_transit`, `out_for_delivery`, `delivered`, `rto`, `failed` |
-| `tracking_number` | TEXT | Shiprocket tracking |
-| `ordered_at`, `delivered_at` | TIMESTAMP | Dates |
-
-### `tasks` — Follow-up Work Items
-Core CRM work unit. Every customer interaction flows through tasks.
-
-| Column | Type | Purpose |
-|--------|------|---------|
-| `id` | UUID | Primary key |
-| `order_id`, `customer_id` | UUID | FK references |
-| `abandoned_cart_id` | UUID | FK (for recovery tasks) |
-| `assigned_to` | UUID | FK to profiles |
-| `task_type` | ENUM | See Task Types below |
-| `due_date` | TIMESTAMP | When to act |
-| `priority_score` | INT | Computed priority |
-| `status` | ENUM | `pending`, `due`, `done`, `rescheduled`, `skipped`, `cancelled`, `overdue` |
-| `call_attempt_count` | INT | Attempt tracking |
-| `next_attempt_at` | TIMESTAMP | Callback scheduling |
-| `completed_at`, `rescheduled_to` | TIMESTAMP | Outcome tracking |
-
-### `abandoned_carts` — Checkout Abandonment
-Tracks Shopify checkouts that didn't convert to orders.
-
-| Column | Type | Purpose |
-|--------|------|---------|
-| `id` | UUID | Primary key |
-| `customer_id` | UUID | FK to customers |
-| `cart_token` | VARCHAR | Shopify cart token (unique) |
-| `total_price` | NUMERIC | Cart value |
-| `line_items` | JSONB | Products in cart |
-| `recovery_status` | ENUM | `pending`, `recovered`, `cancelled` |
-| `abandoned_at` | TIMESTAMP | When abandoned |
-
-### `call_logs` — Interaction Audit Trail
-Every agent interaction is logged here.
-
-| Column | Type | Purpose |
-|--------|------|---------|
-| `id` | UUID | Primary key |
-| `task_id`, `customer_id` | UUID | FK references |
-| `outcome` | ENUM | `done`, `rescheduled`, `no_answer`, `skipped`, `whatsapp` |
-| `disposition` | ENUM | `interested`, `callback_requested`, `purchased`, `support_needed`, `not_interested`, `wrong_number`, `follow_up_later` |
-| `note` | TEXT | Agent notes |
-| `called_at` | TIMESTAMP | When called |
-
-### `profiles` — User Accounts with RBAC
-
-| Column | Type | Purpose |
-|--------|------|---------|
-| `id` | UUID | FK to auth.users |
-| `email`, `name` | TEXT | Identity |
-| `role` | ENUM | `admin`, `agent`, `hr`, `manager` |
-| `permissions` | JSONB | Granular RBAC |
-| `status` | ENUM | `online`, `break`, `meeting`, `lunch`, `away`, `offline` |
-| `assigned_segments` | TEXT[] | Specialization |
-| `assigned_task_types` | TEXT[] | Specialization |
-
-### `settings` — Global Configuration (Single Row)
-Key-value configuration store (upserted, not inserted).
-
-| Setting | Default | Purpose |
-|---------|---------|---------|
-| `review_offset_days` | 5 | Days after delivery to request review |
-| `reorder_offset_days` | 20 | Days after delivery for reorder reminder |
-| `final_offset_days` | 30 | Days after delivery for final follow-up |
-| `inactive_threshold_days` | 45 | Days to mark customer inactive |
-| `recovery_delay_hours` | 24 | Hours before sending cart recovery WA |
-| WhatsApp tokens/IDs | — | Meta Cloud API credentials |
-| Shopify credentials | — | Store domain, API key |
-| Shiprocket credentials | — | Email, password |
+- **Metrics Calculation**:
+  - *Recovered Revenue*: Aggregated total order price of converted carts tracked via `/api/webhooks/shopify` matching active `recovery` tasks.
+  - *Overdue Guardrails*: Limits long-running database scans by querying only the past 4 days of pending tasks to optimize render speeds.
 
 ---
 
-## Task Types
+### Module B: The Intelligent Task Engine (`/tasks`)
+Tasks represent the core operational unit. Every customer touchpoint is calculated, structured, and routed dynamically.
 
-| Task Type | Priority Weight | Description |
-|-----------|----------------|-------------|
-| `issue_resolution` | 120 | RTO, delivery issues |
-| `recovery` | 80 | Abandoned cart recovery |
-| `cod_verify` | 75 | Cash on delivery verification |
-| `ndr` | 70 | Non-deliverable report handling |
-| `transit_update` | 60 | In-transit status updates |
-| `review` | 50 | Request product review |
-| `reorder` | 40 | Remind to reorder |
-| `final_followup` | 30 | Final follow-up after delivery |
-| `manager_audit` | 25 | Manager review task |
+#### Priority Scoring Algorithm (`src/lib/task-engine.ts`)
+The priority score determines the order in which tasks appear on an agent's screen:
+$$\text{Score} = \text{Base Weight} + \text{Price Weight} + \text{Loyalty Bonus} + \text{Segment Modifier} + \text{Urgency Weight} - \text{RTO Penalty}$$
 
----
+| Factor | Calculation Logic |
+| :--- | :--- |
+| **Base Weight** | `issue_resolution`: 120, `recovery`: 80, `cod_verify`: 75, `ndr`: 70, `transit_update`: 60, `review`: 50, `reorder`: 40, `final_followup`: 30 |
+| **Price Weight** | Value $\ge 5000$: +40 \| Value $\ge 3000$: +25 \| Value $\ge 1500$: +15 |
+| **Loyalty Bonus** | Customer Orders $\ge 5$: +30 \| Orders $\ge 2$: +15 |
+| **Segment Modifier** | `risky`: +20 (high urgency) \| `repeat`: +10 |
+| **Urgency Weight** | `overdueDays` $\times$ 6 (capped at maximum +45) |
+| **RTO Penalty** | -15 for `risky` segment (applied to all tasks except `issue_resolution` to shield agent bandwidth) |
 
-## Customer Segments
-
-| Segment | Logic |
-|---------|-------|
-| `repeat` | 2+ total orders |
-| `one_time` | 1 order, recent |
-| `inactive` | No order in 45+ days |
-| `risky` | Has RTO flag set |
+#### Specialization-Based Workload Assignment
+1. Scans for active agent profiles (`profiles.is_active = true` and presence status is not `offline`).
+2. Filters eligible agents by comparing the task's segment and type against `assigned_segments` and `assigned_task_types` arrays.
+3. Groups available candidates by network latency (Online $\le 5$ min, Recent $\le 1$ hour).
+4. Routes the task to the agent holding the absolute lowest volume of active pending tasks.
 
 ---
 
-## Authentication & Authorization
+### Module C: Omnichannel Cloud Telephony Gateway (`src/components/ClickToCallModal.tsx`)
+Launched in Milestone 3, this system integrates cloud telephony gateways with manual mobile integrations to enable outbound calls with real-time logging.
 
-### Authentication
-- **Provider**: Supabase Auth
-- **Method**: Email/password with PKCE flow
-- **Session**: JWT with auto-refresh
-- **Login URL**: `/login`
-
-### Roles & Permissions
-
-| Role | Description |
-|------|-------------|
-| `admin` | Full system access |
-| `agent` | Task management, customer views |
-| `hr` | HR module access only |
-| `manager` | Team oversight, analytics |
-
-### Permissions Object (per profile)
-```typescript
-interface UserPermissions {
-  view_analytics: boolean;
-  can_import: boolean;
-  can_delete: boolean;
-  manage_team: boolean;
-  manage_orders: boolean;
-  manage_customers: boolean;
-  send_whatsapp: boolean;
-  audit_tasks: boolean;
-  manage_automations: boolean;
-}
 ```
+                  +----------------------------------------+
+                  |           CLOUD CLICK-TO-CALL          |
+                  +----------------------------------------+
+                  | Call Recipient: Ramesh Patel           |
+                  | Customer Phone: +919876543210          |
+                  |                                        |
+                  | [x] Use Twilio Voice Cloud             |
+                  |                                        |
+                  | Input Agent Forwarding Number:         |
+                  | [ +91 99887 76655                 ]    |
+                  |                                        |
+                  |   [ Direct Dialer ]   [ CALL VIA CLOUD ] |
+                  +----------------------------------------+
+```
+
+- **Twilio Voice REST Integration** (`src/app/api/telephony/call/route.ts`):
+  Initiates a server-side call using Basic Authentication to Twilio Voice endpoints. The parameters include the agent's forwarding number, caller ID, and a self-contained TwiML script instructing Twilio to dial the agent first, and bridge the customer instantly upon answer:
+  ```xml
+  <Response>
+    <Dial callerId="+1XXXYYYZZZZ">
+      <Number>+919876543210</Number>
+    </Dial>
+  </Response>
+  ```
+- **Exotel Connect Voice Gateway**:
+  Triggers Exotel's server-to-server outbound bridge using Exotel SID, token, and virtual numbers.
+- **Android Handset MacroDroid Webhook Receiver**:
+  Generates manual dial requests broadcasted to agent mobile handsets running MacroDroid receivers for zero-cost, localized calling.
 
 ---
 
-## API Routes Overview
+### Module D: WhatsApp & Twilio SMS Fallback Bridge
+High-throughput post-purchase communications must hit near-100% receipt rates. If Meta's WhatsApp Cloud API rejects a template delivery or reports a template failure, the system falls back to SMS.
 
-### Dashboard & Stats
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/dashboard` | GET | Today's tasks, overdue, upcoming, counts |
-| `/api/dashboard/agent` | GET | Agent-specific stats |
+```mermaid
+sequenceDiagram
+    participant CRM as CRM Workflow Engine
+    participant WA as Meta WhatsApp Cloud API
+    participant SMS as Twilio SMS Gateway
+    participant CUST as Customer Handset
 
-### Tasks CRUD
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/tasks` | GET | List with filters (status, type, customer, date) |
-| `/api/tasks` | POST | Create manual task |
-| `/api/tasks/[id]/[action]` | POST | complete/reschedule/skip |
-| `/api/tasks/[id]/attempt` | POST | Log call attempt |
-| `/api/tasks/repair-dates` | POST | Fix task due dates |
+    CRM->>WA: Send Template Message (Cart/Order/Review)
+    alt WhatsApp Success (200 OK)
+        WA-->>CUST: Message Delivered
+        WA-->>CRM: Status: Delivered
+    else WhatsApp Failure (Error code / Timeout)
+        WA-->>CRM: Status: Failed
+        CRM->>CRM: Check settings.sms_fallback_enabled = true
+        CRM->>SMS: Post REST SMS Request (Basic Auth)
+        SMS-->>CUST: Deliver Standard SMS Fallback
+        CRM->>CRM: Update task log notes: "[SMS Fallback]"
+    end
+```
 
-### Webhooks
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/webhooks/shopify` | POST | orders/create, orders/updated, checkouts/create/update |
-| `/api/webhooks/shiprocket` | POST | Delivery status updates, tracking |
-| `/api/webhooks/whatsapp` | POST | Inbound WhatsApp messages |
-
-### Cron Jobs
-| Endpoint | Schedule | Purpose |
-|----------|----------|---------|
-| `/api/cron/task-generator` | Daily midnight | Creates review/reorder/final_followup tasks |
-| `/api/cron/overdue-marker` | Daily 00:05 | Mark past-due tasks as overdue |
-| `/api/cron/segment-updater` | Daily 02:00 | Recompute customer segments |
-| `/api/cron/recovery-reminder` | On-demand | Abandoned cart recovery |
-| `/api/cron/workflow-executor` | On-demand | Execute workflow steps |
-
-### Sync
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/sync/shopify` | POST | Full Shopify sync |
-| `/api/sync/shiprocket` | POST | Shiprocket sync |
-| `/api/sync/all` | POST | Complete sync |
-| `/api/sync/unmask` | POST | Unmask all masked phones |
+* **WhatsApp Secondary Endpoint**: Integrates a local `wa_server.js` using `whatsapp-web.js` for localized, zero-cost fallback broadcasts over standard scanned QR sessions.
 
 ---
 
-## Key Business Flows
+### Module E: Automated E-Commerce & Logistics Sync
+Pipes data dynamically from Shopify checkout processes and Shiprocket logistics.
 
-### 1. Abandoned Cart Recovery Flow
-```
-1. Customer starts checkout on Shopify but doesn't complete
-2. Shopify sends checkout webhook → /api/webhooks/shopify
-3. System creates/updates abandoned_carts record
-4. Creates recovery task (due: now + recovery_delay_hours)
-5. Agent contacts customer via WhatsApp with cart recovery message
-6. If customer completes order → cart marked recovered, task done
-```
-
-### 2. Order Delivery Follow-up Flow
-```
-1. Shiprocket sends delivery webhook → /api/cron/task-generator
-2. task-generator finds delivered orders without follow-up tasks
-3. Creates 3 tasks per order:
-   - review (due: delivered_at + review_offset_days)
-   - reorder (due: delivered_at + reorder_offset_days)
-   - final_followup (due: delivered_at + final_offset_days)
-4. Tasks auto-assigned to agents based on specialization + workload
-5. Agents complete tasks and log outcomes
-```
-
-### 3. RTO Handling Flow
-```
-1. Shiprocket reports RTO/failed delivery
-2. System updates order.delivery_status = "rto"
-3. Cancels all pending follow-up tasks for that order
-4. Creates issue_resolution task (due: today)
-5. If 2+ RTOs for customer → marks as "risky" segment
-6. WhatsApp notification sent to admin
-```
-
-### 4. Task Priority Calculation
-```typescript
-score = baseWeight[taskType]        // issue_resolution: 120, recovery: 80
-       + priceWeight                 // 5000+: +40, 3000+: +25, 1500+: +15
-       + loyaltyBonus                // 5+ orders: +30, 2+ orders: +15
-       + rtoPenalty                 // -15 if risky (except issue_resolution)
-       + segmentBonus               // risky: +20, repeat: +10
-       + urgencyBonus               // overdueDays * 6 (max 45)
-       + priorityOverride           // +50 if high-priority product
-```
-
-### 5. Agent Assignment Algorithm
-```typescript
-1. Get all active agents (status != offline)
-2. Filter by specialization (assigned_segments, assigned_task_types)
-3. Categorize by presence:
-   - Online: last_seen within 5 minutes
-   - Recent: last_seen within 1 hour
-   - Fallback: any active agent
-4. Get current pending task count per agent
-5. Return agent with minimum workload
-```
-
-### 6. Customer Segmentation Logic
-```typescript
-if (rto_flag) return "risky"
-if (total_orders >= 2) return "repeat"
-if (last_order_date < now - 45 days) return "inactive"
-return "one_time"
-```
+- **OAuth Credentials Management**:
+  Configured a self-healing auto-refresh endpoint. If a webhook or sync reports a `401 Unauthorized` token, it reads the encrypted `shopify_refresh_token` from the database, triggers the token endpoint with Client ID and Secret credentials, saves the fresh token back to settings, and retries the sync process.
+- **Fastrr Checkouts & Webhooks** (`src/app/api/webhooks/shopify/route.ts`):
+  Decodes cart abandonment payloads. If an uncompleted checkout token is captured, it schedules a `recovery` task in PostgreSQL exactly `settings.recovery_delay_hours` later.
+- **Transit Inform Pipeline** (`src/app/api/cron/task-generator/route.ts`):
+  Scans all active orders holding the `in_transit` state. If the shipment remains stuck in transit for 48+ hours, it cancels general follow-up sequences and creates an `issue_resolution` task assigned to the NDR logistics team.
+- **Sentiment Protection Guardrail**:
+  If a customer profile has a pending, open, or unresolved `issue_resolution` task (e.g. damaged package, missing refund, wrong shipment), the system immediately **suppresses all automatic reviews or reorder campaigns** to avoid brand damage.
 
 ---
 
-## WhatsApp Integration
+### Module F: The Interactive Calendar Module (`/calendar`)
+Provides agents and floor managers a clean calendar interface to organize task loads.
 
-### How It Works
+- **Visualizing Time & Work**: Displays color-coded task cards over a day, week, or month layout. Red marks high-priority tasks (e.g. `issue_resolution`, `recovery`), orange for standard `cod_verify` tasks, and cream/grey for routine follow-ups.
+- **Quick-Action Panel**: Clicking on a scheduled calendar block slides in a panel where agents can complete, reschedule, or initiate click-to-call dialing instantly without losing their place on the calendar.
+
+---
+
+### Module G: The Indian Compliance HR & Payroll Suite (`/hr`)
+Handles agent floor management and payroll operations according to Indian compliance standards.
+
+#### Heartbeat Presence Monitor (`src/components/AgentHeartbeat.tsx`)
+Updates agent activity status to the database every 60 seconds. If an agent goes idle or fails to send heartbeats, their status changes to offline, pausing task routing to their queue.
+
+#### Financial Calculations & Tax Compliance Formulae
+When a manager runs monthly payroll via the console, the system applies the following calculations:
+
 ```
-1. Event occurs (order_placed, order_delivered, cart_abandoned)
-2. WorkflowEngine checks settings flags (wa_auto_*)
-3. If enabled:
-   - Personalizes template with customer/order data
-   - Sends via Meta Cloud API (primary) or local wa_server.js (fallback)
-   - Logs to whatsapp_messages table
-```
-
-### Template Types
-- `whatsapp_review_template` — Review request
-- `whatsapp_reorder_template` — Reorder reminder
-- `whatsapp_recovery_template` — Cart recovery
-- `whatsapp_final_template` — Final follow-up
-- `whatsapp_transit_template` — In-transit update
-
----
-
-## Workflow Engine
-
-The workflow engine (`src/lib/workflow-engine.ts`) automates multi-step sequences:
-
-### Triggers
-- `order_placed`, `order_delivered`, `order_rto`
-- `cart_abandoned`, `order_in_transit`
-- `manual`, `scheduled`
-
-### Step Types
-- `message` — Send WhatsApp message
-- `task` — Create follow-up task
-- `delay` — Wait before next step
-
-### Features
-- Idempotency per order/customer (prevents duplicate executions)
-- Inventory-aware (skips if out of stock — via Shopify product data)
-- Step-by-step execution via `/api/cron/workflow-executor`
-
----
-
-## HR Module
-
-The HR module handles internal team operations:
-
-### Attendance
-- Real-time monthly grid tracking
-- Check-in/check-out via AgentHeartbeat
-- Status: online, break, meeting, lunch, away, offline
-
-### Payroll (Indian Tax Compliance)
-- PF (Provident Fund) calculation
-- PT (Professional Tax) deduction
-- TDS calculation
-- Salary disbursement tracking via `payroll_runs`
-
-### Leave Management
-- Leave request submission via Sidebar
-- Approval workflow (manager approves/rejects)
-- Leave balance tracking
-
-### Employee Lifecycle
-- Offer letter generation
-- Relieving letter generation
-- Document management
-
----
-
-## UI Design System
-
-| Property | Value |
-|----------|-------|
-| Background | `#f7f4ed` (warm cream) |
-| Primary Text | `#1c1c1c` (charcoal) |
-| Light Border | `#eceae4` |
-| Interactive Border | `rgba(28,28,28,0.4)` |
-| Standard Radius | `6px` |
-| Card Radius | `12px` |
-| Pill Radius | `9999px` |
-| Focus Shadow | `rgba(0,0,0,0.1) 0px 4px 12px` |
-
----
-
-## Frontend Pages Summary
-
-| Page | Route | Purpose |
-|------|-------|---------|
-| Login | `/login` | Supabase Auth |
-| Dashboard | `/dashboard` | Today's tasks, stats, overdue |
-| Tasks | `/tasks` | Full task list with filters |
-| Customers | `/customers`, `/customers/[id]` | Customer list + profiles |
-| Orders | `/orders` | Order grid + tracking |
-| Reports | `/reports` | Analytics |
-| Team | `/team`, `/team/[id]` | Agent management |
-| HR | `/hr` | HR suite (tabbed) |
-| Campaigns | `/campaigns` | WhatsApp broadcasts |
-| Workflows | `/workflows` | Visual automation builder |
-| Templates | `/templates` | Message templates |
-| Import | `/import` | Excel bulk import |
-| Calendar | `/calendar` | Task calendar view |
-| Abandoned Carts | `/abandoned-carts` | Cart recovery |
-| My Hub | `/my-hub` | Personal agent dashboard |
-| Manager | `/manager` | Manager dashboard |
-| Floor | `/floor` | Floor operations |
-| Admin Logs | `/admin-logs` | Audit trail |
-| Chat | `/chat` | Team messaging |
-| Settings | `/settings` | System configuration |
-
----
-
-## Cron Jobs Configuration (Vercel)
-
-```json
-{
-  "crons": [
-    { "path": "/api/cron/task-generator", "schedule": "0 0 * * *" },
-    { "path": "/api/cron/overdue-marker", "schedule": "5 0 * * *" },
-    { "path": "/api/cron/segment-updater", "schedule": "0 2 * * *" }
-  ]
-}
+                  +-----------------------------------------+
+                  |         INDIAN COMPLIANCE PAYROLL       |
+                  +-----------------------------------------+
+                  | Gross Base Salary: ₹30,000              |
+                  |                                         |
+                  | Deductions:                             |
+                  |   - Provident Fund (12%): ₹3,600        |
+                  |   - Professional Tax (PT): ₹200         |
+                  |   - TDS (Estimated Tax):  ₹1,500        |
+                  |                                         |
+                  | Net Pay Distributed: ₹24,700            |
+                  +-----------------------------------------+
 ```
 
+1. **Provident Fund (PF)**:
+   $$\text{PF Deduction} = \text{Basic Salary} \times 12\%$$
+   *(Under EPF Act, 1952, capped at a basic wage of ₹15,000 per month unless voluntary option is set).*
+2. **Professional Tax (PT)**:
+   Assesses professional taxes according to regional state slab structures:
+   $$\text{PT} = \begin{cases} \text{₹200} & \text{Monthly Gross } \ge \text{₹10,000} \\ \text{₹0} & \text{Otherwise} \end{cases}$$
+   *(Note: Maharashtra levies ₹250 in February, ₹200 in all other months).*
+3. **Tax Deducted at Source (TDS)**:
+   Dynamic calculation according to estimated income tax slabs or standard rates:
+   $$\text{TDS} = \text{Gross Monthly Salary} \times \text{TDS Rate (e.g., 5\% or 10\% depending on PAN status)}$$
+
 ---
 
-## Database Indexes
+## 4. Comprehensive Database Schema Reference
 
+A complete set of optimized PostgreSQL tables running under Supabase:
+
+```
+                                 [profiles]
+                                     | (1)
+                                     |
+                                     | (many)
+  [customers] (1)-----(many) [orders] (1)-----(many) [tasks] (1)-----(many) [call_logs]
+       |                         |                      |
+       | (1)                     | (1)                  | (1)
+       |                         |                      |
+       | (many)                  | (1)                  | (1)
+  [abandoned_carts] ------------+                      +-- [raw_call_logs] (1:1)
+```
+
+### Table 1: `public.customers`
 ```sql
-idx_tasks_customer_status_due  ON tasks(customer_id, status, due_date)
-idx_tasks_order_type           ON tasks(order_id, task_type)
-idx_tasks_due_date_status     ON tasks(due_date, status)
-idx_orders_customer_delivery   ON orders(customer_id, delivery_status)
-idx_orders_shopify_id         ON orders(shopify_order_id)
-idx_customers_phone           ON customers(phone)
-idx_customers_segment         ON customers(segment)
-idx_call_logs_task            ON call_logs(task_id)
+CREATE TABLE public.customers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    shopify_customer_id VARCHAR(100) UNIQUE,
+    name TEXT NOT NULL,
+    phone VARCHAR(50) NOT NULL,
+    email TEXT,
+    alt_phone VARCHAR(50) DEFAULT '',
+    segment VARCHAR(50) DEFAULT 'one_time', -- repeat, one_time, inactive, risky
+    rto_flag BOOLEAN DEFAULT false,
+    rto_count INT DEFAULT 0,
+    total_orders INT DEFAULT 0,
+    last_order_date TIMESTAMP WITH TIME ZONE,
+    whatsapp_reminders_enabled BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+```
+
+### Table 2: `public.orders`
+```sql
+CREATE TABLE public.orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    customer_id UUID REFERENCES public.customers(id) ON DELETE CASCADE,
+    shopify_order_id VARCHAR(100) UNIQUE,
+    order_number VARCHAR(100) NOT NULL,
+    line_items JSONB NOT NULL,
+    total_price NUMERIC(12,2) NOT NULL,
+    fulfillment_status VARCHAR(50) DEFAULT 'unfulfilled', -- unfulfilled, partial, fulfilled
+    delivery_status VARCHAR(50) DEFAULT 'pending', -- pending, in_transit, out_for_delivery, delivered, rto, failed
+    tracking_number VARCHAR(100) DEFAULT '',
+    ordered_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    delivered_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+```
+
+### Table 3: `public.tasks`
+```sql
+CREATE TABLE public.tasks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE,
+    customer_id UUID REFERENCES public.customers(id) ON DELETE CASCADE,
+    abandoned_cart_id UUID REFERENCES public.abandoned_carts(id) ON DELETE SET NULL,
+    assigned_to UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    task_type VARCHAR(50) NOT NULL, -- issue_resolution, recovery, cod_verify, review, reorder, etc.
+    due_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    priority_score INT DEFAULT 0,
+    status VARCHAR(50) DEFAULT 'pending', -- pending, due, done, rescheduled, skipped, cancelled, overdue
+    call_attempt_count INT DEFAULT 0,
+    next_attempt_at TIMESTAMP WITH TIME ZONE,
+    completed_at TIMESTAMP WITH TIME ZONE,
+    rescheduled_to TIMESTAMP WITH TIME ZONE,
+    notes TEXT DEFAULT '',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+```
+
+### Table 4: `public.settings`
+```sql
+CREATE TABLE public.settings (
+    id UUID PRIMARY KEY,
+    review_offset_days INT DEFAULT 5,
+    reorder_offset_days INT DEFAULT 20,
+    final_offset_days INT DEFAULT 30,
+    inactive_threshold_days INT DEFAULT 45,
+    recovery_delay_hours INT DEFAULT 24,
+    
+    -- WhatsApp Credentials
+    whatsapp_app_id VARCHAR(255) DEFAULT '',
+    whatsapp_app_secret VARCHAR(255) DEFAULT '',
+    whatsapp_phone_id VARCHAR(255) DEFAULT '',
+    whatsapp_token VARCHAR(255) DEFAULT '',
+    
+    -- Telephony Credentials (Milestone 3)
+    telephony_provider VARCHAR(50) DEFAULT 'none',
+    twilio_account_sid VARCHAR(255) DEFAULT '',
+    twilio_auth_token VARCHAR(255) DEFAULT '',
+    twilio_caller_id VARCHAR(50) DEFAULT '',
+    exotel_sid VARCHAR(255) DEFAULT '',
+    exotel_token VARCHAR(255) DEFAULT '',
+    exotel_caller_id VARCHAR(50) DEFAULT '',
+    
+    -- SMS Fallback Credentials (Milestone 3)
+    sms_fallback_enabled BOOLEAN DEFAULT false,
+    sms_provider VARCHAR(50) DEFAULT 'twilio',
+    sms_twilio_sid VARCHAR(255) DEFAULT '',
+    sms_twilio_token VARCHAR(255) DEFAULT '',
+    sms_twilio_number VARCHAR(50) DEFAULT ''
+);
 ```
 
 ---
 
-## Self-Healing Mechanisms
+## 5. System Setup & Compilation Guide
 
-The system has several idempotency and self-healing checks:
+### Local Environment Setup
+To spin up the environment locally, configure the following keys in your `.env.local` file:
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-1. **Delivery status changes to "delivered"** → Cancel premature review tasks
-2. **Delivery status changes from "delivered"** → Cancel already-created review tasks
-3. **Webhook processing** → Idempotency checks prevent duplicate processing
-4. **Phone unmasking** → Sentinel resolves masked Shiprocket phones from order history
-5. **Order/task heal** → Sync endpoint can repair orphaned records
+# Production Shopify OAuth Setup
+SHOPIFY_CLIENT_ID=shopify_app_client_id_here
+SHOPIFY_API_SECRET=shopify_app_api_secret_here
 
----
-
-## Google Sheets Integration
-
-Webhook events and order data are synced to Google Sheets for non-technical stakeholder visibility:
-
-- `Audit_Logs` — All system events
-- `Orders` — Order sync log
-- `Abandoned_Carts` — Cart abandonment data
-
----
-
-## How It All Fits Together
-
-```
-SHOPIFY                          SUPERBASE                         VERCEL
-┌─────────────┐                  ┌──────────────────┐               ┌─────────────────┐
-│ Customer    │ webhook         │ customers table  │              │ Next.js App     │
-│ places      │───────────────► │ orders table     │              │                 │
-│ order       │                  │ tasks table      │              │ API Routes      │
-└─────────────┘                  │ abandoned_carts  │              │                 │
-      │                          │ call_logs        │              │ Cron Jobs       │
-      │ webhook                 │ profiles         │              │                 │
-      ▼                          └──────────────────┘              └────────┬────────┘
-┌─────────────┐                                                 │           │
-│ Cart        │                  ┌──────────────────┐            │    META WHATSAPP
-│ abandoned   │───────────────► │ Workflow Engine   │────────────┼──────────► CLOUD API
-└─────────────┘                  │ task-engine.ts   │            │
-                                  └──────────────────┘            │
-                                                                   ▼
-                                  ┌──────────────────┐      ┌─────────────────┐
-                                  │ wa_server.js     │◄─────│ whatsapp-web.js │
-                                  │ (fallback WA)    │      │ (local bridge)  │
-                                  └──────────────────┘      └─────────────────┘
-
-SHIPROCKET                                                        AGENTS
-┌─────────────┐                  ┌──────────────────┐            ┌─────────────────┐
-│ Delivery    │ webhook         │ Order updated    │            │ Task Cards      │
-│ status      │───────────────► │ delivery_status   │───────────►│ Complete/Skip   │
-│ update      │                  └──────────────────┘            │ WhatsApp        │
-└─────────────┘                                                   └─────────────────┘
+# Shiprocket Credentials
+SHIPROCKET_EMAIL=shiprocket_registered_email@domain.com
+SHIPROCKET_PASSWORD=shiprocket_password_here
 ```
 
----
+### Verification & Operations Checklists
+Verify compilation and run-time safety before pushes or updates to live production pipelines:
 
-## Summary
-
-| Metric | Value |
-|--------|-------|
-| Total API Routes | ~60+ |
-| Database Tables | 15+ |
-| Frontend Pages | 25+ |
-| Task Types | 9 |
-| Customer Segments | 4 |
-| Delivery Statuses | 6 |
-| User Roles | 4 |
-| WhatsApp Integrations | 2 (Meta Cloud API + local fallback) |
-| External Integrations | 4 (Shopify, Shiprocket, Meta WA, Google Sheets) |
-
-CureForever CRM is essentially a **task automation platform for post-purchase e-commerce operations**, combining Shopify order data, Shiprocket logistics tracking, and WhatsApp communication into a unified workflow for wellness brands to maximize customer retention and recover abandoned revenue.
+1. **Static Type Verification Check**:
+   ```bash
+   npx tsc --noEmit
+   ```
+2. **Execute Local Development Engine**:
+   ```bash
+   npm run dev
+   ```
+3. **Execute Real-time Socket.IO Chat Broadcast Engine**:
+   ```bash
+   npm run chat
+   ```
+4. **Execute Backup Local WhatsApp Bridge Session**:
+   ```bash
+   npm run wa
+   ```

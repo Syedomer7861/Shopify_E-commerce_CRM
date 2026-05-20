@@ -44,6 +44,7 @@ import { useChat } from "@/context/ChatContext";
 import { useRouter } from "next/navigation";
 import RTOClaimGenerator from "./RTOClaimGenerator";
 import { WhatsAppChat } from "./chat/WhatsAppChat";
+import ClickToCallModal from "./ClickToCallModal";
 
 interface TaskCardProps {
   task: Task & { customer: Customer; order?: Order; abandoned_cart?: AbandonedCart };
@@ -176,6 +177,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   const [sendWaInLog, setSendWaInLog] = useState(false);
   const [logWaMessage, setLogWaMessage] = useState("");
   const [processingManager, setProcessingManager] = useState(false);
+  const [showClickToCall, setShowClickToCall] = useState(false);
 
   const handleManagerAction = async (e: React.MouseEvent, action: 'approved' | 'rejected') => {
     e.stopPropagation();
@@ -801,7 +803,15 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   className="inline-block"
                 >
                   <div className="flex items-center gap-2 mt-0.5">
-                    <a href={`tel:${task.customer.phone}`} className="text-[11px] text-gray-500 hover:text-[#1c1c1c] flex items-center gap-1">
+                    <a 
+                      href={`tel:${task.customer.phone}`} 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowClickToCall(true);
+                      }}
+                      className="text-[11px] text-gray-500 hover:text-[#1c1c1c] flex items-center gap-1"
+                    >
                       <Phone className="w-2.5 h-2.5" /> {task.customer.phone}
                     </a>
                     <a href={`sms:${task.customer.phone}`} className="text-[11px] text-gray-500 hover:text-[#1c1c1c] flex items-center gap-1 border-l border-gray-200 pl-2">
@@ -882,7 +892,13 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   </>
                 ) : (
                   <>
-                    <button onClick={() => setDoneModal(true)} className="btn-primary text-[10px] py-1 px-4 h-8 rounded-lg">
+                    <button 
+                      onClick={() => setShowClickToCall(true)} 
+                      className="btn-primary text-[10px] py-1 px-4 h-8 rounded-lg flex items-center gap-1.5"
+                    >
+                      <Phone className="w-3 h-3 fill-current" /> Call
+                    </button>
+                    <button onClick={() => setDoneModal(true)} className="btn-secondary text-[10px] py-1 px-4 h-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5 bg-white shadow-sm">
                       <CheckCircle className="w-3 h-3" /> Log Call
                     </button>
                     <button onClick={openWa} className="btn-secondary text-[10px] py-1 px-4 h-8 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5">
@@ -948,7 +964,13 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                     </>
                   ) : (
                     <>
-                      <button onClick={() => setDoneModal(true)} className="btn-primary text-[10px] py-1 px-3 h-7 rounded-md">
+                      <button 
+                        onClick={() => setShowClickToCall(true)} 
+                        className="btn-primary text-[10px] py-1 px-3 h-7 rounded-md flex items-center gap-1.5"
+                      >
+                        <Phone className="w-3 h-3 fill-current" /> Call
+                      </button>
+                      <button onClick={() => setDoneModal(true)} className="btn-secondary text-[10px] py-1 px-3 h-7 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5 bg-white shadow-sm">
                         <CheckCircle className="w-3 h-3" /> Log Call
                       </button>
                       <button onClick={openWa} className="btn-secondary text-[10px] py-1 px-3 h-7 text-[#1c1c1c] border-[#1c1c1c]/20 hover:bg-[#1c1c1c]/5 bg-white shadow-sm">
@@ -1717,6 +1739,16 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
              setShowNDRModal(false);
              window.location.reload();
           }}
+        />
+      )}
+
+      {showClickToCall && (
+        <ClickToCallModal 
+          open={showClickToCall}
+          onClose={() => setShowClickToCall(false)}
+          customerName={task.customer.name}
+          customerPhone={task.customer.phone}
+          taskId={task.id}
         />
       )}
     </>

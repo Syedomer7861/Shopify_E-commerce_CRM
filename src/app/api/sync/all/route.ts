@@ -373,7 +373,7 @@ export async function POST(req: NextRequest) {
             .select("id", { count: "exact", head: true })
             .eq("order_id", order.id)
             .eq("task_type", "issue_resolution")
-            .not("status", "in", '("done","cancelled")');
+            .not("status", "in", '("done","cancelled","skipped")');
 
           if ((count || 0) === 0) {
             const { data: customer } = await supabase

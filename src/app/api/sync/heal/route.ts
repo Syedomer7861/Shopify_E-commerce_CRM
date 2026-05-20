@@ -259,7 +259,7 @@ export async function POST(req: NextRequest) {
       .from("tasks")
       .select("id, customer_id, order_id, orders!inner(delivery_status)")
       .in("task_type", ["issue_resolution", "transit_update"])
-      .not("status", "in", '("done","cancelled")')
+      .not("status", "in", '("done","cancelled","skipped")')
       .eq("orders.delivery_status", "delivered");
 
     if (mismatchedTasks && mismatchedTasks.length > 0) {

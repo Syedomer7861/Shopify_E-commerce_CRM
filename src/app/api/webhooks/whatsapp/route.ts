@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
                 priority_score: 150 // Jump to the absolute top
             })
             .eq("customer_id", customer.id)
-            .not("status", "in", '("done","cancelled")');
+            .not("status", "in", '("done","cancelled","skipped")');
       }
 
       // 3. Handle Button Clicks

@@ -111,15 +111,21 @@ export default function Sidebar() {
   const fetchTaskCounts = useCallback(async (userId: string, role?: string) => {
     try {
       const today = toDbDateString(new Date());
+      
+      const fourDaysAgoDate = new Date();
+      fourDaysAgoDate.setDate(new Date().getDate() - 4);
+      const fourDaysAgo = toDbDateString(fourDaysAgoDate);
+
       let dueQuery = supabase.from("tasks")
         .select("*, customer:customers!inner(id, segment)", { count: "exact", head: true })
         .eq("due_date", today)
-        .not("status", "in", '("done","cancelled")');
+        .not("status", "in", '("done","cancelled","skipped")');
       
       let overdueQuery = supabase.from("tasks")
         .select("*, customer:customers!inner(id, segment)", { count: "exact", head: true })
         .lt("due_date", today)
-        .not("status", "in", '("done","cancelled")');
+        .gte("due_date", fourDaysAgo)
+        .not("status", "in", '("done","cancelled","skipped")');
 
       if (role === "agent" && profile) {
         dueQuery = applyAgentFilters(dueQuery, profile);

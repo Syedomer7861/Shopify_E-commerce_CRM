@@ -179,6 +179,10 @@ export default function TasksPage() {
     thirtyDaysAgoDate.setDate(todayDate.getDate() - 30);
     const thirtyDaysAgo = toDbDateString(thirtyDaysAgoDate);
 
+    const fourDaysAgoDate = new Date();
+    fourDaysAgoDate.setDate(todayDate.getDate() - 4);
+    const fourDaysAgo = toDbDateString(fourDaysAgoDate);
+
     const fourteenDaysAgoDate = new Date();
     fourteenDaysAgoDate.setDate(todayDate.getDate() - 14);
     const fourteenDaysAgo = toDbDateString(fourteenDaysAgoDate);
@@ -265,13 +269,13 @@ export default function TasksPage() {
 
     // Status logic (Dynamic vs Static)
     if (statusFilter === "due") {
-      query = query.eq("due_date", today).not("status", "in", '("done","cancelled")');
+      query = query.eq("due_date", today).not("status", "in", '("done","cancelled","skipped")');
     } else if (statusFilter === "overdue") {
-      query = query.lt("due_date", today).gte("due_date", thirtyDaysAgo).not("status", "in", '("done","cancelled")');
+      query = query.lt("due_date", today).gte("due_date", fourDaysAgo).not("status", "in", '("done","cancelled","skipped")');
       // Additional safety for recovery:
       query = query.or(`task_type.neq.recovery,due_date.gte.${fourteenDaysAgo}`);
     } else if (statusFilter === "pending") {
-      query = query.gt("due_date", today).not("status", "in", '("done","cancelled")');
+      query = query.gt("due_date", today).not("status", "in", '("done","cancelled","skipped")');
     } else if (statusFilter === "flagged") {
       query = query.eq("manager_action", "rejected");
     } else if (statusFilter !== "all") {
@@ -308,9 +312,9 @@ export default function TasksPage() {
       }
 
       if (status === "done") return q.eq("status", "done");
-      if (status === "overdue") return q.lt("due_date", today).gte("due_date", thirtyDaysAgo).not("status", "in", '("done","cancelled")');
-      if (status === "due") return q.eq("due_date", today).not("status", "in", '("done","cancelled")');
-      if (status === "pending") return q.gt("due_date", today).not("status", "in", '("done","cancelled")');
+      if (status === "overdue") return q.lt("due_date", today).gte("due_date", fourDaysAgo).not("status", "in", '("done","cancelled","skipped")');
+      if (status === "due") return q.eq("due_date", today).not("status", "in", '("done","cancelled","skipped")');
+      if (status === "pending") return q.gt("due_date", today).not("status", "in", '("done","cancelled","skipped")');
       // Global Staleness for generic counts
       return q.gte("due_date", thirtyDaysAgo);
     };

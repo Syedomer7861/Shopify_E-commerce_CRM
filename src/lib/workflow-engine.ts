@@ -44,7 +44,7 @@ export class WorkflowEngine {
             completed_at: new Date().toISOString() 
           })
           .eq("order_id", payload.order_id)
-          .not("status", "in", '("done","cancelled")');
+          .not("status", "in", '("done","cancelled","skipped")');
         
         if (!cleanupError) {
           console.log(`🧹 Ghost Task Cleanup: Cancelled pending tasks for RTO/Cancelled order ${payload.order_id}`);
@@ -76,7 +76,7 @@ export class WorkflowEngine {
         .select("id", { count: "exact", head: true })
         .eq("customer_id", customerId)
         .eq("task_type", "issue_resolution")
-        .not("status", "in", '("done","cancelled")');
+        .not("status", "in", '("done","cancelled","skipped")');
 
       if ((issueCount || 0) > 0) {
         console.log(`🛡️ Negative Feedback Suppression: Skipping '${trigger}' for customer ${customerId} due to active issue task.`);
@@ -250,7 +250,7 @@ export class WorkflowEngine {
       .select("id", { count: "exact", head: true })
       .eq("customer_id", instance.customer_id)
       .eq("task_type", "issue_resolution")
-      .not("status", "in", '("done","cancelled")');
+      .not("status", "in", '("done","cancelled","skipped")');
 
     if ((issueCount || 0) > 0) {
       console.log(`🛡️ Message Suppression: Skipping step for customer ${instance.customer_id} due to active issue.`);
@@ -403,7 +403,7 @@ export class WorkflowEngine {
           .select("id", { count: "exact", head: true })
           .eq("customer_id", payload.customer_id)
           .eq("task_type", "issue_resolution")
-          .not("status", "in", '("done","cancelled")');
+          .not("status", "in", '("done","cancelled","skipped")');
         
         if ((issueCount || 0) > 0) {
           console.log(`[WORKFLOW] Review skipped for customer ${payload.customer_id} due to active issue task.`);

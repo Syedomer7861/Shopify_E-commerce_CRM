@@ -114,17 +114,59 @@ async function enforceSafeguardDelay(supabase: any) {
   }
 }
 
+async function sendTwilioSMS(
+  sid: string,
+  token: string,
+  from: string,
+  to: string,
+  body: string
+): Promise<{ ok: boolean; error?: string; sid?: string }> {
+  try {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`;
+    const authString = Buffer.from(`${sid}:${token}`).toString("base64");
+    
+    // Ensure 'to' is formatted correctly with a '+' if needed
+    let formattedTo = to.replace(/[^0-9+]/g, "");
+    if (!formattedTo.startsWith("+")) {
+      formattedTo = "+" + (formattedTo.startsWith("91") ? formattedTo : "91" + formattedTo);
+    }
+    
+    const params = new URLSearchParams();
+    params.append("To", formattedTo);
+    params.append("From", from);
+    params.append("Body", body);
+    
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${authString}`,
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: params.toString()
+    });
+    
+    const data = await res.json();
+    if (!res.ok) {
+      return { ok: false, error: data.message || "Twilio API error" };
+    }
+    return { ok: true, sid: data.sid };
+  } catch (err: any) {
+    return { ok: false, error: err.message || "Twilio network error" };
+  }
+}
+
 export async function sendWhatsApp(phone: string, message: string, imagePath?: string): Promise<WhatsAppResponse> {
   return sendQueue.enqueue(async () => {
     const supabase = createServerClient();
     await enforceSafeguardDelay(supabase);
     
     const { data: settings } = await supabase.from("settings")
-       .select("whatsapp_bridge_url, whatsapp_token, whatsapp_phone_id")
+       .select("whatsapp_bridge_url, whatsapp_token, whatsapp_phone_id, sms_fallback_enabled, sms_provider, sms_twilio_sid, sms_twilio_token, sms_twilio_number")
        .single();
        
+    let whatsappResult: WhatsAppResponse = { ok: false, error: "No WhatsApp messaging gateway configured" };
+
     // 1. Legacy wa_server.js Local Bridge (Primary Route if configured)
-    // Prefer env var (local dev uses localhost) over settings DB (may be Tailscale/remote URL)
     const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings?.whatsapp_bridge_url;
     if (bridgeUrl) {
       try {
@@ -145,20 +187,15 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
            });
            return { ok: true };
         }
-        // If bridge failed but Meta credentials exist, we can fall through to Meta
-        if (!settings?.whatsapp_token || !settings?.whatsapp_phone_id) {
-          return { ok: false, error: data.error || "Bridge failed and no Meta fallback" };
-        }
+        whatsappResult = { ok: false, error: data.error || "Bridge rejected message" };
       } catch (err: any) {
         console.error("Bridge failed, checking for Meta fallback:", err.message);
-        if (!settings?.whatsapp_token || !settings?.whatsapp_phone_id) {
-          return { ok: false, error: err.message || "Failed to reach WhatsApp bridge" };
-        }
+        whatsappResult = { ok: false, error: err.message || "Failed to reach WhatsApp bridge" };
       }
     }
 
     // 2. Official Meta Cloud API (Secondary Route)
-    if (settings?.whatsapp_token && settings?.whatsapp_phone_id) {
+    if (!whatsappResult.ok && settings?.whatsapp_token && settings?.whatsapp_phone_id) {
       try {
         const payload = {
           messaging_product: "whatsapp",
@@ -178,26 +215,60 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
         });
         
         const data = await res.json();
-        if (!res.ok || data.error) {
-           return { ok: false, error: data.error?.message || "Meta API Rejected Message" };
+        if (res.ok && !data.error) {
+          await saveMessageToHistory({
+            phone,
+            body: message,
+            type: "text",
+            direction: "outbound",
+            metaId: data.messages?.[0]?.id,
+            metadata: { gateway: "meta" }
+          });
+          return { ok: true, messageId: data.messages?.[0]?.id };
         }
-
-        await saveMessageToHistory({
-          phone,
-          body: message,
-          type: "text",
-          direction: "outbound",
-          metaId: data.messages?.[0]?.id,
-          metadata: { gateway: "meta" }
-        });
-
-        return { ok: true, messageId: data.messages?.[0]?.id };
+        whatsappResult = { ok: false, error: data.error?.message || "Meta API Rejected Message" };
       } catch (err: any) {
-        return { ok: false, error: err.message || "Failed to reach Meta API" };
+        whatsappResult = { ok: false, error: err.message || "Failed to reach Meta API" };
       }
     }
 
-    return { ok: false, error: "No WhatsApp messaging gateway configured (Bridge or Meta)" };
+    // 3. SMS Fallback if enabled and WhatsApp failed
+    if (!whatsappResult.ok && settings?.sms_fallback_enabled) {
+      console.log(`[SMS Fallback] WhatsApp failed: ${whatsappResult.error}. Initiating SMS fallback...`);
+      if (
+        settings.sms_provider === "twilio" &&
+        settings.sms_twilio_sid &&
+        settings.sms_twilio_token &&
+        settings.sms_twilio_number
+      ) {
+        const smsRes = await sendTwilioSMS(
+          settings.sms_twilio_sid,
+          settings.sms_twilio_token,
+          settings.sms_twilio_number,
+          phone,
+          message
+        );
+        
+        if (smsRes.ok) {
+          await saveMessageToHistory({
+            phone,
+            body: message,
+            type: "sms",
+            direction: "outbound",
+            metaId: smsRes.sid,
+            metadata: { gateway: "sms_fallback", sms_provider: "twilio", whatsapp_error: whatsappResult.error }
+          });
+          return { ok: true, messageId: smsRes.sid };
+        } else {
+          console.error(`[SMS Fallback] Failed to send Twilio SMS: ${smsRes.error}`);
+          return { ok: false, error: `WhatsApp failed (${whatsappResult.error}) & SMS Fallback failed (${smsRes.error})` };
+        }
+      } else {
+        return { ok: false, error: `WhatsApp failed (${whatsappResult.error}) & SMS Fallback configured but credentials missing` };
+      }
+    }
+
+    return whatsappResult;
   });
 }
 
@@ -218,7 +289,7 @@ export async function sendMetaTemplate(
       .single();
 
     const { data: settings } = await supabase.from("settings")
-       .select("whatsapp_token, whatsapp_phone_id, meta_review_name, meta_reorder_name, meta_recovery_name, meta_final_name")
+       .select("whatsapp_token, whatsapp_phone_id, meta_review_name, meta_reorder_name, meta_recovery_name, meta_final_name, sms_fallback_enabled, sms_provider, sms_twilio_sid, sms_twilio_token, sms_twilio_number")
        .single();
 
     let metaName = template?.meta_template_name;
@@ -237,57 +308,95 @@ export async function sendMetaTemplate(
     const mapping = (template?.meta_variable_mapping as string[]) || [];
 
     // 2. Build Parameters List Based on Mapping
-    // If mapping exists, we use it to cherry-pick values from 'data' in order
     const parameters = mapping.length > 0 
       ? mapping.map(key => ({ type: "text", text: data[key]?.toString() || "" }))
       : Object.values(data).map(val => ({ type: "text", text: val?.toString() || "" }));
        
-    if (!settings?.whatsapp_token || !settings?.whatsapp_phone_id) {
-       return { ok: false, error: "Meta API credentials missing" };
-    }
-    
-    const payload = {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: phone.replace(/[^0-9]/g, ""),
-      type: "template",
-      template: {
-        name: metaName,
-        language: { code: "en" },
-        components: parameters.length > 0 ? [{
-          type: "body",
-          parameters: parameters
-        }] : []
+    let whatsappResult: WhatsAppResponse = { ok: false, error: "Meta API credentials missing" };
+
+    if (settings?.whatsapp_token && settings?.whatsapp_phone_id) {
+      const payload = {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: phone.replace(/[^0-9]/g, ""),
+        type: "template",
+        template: {
+          name: metaName,
+          language: { code: "en" },
+          components: parameters.length > 0 ? [{
+            type: "body",
+            parameters: parameters
+          }] : []
+        }
+      };
+
+      try {
+         const res = await fetch(`https://graph.facebook.com/v20.0/${settings.whatsapp_phone_id}/messages`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${settings.whatsapp_token}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+         });
+         
+         const resData = await res.json();
+         if (res.ok && !resData.error) {
+           await saveMessageToHistory({
+              phone,
+              body: `[Template] ${metaName}`,
+              type: "template",
+              direction: "outbound",
+              metaId: resData.messages?.[0]?.id,
+              metadata: { template_name: metaName, params: parameters }
+           });
+           return { ok: true, messageId: resData.messages?.[0]?.id };
+         }
+         whatsappResult = { ok: false, error: resData.error?.message || "Template execution failed" };
+      } catch (err: any) {
+         whatsappResult = { ok: false, error: err.message || "Failed to reach Meta API" };
       }
-    };
-
-    try {
-       const res = await fetch(`https://graph.facebook.com/v20.0/${settings.whatsapp_phone_id}/messages`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${settings.whatsapp_token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-       });
-       
-       const resData = await res.json();
-       if (!res.ok || resData.error) return { ok: false, error: resData.error?.message || "Template execution failed" };
-
-       // Log to history
-       await saveMessageToHistory({
-          phone,
-          body: `[Template] ${metaName}`,
-          type: "template",
-          direction: "outbound",
-          metaId: resData.messages?.[0]?.id,
-          metadata: { template_name: metaName, params: parameters }
-       });
-
-       return { ok: true, messageId: resData.messages?.[0]?.id };
-    } catch (err: any) {
-       return { ok: false, error: err.message || "Failed to reach Meta API" };
     }
+
+    // 3. SMS Fallback
+    if (!whatsappResult.ok && settings?.sms_fallback_enabled) {
+      console.log(`[SMS Fallback] Template sending failed: ${whatsappResult.error}. Initiating SMS fallback...`);
+      const personalisedBody = template?.body ? personaliseTemplate(template.body, data) : `[Template] ${metaName}`;
+      
+      if (
+        settings.sms_provider === "twilio" &&
+        settings.sms_twilio_sid &&
+        settings.sms_twilio_token &&
+        settings.sms_twilio_number
+      ) {
+        const smsRes = await sendTwilioSMS(
+          settings.sms_twilio_sid,
+          settings.sms_twilio_token,
+          settings.sms_twilio_number,
+          phone,
+          personalisedBody
+        );
+
+        if (smsRes.ok) {
+          await saveMessageToHistory({
+            phone,
+            body: personalisedBody,
+            type: "sms",
+            direction: "outbound",
+            metaId: smsRes.sid,
+            metadata: { gateway: "sms_fallback", sms_provider: "twilio", template_name: metaName, whatsapp_error: whatsappResult.error }
+          });
+          return { ok: true, messageId: smsRes.sid };
+        } else {
+          console.error(`[SMS Fallback] Failed to send Twilio SMS for template: ${smsRes.error}`);
+          return { ok: false, error: `WhatsApp Template failed (${whatsappResult.error}) & SMS Fallback failed (${smsRes.error})` };
+        }
+      } else {
+        return { ok: false, error: `WhatsApp Template failed (${whatsappResult.error}) & SMS Fallback configured but credentials missing` };
+      }
+    }
+
+    return whatsappResult;
   });
 }
 

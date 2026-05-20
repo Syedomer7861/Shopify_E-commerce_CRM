@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
       .select("id", { count: "exact", head: true })
       .eq("order_id", order.id)
       .eq("task_type", "issue_resolution")
-      .not("status", "in", '("done","cancelled")');
+      .not("status", "in", '("done","cancelled","skipped")');
 
     if ((existingIssue || 0) > 0) continue;
 
@@ -184,7 +184,7 @@ export async function POST(req: NextRequest) {
        .select("id", { count: "exact", head: true })
        .eq("customer_id", cust.id)
        .eq("task_type", "win_back")
-       .not("status", "in", '("done","cancelled")');
+       .not("status", "in", '("done","cancelled","skipped")');
 
      if ((existingWinback || 0) > 0) continue;
 

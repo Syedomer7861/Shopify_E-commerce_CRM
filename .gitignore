@@ -36,12 +36,16 @@ wwebjs_auth/
 wwebjs_cache/
 
 # AI Agent & Planning (GSD)
+.agent/
 .agents/
 .claude/
 .gemini/
 .planning/
 .antigravity/
 .code-review-graph/
+.codex/
+.opencode/
+openspec/
 scratch/
 brain/
 get-shit-done-for-antigravity/
@@ -49,6 +53,7 @@ skills-lock.json
 
 # IDE & OS Files
 .vscode/
+.cursor/
 .idea/
 .DS_Store
 Thumbs.db
@@ -65,3 +70,9 @@ order_*.json
 mukesh.json
 sync_progress.json
 docs/
+
+# Temporary Root Scripts
+debug_tasks.ts
+list_pending.ts
+nuke_old_tasks.ts
+reset_user.ts

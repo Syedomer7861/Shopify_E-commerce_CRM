@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui";
 import Link from "next/link";
+import ClickToCallModal from "@/components/ClickToCallModal";
 
 // ─── task type colour config ──────────────────────────────────────────────────
 const TYPE_COLORS: Record<string, { bg: string; dot: string; label: string }> = {
@@ -49,6 +50,8 @@ export default function CalendarPage() {
   const [view, setView]                 = useState<ViewMode>("month");
   const [selectedDay, setSelectedDay]   = useState<Date | null>(null);
   const [typeFilter, setTypeFilter]     = useState<string>("all");
+  const [showClickToCall, setShowClickToCall] = useState(false);
+  const [activeTaskForCall, setActiveTaskForCall] = useState<any>(null);
   const supabase = createClient();
 
   // ── fetch window ─────────────────────────────────────────────────────────────
@@ -90,7 +93,7 @@ export default function CalendarPage() {
       .select("id, due_date, status, task_type, priority_score, customer:customers(id, name, phone)")
       .gte("due_date", start)
       .lte("due_date", end)
-      .neq("status", "cancelled")
+      .not("status", "in", '("cancelled","skipped")')
       .order("priority_score", { ascending: false });
     setTasks(data || []);
     setLoading(false);
@@ -381,10 +384,17 @@ export default function CalendarPage() {
                       {/* Quick actions */}
                       <div className="flex items-center gap-1.5 mt-2.5 pl-4 opacity-0 group-hover:opacity-100 transition-opacity">
                         {task.customer?.phone && (
-                          <a href={`tel:${task.customer.phone}`}
-                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#eceae4]/60 text-[#1c1c1c] text-[9px] font-bold hover:bg-[#1c1c1c] hover:text-white transition-all">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setActiveTaskForCall(task);
+                              setShowClickToCall(true);
+                            }}
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#eceae4]/60 text-[#1c1c1c] text-[9px] font-bold hover:bg-[#1c1c1c] hover:text-white transition-all"
+                          >
                             <Phone className="w-2.5 h-2.5" /> Call
-                          </a>
+                          </button>
                         )}
                         {task.customer?.phone && (
                           <a href={`https://wa.me/${task.customer.phone.replace(/\D/g, "")}`} target="_blank"
@@ -423,6 +433,19 @@ export default function CalendarPage() {
           </div>
         )}
       </div>
+
+      {showClickToCall && activeTaskForCall && (
+        <ClickToCallModal 
+          open={showClickToCall}
+          onClose={() => {
+            setShowClickToCall(false);
+            setActiveTaskForCall(null);
+          }}
+          customerName={activeTaskForCall.customer?.name || "Unknown"}
+          customerPhone={activeTaskForCall.customer?.phone || ""}
+          taskId={activeTaskForCall.id}
+        />
+      )}
     </div>
   );
 }

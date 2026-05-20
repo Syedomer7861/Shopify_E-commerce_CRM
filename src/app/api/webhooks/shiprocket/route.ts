@@ -536,7 +536,7 @@ export async function POST(req: NextRequest) {
             .select("id, customer_id")
             .eq("order_id", orderId)
             .in("task_type", ["issue_resolution", "transit_update"])
-            .not("status", "in", '("done","cancelled")');
+            .not("status", "in", '("done","cancelled","skipped")');
           
           if (staleTasks && staleTasks.length > 0) {
             await supabase.from("tasks").update({ status: "cancelled" }).in("id", staleTasks.map(t => t.id));
@@ -603,7 +603,7 @@ export async function POST(req: NextRequest) {
             .select("id", { count: "exact", head: true })
             .eq("order_id", orders[0].id)
             .eq("task_type", "issue_resolution")
-            .not("status", "in", '("done","cancelled")');
+            .not("status", "in", '("done","cancelled","skipped")');
 
           if ((count || 0) === 0) {
             const { data: customer } = await supabase

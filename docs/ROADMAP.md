@@ -27,7 +27,7 @@ Project roadmap for CureForever CRM. Each phase builds towards higher automation
 
 ---
 
-## Milestone 2: Intelligent Automation & Hardening (90% COMPLETE)
+## Milestone 2: Intelligent Automation & Hardening (100% COMPLETE)
 
 ### ✅ Phase 4: Workflow Hardening & Advanced Automation
 - **Goal**: Hardening sync engine and expanding follow-up workflows.
@@ -35,7 +35,7 @@ Project roadmap for CureForever CRM. Each phase builds towards higher automation
   - ✅ **Shopify OAuth Auto-Refresh**: Zero-touch persistent API connectivity.
   - ✅ **Fastrr Checkout Sync**: Real-time abandoned cart capture via webhooks.
   - ✅ **Smart Task Assignment**: Workload-aware distribution for agents.
-  - [ ] Transit Inform Pipeline (notifications for 'undelivered' or 'stale' shipments).
+  - ✅ **Transit Inform Pipeline**: Proactive notifications for stale shipments.
 
 ### 🚀 Phase 5: Deep Intelligence & Reporting
 - **Goal**: ROI tracking and AI-assisted engagement.

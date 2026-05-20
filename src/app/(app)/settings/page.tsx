@@ -171,8 +171,84 @@ export default function SettingsPage() {
     email_cart_abandoned_template: "",
     email_reorder_subject: "",
     email_reorder_template: "",
+    telephony_provider: "none",
+    twilio_account_sid: "",
+    twilio_auth_token: "",
+    twilio_caller_id: "",
+    exotel_sid: "",
+    exotel_token: "",
+    exotel_caller_id: "",
+    sms_fallback_enabled: false,
+    sms_provider: "twilio",
+    sms_twilio_sid: "",
+    sms_twilio_token: "",
+    sms_twilio_number: "",
     updated_at: new Date().toISOString()
   });
+  const [testingCall, setTestingCall] = useState(false);
+  const [testCallPhone, setTestCallPhone] = useState("");
+  const [testingSMS, setTestingSMS] = useState(false);
+  const [testSMSPhone, setTestSMSPhone] = useState("");
+
+  async function handleTestCall() {
+    if (!testCallPhone) {
+      toast.error("Please enter a phone number to test dialing");
+      return;
+    }
+    setTestingCall(true);
+    try {
+      const res = await fetch("/api/calls/test-dial", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: testCallPhone,
+          provider: settings.telephony_provider,
+          twilio_sid: settings.twilio_account_sid,
+          twilio_token: settings.twilio_auth_token,
+          twilio_caller_id: settings.twilio_caller_id,
+          exotel_sid: settings.exotel_sid,
+          exotel_token: settings.exotel_token,
+          exotel_caller_id: settings.exotel_caller_id,
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Failed to initiate test call");
+      toast.success("Test call initiated successfully! Check your phone.");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setTestingCall(false);
+    }
+  }
+
+  async function handleTestSMS() {
+    if (!testSMSPhone) {
+      toast.error("Please enter a phone number to test SMS");
+      return;
+    }
+    setTestingSMS(true);
+    try {
+      const res = await fetch("/api/sms/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: testSMSPhone,
+          provider: settings.sms_provider,
+          twilio_sid: settings.sms_twilio_sid,
+          twilio_token: settings.sms_twilio_token,
+          twilio_number: settings.sms_twilio_number,
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Failed to send test SMS");
+      toast.success("Test SMS sent successfully!");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setTestingSMS(false);
+    }
+  }
+
   const [pipeline, setPipeline] = useState<PipelineState>({ sent: [], waiting: [] });
   const [fetchingPipeline, setFetchingPipeline] = useState(false);
   const [overrides, setOverrides] = useState<ProductOverride[]>([]);
@@ -759,7 +835,9 @@ export default function SettingsPage() {
           "email_auto_cart_abandoned", "email_auto_reorder", "email_welcome_subject", "email_welcome_template",
           "email_order_placed_subject", "email_order_placed_template", "email_order_transit_subject", "email_order_transit_template",
           "email_order_delivered_subject", "email_order_delivered_template", "email_cart_abandoned_subject", "email_cart_abandoned_template",
-          "email_reorder_subject", "email_reorder_template"
+          "email_reorder_subject", "email_reorder_template",
+          "telephony_provider", "twilio_account_sid", "twilio_auth_token", "twilio_caller_id", "exotel_sid", "exotel_token", "exotel_caller_id",
+          "sms_fallback_enabled", "sms_provider", "sms_twilio_sid", "sms_twilio_token", "sms_twilio_number"
         ];
 
         const legacySettings = { ...settings };
@@ -1057,17 +1135,274 @@ export default function SettingsPage() {
 
       {/* TELEPHONY */}
       {tab === "telephony" && (
-        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+          {/* Cloud Telephony Gateway */}
+          <div className="card overflow-hidden bg-[#fcfbf8]">
+            <div className="px-6 py-4 bg-[#1c1c1c] text-[#f7f4ed] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Smartphone className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Enterprise Cloud Telephony</h3>
+              </div>
+              <span className="text-[9px] font-black bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-lg border border-emerald-500/30 tracking-widest">ACTIVE GATEWAY</span>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-3 block opacity-60">Active Provider</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { key: "none", label: "None (Manual / Webhook)" },
+                    { key: "twilio", label: "Twilio Cloud" },
+                    { key: "exotel", label: "Exotel Cloud (India)" },
+                  ].map(p => (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() => setSettings({ ...settings, telephony_provider: p.key })}
+                      className={cn(
+                        "py-3 px-4 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all text-center",
+                        settings.telephony_provider === p.key
+                          ? "bg-[#1c1c1c] border-[#1c1c1c] text-white shadow-md shadow-black/10"
+                          : "bg-white border-[#eceae4] text-[#5f5f5d] hover:border-[#1c1c1c]/30"
+                      )}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {settings.telephony_provider === "twilio" && (
+                <div className="space-y-4 pt-2 border-t border-[#eceae4]/50 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Twilio Account SID</label>
+                      <input
+                        type="text"
+                        value={settings.twilio_account_sid || ""}
+                        onChange={e => setSettings({ ...settings, twilio_account_sid: e.target.value })}
+                        placeholder="AC..."
+                        className="input font-mono text-[10px] bg-[#fcfbf8]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Twilio Auth Token</label>
+                      <input
+                        type="password"
+                        value={settings.twilio_auth_token || ""}
+                        onChange={e => setSettings({ ...settings, twilio_auth_token: e.target.value })}
+                        placeholder="••••••••••••••••••••••••••••••••"
+                        className="input font-mono text-[10px] bg-[#fcfbf8]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Caller ID / Verified Twilio Number</label>
+                      <input
+                        type="text"
+                        value={settings.twilio_caller_id || ""}
+                        onChange={e => setSettings({ ...settings, twilio_caller_id: e.target.value })}
+                        placeholder="+1234567890"
+                        className="input font-mono text-[10px] bg-[#fcfbf8]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Test Connection */}
+                  <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-4 flex items-center justify-between gap-4 mt-4">
+                    <div className="flex-1">
+                      <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">Verify Twilio Credentials</h4>
+                      <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed opacity-70">
+                        Initiate a test phone call to verify Twilio API and outbound routing connectivity.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="text"
+                        value={testCallPhone}
+                        onChange={e => setTestCallPhone(e.target.value)}
+                        placeholder="Enter phone number (+91...)"
+                        className="input w-48 text-[10px] bg-white h-9 px-3 border border-[#eceae4] rounded-xl font-mono"
+                      />
+                      <button
+                        onClick={handleTestCall}
+                        disabled={testingCall}
+                        className="btn-primary py-2 px-4 text-[9px] font-black uppercase tracking-widest shrink-0 h-9"
+                      >
+                        {testingCall ? "DIALING..." : "TEST DIAL"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {settings.telephony_provider === "exotel" && (
+                <div className="space-y-4 pt-2 border-t border-[#eceae4]/50 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Exotel API Key / SID</label>
+                      <input
+                        type="text"
+                        value={settings.exotel_sid || ""}
+                        onChange={e => setSettings({ ...settings, exotel_sid: e.target.value })}
+                        placeholder="Exotel Account SID..."
+                        className="input font-mono text-[10px] bg-[#fcfbf8]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Exotel API Token</label>
+                      <input
+                        type="password"
+                        value={settings.exotel_token || ""}
+                        onChange={e => setSettings({ ...settings, exotel_token: e.target.value })}
+                        placeholder="••••••••••••••••••••••••••••••••"
+                        className="input font-mono text-[10px] bg-[#fcfbf8]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Exotel Virtual / Caller Number</label>
+                      <input
+                        type="text"
+                        value={settings.exotel_caller_id || ""}
+                        onChange={e => setSettings({ ...settings, exotel_caller_id: e.target.value })}
+                        placeholder="080xxxxxxx"
+                        className="input font-mono text-[10px] bg-[#fcfbf8]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Test Connection */}
+                  <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-4 flex items-center justify-between gap-4 mt-4">
+                    <div className="flex-1">
+                      <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">Verify Exotel Credentials</h4>
+                      <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed opacity-70">
+                        Initiate a test phone call to verify Exotel API integration and local virtual number routing.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="text"
+                        value={testCallPhone}
+                        onChange={e => setTestCallPhone(e.target.value)}
+                        placeholder="Enter phone number"
+                        className="input w-48 text-[10px] bg-white h-9 px-3 border border-[#eceae4] rounded-xl font-mono"
+                      />
+                      <button
+                        onClick={handleTestCall}
+                        disabled={testingCall}
+                        className="btn-primary py-2 px-4 text-[9px] font-black uppercase tracking-widest shrink-0 h-9"
+                      >
+                        {testingCall ? "DIALING..." : "TEST DIAL"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* SMS Fallback Bridge */}
+          <div className="card overflow-hidden bg-[#fcfbf8]">
+            <div className="px-6 py-4 bg-[#1c1c1c]/5 border-b border-[#eceae4] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Mail className="w-4 h-4 text-[#5f5f5d]" />
+                <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1c1c1c]">SMS Fallback Bridge</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSettings({ ...settings, sms_fallback_enabled: !settings.sms_fallback_enabled })}
+                className="focus:outline-none transition-transform active:scale-95"
+              >
+                {settings.sms_fallback_enabled ? (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1c1c1c] border border-[#1c1c1c] rounded-xl shadow-md">
+                    <ToggleRight className="w-4 h-4 text-white" />
+                    <span className="text-[8px] font-black text-white uppercase tracking-widest">BRIDGE ACTIVE</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#eceae4] rounded-xl">
+                    <ToggleLeft className="w-4 h-4 text-gray-400" />
+                    <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">BRIDGE INACTIVE</span>
+                  </div>
+                )}
+              </button>
+            </div>
+
+            <div className={cn("p-6 space-y-6 transition-all", !settings.sms_fallback_enabled && "opacity-40 pointer-events-none grayscale")}>
+              <p className="text-xs text-[#5f5f5d] leading-relaxed mb-4">
+                Configure Twilio SMS as a highly reliable secondary communications layer. The CRM will automatically and instantly redirect critical templates and messages to standard SMS if the recipient's WhatsApp delivery fails or API limits are hit.
+              </p>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Twilio Account SID</label>
+                  <input
+                    type="text"
+                    value={settings.sms_twilio_sid || ""}
+                    onChange={e => setSettings({ ...settings, sms_twilio_sid: e.target.value })}
+                    placeholder="AC..."
+                    className="input font-mono text-[10px] bg-[#fcfbf8]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Twilio Auth Token</label>
+                  <input
+                    type="password"
+                    value={settings.sms_twilio_token || ""}
+                    onChange={e => setSettings({ ...settings, sms_twilio_token: e.target.value })}
+                    placeholder="••••••••••••••••••••••••••••••••"
+                    className="input font-mono text-[10px] bg-[#fcfbf8]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Twilio SMS Phone Number / Short Code</label>
+                  <input
+                    type="text"
+                    value={settings.sms_twilio_number || ""}
+                    onChange={e => setSettings({ ...settings, sms_twilio_number: e.target.value })}
+                    placeholder="+1234567890"
+                    className="input font-mono text-[10px] bg-[#fcfbf8]"
+                  />
+                </div>
+              </div>
+
+              {/* SMS Test Connection */}
+              <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-4 flex items-center justify-between gap-4 mt-4">
+                <div className="flex-1">
+                  <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">Verify SMS Gateway</h4>
+                  <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed opacity-70">
+                    Send a test SMS to confirm API permissions and verify outbound mobile routing.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={testSMSPhone}
+                    onChange={e => setTestSMSPhone(e.target.value)}
+                    placeholder="Phone number (+91...)"
+                    className="input w-48 text-[10px] bg-white h-9 px-3 border border-[#eceae4] rounded-xl font-mono"
+                  />
+                  <button
+                    onClick={handleTestSMS}
+                    disabled={testingSMS}
+                    className="btn-primary py-2 px-4 text-[9px] font-black uppercase tracking-widest shrink-0 h-9"
+                  >
+                    {testingSMS ? "SENDING..." : "TEST SMS"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Manual Webhook dialing (MacroDroid) instructions */}
           <div className="card p-6">
-            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 opacity-60">&quot;Poor Man&apos;s&quot; Cloud Telephony</h3>
-            <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Establish a cost-free cloud telephony alternative by turning an agent&apos;s Android handset into a webhook bridge via MacroDroid.</p>
+            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 opacity-60">Manual Agent Handset Integration (MacroDroid)</h3>
+            <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Establish a cost-free manual telephony channel by transforming any agent's Android device into an automated webhook caller via MacroDroid.</p>
             
             <div className="space-y-8">
               <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-6 space-y-6">
                   <div className="flex items-start gap-4">
                      <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">1</div>
                      <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
-                       Install <strong>MacroDroid</strong> from the Play Store on your agent&apos;s Android handset.
+                       Install <strong>MacroDroid</strong> from the Play Store on your agent's Android handset.
                      </p>
                   </div>
                   <div className="flex items-start gap-4">
@@ -1095,7 +1430,7 @@ export default function SettingsPage() {
                      <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">3</div>
                      <div className="flex-1">
                        <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium mb-2">
-                         Set the JSON Payload to include your agent&apos;s email and the customer&apos;s phone number. Example:
+                         Set the JSON Payload to include your agent's email and the customer's phone number. Example:
                        </p>
                        <pre className="text-[9px] font-mono bg-[#1c1c1c] text-[#f7f4ed] p-4 rounded-xl overflow-x-auto shadow-inner">
 {`{
@@ -1109,7 +1444,7 @@ export default function SettingsPage() {
                   <div className="flex items-start gap-4">
                      <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">4</div>
                      <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
-                       <strong>Auto-Recording (Optional):</strong> Enable &quot;Auto-record calls&quot; in the phone&apos;s native settings. Set MacroDroid to upload the recording file to the CRM upon call completion.
+                       <strong>Auto-Recording (Optional):</strong> Enable &quot;Auto-record calls&quot; in the phone's native settings. Set MacroDroid to upload the recording file to the CRM upon call completion.
                      </p>
                   </div>
               </div>
@@ -1126,6 +1461,13 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Commit Settings Button */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-[#eceae4]/50">
+             <button onClick={handleSave} disabled={saving} className="btn-primary py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest min-w-[140px]">
+                {saving ? "Saving..." : "Commit Settings"}
+             </button>
           </div>
         </div>
       )}
