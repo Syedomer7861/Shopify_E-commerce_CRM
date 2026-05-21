@@ -492,7 +492,7 @@ export default function Sidebar() {
   const adminUser = isAdmin(profile);
 
   return (
-    <aside className="w-full lg:w-64 lg:min-w-[256px] h-16 lg:h-screen bg-[#f7f4ed] flex flex-row lg:flex-col border-t lg:border-r border-[#eceae4] fixed bottom-0 lg:static z-50 transition-all duration-300">
+    <aside className="w-full lg:w-64 lg:min-w-[256px] h-16 lg:h-screen bg-[#f7f4ed] flex flex-row lg:flex-col border-t lg:border-r border-[#eceae4] fixed bottom-0 lg:relative z-50 transition-all duration-300">
       <div className="px-4 lg:px-6 py-4 lg:py-10 border-r lg:border-b border-[#eceae4]/50 flex items-center lg:block flex-shrink-0 bg-white lg:bg-transparent">
         <div className="flex items-center gap-2 lg:gap-3">
           <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-xl bg-[#1c1c1c] flex items-center justify-center shadow-lg shadow-[#1c1c1c]/10">
