@@ -119,7 +119,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
   const trackingHistory = trackingData.shipment_track_activities || [];
   
   // Merge and Normalize Activities
-  const combinedPulse = [
+  let combinedPulse = [
     ...trackingHistory.map((h: any) => ({
       date: h.date,
       activity: h.activity,
@@ -135,7 +135,41 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
       isHistory: true,
       description: h.description
     }))
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  ];
+
+  if (combinedPulse.length === 0 && order) {
+    const fallbackDate = order.updated_at || order.created_at || new Date().toISOString();
+    if (status === "CANCELED" || status === "CANCELLED") {
+      combinedPulse.push({
+        date: fallbackDate,
+        activity: "Order Canceled",
+        location: "System",
+        status: "CANCELED",
+        isHistory: true,
+        description: "The order has been canceled. Fulfillment and transit details are unavailable."
+      });
+    } else if (status === "PENDING" || status === "NEW" || status === "READY TO SHIP" || data.is_local) {
+      combinedPulse.push({
+        date: fallbackDate,
+        activity: "Order Received",
+        location: "System",
+        status: "PENDING",
+        isHistory: true,
+        description: "Order has been logged in the system and is awaiting shipment packaging & courier handoff."
+      });
+    } else {
+      combinedPulse.push({
+        date: fallbackDate,
+        activity: `Status: ${status}`,
+        location: "System",
+        status: status,
+        isHistory: true,
+        description: `The current order logistics status is reported as: ${status}.`
+      });
+    }
+  }
+
+  combinedPulse.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Guard: If no AWB and no Activity, cap UI status at "PENDING"
   const hasShippingActive = order.awb_code || combinedPulse.length > 0;

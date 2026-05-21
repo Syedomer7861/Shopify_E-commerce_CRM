@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       agent_id,
       activity_type,
       metadata,
-      description
+      note: description
     }).select("id, created_at").single();
 
     if (error) throw error;

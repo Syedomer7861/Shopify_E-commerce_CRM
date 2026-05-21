@@ -19,7 +19,7 @@ export async function PATCH(
 
     const { data: task } = await supabase
       .from("tasks")
-      .select("customer_id, task_type, customers(name)")
+      .select("customer_id, order_id, abandoned_cart_id, task_type, priority_score, customers(name)")
       .eq("id", id)
       .single();
     if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });

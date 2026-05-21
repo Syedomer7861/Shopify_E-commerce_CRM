@@ -1328,7 +1328,7 @@ export default function SettingsPage() {
 
             <div className={cn("p-6 space-y-6 transition-all", !settings.sms_fallback_enabled && "opacity-40 pointer-events-none grayscale")}>
               <p className="text-xs text-[#5f5f5d] leading-relaxed mb-4">
-                Configure Twilio SMS as a highly reliable secondary communications layer. The CRM will automatically and instantly redirect critical templates and messages to standard SMS if the recipient's WhatsApp delivery fails or API limits are hit.
+                Configure Twilio SMS as a highly reliable secondary communications layer. The CRM will automatically and instantly redirect critical templates and messages to standard SMS if the recipient&apos;s WhatsApp delivery fails or API limits are hit.
               </p>
 
               <div className="grid grid-cols-2 gap-4">
@@ -1395,14 +1395,14 @@ export default function SettingsPage() {
           {/* Manual Webhook dialing (MacroDroid) instructions */}
           <div className="card p-6">
             <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 opacity-60">Manual Agent Handset Integration (MacroDroid)</h3>
-            <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Establish a cost-free manual telephony channel by transforming any agent's Android device into an automated webhook caller via MacroDroid.</p>
+            <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Establish a cost-free manual telephony channel by transforming any agent&apos;s Android device into an automated webhook caller via MacroDroid.</p>
             
             <div className="space-y-8">
               <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-6 space-y-6">
                   <div className="flex items-start gap-4">
                      <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">1</div>
                      <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
-                       Install <strong>MacroDroid</strong> from the Play Store on your agent's Android handset.
+                       Install <strong>MacroDroid</strong> from the Play Store on your agent&apos;s Android handset.
                      </p>
                   </div>
                   <div className="flex items-start gap-4">
@@ -1430,7 +1430,7 @@ export default function SettingsPage() {
                      <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">3</div>
                      <div className="flex-1">
                        <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium mb-2">
-                         Set the JSON Payload to include your agent's email and the customer's phone number. Example:
+                         Set the JSON Payload to include your agent&apos;s email and the customer&apos;s phone number. Example:
                        </p>
                        <pre className="text-[9px] font-mono bg-[#1c1c1c] text-[#f7f4ed] p-4 rounded-xl overflow-x-auto shadow-inner">
 {`{
@@ -1444,7 +1444,7 @@ export default function SettingsPage() {
                   <div className="flex items-start gap-4">
                      <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">4</div>
                      <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
-                       <strong>Auto-Recording (Optional):</strong> Enable &quot;Auto-record calls&quot; in the phone's native settings. Set MacroDroid to upload the recording file to the CRM upon call completion.
+                       <strong>Auto-Recording (Optional):</strong> Enable &quot;Auto-record calls&quot; in the phone&apos;s native settings. Set MacroDroid to upload the recording file to the CRM upon call completion.
                      </p>
                   </div>
               </div>

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Phone, MoreVertical, Paperclip, Smile, Loader2 } from 'lucide-react';
+import { Send, Phone, MoreVertical, Paperclip, Smile, Loader2, BookOpen } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { Avatar } from '@/components/ui';
 import { toast } from 'react-hot-toast';
@@ -18,6 +18,72 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
+
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [customerContext, setCustomerContext] = useState<any>(null);
+  const [suggesting, setSuggesting] = useState(false);
+
+  // 1. Fetch customer context & recent orders
+  useEffect(() => {
+    async function fetchContext() {
+      if (!customerId) return;
+      try {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('name, alt_phone, custom_meta, orders(order_number, total_price, line_items, ordered_at)')
+          .eq('id', customerId)
+          .maybeSingle();
+        if (error) throw error;
+        setCustomerContext(data);
+      } catch (err) {
+        console.error("Failed to fetch customer context for templates:", err);
+      }
+    }
+    fetchContext();
+  }, [customerId, supabase]);
+
+  // 2. Fetch active campaign templates from database
+  useEffect(() => {
+    async function fetchTemplates() {
+      try {
+        const res = await fetch("/api/templates");
+        if (res.ok) {
+          const data = await res.json();
+          setTemplates(data.templates || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch templates:", err);
+      }
+    }
+    fetchTemplates();
+  }, []);
+
+  // 3. Resolve template placeholders dynamically
+  const handleApplyTemplate = (tpl: any) => {
+    let body = tpl.body;
+
+    const firstName = customerContext?.name?.split(" ")[0] || customerName.split(" ")[0];
+    
+    // Sort orders by ordered_at to get the absolute latest order details
+    const sortedOrders = customerContext?.orders 
+      ? [...customerContext.orders].sort((a: any, b: any) => new Date(b.ordered_at).getTime() - new Date(a.ordered_at).getTime()) 
+      : [];
+    const lastOrder = sortedOrders[0] || customerContext?.orders?.[0];
+    const productName = lastOrder?.line_items?.[0]?.name || "your order";
+    const orderNo = lastOrder?.order_number || "order";
+    const abandonLink = customerContext?.custom_meta?.ABANDONLINK || "https://cureforever.in/cart";
+
+    const resolved = body
+      .replace(/{{name}}/g, firstName)
+      .replace(/{{product}}/g, productName)
+      .replace(/{{order_no}}/g, orderNo)
+      .replace(/{{abandon_link}}/g, abandonLink);
+
+    setInput(resolved);
+    setShowTemplates(false);
+    toast.success(`Loaded template: "${tpl.name}"`);
+  };
 
   useEffect(() => {
     async function fetchHistory() {
@@ -171,14 +237,70 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
       </div>
 
       {/* Chat Input */}
-      <div className="px-3 py-3 bg-[#f0f2f5] flex flex-col gap-2 shrink-0">
+      <div className="px-3 py-3 bg-[#f0f2f5] flex flex-col gap-2 shrink-0 relative">
+        {/* Templates Dropdown Popover */}
+        {showTemplates && (
+          <div className="absolute bottom-full left-3 mb-2 p-2 bg-white/95 backdrop-blur-md border border-gray-200 rounded-2xl shadow-2xl flex flex-col gap-1 w-72 max-h-60 overflow-y-auto z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="px-3 py-2 text-[9px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
+              Select Message Template
+            </div>
+            {templates.length > 0 ? (
+              templates.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  onClick={() => handleApplyTemplate(tpl)}
+                  className="w-full text-left px-3 py-2.5 hover:bg-emerald-50 rounded-xl transition-all group flex flex-col gap-0.5"
+                >
+                  <span className="text-[11px] font-bold text-gray-800 group-hover:text-emerald-700 transition-colors">
+                    {tpl.name}
+                  </span>
+                  <span className="text-[9px] text-gray-400 line-clamp-1">
+                    {tpl.body}
+                  </span>
+                </button>
+              ))
+            ) : (
+              // Fallback templates if database returns empty
+              [
+                { id: 'f1', name: 'Abandoned Checkout Recovery', body: 'Hi {{name}} 👋, we noticed you left some wellness items in your cart! 🛒 Can we help you complete your purchase? Use code RECOVER5 for 5% off! 🌿\n\nLink: {{abandon_link}}' },
+                { id: 'f2', name: 'Post-Purchase Feedback', body: 'Hi {{name}} 👋, thank you for your recent order! How was your experience with CureForever? We\'d love to hear your honest feedback. 🌿' },
+                { id: 'f3', name: '30-Day Refill Reminder', body: 'Hi {{name}}! It\'s been about a month since your last CureForever order. Is it time for a refill to keep your wellness routine going? 💊' },
+                { id: 'f4', name: 'COD Order Verification', body: 'Hi {{name}} 👋, thanks for ordering {{product}} (Order {{order_no}})! Just confirming your COD order before we ship it out today. Should we go ahead? ✅' }
+              ].map((tpl) => (
+                <button
+                  key={tpl.id}
+                  onClick={() => handleApplyTemplate(tpl)}
+                  className="w-full text-left px-3 py-2.5 hover:bg-emerald-50 rounded-xl transition-all group flex flex-col gap-0.5"
+                >
+                  <span className="text-[11px] font-bold text-gray-800 group-hover:text-emerald-700 transition-colors">
+                    {tpl.name}
+                  </span>
+                  <span className="text-[9px] text-gray-400 line-clamp-1">
+                    {tpl.body}
+                  </span>
+                </button>
+              ))
+            )}
+            <div className="h-px bg-gray-100 my-1" />
+            <button
+              onClick={() => setShowTemplates(false)}
+              className="w-full py-1.5 text-center text-[9px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-700 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center gap-2">
           <button 
             onClick={async () => {
+              if (suggesting) return;
+              setSuggesting(true);
               const lastInbound = [...messages].reverse().find(m => m.type === 'inbound');
               try {
                 const res = await fetch("/api/ai/suggest-reply", {
                   method: "POST",
+                  headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ 
                     customerId, 
                     lastMessage: lastInbound?.text || "",
@@ -186,16 +308,39 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
                   })
                 });
                 const data = await res.json();
-                if (data.suggestion) setInput(data.suggestion);
+                if (data.suggestion) {
+                  setInput(data.suggestion);
+                  if (data.isMock) {
+                    toast.success("AI: Suggestion loaded (Local fallback)");
+                  } else {
+                    toast.success("Gemini: Dynamic reply generated!");
+                  }
+                }
               } catch (e) {
                 toast.error("AI Suggestion failed");
+              } finally {
+                setSuggesting(false);
               }
             }}
-            className="text-[10px] font-black uppercase tracking-[0.1em] text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-3 py-1 rounded-md flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+            disabled={suggesting}
+            className="text-[10px] font-black uppercase tracking-[0.1em] text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50"
           >
-            <Loader2 className="w-3 h-3 animate-pulse" /> AI Suggest Reply
+            {suggesting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-700" />
+            ) : (
+              <Smile className="w-3.5 h-3.5" />
+            )}
+            AI Suggest Reply
+          </button>
+
+          <button
+            onClick={() => setShowTemplates(!showTemplates)}
+            className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-700 bg-indigo-100 hover:bg-indigo-200 px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+          >
+            <BookOpen className="w-3.5 h-3.5" /> Templates
           </button>
         </div>
+
         <div className="flex items-center gap-2">
           <Smile className="w-6 h-6 text-gray-500 cursor-pointer hover:text-gray-700" />
           <Paperclip className="w-5 h-5 text-gray-500 cursor-pointer hover:text-gray-700" />
