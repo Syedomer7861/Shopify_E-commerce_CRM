@@ -1149,9 +1149,10 @@ export default function SettingsPage() {
             <div className="p-6 space-y-6">
               <div>
                 <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-3 block opacity-60">Active Provider</label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     { key: "none", label: "None (Manual / Webhook)" },
+                    { key: "demo", label: "Demo Mode (Simulation)" },
                     { key: "twilio", label: "Twilio Cloud" },
                     { key: "exotel", label: "Exotel Cloud (India)" },
                   ].map(p => (
@@ -1171,6 +1172,45 @@ export default function SettingsPage() {
                   ))}
                 </div>
               </div>
+
+              {settings.telephony_provider === "demo" && (
+                <div className="space-y-4 pt-2 border-t border-[#eceae4]/50 animate-in fade-in duration-300">
+                  <div className="bg-[#fcfbf8] border border-amber-200 bg-amber-50/30 rounded-2xl p-5">
+                    <h4 className="text-[10px] font-bold text-amber-800 uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-600" /> Simulated Call Sandbox Active
+                    </h4>
+                    <p className="text-[10px] text-amber-800/80 font-semibold leading-relaxed">
+                      In Simulation mode, calls will succeed instantly and progress through agent handset ring and customer ring simulation steps. No external Twilio/Exotel balance or setup is required. This is highly recommended for evaluation and offline training.
+                    </p>
+                  </div>
+
+                  {/* Test Connection */}
+                  <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-4 flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">Verify Simulated Dialer</h4>
+                      <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed opacity-70">
+                        Initiate a fast simulation callback loop to verify local raw log event streaming.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="text"
+                        value={testCallPhone}
+                        onChange={e => setTestCallPhone(e.target.value)}
+                        placeholder="Enter phone number"
+                        className="input w-48 text-[10px] bg-white h-9 px-3 border border-[#eceae4] rounded-xl font-mono"
+                      />
+                      <button
+                        onClick={handleTestCall}
+                        disabled={testingCall}
+                        className="btn-primary py-2 px-4 text-[9px] font-black uppercase tracking-widest shrink-0 h-9"
+                      >
+                        {testingCall ? "SIMULATING..." : "SIMULATE CALL"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {settings.telephony_provider === "twilio" && (
                 <div className="space-y-4 pt-2 border-t border-[#eceae4]/50 animate-in fade-in duration-300">

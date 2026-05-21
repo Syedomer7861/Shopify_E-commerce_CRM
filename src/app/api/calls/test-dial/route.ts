@@ -18,6 +18,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Recipient phone number is required" }, { status: 400 });
     }
 
+    if (provider === "demo") {
+      console.log("[TELEPHONY TEST] Simulating demo call to:", phone);
+      return NextResponse.json({ ok: true, message: "Demo mode simulated call queued successfully!" });
+    }
+
     if (provider === "twilio") {
       if (!twilio_sid || !twilio_token || !twilio_caller_id) {
         return NextResponse.json({ ok: false, error: "Missing Twilio credentials in request" }, { status: 400 });

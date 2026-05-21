@@ -90,6 +90,26 @@ export async function POST(req: Request) {
     const finalCustomerPhone = formattedCustomerPhone.length === 10 ? `+91${formattedCustomerPhone}` : `+${formattedCustomerPhone}`;
 
     // 4. Place Outbound Click-to-Call
+    if (provider === "demo") {
+      // Log Demo Call
+      try {
+        await supabase.from("raw_call_logs").insert({
+          customer_phone: finalCustomerPhone,
+          task_id: taskId || null,
+          status: "in_progress",
+          recording_url: null
+        });
+      } catch (err) {
+        console.error("Failed to log Demo call:", err);
+      }
+
+      return NextResponse.json({
+        ok: true,
+        message: "Simulated Call Initiated (Demo Mode)",
+        sid: "mock_call_sid_" + Math.random().toString(36).substring(7),
+        provider: "demo"
+      });
+    }
     if (provider === "twilio") {
       const accountSid = settings.twilio_account_sid;
       const authToken = settings.twilio_auth_token;
