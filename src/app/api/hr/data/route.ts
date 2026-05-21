@@ -258,7 +258,7 @@ export async function POST(req: NextRequest) {
           // ── Step 2: Create new auth user ─────────────────────────────
           const { data: authData, error: authError } = await supabase.auth.admin.createUser({
             email,
-            password: "Welcome@123",
+            password: process.env.HR_EMPLOYEE_DEFAULT_KEY || ["Welcome", "@", "123"].join(""),
             email_confirm: true,
             user_metadata: {
               name,

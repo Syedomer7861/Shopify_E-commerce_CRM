@@ -1,17 +1,17 @@
-# 🚀 CureForever CRM: Shopify & Shiprocket Operations Hub
+# CureForever CRM: Shopify & Shiprocket Operations Hub
 
 [![Next.js 14](https://img.shields.io/badge/Framework-Next.js%2014-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![Supabase](https://img.shields.io/badge/Database-Supabase-emerald?style=flat-square&logo=supabase)](https://supabase.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind%20CSS-blue?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/Status-Production%20Hardened-rose?style=flat-square)](https://github.com/)
 
-**🟢 Live Production:** [https://cureforever-crm.vercel.app/](https://cureforever-crm.vercel.app/)
+**Live Production:** [https://cureforever-crm.vercel.app/](https://cureforever-crm.vercel.app/)
 
 > **The Ultimate Operations Engine** for CureForever. High-fidelity task automation, "Poor Man's" cloud telephony, and real-time customer engagement.
 
 ---
 
-## 🛠️ Technical Stack
+## Technical Stack
 
 | Layer | Technology |
 | :--- | :--- |
@@ -24,7 +24,7 @@
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
 ### 1. Clone & Install
 ```bash
@@ -59,31 +59,31 @@ npm run wa
 
 ---
 
-## 📁 Project Architecture
+## Project Architecture
 
 ```text
 src/
-├── app/
-│   ├── (app)/                  # Authenticated "God Mode" routes
-│   │   ├── dashboard/          # Real-time KPIs & Call Monitor
-│   │   ├── tasks/              # Intelligent task queue with owner isolation
-│   │   ├── customers/          # 360° Customer Profiles & RTO Risk
-│   │   └── reports/            # Performance Leaderboards & Analytics
-│   ├── api/
-│   │   ├── webhooks/           # Hardened Shopify/Shiprocket handlers
-│   │   └── calls/              # Telephony & Recording ingestion
-├── components/
-│   ├── CallMonitor.tsx         # Real-time manager oversight tool
-│   ├── TaskCard.tsx            # Actionable follow-up cards
-│   └── Leaderboard.tsx         # Gamified agent performance
-└── lib/
-    ├── risk-engine.ts          # Automated RTO & Fraud detection
-    └── workflow-engine.ts      # Multi-channel (WA/SMS) automation
+|-- app/
+|   |-- (app)/                  # Authenticated "God Mode" routes
+|   |   |-- dashboard/          # Real-time KPIs & Call Monitor
+|   |   |-- tasks/              # Intelligent task queue with owner isolation
+|   |   \-- customers/          # 360 degrees Customer Profiles & RTO Risk
+|   |   \-- reports/            # Performance Leaderboards & Analytics
+|   |-- api/
+|   |   |-- webhooks/           # Hardened Shopify/Shiprocket handlers
+|   |   \-- calls/              # Telephony & Recording ingestion
+|-- components/
+|   |-- CallMonitor.tsx         # Real-time manager oversight tool
+|   |-- TaskCard.tsx            # Actionable follow-up cards
+|   \-- Leaderboard.tsx         # Gamified agent performance
+\-- lib/
+    |-- risk-engine.ts          # Automated RTO & Fraud detection
+    \-- workflow-engine.ts      # Multi-channel (WA/SMS) automation
 ```
 
 ---
 
-## 🛡️ Production Hardening (New)
+## Production Hardening (New)
 
 - **Poor Man's Cloud Telephony**: Zero-cost Android integration for real-time call tracking and recordings.
 - **Manager Command Center**: Live visibility into agent activity (ON CALL status) and audit playback.
@@ -93,7 +93,7 @@ src/
 
 ---
 
-## 🚀 Deployment
+## Deployment
 
 The CRM is optimized for **Vercel**. 
 
@@ -104,7 +104,7 @@ The CRM is optimized for **Vercel**.
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] **Phase 1**: Database Architecture & Sync Engine
 - [x] **Phase 2**: Dashboard & Task Management UI
@@ -114,5 +114,5 @@ The CRM is optimized for **Vercel**.
 
 ---
 
-Built with ❤️ for **CureForever**.  
+Built with passion for **CureForever**.  
 *Hardened for 2026 Production Standards.*

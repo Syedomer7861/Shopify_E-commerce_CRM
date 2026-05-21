@@ -1,7 +1,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "@supabase/functions-js/edge-runtime.d.ts"
 
-const WEBHOOK_SECRET = "cureforeever_shiprocket_sync_2026"
+const WEBHOOK_SECRET = Deno.env.get("SHIPROCKET_WEBHOOK_SECRET") || "cureforeever_shiprocket_sync_2026"
 
 Deno.serve(async (req: any) => {
   // Verify secret header

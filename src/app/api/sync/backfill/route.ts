@@ -10,7 +10,7 @@ async function getShiprocketToken(): Promise<string | null> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: process.env.SHIPROCKET_EMAIL,
-        password: process.env.SHIPROCKET_PASSWORD,
+        password: process.env.SHIPROCKET_SECRET_KEY,
       }),
     });
     const data = await res.json();
