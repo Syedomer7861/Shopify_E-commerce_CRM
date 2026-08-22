@@ -32,6 +32,9 @@ concurrency:
   group: crm-cron-${{ github.event.schedule || inputs.group }}
   cancel-in-progress: false
 
+# The job only makes outbound HTTP calls; it never touches the repository.
+permissions: {}
+
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -67,15 +70,18 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           PATHS: ${{ steps.plan.outputs.paths }}
         run: |
+          # Until the secrets are added this workflow has nothing to call.
+          # Skip quietly rather than failing: a scheduled job that fails every
+          # 15 minutes just mails the repo owner into ignoring it.
           if [ -z "$BASE_URL" ] || [ -z "$CRON_SECRET" ]; then
-            echo "::error::CRM_BASE_URL and CRON_SECRET repository secrets must be set."
-            exit 1
+            echo "::notice::Skipped - set the CRM_BASE_URL and CRON_SECRET repository secrets to enable scheduled jobs."
+            exit 0
           fi
 
           failed=0
           for path in $PATHS; do
             echo "--> POST $path"
-            # Separate the body from the status line so a non-2xx is visible.
+            # Body and status are captured separately so a non-2xx is visible.
             code=$(curl -sS -o /tmp/body.txt -w "%{http_code}" \
               --max-time 300 --retry 2 --retry-delay 15 \
               -X POST "${BASE_URL}${path}" \
@@ -83,11 +89,12 @@ jobs:
               -H "x-cron-secret: ${CRON_SECRET}" || echo "000")
 
             head -c 500 /tmp/body.txt; echo
-            if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
-              echo "::warning::${path} returned HTTP ${code}"
-              failed=1
-            else
-              echo "    ok (${code})"
-            fi
+            case "$code" in
+              2*) echo "    ok ($code)" ;;
+              000) echo "::warning::${path} - no response (DNS, TLS or timeout)"; failed=1 ;;
+              401|403) echo "::error::${path} returned $code - CRON_SECRET does not match the value in Vercel"; failed=1 ;;
+              404) echo "::error::${path} returned 404 - check CRM_BASE_URL and that the route is deployed"; failed=1 ;;
+              *) echo "::warning::${path} returned HTTP $code"; failed=1 ;;
+            esac
           done
           exit $failed
