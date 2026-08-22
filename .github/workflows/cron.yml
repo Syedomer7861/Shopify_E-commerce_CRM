@@ -53,8 +53,13 @@ jobs:
             *)              group="${MANUAL:-frequent}" ;;
           esac
 
+          # /api/sync/all is deliberately absent. It chains six jobs in one
+          # request (Shopify, Shiprocket, webhook backlog, task generation,
+          # self-healing, reminders) and always exceeds the function limit.
+          # Five of the six are already scheduled individually below, so only
+          # the Shopify half needed a home.
           case "$group" in
-            frequent)  paths="/api/sync/all /api/cron/workflow-executor" ;;
+            frequent)  paths="/api/cron/workflow-executor /api/sync/shopify" ;;
             hourly)    paths="/api/cron/unmask-sentinel /api/cron/shiprocket-sync" ;;
             sixhourly) paths="/api/cron/transit-inform /api/cron/transit-escalator" ;;
             daily)     paths="/api/cron/unresponsive-handler /api/cron/segment-updater /api/cron/recovery-reminder /api/cron/reorder-reminder /api/cron/review-reminder /api/cron/daily-digest" ;;
@@ -95,14 +100,30 @@ jobs:
             echo "    result: $code"
             echo "    body:   $(head -c 400 /tmp/body.txt)"
 
+            # A sync being cut off at the plan's function limit is expected on
+            # Hobby and the work resumes next tick, so it must not turn the
+            # job red forever - permanent red is the same as no alerting.
+            # Anything else, including a timeout on a job that should be fast,
+            # still fails.
+            case "$path" in
+              /api/sync/*) tolerate_timeout=yes ;;
+              *)           tolerate_timeout=no ;;
+            esac
+
             case "$code" in
-              2*)      echo "    ok" ;;
-              000*)    echo "::warning::${path} - no response within 90s. On Hobby the 60s function limit cuts long syncs off; the next run resumes."; failed=1 ;;
+              2*)        echo "    ok" ;;
               401*|403*) echo "::error::${path} - CRON_SECRET does not match the value in Vercel"; failed=1 ;;
-              404*)    echo "::error::${path} - 404. Check CRM_BASE_URL and that the route is deployed"; failed=1 ;;
-              504*)    echo "::warning::${path} - 504, the function hit the Vercel time limit. Expected on Hobby for large syncs."; failed=1 ;;
-              5*)      echo "::error::${path} - server error, see body above"; failed=1 ;;
-              *)       echo "::warning::${path} returned $code"; failed=1 ;;
+              404*)      echo "::error::${path} - 404. Check CRM_BASE_URL and that the route is deployed"; failed=1 ;;
+              504*|000*)
+                if [ "$tolerate_timeout" = yes ]; then
+                  echo "::warning::${path} - cut off at the Vercel function limit. Partial progress kept; the next run continues. Upgrade to Pro, or batch the sync, to finish in one pass."
+                else
+                  echo "::error::${path} - timed out, and this job is not expected to be slow"
+                  failed=1
+                fi
+                ;;
+              5*)        echo "::error::${path} - server error, see body above"; failed=1 ;;
+              *)         echo "::warning::${path} returned $code"; failed=1 ;;
             esac
           done
           exit $failed
