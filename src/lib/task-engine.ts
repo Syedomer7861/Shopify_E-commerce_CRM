@@ -331,3 +331,42 @@ export async function triggerAuditTask(supabase: any, originalTask: any) {
 
   return newTask;
 }
+
+/**
+ * Insert generated tasks, treating an existing row as success.
+ *
+ * The task generators re-run on a schedule and re-derive the same tasks for
+ * the same order, which collides with the unique_order_task constraint and
+ * fills the logs with 23505 / HTTP 409. A duplicate here means the task was
+ * already created on an earlier pass — that is the desired end state, not an
+ * error worth reporting.
+ *
+ * Returns how many rows were actually new.
+ */
+export async function insertTasksIgnoringDuplicates(
+  supabase: any,
+  rows: any[]
+): Promise<{ inserted: number; error: string | null }> {
+  if (!rows?.length) return { inserted: 0, error: null };
+
+  const { data, error } = await supabase.from("tasks").insert(rows).select("id");
+
+  if (!error) return { inserted: data?.length ?? rows.length, error: null };
+
+  // 23505 = unique_violation.
+  if (error.code === "23505") {
+    // The batch is rejected as a whole, so retry one at a time to keep the
+    // rows that are genuinely new.
+    let inserted = 0;
+    for (const row of rows) {
+      const { error: rowErr } = await supabase.from("tasks").insert(row);
+      if (!rowErr) inserted++;
+      else if (rowErr.code !== "23505") {
+        return { inserted, error: rowErr.message };
+      }
+    }
+    return { inserted, error: null };
+  }
+
+  return { inserted: 0, error: error.message };
+}

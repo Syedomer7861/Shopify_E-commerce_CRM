@@ -3,7 +3,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getServiceSupabase } from "@/lib/supabase";
 import { TaskType } from "@/types";
 import { getSystemSettings } from "@/lib/server-settings";
-import { assignTaskOwner, calculateTaskPriority, reassignOfflineAgentTasks } from "@/lib/task-engine";
+import { assignTaskOwner, calculateTaskPriority, reassignOfflineAgentTasks, insertTasksIgnoringDuplicates } from "@/lib/task-engine";
 import { syncShopifyData, syncShiprocketData } from "@/lib/sync-logic";
 
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
@@ -357,7 +357,7 @@ export async function POST(req: NextRequest) {
              task.assigned_to = assignedTo;
            });
 
-           const { error: insertErr } = await supabase.from("tasks").insert(newTasks);
+           const { error: insertErr } = await insertTasksIgnoringDuplicates(supabase, newTasks);
            if (!insertErr) report.tasks.generated += 3;
 
            // SELF-HEALING: If delivered, cancel any pending pre-delivery tasks

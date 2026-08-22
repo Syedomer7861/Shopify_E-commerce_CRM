@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
-import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
+import { assignTaskOwner, calculateTaskPriority, insertTasksIgnoringDuplicates } from "@/lib/task-engine";
 import { requireInternal } from "@/lib/auth-utils";
 
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
       status: "pending",
     }));
 
-    const { error: insertErr } = await supabase.from("tasks").insert(newTasks);
+    const { error: insertErr } = await insertTasksIgnoringDuplicates(supabase, newTasks);
     if (!insertErr) {
       generated += 3;
     } else {
