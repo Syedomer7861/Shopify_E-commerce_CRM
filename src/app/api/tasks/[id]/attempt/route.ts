@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 import { WorkflowEngine } from "@/lib/workflow-engine";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createServerClient();
 
   try {

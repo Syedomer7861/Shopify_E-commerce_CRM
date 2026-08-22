@@ -6,9 +6,10 @@
     "dev": "next dev",
     "chat": "node chat_server.js",
     "wa": "node wa_server.js",
-    "build": "next build",
+    "build": "node scripts/check-route-guards.mjs && next build",
     "start": "next start",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "verify": "node scripts/check-route-guards.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.4.0",

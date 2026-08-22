@@ -63,8 +63,12 @@ import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
 
 import fs from 'fs';
 import path from 'path';
+import { requireInternal } from "@/lib/auth-utils";
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const { stream, send, close } = createSyncStream();
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
   const logPath = path.join(process.cwd(), 'unmask_audit.log');

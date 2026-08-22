@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createServerClient();
   const searchParams = req.nextUrl.searchParams;
   const days = parseInt(searchParams.get("days") || "30");

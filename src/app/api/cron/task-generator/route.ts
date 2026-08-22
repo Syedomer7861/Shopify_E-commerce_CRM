@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
+import { requireInternal } from "@/lib/auth-utils";
 
 function getSupabase() {
   return createServerClient();
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = getSupabase();
 
   // Find delivered orders AND orders with status "Delivered" (case-insensitive query via ilike or in)
@@ -210,3 +214,6 @@ export async function POST(req: NextRequest) {
     winbackTasks
   });
 }
+
+// Vercel Cron invokes scheduled paths with GET.
+export const GET = POST;

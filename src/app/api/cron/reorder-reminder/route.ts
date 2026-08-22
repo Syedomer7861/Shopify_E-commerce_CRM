@@ -4,6 +4,7 @@ import { getTaskProductName } from "@/lib/utils";
 import { getSystemSettings } from "@/lib/server-settings";
 import { sendGmail } from "@/lib/gmail";
 import { personaliseTemplate, getTemplateVariables } from "@/lib/whatsapp";
+import { requireInternal } from "@/lib/auth-utils";
 
 function getSupabase() {
   return createAdminClient();
@@ -14,6 +15,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   return processRequest(req);
 }
 

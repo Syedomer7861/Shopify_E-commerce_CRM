@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 
@@ -6,10 +7,11 @@ export const dynamic = "force-dynamic";
 
 const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const resolvedParams = await params;
   const orderId = resolvedParams.id;
 

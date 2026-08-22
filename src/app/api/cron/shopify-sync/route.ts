@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { isPhoneMasked } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   // CRON Security Check
   const authHeader = req.headers.get("authorization");
   if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

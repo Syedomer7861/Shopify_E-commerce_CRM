@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 
 function getSupabase() {
@@ -6,10 +7,11 @@ function getSupabase() {
 }
 
 // PATCH /api/tasks/[id]/[action]
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string; action: string }> }
-) {
+export async function PATCH(req: NextRequest,
+  { params }: { params: Promise<{ id: string; action: string }> }) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = getSupabase();
   const body = await req.json();
   const { id, action } = await params; // ✅ await params (Next.js 15)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 import { WorkflowEngine } from "@/lib/workflow-engine";
+import { requireInternal } from "@/lib/auth-utils";
 
 function getSupabase() {
   return createServerClient();
@@ -11,6 +12,9 @@ function getSupabase() {
  * Runs every ~10 mins to process delayed steps.
  */
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = getSupabase();
   const now = new Date().toISOString();
 
@@ -48,3 +52,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+// Vercel Cron invokes scheduled paths with GET.
+export const GET = POST;

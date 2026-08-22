@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createAdminClient } from "@/lib/supabase";
 
 /**
@@ -6,6 +7,9 @@ import { createAdminClient } from "@/lib/supabase";
  * POST /api/templates
  */
 export async function GET(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createAdminClient();
 
   const { data, error } = await supabase
@@ -18,6 +22,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createAdminClient();
 
   const body = await req.json();
@@ -32,6 +39,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createAdminClient();
 
   const { searchParams } = new URL(req.url);

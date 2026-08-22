@@ -108,7 +108,7 @@ export default function Sidebar() {
     return filteredQuery;
   }, []);
 
-  const fetchTaskCounts = useCallback(async (userId: string, role?: string) => {
+  const fetchTaskCounts = useCallback(async (userId: string, role?: string, activeProfile?: Profile | null) => {
     try {
       const today = toDbDateString(new Date());
       
@@ -127,9 +127,9 @@ export default function Sidebar() {
         .gte("due_date", fourDaysAgo)
         .not("status", "in", '("done","cancelled","skipped")');
 
-      if (role === "agent" && profile) {
-        dueQuery = applyAgentFilters(dueQuery, profile);
-        overdueQuery = applyAgentFilters(overdueQuery, profile);
+      if (role === "agent" && activeProfile) {
+        dueQuery = applyAgentFilters(dueQuery, activeProfile);
+        overdueQuery = applyAgentFilters(overdueQuery, activeProfile);
       }
 
       const [dueRes, overdueRes] = await Promise.all([dueQuery, overdueQuery]);
@@ -140,7 +140,7 @@ export default function Sidebar() {
     } catch (err) {
       console.error("fetchTaskCounts error:", err);
     }
-  }, [supabase, profile, applyAgentFilters]);
+  }, [supabase, applyAgentFilters]);
 
   const fetchTodayAttendance = useCallback(async (userId: string) => {
     try {
@@ -177,6 +177,11 @@ export default function Sidebar() {
 
   const fetchProfile = useCallback(async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      // Demo presenter view. Requires a real demo login - the cookie alone is
+      // not enough, or anyone could hand themselves a manager-role profile.
       const isDemo = document.cookie.includes("crm-demo-mode=true");
       if (isDemo) {
         const demoProfile: Profile = {
@@ -191,9 +196,6 @@ export default function Sidebar() {
         setProfile(demoProfile);
         return;
       }
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
       
       const user = session.user;
       const { data: profileData } = await supabase
@@ -212,7 +214,7 @@ export default function Sidebar() {
       };
       
       setProfile(profile);
-      fetchTaskCounts(user.id, profile.role);
+      fetchTaskCounts(user.id, profile.role, profile);
       fetchTodayAttendance(user.id);
     } catch (err) {
       console.error("fetchProfile error:", err);
@@ -267,6 +269,11 @@ export default function Sidebar() {
 
   const updateStatus = useCallback(async (status: string, reasonCode?: string) => {
     if (!profile) return;
+    if (profile.id === "demo-presenter-id") {
+      setProfile({ ...profile, status: status as any });
+      toast.success(`Shift: ${status.toUpperCase()}`);
+      return;
+    }
     const { error } = await supabase.from("profiles").update({ 
         status: status, 
         last_seen_at: new Date().toISOString(),
@@ -375,6 +382,8 @@ export default function Sidebar() {
 
     const runHeartbeat = async () => {
       try {
+        if (profile.id === "demo-presenter-id") return; // Skip heartbeat for demo profile
+
         if (profile.status === "offline" && !path.includes("login")) {
            await updateStatus("online", "Auto-Active");
            return;

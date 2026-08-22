@@ -5,19 +5,20 @@ import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
 import { syncShopifyData, syncReviewTasks } from "@/lib/sync-logic";
+import { requireInternal } from "@/lib/auth-utils";
 
 export async function GET(req: NextRequest) {
   return POST(req);
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const { stream, send, close } = createSyncStream();
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
 
   const supabase = getServiceSupabase(req);
-
-  const authHeader = req.headers.get("x-sync-secret");
-  const isInternal = authHeader === process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   const runSync = async () => {
     try {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
+import { requireInternal } from "@/lib/auth-utils";
 
 const supabase = createServerClient();
 
@@ -61,6 +62,9 @@ function isRealPhone(phone: any): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   let unmasked = 0;
   let skipped = 0;
   let failed = 0;

@@ -1,7 +1,12 @@
 import { createServerClient } from "@/lib/supabase";
-import { NextResponse } from "next/server";
+import { hasInternalSecret } from "@/lib/auth-utils";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!hasInternalSecret(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = createServerClient();
 
   const targetEmail = "admin@cureforever.in";

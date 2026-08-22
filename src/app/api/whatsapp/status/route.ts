@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 export const dynamic = "force-dynamic";
 import { createAdminClient } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createAdminClient();
   
   // Get Bridge URL: env var takes priority (always correct for local dev),

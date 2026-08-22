@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 
 function getSupabase() {
@@ -29,6 +30,9 @@ function hasPermission(profile: any, permission: string) {
 }
 
 export async function GET(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from("workflows")
@@ -40,6 +44,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const profile = await checkAuth(req);
   if (!hasPermission(profile, "manage_automations")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
@@ -58,6 +65,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const profile = await checkAuth(req);
   if (!hasPermission(profile, "manage_automations")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });

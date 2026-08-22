@@ -15,7 +15,7 @@ const express       = require("express");
 const helmet        = require("helmet");
 const rateLimit     = require("express-rate-limit");
 const { z }         = require("zod");
-const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
+const { Client, LocalAuth, MessageMedia, Buttons } = require("whatsapp-web.js");
 const qrcode        = require("qrcode-terminal");
 require("dotenv").config({ path: ".env.local" });
 
@@ -174,7 +174,10 @@ function initClient() {
 
             await fetch(crmUrl, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-sync-secret": process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+                },
                 body: JSON.stringify(payload)
             });
         } catch (e) {
@@ -341,14 +344,15 @@ app.listen(PORT, "0.0.0.0", () => {
 });
 
 // ── Backup Daemon (Daily at 3 AM) ──────────────────────────────────────────────
-const BACKUP_SECRET = process.env.BACKUP_SECRET || "cureforever_sync_secret_2026";
+const BACKUP_SECRET = process.env.BACKUP_SECRET || process.env.SYNC_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!BACKUP_SECRET) console.warn("⚠️  BACKUP_SECRET/SYNC_SECRET unset - backup sync calls will be rejected.");
 const BACKUP_BASE_URL = process.env.SYNC_BASE_URL || "http://127.0.0.1:3000";
-const BACKUP_URL = BACKUP_BASE_URL + "/api/backup?secret=" + BACKUP_SECRET;
+const BACKUP_URL = BACKUP_BASE_URL + "/api/backup";
 
 async function runBackup() {
     console.log("[BACKUP] Triggering Scheduled Daily Backup...");
     try {
-        const res = await fetch(BACKUP_URL);
+        const res = await fetch(BACKUP_URL, { headers: { "x-cron-secret": BACKUP_SECRET || "" } });
         const text = await res.text();
         
         try {

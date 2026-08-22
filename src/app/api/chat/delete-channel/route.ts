@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from '@/lib/supabase';
 
 export async function DELETE(req: Request) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   try {
     const { searchParams } = new URL(req.url);
     const channelId = searchParams.get('id');

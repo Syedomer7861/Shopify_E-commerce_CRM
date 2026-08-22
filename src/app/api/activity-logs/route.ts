@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 import { appendToSheet } from "@/lib/google-sheets";
 import { analyzeSentiment } from "@/lib/utils";
@@ -8,6 +9,9 @@ import { analyzeSentiment } from "@/lib/utils";
  * Centralized endpoint to log agent/system activity and sync to Google Sheets.
  */
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createServerClient();
   const body = await req.json();
 

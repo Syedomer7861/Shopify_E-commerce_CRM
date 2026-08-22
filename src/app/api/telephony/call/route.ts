@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createAdminClient } from "@/lib/supabase";
 
 export async function POST(req: Request) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   try {
     const { customerPhone, taskId, agentPhoneOverride } = await req.json();
 

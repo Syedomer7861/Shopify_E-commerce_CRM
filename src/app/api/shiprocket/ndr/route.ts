@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 
@@ -7,6 +8,9 @@ export const dynamic = "force-dynamic";
 const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createServerClient();
 
   try {

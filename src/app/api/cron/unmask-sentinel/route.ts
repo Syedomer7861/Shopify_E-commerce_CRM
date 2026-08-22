@@ -1,7 +1,8 @@
 import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings, getShiprocketToken } from "@/lib/server-settings";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Max Allowed for Pro/Enterprise
@@ -10,14 +11,13 @@ export const maxDuration = 60; // Max Allowed for Pro/Enterprise
  * Hourly Sentinel: Automatically heals masked records in the background.
  * Target: All customers with 'x', 'X', or '_SR_' in their phone.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createServerClient();
 
   try {
-    // 1. Authorization (Optional: check for CRON header if on Vercel)
-    // const authHeader = req.headers.get('authorization');
-    // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) return ...
-
     const settings = await getSystemSettings(supabase);
     const token = await getShiprocketToken(supabase);
 

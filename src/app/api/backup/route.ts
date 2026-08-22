@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
+import { hasInternalSecret, safeEqual } from "@/lib/auth-utils";
 import { uploadToDrive } from "@/lib/google-drive";
 
 /**
@@ -8,10 +9,10 @@ import { uploadToDrive } from "@/lib/google-drive";
  * Secure this with the CRON_SECRET.
  */
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const secret = searchParams.get("secret");
-
-  if (secret !== process.env.CRON_SECRET) {
+  // Prefer the header; the ?secret= form is kept for older callers but leaks
+  // the secret into access logs, so it should be retired.
+  const legacySecret = new URL(req.url).searchParams.get("secret");
+  if (!hasInternalSecret(req) && !safeEqual(legacySecret, process.env.CRON_SECRET || null)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

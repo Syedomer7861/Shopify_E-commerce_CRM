@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createServerClient();
   const { data: settings } = await supabase.from("settings").select("whatsapp_bridge_url").single();
   const bridgeUrl = settings?.whatsapp_bridge_url || "http://127.0.0.1:3001";

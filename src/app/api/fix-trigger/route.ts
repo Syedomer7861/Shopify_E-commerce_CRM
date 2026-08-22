@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { hasInternalSecret } from "@/lib/auth-utils";
 
 /**
  * ONE-TIME FIX: Patches the Supabase handle_new_user trigger
@@ -9,6 +10,10 @@ import { NextRequest, NextResponse } from "next/server";
  * Protected by CRON_SECRET header for safety.
  */
 export async function GET(req: NextRequest) {
+  if (!hasInternalSecret(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const secret = req.headers.get("x-secret");
   if (secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

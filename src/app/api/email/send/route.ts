@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 import { sendGmail } from "@/lib/gmail";
 
 export async function POST(req: Request) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   try {
     const { email, subject, message, attachments } = await req.json();
     const supabase = createServerClient();

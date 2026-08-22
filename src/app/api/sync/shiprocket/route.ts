@@ -3,6 +3,7 @@ import { createServerClient, getServiceSupabase } from "@/lib/supabase";
 import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
+import { requireInternal } from "@/lib/auth-utils";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -126,6 +127,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const { stream, send, close } = createSyncStream();
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
 

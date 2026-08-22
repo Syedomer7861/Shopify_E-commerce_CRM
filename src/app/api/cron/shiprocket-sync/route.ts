@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 import { WorkflowEngine } from "@/lib/workflow-engine";
+import { requireInternal } from "@/lib/auth-utils";
 
 const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
 
@@ -16,6 +17,9 @@ function mapShiprocketStatus(status: string | number) {
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createServerClient();
 
   try {
@@ -103,3 +107,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+// Vercel Cron invokes scheduled paths with GET.
+export const GET = POST;

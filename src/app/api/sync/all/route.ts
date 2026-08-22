@@ -20,12 +20,16 @@ function mapShiprocketStatus(status: string | number | null | undefined) {
 }
 
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
+import { requireInternal } from "@/lib/auth-utils";
 
 export async function GET(req: NextRequest) {
   return POST(req);
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const { stream, send, close } = createSyncStream();
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
 

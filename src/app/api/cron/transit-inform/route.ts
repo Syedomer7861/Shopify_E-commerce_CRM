@@ -2,22 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 import { WorkflowEngine } from "@/lib/workflow-engine";
 import { calculateTaskPriority } from "@/lib/task-engine";
+import { requireInternal } from "@/lib/auth-utils";
 
 /**
  * Transit Inform Cron
  * Proactively flags shipments stuck in transit for 48+ hours.
  */
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createServerClient();
-
-  // Security: Check for secret or internal call
-  const authHeader = req.headers.get("Authorization");
-  const isSecret = authHeader === `Bearer ${process.env.CRON_SECRET}`;
-  const isInternal = req.headers.get("x-sync-secret") === process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!isSecret && !isInternal && process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
   try {
     // 1. Identify "Stale" orders: in_transit for more than 48 hours

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 
@@ -8,6 +9,9 @@ function getSupabase() {
 
 // GET /api/tasks — list with filters
 export async function GET(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = getSupabase();
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
@@ -39,6 +43,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/tasks — manually create task
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = getSupabase();
   const body = await req.json();
 

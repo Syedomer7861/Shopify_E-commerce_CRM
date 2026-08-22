@@ -54,22 +54,23 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { session } } = await supabase.auth.getSession()
+  // getUser() revalidates the JWT with Supabase; getSession() trusts the cookie as-is.
+  const { data: { user } } = await supabase.auth.getUser()
 
   // Protect all routes except login, api, and static files
   const isLoginPage = request.nextUrl.pathname.startsWith('/login')
   const isApiRoute = request.nextUrl.pathname.startsWith('/api')
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
   const isStaticFile = request.nextUrl.pathname.includes('.')
-  
-  const isDemoMode = request.cookies.get('crm-demo-mode')?.value === 'true'
 
-  if (!session && !isDemoMode && !isLoginPage && !isApiRoute && !isAuthRoute && !isStaticFile) {
+  // Demo mode is a real login (see login/page.tsx): the demo cookie is only set
+  // after signInWithPassword succeeds, so it must never stand in for a session.
+  if (!user && !isLoginPage && !isApiRoute && !isAuthRoute && !isStaticFile) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // If user is logged in (or demo mode) and tries to access login page, redirect to dashboard
-  if ((session || isDemoMode) && isLoginPage) {
+  // If user is logged in and tries to access login page, redirect to dashboard
+  if (user && isLoginPage) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 

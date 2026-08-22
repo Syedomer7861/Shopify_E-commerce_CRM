@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
+import { requireInternal } from "@/lib/auth-utils";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120; // Allow up to 2 minutes
@@ -16,6 +17,9 @@ export const maxDuration = 120; // Allow up to 2 minutes
  * 5. Update RTO flags
  */
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createServerClient();
 
   const report = {

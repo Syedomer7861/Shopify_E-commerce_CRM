@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 
 export async function POST(req: Request) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   try {
     const body = await req.json();
     const {

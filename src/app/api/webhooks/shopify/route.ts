@@ -6,6 +6,7 @@ import { WorkflowEngine } from "@/lib/workflow-engine";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { analyzeRTORisk } from "@/lib/risk-engine";
 import crypto from "crypto";
+import { safeEqual, isSecretConfigured, webhookStrict } from "@/lib/auth-utils";
 
 export async function POST(req: NextRequest) {
   const supabase = createServerClient();
@@ -20,23 +21,21 @@ export async function POST(req: NextRequest) {
     // 1. Signature Verification
     const secret = process.env.SHOPIFY_WEBHOOK_SECRET || settings?.shopify_webhook_secret;
     
-    if (secret && hmac) {
+    if (isSecretConfigured(secret)) {
       const hash = crypto
         .createHmac("sha256", secret)
         .update(rawBody, "utf8")
         .digest("base64");
-      
-      if (hash !== hmac) {
-        if (secret === "cureforever_secret_2026") {
-          console.warn("⚠️ Shopify Webhook: Signature mismatch but ALLOWED because 'cureforever_secret_2026' placeholder is active.");
-          // We proceed to process the webhook anyway to keep the CRM functional
-        } else {
-          console.warn(`⚠️ Shopify Webhook: Invalid Signature. Expected hash beginning with ${hash.substring(0, 5)}... but got ${hmac.substring(0, 5)}...`);
-          return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-        }
+
+      if (!safeEqual(hash, hmac)) {
+        console.warn("⚠️ Shopify Webhook: rejected - invalid or missing signature.");
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
+    } else if (webhookStrict()) {
+      console.error("🚨 Shopify Webhook: rejected - SHOPIFY_WEBHOOK_SECRET is unset or still the placeholder.");
+      return NextResponse.json({ error: "Webhook secret not configured" }, { status: 503 });
     } else {
-      console.log("ℹ️ Shopify Webhook: Skipping signature verification (secret or hmac missing)");
+      console.warn("🚨 Shopify Webhook: SHOPIFY_WEBHOOK_SECRET is unset or still the placeholder - payload accepted UNVERIFIED. Set the real secret from the Shopify admin, then WEBHOOK_STRICT=true.");
     }
 
     // 2. Logging

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 
 /**
@@ -6,6 +7,9 @@ import { createServerClient } from "@/lib/supabase";
  * Returns productivity metrics for the logged-in agent or all agents if admin.
  */
 export async function GET(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createServerClient();
 
   const { searchParams } = new URL(req.url);

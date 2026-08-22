@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createAdminClient } from "@/lib/supabase";
 import { sendWhatsApp, personaliseTemplate, getTemplateVariables } from "@/lib/whatsapp";
 import fs from "fs";
@@ -11,6 +12,9 @@ import path from "path";
  * PATCH /api/campaigns/run
  */
 export async function GET(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createAdminClient();
 
   const { data, error } = await supabase
@@ -88,6 +92,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createAdminClient();
 
   const body = await req.json();
@@ -138,6 +145,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createAdminClient();
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
@@ -194,6 +204,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createAdminClient();
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
@@ -229,6 +242,9 @@ export async function DELETE(req: NextRequest) {
  * Triggered to run or pause a campaign.
  */
 export async function PATCH(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = createAdminClient();
 
   const { searchParams } = new URL(req.url);

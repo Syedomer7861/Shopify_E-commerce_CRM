@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { hasInternalSecret } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 
 /**
@@ -6,6 +7,10 @@ import { createServerClient } from "@/lib/supabase";
  * Receives audio files from MacroDroid/Android and stores them in Supabase.
  */
 export async function POST(req: NextRequest) {
+  if (!hasInternalSecret(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = createServerClient();
 
   try {

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { notifyAdmin } from "@/lib/notifications";
 import { createServerClient } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
     try {
         const { message, type, action } = await req.json();
         

@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
+import { requireInternal } from "@/lib/auth-utils";
 
 function getSupabase() {
   return createServerClient();
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = getSupabase();
   const now = new Date();
   const yesterday = new Date(now.getTime() - 86400000).toISOString();
@@ -133,3 +137,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ sent: false, error: err.message }, { status: 500 });
   }
 }
+
+// Vercel Cron invokes scheduled paths with GET.
+export const GET = POST;

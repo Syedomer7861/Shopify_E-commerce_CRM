@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { getServiceSupabase } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = getServiceSupabase(req);
   const { customerId, lastMessage, taskType } = await req.json();
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 
 function getSupabase() {
@@ -7,6 +8,9 @@ function getSupabase() {
 
 // GET /api/customers
 export async function GET(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = getSupabase();
   const { searchParams } = new URL(req.url);
   const segment = searchParams.get("segment");
@@ -48,6 +52,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/customers — create manual customer
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   const supabase = getSupabase();
   const body = await req.json();
 

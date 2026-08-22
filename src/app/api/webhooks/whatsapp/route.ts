@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
+import { hasInternalSecret } from "@/lib/auth-utils";
 
 export async function POST(req: NextRequest) {
+  // Only the WhatsApp bridge daemon (wa_server.js) may post inbound messages.
+  if (!hasInternalSecret(req)) {
+    console.warn("⚠️ WhatsApp Webhook: rejected - missing or invalid bridge secret.");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = createServerClient();
 
   try {

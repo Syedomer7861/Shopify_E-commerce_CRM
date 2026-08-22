@@ -76,3 +76,6 @@ debug_tasks.ts
 list_pending.ts
 nuke_old_tasks.ts
 reset_user.ts
+
+# Local vector/agent DB
+ruvector.db

@@ -6,6 +6,7 @@ import { WorkflowEngine } from "@/lib/workflow-engine";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { notifyAdmin } from "@/lib/notifications";
 import { analyzeRTORisk } from "@/lib/risk-engine";
+import { safeEqual, isSecretConfigured, webhookStrict } from "@/lib/auth-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -54,9 +55,17 @@ export async function POST(req: NextRequest) {
     // 1. Security Check
     const token = req.headers.get("x-shiprocket-secret") || req.nextUrl.searchParams.get("token");
     const expectedToken = process.env.SHIPROCKET_WEBHOOK_TOKEN;
-    if (expectedToken && token !== expectedToken) {
-      console.warn("⚠️ Webhook Unauthorized - Token mismatch");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    if (isSecretConfigured(expectedToken)) {
+      if (!safeEqual(token, expectedToken)) {
+        console.warn("⚠️ Shiprocket Webhook: rejected - invalid or missing token.");
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    } else if (webhookStrict()) {
+      console.error("🚨 Shiprocket Webhook: rejected - SHIPROCKET_WEBHOOK_TOKEN is not configured.");
+      return NextResponse.json({ error: "Webhook token not configured" }, { status: 503 });
+    } else {
+      console.warn("🚨 Shiprocket Webhook: SHIPROCKET_WEBHOOK_TOKEN is not configured - payload accepted UNVERIFIED. Set it in the host env, then WEBHOOK_STRICT=true.");
     }
 
     // 2. Identify Event Type & Global IDs

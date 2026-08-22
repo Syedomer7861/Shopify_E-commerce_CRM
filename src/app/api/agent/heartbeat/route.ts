@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,9 @@ export const dynamic = "force-dynamic";
  * Called every 60 seconds from the dashboard client.
  */
 export async function POST(req: Request) {
+  const unauthorized = await requireInternal(req);
+  if (unauthorized) return unauthorized;
+
   try {
     const body = await req.json();
     const agentId = body.agentId;
