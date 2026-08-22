@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 import { requireInternal } from "@/lib/auth-utils";
 import { createAdminClient } from "@/lib/supabase";
 
 export async function POST(req: Request) {
+  const limited = rateLimit(req, "outbound-call", 30, 60000);
+  if (limited) return limited;
+
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
 

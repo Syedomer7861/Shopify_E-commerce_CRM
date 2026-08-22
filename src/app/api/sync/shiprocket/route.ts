@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 import { getServiceSupabase } from "@/lib/supabase";
 import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
@@ -126,10 +127,15 @@ async function shiprocketFetch(url: string, token: string) {
 }
 
 export async function GET(req: NextRequest) {
+  // Delegates to POST, which applies the rate limit. Counting here too would
+  // charge a GET caller twice and halve the real limit.
   return POST(req);
 }
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, "sync", 5, 60000);
+  if (limited) return limited;
+
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
 

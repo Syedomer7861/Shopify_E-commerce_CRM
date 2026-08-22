@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 import { sendGmail } from "@/lib/gmail";
 
 export async function POST(req: Request) {
+  const limited = rateLimit(req, "outbound-email", 60, 60000);
+  if (limited) return limited;
+
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
 

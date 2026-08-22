@@ -5,6 +5,29 @@ import { resolveUnmaskedPhone } from "./unmask-utils";
 const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+/**
+ * Serverless functions are killed at a hard wall (60s on Vercel Hobby, 300s on
+ * Pro) and a killed function returns a 504 with no report, so the caller
+ * cannot tell what was written. A budget lets the sync stop one record short
+ * of the wall and return what it did, and the next run picks up from there.
+ *
+ * Every sync writes with upsert, so re-processing a record already handled is
+ * a no-op rather than a duplicate.
+ */
+export type SyncBudget = {
+  /** Stop starting new records once this many ms have elapsed. */
+  budgetMs?: number;
+};
+
+function makeDeadline(opts?: SyncBudget) {
+  const started = Date.now();
+  const budget = opts?.budgetMs ?? Infinity;
+  return {
+    expired: () => Date.now() - started >= budget,
+    elapsed: () => Date.now() - started,
+  };
+}
+
 function mapShiprocketStatus(status: string | number) {
   const s = String(status).toLowerCase();
   if (s.includes("rto") || s === "9") return "rto";
@@ -53,12 +76,20 @@ function extractShiprocketLineItems(sr: any): any[] {
   }));
 }
 
-export async function syncShopifyData(supabase: any, send: (data: any) => void, full: boolean = false) {
+export async function syncShopifyData(
+  supabase: any,
+  send: (data: any) => void,
+  full: boolean = false,
+  opts?: SyncBudget
+) {
+  const deadline = makeDeadline(opts);
   const report = {
     orders: { synced: 0, skipped: 0 },
     abandoned: { synced: 0, skipped: 0 },
     customers: { updated: 0 },
     tasks: { created: 0 },
+    /** True when the budget ran out before the source was exhausted. */
+    truncated: false,
     errors: [] as string[]
   };
 
@@ -105,6 +136,13 @@ export async function syncShopifyData(supabase: any, send: (data: any) => void, 
       // 2. PROCESS ORDERS
       const affectedCustomerIds = new Set<string>();
       for (const order of orders) {
+        // Checked before each order, not mid-order: stopping part-way through
+        // one order could leave a customer written without its order.
+        if (deadline.expired()) {
+          report.truncated = true;
+          send({ message: `Budget reached after ${report.orders.synced} orders; the next run continues from here.` });
+          break;
+        }
         try {
           const customerData = order.customer;
           const rawPhone = order.phone || customerData?.phone || order.shipping_address?.phone || order.billing_address?.phone || "";
@@ -213,6 +251,16 @@ export async function syncShopifyData(supabase: any, send: (data: any) => void, 
         if (nextMatch) ordersUrl = nextMatch[1];
       }
       ordersPage++;
+
+      if (report.truncated) break;
+    }
+
+    // Checkouts are lower value than orders, so a tight budget spends what is
+    // left on orders and picks these up next run.
+    if (deadline.expired()) {
+      report.truncated = true;
+      send({ progress: 90, message: "Budget reached; skipping checkouts this run." });
+      return report;
     }
 
     // 3. FETCH ABANDONED CHECKOUTS
@@ -239,6 +287,11 @@ export async function syncShopifyData(supabase: any, send: (data: any) => void, 
       send({ progress: Math.min(85, 40 + (checkoutsPage * 5)), message: `Shopify Sync: Processing checkout batch ${checkoutsPage}...` });
 
       for (const cart of checkouts) {
+        if (deadline.expired()) {
+          report.truncated = true;
+          send({ message: "Budget reached during checkouts; the next run continues from here." });
+          break;
+        }
         try {
           // 1. STALENESS GUARD: Skip checkouts older than 7 days
           const abandonedAt = cart.updated_at || cart.created_at;
@@ -365,6 +418,8 @@ export async function syncShopifyData(supabase: any, send: (data: any) => void, 
         if (nextMatch) checkoutsUrl = nextMatch[1];
       }
       checkoutsPage++;
+
+      if (report.truncated) break;
     }
 
     return report;

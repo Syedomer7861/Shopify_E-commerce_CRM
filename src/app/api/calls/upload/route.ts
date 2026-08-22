@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 import { hasInternalSecret } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 
@@ -7,6 +8,9 @@ import { createServerClient } from "@/lib/supabase";
  * Receives audio files from MacroDroid/Android and stores them in Supabase.
  */
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, "calls-upload", 60, 60000);
+  if (limited) return limited;
+
   if (!hasInternalSecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

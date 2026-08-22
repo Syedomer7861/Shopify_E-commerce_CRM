@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
 import { DeliveryStatus, TaskType } from "@/types";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
@@ -36,6 +37,9 @@ function getTriggerByStatus(status: string): any {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, "webhook-shiprocket", 300, 60000);
+  if (limited) return limited;
+
   const supabase = getSupabase();
   let body: any;
   

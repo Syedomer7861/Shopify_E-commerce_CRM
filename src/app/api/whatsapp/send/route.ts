@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 import { getAuthenticatedSession } from "@/lib/auth-utils";
 import { sendWhatsApp, cleanPhone, personaliseTemplate } from "@/lib/whatsapp";
 import { z } from "zod";
@@ -11,6 +12,9 @@ const WhatsAppSendSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, "outbound-wa", 60, 60000);
+  if (limited) return limited;
+
   try {
     const { errorResponse } = await getAuthenticatedSession();
     if (errorResponse) return errorResponse;

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { requireInternal } from "@/lib/auth-utils";
@@ -20,6 +21,9 @@ export const maxDuration = 60;
  * 5. Update RTO flags
  */
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, "sync", 5, 60000);
+  if (limited) return limited;
+
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
 

@@ -79,3 +79,6 @@ reset_user.ts
 
 # Local vector/agent DB
 ruvector.db
+
+# Compiled output from scripts/check-*.mjs
+node_modules/.cache/crm-checks/

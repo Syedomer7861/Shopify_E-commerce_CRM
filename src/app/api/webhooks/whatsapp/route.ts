@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
 import { hasInternalSecret } from "@/lib/auth-utils";
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, "webhook-whatsapp", 300, 60000);
+  if (limited) return limited;
+
   // Only the WhatsApp bridge daemon (wa_server.js) may post inbound messages.
   if (!hasInternalSecret(req)) {
     console.warn("⚠️ WhatsApp Webhook: rejected - missing or invalid bridge secret.");

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
@@ -9,6 +10,9 @@ import crypto from "crypto";
 import { safeEqual, isSecretConfigured, webhookStrict } from "@/lib/auth-utils";
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, "webhook-shopify", 300, 60000);
+  if (limited) return limited;
+
   const supabase = createAdminClient();
 
   try {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
 import { requireInternal } from "@/lib/auth-utils";
 
@@ -62,6 +63,9 @@ function isRealPhone(phone: any): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, "sync", 5, 60000);
+  if (limited) return limited;
+
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
 
