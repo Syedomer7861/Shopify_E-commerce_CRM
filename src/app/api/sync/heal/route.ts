@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { requireInternal } from "@/lib/auth-utils";
 
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
 
-  const supabase = createServerClient();
+  const supabase = createAdminClient();
 
   const report = {
     unmasked: 0,

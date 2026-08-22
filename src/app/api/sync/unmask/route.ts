@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings, getShiprocketToken } from "@/lib/server-settings";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
   const logPath = path.join(process.cwd(), 'unmask_audit.log');
 
-  const supabase = createServerClient();
+  const supabase = createAdminClient();
 
   const runSync = async () => {
     const log = (msg: string) => {

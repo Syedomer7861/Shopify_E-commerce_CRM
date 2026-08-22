@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 import { TaskType } from "@/types";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { requireInternal } from "@/lib/auth-utils";
@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
 
-  const supabase = createServerClient();
+  const supabase = createAdminClient();
 
   try {
     const { rows } = await req.json();

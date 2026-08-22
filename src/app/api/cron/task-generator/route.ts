@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { requireInternal } from "@/lib/auth-utils";
 
+// Vercel Cron invokes this; 300s is the Pro ceiling. On Hobby (60s) a full
+// sync will be cut off part-way - it is incremental, so the next run resumes.
+export const maxDuration = 300;
+
 function getSupabase() {
-  return createServerClient();
+  return createAdminClient();
 }
 
 export async function POST(req: NextRequest) {

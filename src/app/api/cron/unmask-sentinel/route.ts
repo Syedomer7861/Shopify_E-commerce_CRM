@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings, getShiprocketToken } from "@/lib/server-settings";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { NextRequest, NextResponse } from "next/server";
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
 
-  const supabase = createServerClient();
+  const supabase = createAdminClient();
 
   try {
     const settings = await getSystemSettings(supabase);

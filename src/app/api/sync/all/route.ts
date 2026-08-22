@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient, getServiceSupabase } from "@/lib/supabase";
+import { getServiceSupabase } from "@/lib/supabase";
 import { TaskType } from "@/types";
 import { getSystemSettings } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority, reassignOfflineAgentTasks } from "@/lib/task-engine";
 import { syncShopifyData, syncShiprocketData } from "@/lib/sync-logic";
+
+// Vercel Cron invokes this; 300s is the Pro ceiling. On Hobby (60s) a full
+// sync will be cut off part-way - it is incremental, so the next run resumes.
+export const maxDuration = 300;
 
 function getSupabase(req?: any) {
   return getServiceSupabase(req);

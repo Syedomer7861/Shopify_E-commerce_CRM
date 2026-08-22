@@ -122,17 +122,9 @@ export const createAdminClient = () => {
   );
 }
 
-// 4. Helper for API Routes to get a Service/Admin client if authorized by secret
-export const getServiceSupabase = (req?: any) => {
-  if (req) {
-    const syncSecret = req.headers.get("x-sync-secret");
-    const cronSecret = req.headers.get("x-cron-secret");
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const cronKey = process.env.CRON_SECRET;
-
-    if ((syncSecret && syncSecret === serviceKey) || (cronSecret && cronSecret === cronKey)) {
-      return createAdminClient();
-    }
-  }
-  return createServerClient();
-}
+// 4. Service client for server-to-server routes (cron, sync, webhooks).
+// These run with no user session, so the cookie client resolves to the anon
+// role and every write is refused by RLS — that was the source of the 42501
+// "new row violates row-level security policy" errors on webhook_logs.
+// Authorization happens earlier, in requireInternal()/hasInternalSecret().
+export const getServiceSupabase = (_req?: any) => createAdminClient();

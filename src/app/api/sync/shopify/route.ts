@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient, getServiceSupabase } from "@/lib/supabase";
+import { getServiceSupabase } from "@/lib/supabase";
 import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
+
+// Vercel Cron invokes this; 300s is the Pro ceiling. On Hobby (60s) a full
+// sync will be cut off part-way - it is incremental, so the next run resumes.
+export const maxDuration = 300;
 
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
 import { syncShopifyData, syncReviewTasks } from "@/lib/sync-logic";

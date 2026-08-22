@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient, getServiceSupabase } from "@/lib/supabase";
+import { getServiceSupabase } from "@/lib/supabase";
 import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";

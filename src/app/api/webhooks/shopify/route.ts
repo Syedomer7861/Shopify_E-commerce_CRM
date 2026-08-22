@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { WorkflowEngine } from "@/lib/workflow-engine";
@@ -9,7 +9,7 @@ import crypto from "crypto";
 import { safeEqual, isSecretConfigured, webhookStrict } from "@/lib/auth-utils";
 
 export async function POST(req: NextRequest) {
-  const supabase = createServerClient();
+  const supabase = createAdminClient();
 
   try {
     const topic = req.headers.get("x-shopify-topic");
@@ -305,7 +305,11 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Mark as Processed
-    await supabase.from("webhook_logs").update({ status: "processed" }).eq("id", logId);
+    // logId is undefined when the log insert failed; skipping avoids a
+    // PATCH with id=eq.undefined, which Postgres rejects with 22P02.
+    if (logId) {
+      await supabase.from("webhook_logs").update({ status: "processed" }).eq("id", logId);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

@@ -1,12 +1,14 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { ChatBus } from '@/lib/chat-bus';
 import { useCurrentProfile } from '@/hooks/useCurrentProfile';
 import { createClient } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 interface ChatContextType {
-  socket: Socket | null;
+  // Supabase Realtime behind a socket.io-shaped facade, so chat runs on
+  // Vercel without the standalone chat_server.js process.
+  socket: ChatBus | null;
   connected: boolean;
   unreadCount: number;
   activeChannel: any | null;
@@ -21,7 +23,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { profile } = useCurrentProfile();
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [socket, setSocket] = useState<ChatBus | null>(null);
   const [connected, setConnected] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeChannel, setActiveChannelState] = useState<any>(null);
@@ -100,34 +102,29 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     updateUnreadCount();
 
-    let newSocket: Socket;
+    let newSocket: ChatBus;
 
     const initSocket = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
+      if (!session?.user) return;
 
-      const chatUrl = process.env.NEXT_PUBLIC_CHAT_URL || 'http://localhost:3002';
-      newSocket = io(chatUrl, {
-        auth: { token: session.access_token },
-        reconnection: true,
-        reconnectionAttempts: 10,
-        reconnectionDelay: 1500,
-        timeout: 10000,
+      newSocket = new ChatBus(supabase, {
+        id: profile.id,
+        name: profile.name,
+        role: profile.role,
       });
 
       newSocket.on('connect', () => {
         setConnected(true);
-        console.log('[Chat] ✅ Socket connected');
       });
 
-      newSocket.on('connect_error', (err) => {
-        console.warn('[Chat] ⚠️ Connection error:', err.message);
+      newSocket.on('connect_error', (err: Error) => {
+        console.warn('[Chat] Realtime connection error:', err.message);
         setConnected(false);
       });
 
-      newSocket.on('disconnect', (reason) => {
+      newSocket.on('disconnect', () => {
         setConnected(false);
-        console.log('[Chat] 🔴 Disconnected:', reason);
       });
 
       newSocket.on('presence:initial', setOnlineUsers);
@@ -195,6 +192,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       });
 
+      newSocket.connect();
       setSocket(newSocket);
     };
 
@@ -205,7 +203,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSocket(null);
       setConnected(false);
     };
-  }, [profile?.id, supabase, updateUnreadCount]); // ← Only profile.id — NOT activeChannel — prevents socket churn
+    // Only profile.id — NOT activeChannel — prevents connection churn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id, supabase, updateUnreadCount]);
 
   // ── Send message ─────────────────────────────────────────────────────────────
   const sendMessage = useCallback((

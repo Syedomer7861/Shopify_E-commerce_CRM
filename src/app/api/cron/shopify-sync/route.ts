@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireInternal } from "@/lib/auth-utils";
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { isPhoneMasked } from "@/lib/utils";
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const supabase = createServerClient();
+  const supabase = createAdminClient();
 
   const report = {
     orders: { synced: 0, skipped: 0 },

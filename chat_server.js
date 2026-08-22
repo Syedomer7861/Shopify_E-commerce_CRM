@@ -1,3 +1,7 @@
+// NOTE: chat is no longer served from here. The CRM talks to Supabase
+// Realtime directly (src/lib/chat-bus.ts), so chat works on Vercel with no
+// standalone process. This file is kept for the local 15-minute background
+// sync loop below; in production that runs as the /api/sync/all Vercel cron.
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");

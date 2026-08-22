@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 import { requireInternal } from "@/lib/auth-utils";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   if (unauthorized) return unauthorized;
 
   try {
-    const supabase = createServerClient();
+    const supabase = createAdminClient();
 
     const { data: logsData, error } = await supabase
       .from("webhook_logs")

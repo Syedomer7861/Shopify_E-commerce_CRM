@@ -1,16 +1,18 @@
 {
   "crons": [
-    {
-      "path": "/api/cron/task-generator",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/overdue-marker",
-      "schedule": "5 0 * * *"
-    },
-    {
-      "path": "/api/cron/segment-updater",
-      "schedule": "0 2 * * *"
-    }
+    { "path": "/api/sync/all", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/workflow-executor", "schedule": "*/10 * * * *" },
+    { "path": "/api/cron/unmask-sentinel", "schedule": "0 * * * *" },
+    { "path": "/api/cron/shiprocket-sync", "schedule": "30 * * * *" },
+    { "path": "/api/cron/transit-inform", "schedule": "0 */6 * * *" },
+    { "path": "/api/cron/transit-escalator", "schedule": "30 */6 * * *" },
+    { "path": "/api/cron/task-generator", "schedule": "0 0 * * *" },
+    { "path": "/api/cron/overdue-marker", "schedule": "5 0 * * *" },
+    { "path": "/api/cron/unresponsive-handler", "schedule": "15 0 * * *" },
+    { "path": "/api/cron/segment-updater", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/recovery-reminder", "schedule": "0 5 * * *" },
+    { "path": "/api/cron/reorder-reminder", "schedule": "30 5 * * *" },
+    { "path": "/api/cron/review-reminder", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/daily-digest", "schedule": "0 14 * * *" }
   ]
 }

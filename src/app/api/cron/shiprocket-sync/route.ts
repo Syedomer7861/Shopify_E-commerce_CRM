@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 import { WorkflowEngine } from "@/lib/workflow-engine";
 import { requireInternal } from "@/lib/auth-utils";
+
+// Vercel Cron invokes this; 300s is the Pro ceiling. On Hobby (60s) a full
+// sync will be cut off part-way - it is incremental, so the next run resumes.
+export const maxDuration = 300;
 
 const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
 
@@ -20,7 +24,7 @@ export async function POST(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
 
-  const supabase = createServerClient();
+  const supabase = createAdminClient();
 
   try {
     const settings = await getSystemSettings(supabase);

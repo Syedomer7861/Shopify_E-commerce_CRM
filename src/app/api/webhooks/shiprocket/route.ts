@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 import { DeliveryStatus, TaskType } from "@/types";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { WorkflowEngine } from "@/lib/workflow-engine";
@@ -11,7 +11,7 @@ import { safeEqual, isSecretConfigured, webhookStrict } from "@/lib/auth-utils";
 export const dynamic = "force-dynamic";
 
 function getSupabase() {
-  return createServerClient();
+  return createAdminClient();
 }
 
 function mapShiprocketStatus(status: string | number): DeliveryStatus {
@@ -51,6 +51,10 @@ export async function POST(req: NextRequest) {
       payload: body,
       status: "received"
     }).select("id").single();
+
+    if (logErr) console.error("Shiprocket Webhook: could not write webhook_logs:", logErr.message);
+    // Undefined when the insert failed - every later update is keyed on it.
+    const logId = logEntry?.id;
 
     // 1. Security Check
     const token = req.headers.get("x-shiprocket-secret") || req.nextUrl.searchParams.get("token");
@@ -436,7 +440,7 @@ export async function POST(req: NextRequest) {
           await supabase.from("webhook_logs").update({ 
               status: "processed", 
               topic: orderId ? "order_placed" : "cart_update" 
-          }).eq("id", logEntry.id);
+          }).eq("id", logId);
       }
 
       return NextResponse.json({ success: true, processed: orderId || cartId });
@@ -705,7 +709,7 @@ export async function POST(req: NextRequest) {
       }
 
       if (logEntry) {
-        await supabase.from("webhook_logs").update({ status: "processed", topic: "tracking_update" }).eq("id", logEntry.id);
+        if (logId) await supabase.from("webhook_logs").update({ status: "processed", topic: "tracking_update" }).eq("id", logId);
       }
 
       // Live Sync to Google Sheets (Shipping Tracking)
@@ -738,7 +742,7 @@ export async function POST(req: NextRequest) {
 
     // Default: Return success but log as unhandled if we reached here
     if (logEntry) {
-      await supabase.from("webhook_logs").update({ status: "processed", topic: "unhandled_format" }).eq("id", logEntry.id);
+      if (logId) await supabase.from("webhook_logs").update({ status: "processed", topic: "unhandled_format" }).eq("id", logId);
     }
     return NextResponse.json({ success: true, message: "Unhandled format logged" });
 
