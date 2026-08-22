@@ -4,9 +4,10 @@ import { getSystemSettings } from "@/lib/server-settings";
 import { WorkflowEngine } from "@/lib/workflow-engine";
 import { requireInternal } from "@/lib/auth-utils";
 
-// Vercel Cron invokes this; 300s is the Pro ceiling. On Hobby (60s) a full
-// sync will be cut off part-way - it is incremental, so the next run resumes.
-export const maxDuration = 300;
+// Vercel Hobby caps functions at 60s; a higher value fails the deploy.
+// On Pro this can go to 300. The syncs are incremental, so a cut-off run
+// resumes on the next tick.
+export const maxDuration = 60;
 
 const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
 

@@ -5,7 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireInternal } from "@/lib/auth-utils";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60; // Max Allowed for Pro/Enterprise
+// Vercel Hobby caps functions at 60s; a higher value fails the deploy.
+// On Pro this can go to 300. The syncs are incremental, so a cut-off run
+// resumes on the next tick.
+export const maxDuration = 60;
 
 /**
  * Hourly Sentinel: Automatically heals masked records in the background.
@@ -95,3 +98,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+// The scheduler posts to every job path; keep both verbs working.
+export const POST = GET;

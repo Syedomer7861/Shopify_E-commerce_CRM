@@ -4,6 +4,9 @@ import { getSystemSettings, getShiprocketToken } from "@/lib/server-settings";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 
 export const dynamic = "force-dynamic";
+// Vercel Hobby caps functions at 60s; a higher value fails the deploy.
+// On Pro this can go to 300. The syncs are incremental, so a cut-off run
+// resumes on the next tick.
 export const maxDuration = 60;
 
 const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";

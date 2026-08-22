@@ -1,0 +1,93 @@
+name: CRM scheduled jobs
+
+# Vercel Hobby allows only 2 cron jobs and only once per day, so vercel.json
+# keeps task-generator and overdue-marker and everything else runs from here.
+# GitHub Actions schedules are free but best-effort: a run can be delayed by
+# several minutes under load, and scheduled workflows are disabled after 60
+# days with no repository activity.
+#
+# Required repository secrets (Settings > Secrets and variables > Actions):
+#   CRM_BASE_URL  e.g. https://your-app.vercel.app   (no trailing slash)
+#   CRON_SECRET   the same value set in the Vercel environment
+#
+# Delete this file once you move to Vercel Pro and put every path back into
+# vercel.json.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # frequent  - order sync, workflow engine
+    - cron: "20 * * * *"     # hourly    - masked-number healing, shipping sync
+    - cron: "0 */6 * * *"    # 6-hourly  - transit monitoring
+    - cron: "15 0 * * *"     # daily     - housekeeping and reminders
+  workflow_dispatch:
+    inputs:
+      group:
+        description: "Which group to run"
+        required: true
+        default: frequent
+        type: choice
+        options: [frequent, hourly, sixhourly, daily]
+
+concurrency:
+  group: crm-cron-${{ github.event.schedule || inputs.group }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve job list
+        id: plan
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+          MANUAL: ${{ inputs.group }}
+        run: |
+          case "${SCHEDULE:-}" in
+            "*/15 * * * *") group=frequent ;;
+            "20 * * * *")   group=hourly ;;
+            "0 */6 * * *")  group=sixhourly ;;
+            "15 0 * * *")   group=daily ;;
+            *)              group="${MANUAL:-frequent}" ;;
+          esac
+
+          case "$group" in
+            frequent)  paths="/api/sync/all /api/cron/workflow-executor" ;;
+            hourly)    paths="/api/cron/unmask-sentinel /api/cron/shiprocket-sync" ;;
+            sixhourly) paths="/api/cron/transit-inform /api/cron/transit-escalator" ;;
+            daily)     paths="/api/cron/unresponsive-handler /api/cron/segment-updater /api/cron/recovery-reminder /api/cron/reorder-reminder /api/cron/review-reminder /api/cron/daily-digest" ;;
+          esac
+
+          echo "group=$group" >> "$GITHUB_OUTPUT"
+          echo "paths=$paths" >> "$GITHUB_OUTPUT"
+          echo "Running group: $group"
+
+      - name: Trigger endpoints
+        env:
+          BASE_URL: ${{ secrets.CRM_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          PATHS: ${{ steps.plan.outputs.paths }}
+        run: |
+          if [ -z "$BASE_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRM_BASE_URL and CRON_SECRET repository secrets must be set."
+            exit 1
+          fi
+
+          failed=0
+          for path in $PATHS; do
+            echo "--> POST $path"
+            # Separate the body from the status line so a non-2xx is visible.
+            code=$(curl -sS -o /tmp/body.txt -w "%{http_code}" \
+              --max-time 300 --retry 2 --retry-delay 15 \
+              -X POST "${BASE_URL}${path}" \
+              -H "Authorization: Bearer ${CRON_SECRET}" \
+              -H "x-cron-secret: ${CRON_SECRET}" || echo "000")
+
+            head -c 500 /tmp/body.txt; echo
+            if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+              echo "::warning::${path} returned HTTP ${code}"
+              failed=1
+            else
+              echo "    ok (${code})"
+            fi
+          done
+          exit $failed

@@ -4,7 +4,10 @@ import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { requireInternal } from "@/lib/auth-utils";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120; // Allow up to 2 minutes
+// Vercel Hobby caps functions at 60s; a higher value fails the deploy.
+// On Pro this can go to 300. The syncs are incremental, so a cut-off run
+// resumes on the next tick.
+export const maxDuration = 60;
 
 /**
  * POST /api/sync/heal
