@@ -81,20 +81,28 @@ jobs:
           failed=0
           for path in $PATHS; do
             echo "--> POST $path"
-            # Body and status are captured separately so a non-2xx is visible.
-            code=$(curl -sS -o /tmp/body.txt -w "%{http_code}" \
-              --max-time 300 --retry 2 --retry-delay 15 \
+
+            # No --retry: these endpoints do real work, so retrying a slow one
+            # starts a second sync on top of the first. 90s is just past the
+            # Vercel Hobby 60s function ceiling, so a cut-off shows as a 504
+            # rather than costing us three 5-minute waits.
+            code=$(curl -sS -o /tmp/body.txt -w '%{http_code} %{time_total}s' \
+              --max-time 90 \
               -X POST "${BASE_URL}${path}" \
               -H "Authorization: Bearer ${CRON_SECRET}" \
-              -H "x-cron-secret: ${CRON_SECRET}" || echo "000")
+              -H "x-cron-secret: ${CRON_SECRET}" || echo "000 timeout")
 
-            head -c 500 /tmp/body.txt; echo
+            echo "    result: $code"
+            echo "    body:   $(head -c 400 /tmp/body.txt)"
+
             case "$code" in
-              2*) echo "    ok ($code)" ;;
-              000) echo "::warning::${path} - no response (DNS, TLS or timeout)"; failed=1 ;;
-              401|403) echo "::error::${path} returned $code - CRON_SECRET does not match the value in Vercel"; failed=1 ;;
-              404) echo "::error::${path} returned 404 - check CRM_BASE_URL and that the route is deployed"; failed=1 ;;
-              *) echo "::warning::${path} returned HTTP $code"; failed=1 ;;
+              2*)      echo "    ok" ;;
+              000*)    echo "::warning::${path} - no response within 90s. On Hobby the 60s function limit cuts long syncs off; the next run resumes."; failed=1 ;;
+              401*|403*) echo "::error::${path} - CRON_SECRET does not match the value in Vercel"; failed=1 ;;
+              404*)    echo "::error::${path} - 404. Check CRM_BASE_URL and that the route is deployed"; failed=1 ;;
+              504*)    echo "::warning::${path} - 504, the function hit the Vercel time limit. Expected on Hobby for large syncs."; failed=1 ;;
+              5*)      echo "::error::${path} - server error, see body above"; failed=1 ;;
+              *)       echo "::warning::${path} returned $code"; failed=1 ;;
             esac
           done
           exit $failed
