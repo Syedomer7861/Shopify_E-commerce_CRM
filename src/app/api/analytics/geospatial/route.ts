@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 
+// Vercel Hobby defaults to 10s without this. Paginating a 30-90 day order
+// window in 1000-row pages is usually a couple seconds, but not guaranteed.
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
@@ -15,20 +19,31 @@ export async function GET(req: NextRequest) {
     const dateThreshold = new Date();
     dateThreshold.setDate(dateThreshold.getDate() - days);
 
-    const { data: allOrders, error } = await supabase
-      .from("orders")
-      .select(`
-        id,
-        total_price,
-        delivery_status,
-        ordered_at,
-        customer:customers (
-          state
-        )
-      `)
-      .gte("ordered_at", dateThreshold.toISOString());
-
-    if (error) throw error;
+    // PostgREST caps a single select at 1000 rows - a 30+ day order window
+    // easily exceeds that given real volume (one day alone has shown 290+
+    // tasks), which would silently under-represent whichever states'
+    // orders happened to sort last. Page through with .range().
+    const PAGE = 1000;
+    let allOrders: any[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase
+        .from("orders")
+        .select(`
+          id,
+          total_price,
+          delivery_status,
+          ordered_at,
+          customer:customers (
+            state
+          )
+        `)
+        .gte("ordered_at", dateThreshold.toISOString())
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      allOrders = allOrders.concat(data);
+      if (data.length < PAGE) break;
+    }
 
     const stateStats: Record<string, { 
       orders: number, 

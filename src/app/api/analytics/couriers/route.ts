@@ -4,6 +4,9 @@ import { createServerClient } from "@/lib/supabase";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+// Vercel Hobby defaults to 10s without this. Paginating 20k+ orders in
+// 1000-row pages is usually a couple seconds, but not guaranteed under 10.
+export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
   const unauthorized = await requireInternal(req);
@@ -13,13 +16,24 @@ export async function GET(req: NextRequest) {
     const supabase = createServerClient();
 
     // 1. Fetch data for Courier Performance
-    const { data: allOrders, error } = await supabase
-      .from("orders")
-      .select("courier_name, delivery_status, created_at");
-
-    if (error) throw error;
-    
-    const ordersList = allOrders || [];
+    // PostgREST caps a single select at 1000 rows. With 20k+ real orders,
+    // an unranged select here silently returned only the oldest 1000 (no
+    // ORDER BY = insertion order) - "Total Orders: 1000" on the Manager Hub
+    // was literally the cap, not the real count, and every derived stat
+    // (success rate, RTO rate, courier rankings, status donut) was computed
+    // from ~4% of real volume. Page through with .range() for the real total.
+    const PAGE = 1000;
+    let ordersList: any[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("courier_name, delivery_status, created_at")
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      ordersList = ordersList.concat(data);
+      if (data.length < PAGE) break;
+    }
     console.log(`[Analytics API] Fetched ${ordersList.length} orders from DB.`);
 
     const courierStats: Record<string, { delivered: number, rto: number, total: number }> = {};

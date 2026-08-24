@@ -9,11 +9,16 @@ export async function GET(req: NextRequest) {
   const supabase = createServerClient();
 
   try {
-    // 1. Audit Queue (Tasks with status 'done' but not yet verified)
+    // 1. Audit Queue (Tasks with status 'done' but not yet verified).
+    // Was missing is_processed_by_manager=false - counted every task ever
+    // completed, all-time, instead of the real actionable queue (the same
+    // filter ManagerTaskReview.tsx itself uses below this card). Grew
+    // forever and never reflected what a manager actually had left to do.
     const { count: auditCount } = await supabase
       .from("tasks")
       .select("*", { count: "exact", head: true })
-      .eq("status", "done");
+      .eq("status", "done")
+      .eq("is_processed_by_manager", false);
 
     // 2. Active Agents (Profiles with status 'online')
     const { count: activeAgents } = await supabase
