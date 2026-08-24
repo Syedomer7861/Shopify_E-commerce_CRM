@@ -146,7 +146,7 @@ export async function GET(req: NextRequest) {
   };
 
   // Fetch current profiles to get real-time status as a fallback
-  const { data: profiles } = await supabase.from("profiles").select("id, status, last_seen_at, is_active, role, live_state");
+  const { data: profiles } = await supabase.from("profiles").select("id, status, last_seen_at, is_active, role, live_state, weekly_revenue_target");
   const STALE_THRESHOLD = 60000; // 1 minute
   const now = Date.now();
 
@@ -234,7 +234,7 @@ export async function GET(req: NextRequest) {
       total_whatsapp: 0,
       tasks_resolved: 0,
       revenue_recovered: 0,
-      weekly_revenue_target: 50000, 
+      weekly_revenue_target: prof?.weekly_revenue_target || 0,
       today_work_hours: formatDuration(aWorkMs),
       today_break_hours: formatDuration(aBreakMs),
       today_work_ms: aWorkMs,

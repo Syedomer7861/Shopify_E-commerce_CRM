@@ -279,8 +279,6 @@ export default function Dashboard() {
         { count: issueCount },
         { count: shipCount },
         { count: ndrCount },
-        { count: totalCarts },
-        { count: recoveredCarts }
       ] = await Promise.all([
         supabase.from("tasks").select("id", { count: "exact", head: true }).lte("due_date", medDate).not("status", "in", '("done","skipped","cancelled")'),
         supabase.from("tasks").select("id", { count: "exact", head: true }).lte("due_date", highDate).not("status", "in", '("done","skipped","cancelled")'),
@@ -288,12 +286,38 @@ export default function Dashboard() {
         supabase.from("tasks").select("id", { count: "exact", head: true }).eq("task_type", "issue_resolution").not("status", "in", '("done","skipped","cancelled")'),
         supabase.from("tasks").select("id", { count: "exact", head: true }).eq("task_type", "transit_update").not("status", "in", '("done","skipped","cancelled")'),
         supabase.from("orders").select("id", { count: "exact", head: true }).in("delivery_status", ["rto", "failed", "ndr"]),
-        supabase.from("abandoned_carts").select("id", { count: "exact", head: true }),
-        supabase.from("abandoned_carts").select("id", { count: "exact", head: true }).eq("recovery_status", "recovered")
       ]);
 
       setStats({ activeNdr: ndrCount || 0 });
-      setRecoveryRate(totalCarts ? Math.round(((recoveredCarts || 0) / totalCarts) * 100) : 0);
+
+      // The "Recovery Rate" KPI sits alongside 3 genuinely agent-scoped
+      // numbers (calls/overdue/done this week) - showing the whole
+      // company's cart recovery rate there reads as personal but isn't.
+      // Scope it to carts whose recovery task is assigned to this agent.
+      if (prof?.role === "agent") {
+        const { data: myRecoveryTasks } = await supabase
+          .from("tasks")
+          .select("abandoned_cart_id")
+          .eq("assigned_to", prof.id)
+          .eq("task_type", "recovery")
+          .not("abandoned_cart_id", "is", null);
+        const cartIds = [...new Set((myRecoveryTasks || []).map((t: any) => t.abandoned_cart_id))];
+        if (cartIds.length > 0) {
+          const [{ count: myTotal }, { count: myRecovered }] = await Promise.all([
+            supabase.from("abandoned_carts").select("id", { count: "exact", head: true }).in("id", cartIds),
+            supabase.from("abandoned_carts").select("id", { count: "exact", head: true }).in("id", cartIds).eq("recovery_status", "recovered"),
+          ]);
+          setRecoveryRate(myTotal ? Math.round(((myRecovered || 0) / myTotal) * 100) : 0);
+        } else {
+          setRecoveryRate(0);
+        }
+      } else {
+        const [{ count: totalCarts }, { count: recoveredCarts }] = await Promise.all([
+          supabase.from("abandoned_carts").select("id", { count: "exact", head: true }),
+          supabase.from("abandoned_carts").select("id", { count: "exact", head: true }).eq("recovery_status", "recovered"),
+        ]);
+        setRecoveryRate(totalCarts ? Math.round(((recoveredCarts || 0) / totalCarts) * 100) : 0);
+      }
 
       setEscalations({
         medium: medCount || 0,
@@ -802,14 +826,12 @@ export default function Dashboard() {
           icon={<CheckCircle2 className="w-4 h-4" />}
           href="/tasks?status=done" 
         />
-        <StatCard 
-          label="Recovery Rate" 
-          value={`${recoveryRate}%`} 
-          sub="Abandoned carts" 
+        <StatCard
+          label="Recovery Rate"
+          value={`${recoveryRate}%`}
+          sub={profile?.role === "agent" ? "My recovery tasks" : "Abandoned carts"}
           variant="glass"
           icon={<TrendingUp className="w-4 h-4" />}
-          trend={recoveryRate > 30 ? "up" : "neutral"}
-          trendValue="+2.4%"
         />
       </div>
 

@@ -212,6 +212,7 @@ export default function TeamPage() {
   };
 
   const [newUpdatePassword, setNewUpdatePassword] = useState("");
+  const [newRevenueTarget, setNewRevenueTarget] = useState("");
 
   async function handleUpdatePassword() {
     if (!selectedProfile) return;
@@ -239,6 +240,13 @@ export default function TeamPage() {
       setNewUpdatePassword("");
     }
     setIsUpdating(false);
+  }
+
+  async function handleUpdateRevenueTarget() {
+    if (!selectedProfile) return;
+    const target = Number(newRevenueTarget);
+    if (isNaN(target) || target < 0) return toast.error("Enter a valid target amount");
+    await updateProfile({ weekly_revenue_target: target } as any);
   }
 
   if (profileLoading) {
@@ -384,7 +392,7 @@ export default function TeamPage() {
               </div>
               <div className="flex items-center gap-2 pt-3 border-t border-gray-50">
                 <button 
-                  onClick={() => { setSelectedProfile(p); setNewUpdatePassword(""); setEditModal(true); }}
+                  onClick={() => { setSelectedProfile(p); setNewUpdatePassword(""); setNewRevenueTarget(String((p as any).weekly_revenue_target || "")); setEditModal(true); }}
                   className="flex-1 btn-secondary py-1.5 text-xs gap-1.5"
                 >
                   <Edit2 className="w-3 h-3" /> Edit Permissions
@@ -547,6 +555,34 @@ export default function TeamPage() {
                <p className="text-[9px] text-gray-400 italic text-center">Administrators have all permissions by default.</p>
              )}
           </div>
+
+          {/* Weekly Revenue Target - drives the "Recovered Revenue" progress
+              bar on the agent's own dashboard (AgentStats.tsx). Defaults to
+              0 with no other way to set it, which made every agent's target
+              badge show a meaningless 100%. */}
+          {selectedProfile?.role === "agent" && (
+            <div className="space-y-3 pt-4 border-t border-gray-100">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Weekly Revenue Target</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="e.g. 50000"
+                  className="input flex-1 text-xs py-2"
+                  value={newRevenueTarget}
+                  onChange={e => setNewRevenueTarget(e.target.value)}
+                />
+                <button
+                  onClick={handleUpdateRevenueTarget}
+                  disabled={isUpdating}
+                  className="btn-secondary whitespace-nowrap"
+                >
+                  {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Set Target"}
+                </button>
+              </div>
+              <p className="text-[9px] text-gray-400 leading-tight">Weekly recovered-revenue goal shown on this agent&apos;s own dashboard.</p>
+            </div>
+          )}
 
           {/* Agent Specialization Section */}
           <div className="space-y-4 pt-4 border-t border-gray-100">

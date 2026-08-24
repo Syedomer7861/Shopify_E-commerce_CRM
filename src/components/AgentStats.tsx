@@ -27,7 +27,12 @@ interface AgentStatsProps {
 }
 
 export const AgentStats: React.FC<AgentStatsProps> = ({ metrics, trendData }) => {
-  const revenueProgress = Math.min(100, ((metrics?.revenue_recovered || 0) / (metrics?.weekly_revenue_target || 1)) * 100);
+  // weekly_revenue_target defaults to 0 until an admin sets one (Team ->
+  // Edit Permissions). Dividing by a 1-fallback there made every agent with
+  // no target show a meaningless "100% of target" the moment they recovered
+  // even ₹1 - this shows "no target set" instead of a fake achievement.
+  const hasTarget = (metrics?.weekly_revenue_target || 0) > 0;
+  const revenueProgress = hasTarget ? Math.min(100, ((metrics?.revenue_recovered || 0) / metrics.weekly_revenue_target) * 100) : 0;
 
   const data = [
     { name: 'Calls', value: metrics?.total_calls || 0, color: '#3b82f6' },
@@ -51,12 +56,12 @@ export const AgentStats: React.FC<AgentStatsProps> = ({ metrics, trendData }) =>
           </div>
           <div className="mt-6">
             <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
-              <span className="text-[#5f5f5d]/40">TARGET: ₹{(metrics?.weekly_revenue_target || 0).toLocaleString()}</span>
-              <span className="text-emerald-600">{revenueProgress.toFixed(0)}%</span>
+              <span className="text-[#5f5f5d]/40">{hasTarget ? `TARGET: ₹${metrics.weekly_revenue_target.toLocaleString()}` : "NO TARGET SET"}</span>
+              <span className="text-emerald-600">{hasTarget ? `${revenueProgress.toFixed(0)}%` : "—"}</span>
             </div>
             <div className="w-full bg-[#eceae4] h-2 rounded-full overflow-hidden">
-              <div 
-                className="bg-emerald-500 h-full rounded-full transition-all duration-1000 ease-out" 
+              <div
+                className="bg-emerald-500 h-full rounded-full transition-all duration-1000 ease-out"
                 style={{ width: `${revenueProgress}%` }}
               />
             </div>
