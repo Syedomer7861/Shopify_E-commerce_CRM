@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, Search, Filter, Clock, User, Activity, ArrowRight, Download, RefreshCw, Loader2 as LoaderIcon } from "lucide-react";
-import { PageHeader, Avatar, Pagination, AccessDenied } from "@/components/ui";
+import { PageHeader, Avatar, Pagination, AccessDenied, Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { timeAgo, cn } from "@/lib/utils";
 import { isAdmin } from "@/lib/permissions";
@@ -18,7 +18,8 @@ export default function AdminLogs() {
   const [actionFilter, setActionFilter] = useState("all");
   const [isPaused, setIsPaused] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  
+  const [detailsLog, setDetailsLog] = useState<any>(null);
+
   const { profile, loading: profileLoading } = useCurrentProfile();
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
@@ -86,6 +87,39 @@ export default function AdminLogs() {
   });
 
   const uniqueActions = Array.from(new Set(logs.map(l => l.action)));
+
+  // Was a button with no onClick at all - clicking "Export CSV" did
+  // nothing. Exports whatever's currently filtered/searched, matching the
+  // pattern used elsewhere in this app (Orders/Customers CSV export).
+  function exportCsv() {
+    if (filteredLogs.length === 0) {
+      toast.error("No logs to export");
+      return;
+    }
+    const escape = (val: any) => {
+      if (val === null || val === undefined) return "";
+      const str = String(val).replace(/"/g, '""');
+      return str.includes(",") || str.includes("\n") || str.includes('"') ? `"${str}"` : str;
+    };
+    const headers = ["Timestamp", "User", "Action", "Summary"];
+    const rows = filteredLogs.map(log => [
+      new Date(log.created_at).toLocaleString(),
+      log.actor_email || "System",
+      log.action?.replace(/_/g, " ") || "",
+      log.summary || "",
+    ].map(escape));
+    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `alert_logs_${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filteredLogs.length} log entries`);
+  }
   const paginatedLogs = filteredLogs.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   if (profileLoading) {
@@ -122,7 +156,7 @@ export default function AdminLogs() {
               {isPaused ? <Activity className="w-4 h-4 animate-pulse" /> : <RefreshCw className="w-4 h-4 animate-spin-slow" />}
               {isPaused ? "Live Paused" : "Live Feed Active"}
             </button>
-            <button className="btn-primary flex items-center gap-2">
+            <button onClick={exportCsv} className="btn-primary flex items-center gap-2">
               <Download className="w-4 h-4" /> Export CSV
             </button>
           </div>
@@ -222,11 +256,8 @@ export default function AdminLogs() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => {
-                           console.log(log.metadata);
-                           toast.success("Details logged to console");
-                        }}
+                      <button
+                        onClick={() => setDetailsLog(log)}
                         className="p-2 hover:bg-[#1c1c1c] hover:text-[#fcfbf8] rounded-lg transition-all opacity-0 group-hover:opacity-100"
                       >
                         <ArrowRight className="w-4 h-4" />
@@ -238,13 +269,51 @@ export default function AdminLogs() {
             </tbody>
           </table>
         </div>
-        <Pagination 
-          current={currentPage} 
-          total={filteredLogs.length} 
-          pageSize={ITEMS_PER_PAGE} 
-          onChange={setCurrentPage} 
+        <Pagination
+          current={currentPage}
+          total={filteredLogs.length}
+          pageSize={ITEMS_PER_PAGE}
+          onChange={setCurrentPage}
         />
       </div>
+
+      {/* Was console.log(log.metadata) + a toast telling the admin to open
+          DevTools - the actual event context was never shown in the UI at
+          all. */}
+      <Modal open={!!detailsLog} onClose={() => setDetailsLog(null)} title="Event Context">
+        {detailsLog && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Action</div>
+                <div className="font-bold text-[#1c1c1c]">{detailsLog.action?.replace(/_/g, " ")}</div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Timestamp</div>
+                <div className="font-bold text-[#1c1c1c]">{new Date(detailsLog.created_at).toLocaleString()}</div>
+              </div>
+              <div className="col-span-2">
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">User</div>
+                <div className="font-bold text-[#1c1c1c]">{detailsLog.actor_email || "System"}</div>
+              </div>
+              <div className="col-span-2">
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Summary</div>
+                <div className="text-[#5f5f5d]">{detailsLog.summary}</div>
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Raw Metadata</div>
+              {detailsLog.metadata && Object.keys(detailsLog.metadata).length > 0 ? (
+                <pre className="bg-gray-50 rounded-xl p-3 text-[11px] font-mono text-[#5f5f5d] overflow-x-auto max-h-64 overflow-y-auto">
+                  {JSON.stringify(detailsLog.metadata, null, 2)}
+                </pre>
+              ) : (
+                <p className="text-xs text-gray-400 italic">No additional metadata for this event.</p>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
