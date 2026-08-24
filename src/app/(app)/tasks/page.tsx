@@ -851,7 +851,13 @@ export default function TasksPage() {
             className="flex items-center gap-1 p-1 overflow-x-auto scrollbar-hide flex-1 min-w-0 w-full [&::-webkit-scrollbar]:hidden scroll-smooth"
           >
             {TYPES.filter(t => {
-              if (profile?.role === 'admin' || t.value === 'all' || t.value === 'flagged') return true;
+              // assigned_task_types is an agent-only specialization concept
+              // (see applyAgentFilters above, which only ever restricts by
+              // it for role === 'agent'). This used to also gate managers/
+              // HR, whose assigned_task_types is normally null/empty -
+              // meaning almost every tab silently vanished for them even
+              // though their actual task query was never restricted.
+              if (profile?.role !== 'agent' || t.value === 'all' || t.value === 'flagged') return true;
               return profile?.assigned_task_types?.includes(t.value as any);
             }).map((t) => (
               <button
