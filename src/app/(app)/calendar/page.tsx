@@ -17,6 +17,7 @@ import { cn, TASK_TYPE_CONFIG } from "@/lib/utils";
 import { PageHeader } from "@/components/ui";
 import Link from "next/link";
 import ClickToCallModal from "@/components/ClickToCallModal";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 
 // ─── task type colour config ──────────────────────────────────────────────────
 // Was its own hand-picked map covering 6 of the app's 13 real task types -
@@ -58,6 +59,20 @@ export default function CalendarPage() {
   const [showClickToCall, setShowClickToCall] = useState(false);
   const [activeTaskForCall, setActiveTaskForCall] = useState<any>(null);
   const supabase = createClient();
+  const { profile } = useCurrentProfile();
+
+  // Same scoping Dashboard/Tasks apply - without it every agent saw every
+  // other agent's assigned tasks, with real customer names/phones and
+  // direct Call/WhatsApp buttons to contact customers not assigned to them.
+  const applyAgentFilters = useCallback((query: any) => {
+    if (profile?.role !== "agent") return query;
+    const segs = profile.assigned_segments || [];
+    const types = profile.assigned_task_types || [];
+    let q = query.or(`assigned_to.eq.${profile.id},assigned_to.is.null`);
+    if (segs.length > 0) q = q.filter("customer.segment", "in", `(${segs.join(",")})`);
+    if (types.length > 0) q = q.in("task_type", types);
+    return q;
+  }, [profile]);
 
   // ── fetch window ─────────────────────────────────────────────────────────────
   const getWindow = useCallback(() => {
@@ -102,12 +117,14 @@ export default function CalendarPage() {
     const PAGE = 1000;
     let allTasks: any[] = [];
     for (let from = 0; ; from += PAGE) {
-      const { data } = await supabase
+      let query = supabase
         .from("tasks")
-        .select("id, due_date, status, task_type, priority_score, customer:customers(id, name, phone)")
+        .select("id, due_date, status, task_type, priority_score, assigned_to, customer:customers!inner(id, name, phone, segment)")
         .gte("due_date", start)
         .lte("due_date", end)
-        .not("status", "in", '("cancelled","skipped")')
+        .not("status", "in", '("cancelled","skipped")');
+      query = applyAgentFilters(query);
+      const { data } = await query
         .order("priority_score", { ascending: false })
         .range(from, from + PAGE - 1);
       if (!data || data.length === 0) break;
@@ -116,7 +133,7 @@ export default function CalendarPage() {
     }
     setTasks(allTasks);
     setLoading(false);
-  }, [getWindow, supabase]);
+  }, [getWindow, supabase, applyAgentFilters]);
 
   useEffect(() => {
     fetchTasks();
