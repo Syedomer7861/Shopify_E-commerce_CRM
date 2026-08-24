@@ -346,7 +346,9 @@ export default function TasksPage() {
       flagged: flaggedRes.count || 0
     };
 
-    const { data: ws } = await supabase.from("settings").select("*").eq("id", "00000000-0000-0000-0000-000000000000").maybeSingle();
+    // settings itself is admin-only RLS (it holds API secrets) - this view
+    // exposes only the WhatsApp template text TaskCard actually needs.
+    const { data: ws } = await supabase.from("settings_public").select("*").eq("id", "00000000-0000-0000-0000-000000000000").maybeSingle();
     setWaSettings(ws);
 
     // --- SENTINEL: Auto-Heal Stale Tasks on Sight ---

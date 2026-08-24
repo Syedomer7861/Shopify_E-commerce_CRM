@@ -237,8 +237,9 @@ export default function Dashboard() {
       if (prof?.role === "agent") queryDone = queryDone.eq("assigned_to", prof.id);
       const { count: doneCount } = await queryDone;
       
-      // 6. WhatsApp Settings
-      const { data: ws } = await supabase.from("settings").select("*").eq("id", "00000000-0000-0000-0000-000000000000").maybeSingle();
+      // 6. WhatsApp Settings - settings itself is admin-only RLS (it holds
+      // API secrets), this view exposes only the template text TaskCard needs.
+      const { data: ws } = await supabase.from("settings_public").select("*").eq("id", "00000000-0000-0000-0000-000000000000").maybeSingle();
       setWaSettings(ws);
 
       // 7. Recent Webhook Logs (The "Pulse")

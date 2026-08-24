@@ -1068,7 +1068,7 @@ export default function ReportsPage() {
 
   async function exportToWhatsApp(blob: Blob, filename: string) {
     try {
-      const { data: settings } = await supabase.from("settings").select("whatsapp_admin_phone").single();
+      const { data: settings } = await supabase.from("settings_public").select("whatsapp_admin_phone").single();
       const phone = exportOptions.customPhone || settings?.whatsapp_admin_phone;
       if (!phone) throw new Error("No phone number found");
 
