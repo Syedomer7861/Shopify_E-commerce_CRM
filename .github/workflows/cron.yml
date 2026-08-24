@@ -62,7 +62,10 @@ jobs:
             frequent)  paths="/api/cron/workflow-executor /api/sync/shopify" ;;
             hourly)    paths="/api/cron/unmask-sentinel /api/cron/shiprocket-sync" ;;
             sixhourly) paths="/api/cron/transit-inform /api/cron/transit-escalator" ;;
-            daily)     paths="/api/cron/unresponsive-handler /api/cron/segment-updater /api/cron/recovery-reminder /api/cron/reorder-reminder /api/cron/review-reminder /api/cron/daily-digest" ;;
+            # analytics-digest?range=weekly self-gates to Mondays inside the
+            # route, so it can ride the same daily trigger without a fifth
+            # cron schedule.
+            daily)     paths="/api/cron/unresponsive-handler /api/cron/segment-updater /api/cron/recovery-reminder /api/cron/reorder-reminder /api/cron/review-reminder /api/cron/daily-digest /api/cron/analytics-digest?range=daily /api/cron/analytics-digest?range=weekly" ;;
           esac
 
           echo "group=$group" >> "$GITHUB_OUTPUT"
