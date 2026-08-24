@@ -199,6 +199,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (type === "policy") {
+      if (action === "delete") {
+        // The Policy Library's delete button only removed the row from
+        // local React state - no backend call existed at all, so a
+        // "deleted" policy came right back on the next refresh.
+        const { error } = await supabase.from("hr_policies").delete().eq("id", data.id);
+        if (error) throw error;
+        return NextResponse.json({ success: true });
+      }
       const { data: res, error } = await supabase.from("hr_policies").insert([data]).select();
       if (error) throw error;
       return NextResponse.json(res);

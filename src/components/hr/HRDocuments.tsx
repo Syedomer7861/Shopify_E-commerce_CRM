@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { FileText, Shield, BookOpen, Download, Search, Plus, ChevronRight, Upload, Printer, Book, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import toast from "react-hot-toast";
 
 type DocType = "Offer Letter" | "Appointment Letter" | "Relieving Letter" | "Experience Letter" | "Warning Letter" | "Salary Certificate";
 interface PolicyDoc { id: string; name: string; category: string; uploadedOn: string; size: string; }
@@ -49,6 +50,12 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
 
   const handleAddPolicy = async () => {
     if (!newPolicy.name) return;
+    if (document.cookie.includes("crm-demo-mode=true")) {
+      toast.success("Demo: policy added (local only)");
+      setPolicies(pl => [{ id: `demo-${Date.now()}`, name: newPolicy.name, category: newPolicy.category, uploadedOn: new Date().toISOString().split("T")[0], size: "—" }, ...pl]);
+      setNewPolicy({ name: "", category: "General" });
+      return;
+    }
     try {
       const res = await fetch("/api/hr/data", {
         method: "POST",
@@ -60,6 +67,32 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
       onRefresh();
     } catch (err) {
       console.error(err);
+      toast.error("Failed to add policy");
+    }
+  };
+
+  const handleDeletePolicy = async (id: string) => {
+    if (document.cookie.includes("crm-demo-mode=true")) {
+      toast.success("Demo: policy removed (local only)");
+      setPolicies(pl => pl.filter(x => x.id !== id));
+      return;
+    }
+    // Was local-state-only before - filtering the row out of `policies`
+    // with no backend call at all, so a "deleted" policy came right back
+    // on the next refresh.
+    setPolicies(pl => pl.filter(x => x.id !== id));
+    try {
+      const res = await fetch("/api/hr/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "policy", action: "delete", data: { id } })
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      onRefresh();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete policy");
+      onRefresh(); // resync - the optimistic removal above may be wrong now
     }
   };
 
@@ -186,7 +219,7 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full", CAT_COLOR[p.category] || CAT_COLOR.General)}>{p.category}</span>
-                    <button onClick={() => setPolicies(pl => pl.filter(x => x.id !== p.id))} className="text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
+                    <button onClick={() => handleDeletePolicy(p.id)} className="text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
