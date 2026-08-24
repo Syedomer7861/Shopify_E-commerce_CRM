@@ -11,17 +11,26 @@ export async function GET(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
 
+  const { searchParams } = new URL(req.url);
+  const requestedAgentId = searchParams.get("agentId");
+
   // requireInternal only checks "someone is logged in" - this returns
   // every agent's revenue/productivity/attendance data, same tier as
   // Manager Hub/Live Floor/Recordings, all of which gate on view_analytics.
+  // The Performance page needs an agent to see their OWN history though, so
+  // a non-privileged caller is allowed through only when asking for
+  // themselves - the response is filtered to just their rows below.
+  let selfOnlyId: string | null = null;
   if (!hasInternalSecret(req)) {
     const { profile } = await getAuthenticatedSession();
     if (!hasPermission(profile, "view_analytics")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      if (!profile || requestedAgentId !== profile.id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      selfOnlyId = profile.id;
     }
   }
 
-    const { searchParams } = new URL(req.url);
     const start = searchParams.get("start");
     const end = searchParams.get("end");
 
@@ -276,10 +285,21 @@ export async function GET(req: NextRequest) {
         });
     });
 
-    return NextResponse.json({ 
-        success: true, 
+    const dailyLogsSorted = finalDailyLogs.sort((a,b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name));
+
+    if (selfOnlyId) {
+        return NextResponse.json({
+            success: true,
+            data: summary.filter(s => s.id === selfOnlyId),
+            dailyLogs: dailyLogsSorted.filter(d => d.email && d.email === agentStats[selfOnlyId]?.email),
+            recentActivity: (activityLogs || []).filter((a: any) => a.agent_id === selfOnlyId)
+        });
+    }
+
+    return NextResponse.json({
+        success: true,
         data: summary,
-        dailyLogs: finalDailyLogs.sort((a,b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name)),
+        dailyLogs: dailyLogsSorted,
         recentActivity: activityLogs || []
     });
 }

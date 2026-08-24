@@ -3,11 +3,11 @@ import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { 
-  LayoutDashboard, Users, ShoppingBag, 
-  Megaphone, Shield, Settings, Sparkles, 
+  LayoutDashboard, Users, ShoppingBag,
+  Megaphone, Shield, Settings, Sparkles,
   LogOut, Zap, Calendar, BarChart2, Upload, CheckSquare, Plus, Loader2,
   UserCheck, Clock, FileText, ShieldCheck, Calculator, BellRing,
-  Activity, ShoppingCart, MessageSquare, Headphones
+  Activity, ShoppingCart, MessageSquare, Headphones, TrendingUp
 } from "lucide-react";
 import { cn, toDbDateString } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
@@ -26,6 +26,7 @@ const nav = [
   { label: "Customers",   href: "/customers",   icon: Users },
   { label: "Orders",      href: "/orders",      icon: ShoppingBag },
   { label: "Calendar",    href: "/calendar",    icon: Calendar },
+  { label: "Performance", href: "/performance",  icon: TrendingUp },
 ];
 
 const adminNav = [
