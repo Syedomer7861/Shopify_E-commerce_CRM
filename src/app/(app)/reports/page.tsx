@@ -98,12 +98,12 @@ export default function ReportsPage() {
   const fetchAgentsAndStates = useCallback(async () => {
     const { data: pData } = await supabase
       .from("profiles")
-      .select("id, full_name, role")
+      .select("id, name, role")
       .not("email", "ilike", "%demo%")
       .not("name", "ilike", "%demo%")
       .or('is_demo.is.null,is_demo.eq.false')
-      .order("full_name");
-    if (pData) setAgents(pData.map((p: any) => ({ id: p.id, name: p.full_name || p.id })));
+      .order("name");
+    if (pData) setAgents(pData.map((p: any) => ({ id: p.id, name: p.name || p.id })));
     
     // Static common states as fallback for faster UI
     setStates(["Karnataka", "Maharashtra", "Delhi", "Gujarat", "Tamil Nadu", "West Bengal", "Uttar Pradesh", "Telangana", "Haryana", "Rajasthan", "Madhya Pradesh", "Other"]);
@@ -291,7 +291,7 @@ export default function ReportsPage() {
 
         const { data: attData } = await supabase
             .from("agent_attendance")
-            .select("*, profile:profiles(full_name, email)")
+            .select("*, profile:profiles(name, email)")
             .gte("created_at", s)
             .lte("created_at", e)
             .order("created_at", { ascending: true });
@@ -374,7 +374,7 @@ export default function ReportsPage() {
       // Group attendance logs by agent
       const groupedLogs: Record<string, any[]> = {};
       current.attData?.forEach(log => {
-          const name = log.profile?.full_name || log.profile?.email || log.agent_id;
+          const name = log.profile?.name || log.profile?.email || log.agent_id;
           if (!groupedLogs[name]) groupedLogs[name] = [];
           groupedLogs[name].push(log);
       });
