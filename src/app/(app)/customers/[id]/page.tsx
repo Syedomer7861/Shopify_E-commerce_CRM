@@ -113,6 +113,10 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
   }, [fetchCustomerData]);
 
   async function handleSaveNote() {
+    if (document.cookie.includes("crm-demo-mode=true")) {
+      toast.success("Demo: Note saved (local only)");
+      return;
+    }
     const { error } = await supabase
       .from("customers")
       .update({ notes } as any)
@@ -137,6 +141,12 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
   }
 
   async function handleClearRTO() {
+    if (document.cookie.includes("crm-demo-mode=true")) {
+      toast.success("Demo: RTO flag cleared (local only)");
+      setCustomer(prev => prev ? { ...prev, rto_flag: false, rto_count: 0 } as any : null);
+      setClearRtoModal(false);
+      return;
+    }
     const { error } = await supabase
       .from("customers")
       .update({ rto_flag: false, rto_count: 0 } as any)
@@ -316,6 +326,11 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                 <button 
                   onClick={async () => {
                     const newValue = !(customer as any).whatsapp_reminders_enabled;
+                    if (document.cookie.includes("crm-demo-mode=true")) {
+                      setCustomer(prev => prev ? { ...prev, whatsapp_reminders_enabled: newValue } as any : null);
+                      toast.success(`Demo: WhatsApp reminders ${newValue ? "enabled" : "disabled"} (local only)`);
+                      return;
+                    }
                     const { error } = await supabase
                       .from("customers")
                       .update({ whatsapp_reminders_enabled: newValue } as any)
