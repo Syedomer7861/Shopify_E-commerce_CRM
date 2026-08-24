@@ -168,7 +168,7 @@ export default function CustomersPage() {
       if (data.success) {
         const r = data.report;
         toast.success(
-          `✅ Healed: ${r.merged} duplicates merged, ${r.namesCleaned} names cleaned, ${r.unmasked} phones unmasked, ${r.statsRecalculated} stats fixed` +
+          `✅ Healed: ${r.merged} customers merged, ${r.ordersMerged} orders merged (${r.ordersAmbiguous} left ambiguous), ${r.namesCleaned} names cleaned, ${r.unmasked} phones unmasked, ${r.statsRecalculated} stats fixed` +
           (r.truncated ? " - hit the time budget, click Sync System again to keep going" : ""),
           { duration: r.truncated ? 10000 : 6000 }
         );

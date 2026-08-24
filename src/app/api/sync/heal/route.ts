@@ -5,6 +5,7 @@ import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { normalizePhone } from "@/lib/phone-utils";
 import { requireInternal, hasInternalSecret, getAuthenticatedSession } from "@/lib/auth-utils";
 import { makeDeadline } from "@/lib/sync-logic";
+import { isSuspectOrderId, findMergeCandidate } from "@/lib/order-dedup";
 
 export const dynamic = "force-dynamic";
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
@@ -75,6 +76,8 @@ export async function POST(req: NextRequest) {
     statsRecalculated: 0,
     duplicatesFound: 0,
     namesCleaned: 0,
+    ordersMerged: 0,
+    ordersAmbiguous: 0,
     errors: 0,
     truncated: false,
   };
@@ -246,6 +249,74 @@ export async function POST(req: NextRequest) {
             console.error(`Name cleanup failed for ${c.id}:`, e);
             report.errors++;
           }
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PHASE 1d: MERGE DUPLICATE ORDERS
+    // The webhook handler used to prioritize Shiprocket's own internal
+    // order_id over channel_order_id (Shopify's order number, as
+    // Shiprocket reports it) - now fixed at the source, but orders already
+    // created that way are still duplicated: a real numbered order
+    // ("21412") and a second row keyed on a raw Shiprocket id
+    // ("6a8bf01c240c3") for the same actual purchase.
+    //
+    // There's no shared id to group these by after the fact (that's the
+    // bug), so this only merges a "suspect" order (non-numeric
+    // shopify_order_id - a real Shopify order id is always digits) into
+    // a same-customer "clean" numeric order when they also share at
+    // least one line-item name and were placed within 72h of each other.
+    // Ambiguous cases (0 or 2+ candidates) are left alone and counted -
+    // a wrong merge here is worse than leaving a duplicate visible.
+    // ═══════════════════════════════════════════════════════════
+    console.log("🔧 Phase 1d: Merging duplicate orders...");
+
+    const allOrdersForDedup = await fetchAll(
+      "orders",
+      "id, customer_id, shopify_order_id, total_price, ordered_at, line_items",
+      "id"
+    );
+
+    const ordersByCustomerForDedup: Record<string, any[]> = {};
+    for (const o of allOrdersForDedup) {
+      if (!o.customer_id) continue;
+      (ordersByCustomerForDedup[o.customer_id] ||= []).push(o);
+    }
+
+    for (const [customerId, custOrders] of Object.entries(ordersByCustomerForDedup)) {
+      if (deadline.expired()) { report.truncated = true; break; }
+      if (custOrders.length < 2) continue;
+
+      const suspects = custOrders.filter(o => isSuspectOrderId(o.shopify_order_id));
+      const clean = custOrders.filter(o => o.shopify_order_id && !isSuspectOrderId(o.shopify_order_id));
+      if (!suspects.length || !clean.length) continue;
+
+      for (const suspect of suspects) {
+        if (deadline.expired()) { report.truncated = true; break; }
+
+        const golden = findMergeCandidate(suspect, clean);
+        if (!golden) {
+          // findMergeCandidate returns null for both zero and multiple
+          // matches - only count it as ambiguous (not just "no match") to
+          // avoid inflating the count with orders that simply have no
+          // duplicate at all.
+          const anyOverlap = clean.some(c => {
+            if (!suspect.ordered_at || !c.ordered_at) return false;
+            const hoursApart = Math.abs(new Date(c.ordered_at).getTime() - new Date(suspect.ordered_at).getTime()) / 3_600_000;
+            return hoursApart <= 72;
+          });
+          if (anyOverlap) report.ordersAmbiguous++;
+          continue;
+        }
+
+        try {
+          await supabase.from("tasks").update({ order_id: golden.id }).eq("order_id", suspect.id);
+          await supabase.from("orders").delete().eq("id", suspect.id);
+          report.ordersMerged++;
+        } catch (e) {
+          console.error(`Order merge failed for ${suspect.id}:`, e);
+          report.errors++;
         }
       }
     }
@@ -454,7 +525,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       report,
-      message: `Healed: ${report.merged} duplicates merged, ${report.unmasked} phones unmasked, ${report.statsRecalculated} customer stats recalculated, ${report.ordersLinked} delivery dates fixed.`
+      message: `Healed: ${report.merged} duplicate customers merged, ${report.ordersMerged} duplicate orders merged, ${report.unmasked} phones unmasked, ${report.statsRecalculated} customer stats recalculated, ${report.ordersLinked} delivery dates fixed.`
     });
 
   } catch (err: any) {
