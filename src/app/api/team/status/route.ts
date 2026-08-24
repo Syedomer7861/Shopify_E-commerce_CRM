@@ -9,11 +9,16 @@ export async function GET(req: NextRequest) {
   const supabase = createServerClient();
 
   try {
-    // 1. Fetch all active profiles
+    // 1. Fetch all active profiles. Same demo-account exclusion used
+    // throughout task-engine.ts - without it Demo_Account shows up in the
+    // real HR Dashboard's productivity chart and leaderboards.
     const { data: profiles, error: pErr } = await supabase
       .from("profiles")
       .select("*")
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .not("email", "ilike", "%demo%")
+      .not("name", "ilike", "%demo%")
+      .or('is_demo.is.null,is_demo.eq.false');
 
     if (pErr) throw pErr;
 

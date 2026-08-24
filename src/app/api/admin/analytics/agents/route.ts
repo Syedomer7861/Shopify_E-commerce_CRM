@@ -20,11 +20,17 @@ export async function GET(req: NextRequest) {
 
     const supabase = getSupabase();
     
-    // 1. Fetch All Agents/Admins first to ensure everyone is in the leaderboard
+    // 1. Fetch All Agents/Admins first to ensure everyone is in the leaderboard.
+    // Had no demo-account exclusion at all, unlike every other real-data
+    // query in task-engine.ts - Demo_Account (demo@cureforever.in) was
+    // sitting in the real production leaderboard next to actual staff.
     const { data: allProfiles } = await supabase
         .from("profiles")
         .select("id, name, email, last_seen_at, live_state, role, status")
-        .or("role.eq.agent,role.eq.admin");
+        .or("role.eq.agent,role.eq.admin")
+        .not("email", "ilike", "%demo%")
+        .not("name", "ilike", "%demo%")
+        .or('is_demo.is.null,is_demo.eq.false');
 
     const agentStats: Record<string, any> = {};
     (allProfiles || []).forEach(p => {
@@ -84,11 +90,12 @@ export async function GET(req: NextRequest) {
         const key = `${dateKey}_${agentId}`;
 
         if (!dailyStats[key]) {
-            dailyStats[key] = { 
-                date: dateKey, 
-                agentId, 
-                name: log.profile?.name || log.profile?.email || "Unknown", 
-                clockIn: log.created_at, 
+            dailyStats[key] = {
+                date: dateKey,
+                agentId,
+                name: log.profile?.name || log.profile?.email || "Unknown",
+                email: log.profile?.email || "",
+                clockIn: log.created_at,
                 clockOut: log.created_at, 
                 onlineSeconds: 0, 
                 breakSeconds: 0, 
@@ -172,7 +179,12 @@ export async function GET(req: NextRequest) {
     activityData?.forEach(act => {
         const stats = agentStats[act.agent_id];
         if (stats) {
-            if (["whatsapp", "task_completion"].includes(act.activity_type)) {
+            // dashboard/page.tsx and tasks/page.tsx both log "task_completed"
+            // when a task is marked done; TaskCard.tsx logs "task_completion"
+            // for the same real event via a different completion UI. Only
+            // matching one spelling meant completions from two of the three
+            // real call sites never counted toward taskCount/revenue here.
+            if (["whatsapp", "task_completion", "task_completed"].includes(act.activity_type)) {
                 stats.taskCount++;
                 const logDate = new Date(act.created_at).toISOString().split("T")[0];
                 const dKey = `${logDate}_${act.agent_id}`;
@@ -236,6 +248,12 @@ export async function GET(req: NextRequest) {
         finalDailyLogs.push({
             date: d.date,
             name: d.name,
+            // Client (AgentIntelligence.tsx) filters dailyLogs by
+            // agentEmails.has(l.email) - this field was missing entirely,
+            // so that filter always compared against undefined and every
+            // row silently dropped. The Daily Performance Ledger table
+            // could never show data, for any agent, on any date.
+            email: d.email || "",
             clockIn: new Date(d.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             clockOut: new Date(d.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             workHours: formatDuration(d.onlineSeconds),
