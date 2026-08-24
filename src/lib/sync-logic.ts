@@ -31,7 +31,7 @@ export type SyncBudget = {
   budgetMs?: number;
 };
 
-function makeDeadline(opts?: SyncBudget) {
+export function makeDeadline(opts?: SyncBudget) {
   const started = Date.now();
   const budget = opts?.budgetMs ?? Infinity;
   return {

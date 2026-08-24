@@ -168,8 +168,9 @@ export default function CustomersPage() {
       if (data.success) {
         const r = data.report;
         toast.success(
-          `✅ Healed: ${r.merged} duplicates merged, ${r.namesCleaned} names cleaned, ${r.unmasked} phones unmasked, ${r.statsRecalculated} stats fixed`,
-          { duration: 6000 }
+          `✅ Healed: ${r.merged} duplicates merged, ${r.namesCleaned} names cleaned, ${r.unmasked} phones unmasked, ${r.statsRecalculated} stats fixed` +
+          (r.truncated ? " - hit the time budget, click Sync System again to keep going" : ""),
+          { duration: r.truncated ? 10000 : 6000 }
         );
       } else {
         toast.error(data.error || "Heal failed");

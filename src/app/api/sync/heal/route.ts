@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { normalizePhone } from "@/lib/phone-utils";
 import { requireInternal, hasInternalSecret, getAuthenticatedSession } from "@/lib/auth-utils";
+import { makeDeadline } from "@/lib/sync-logic";
 
 export const dynamic = "force-dynamic";
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
@@ -42,6 +43,30 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient();
 
+  // PostgREST caps a single select at 1000 rows by default - every full-table
+  // scan below was silently only ever seeing the oldest 1000 of 16k+
+  // customers (confirmed by a prior run reporting exactly "1000 stats
+  // fixed"). A duplicate pair created after that window never enters the
+  // phone/email grouping, and re-running doesn't help since the query
+  // always returns the same oldest-1000 slice. Page through with .range()
+  // so every phase actually sees the full table. orderCol must be a stable,
+  // never-null column so paging doesn't skip or repeat rows across pages.
+  async function fetchAll(table: string, select: string, orderCol: string): Promise<any[]> {
+    const PAGE = 1000;
+    const all: any[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase
+        .from(table)
+        .select(select)
+        .order(orderCol, { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error || !data || data.length === 0) break;
+      all.push(...data);
+      if (data.length < PAGE) break;
+    }
+    return all;
+  }
+
   const report = {
     unmasked: 0,
     merged: 0,
@@ -51,7 +76,16 @@ export async function POST(req: NextRequest) {
     duplicatesFound: 0,
     namesCleaned: 0,
     errors: 0,
+    truncated: false,
   };
+
+  // Vercel Hobby kills the function at 60s. Each phase below writes one row
+  // at a time (no batch update in supabase-js), and with 16k+ customers a
+  // full pass is minutes, not seconds - stop admitting new work once the
+  // budget's spent so the request always returns a real report instead of
+  // a 504 with nothing. report.truncated tells the caller (and the "Sync
+  // System" button) to just click it again to keep making progress.
+  const deadline = makeDeadline({ budgetMs: 50_000 });
 
   // Strips junk tokens (a lone "," or "." etc.) that slipped into a stored
   // name before the ingestion-side fix existed. Per-word, not whole-string,
@@ -76,10 +110,7 @@ export async function POST(req: NextRequest) {
     // ═══════════════════════════════════════════════════════════
     console.log("🔧 Phase 1: Merging duplicates by email...");
 
-    const { data: allCustomers } = await supabase
-      .from("customers")
-      .select("id, name, phone, email, total_orders, created_at")
-      .order("created_at", { ascending: true });
+    const allCustomers = await fetchAll("customers", "id, name, phone, email, total_orders, created_at", "created_at");
 
     if (allCustomers) {
       // Group by normalized email
@@ -92,8 +123,9 @@ export async function POST(req: NextRequest) {
       }
 
       for (const [email, group] of Object.entries(emailGroups)) {
+        if (deadline.expired()) { report.truncated = true; break; }
         if (group.length <= 1) continue;
-        
+
         report.duplicatesFound += group.length - 1;
 
         // Pick the best "Golden Record": prefer unmasked phone, then oldest created
@@ -146,10 +178,7 @@ export async function POST(req: NextRequest) {
     // ═══════════════════════════════════════════════════════════
     console.log("🔧 Phase 1b: Merging duplicates by normalized phone...");
 
-    const { data: phoneCustomers } = await supabase
-      .from("customers")
-      .select("id, name, phone, email, total_orders, created_at")
-      .order("created_at", { ascending: true });
+    const phoneCustomers = await fetchAll("customers", "id, name, phone, email, total_orders, created_at", "created_at");
 
     if (phoneCustomers) {
       const phoneGroups: Record<string, typeof phoneCustomers> = {};
@@ -162,6 +191,7 @@ export async function POST(req: NextRequest) {
       }
 
       for (const [normalized, group] of Object.entries(phoneGroups)) {
+        if (deadline.expired()) { report.truncated = true; break; }
         if (group.length <= 1) continue;
 
         report.duplicatesFound += group.length - 1;
@@ -206,6 +236,7 @@ export async function POST(req: NextRequest) {
 
     if (phoneCustomers) {
       for (const c of phoneCustomers) {
+        if (deadline.expired()) { report.truncated = true; break; }
         const cleaned = cleanJunkName(c.name);
         if (cleaned) {
           try {
@@ -286,15 +317,15 @@ export async function POST(req: NextRequest) {
     // ═══════════════════════════════════════════════════════════
     console.log("🔧 Phase 3: Recalculating order stats...");
 
-    const { data: remainingCustomers } = await supabase
-      .from("customers")
-      .select("id");
+    const remainingCustomers = await fetchAll(
+      "customers",
+      "id, total_orders, last_order_date, segment, rto_flag, rto_count",
+      "id"
+    );
 
-    if (remainingCustomers) {
+    if (remainingCustomers.length) {
       // Batch: get ALL orders once to avoid N+1 queries
-      const { data: allOrders } = await supabase
-        .from("orders")
-        .select("customer_id, ordered_at, delivery_status, total_price");
+      const allOrders = await fetchAll("orders", "customer_id, ordered_at, delivery_status, total_price", "id");
 
       const ordersByCustomer: Record<string, any[]> = {};
       allOrders?.forEach(o => {
@@ -307,6 +338,7 @@ export async function POST(req: NextRequest) {
       inactiveThreshold.setDate(inactiveThreshold.getDate() - INACTIVE_DAYS);
 
       for (const cust of remainingCustomers) {
+        if (deadline.expired()) { report.truncated = true; break; }
         try {
           const orders = ordersByCustomer[cust.id] || [];
           const totalOrders = orders.length;
@@ -339,14 +371,26 @@ export async function POST(req: NextRequest) {
             segment = "risky";
           }
 
-          // Update
-          await supabase.from("customers").update({
-            total_orders: totalOrders,
-            last_order_date: lastOrderDate,
-            segment,
-            rto_flag: rtoFlag,
-            rto_count: rtoCount,
-          }).eq("id", cust.id);
+          // Skip the write entirely when nothing changed - with 16k+
+          // customers this is what makes a budget-truncated run still
+          // converge over a few clicks instead of re-spending the whole
+          // budget on rows that were already correct.
+          const unchanged =
+            cust.total_orders === totalOrders &&
+            cust.last_order_date === lastOrderDate &&
+            cust.segment === segment &&
+            cust.rto_flag === rtoFlag &&
+            cust.rto_count === rtoCount;
+
+          if (!unchanged) {
+            await supabase.from("customers").update({
+              total_orders: totalOrders,
+              last_order_date: lastOrderDate,
+              segment,
+              rto_flag: rtoFlag,
+              rto_count: rtoCount,
+            }).eq("id", cust.id);
+          }
 
           report.statsRecalculated++;
         } catch (e) {
