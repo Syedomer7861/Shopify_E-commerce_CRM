@@ -45,6 +45,7 @@ export default function ReportsPage() {
     totalRevenue: 0,
     reorderRate: 0,
     rtoRate: 0,
+    rtoRevenue: 0,
     deliveryBreakdown: [],
     segmentStats: [],
     rtoOrders: [],
@@ -145,6 +146,7 @@ export default function ReportsPage() {
         totalRevenue: 45000,
         reorderRate: 35,
         rtoRate: 5,
+        rtoRevenue: 3600,
         deliveryBreakdown: [
           { label: "Delivered", value: 120, color: "bg-[#1c1c1c]" },
           { label: "In Transit", value: 15, color: "bg-[#eceae4]" },
@@ -274,6 +276,10 @@ export default function ReportsPage() {
 
         const revenue = revData?.filter(o => o.delivery_status === "delivered").reduce((acc, o) => acc + (Number(o.total_price) || 0), 0) || 0;
         const metaRev = revData?.reduce((acc, o) => acc + (Number(o.total_price) || 0), 0) || 0;
+        // Real returned-order value, not a flat invented percentage of
+        // revenue - reuses revData (same range/filters) rather than a
+        // separate query.
+        const rtoRevenue = revData?.filter(o => o.delivery_status === "rto").reduce((acc, o) => acc + (Number(o.total_price) || 0), 0) || 0;
 
         const { count: totOrders } = await supabase.from("orders")
             .select("*", { count: "exact", head: true })
@@ -296,7 +302,7 @@ export default function ReportsPage() {
             .lte("created_at", e)
             .order("created_at", { ascending: true });
 
-        return { callsCount, revenue, abCount, abRecovered, rtoCount, totOrders, metaRev, callsData, revData, abData, attData };
+        return { callsCount, revenue, abCount, abRecovered, rtoCount, rtoRevenue, totOrders, metaRev, callsData, revData, abData, attData };
       }
 
       const current = await getStatsForRange(start, end);
@@ -439,10 +445,15 @@ export default function ReportsPage() {
           states[s].count++;
           states[s].revenue += Number(o.total_price) || 0;
       });
-      const stateDist = Object.entries(states).map(([state, d]) => ({ 
-          state, 
-          ...d, 
-          share: current.revenue > 0 ? Math.round((d.revenue / current.revenue) * 100) : 0 
+      // Was dividing each state's revenue (all orders, any status) by
+      // current.revenue (delivered-only) - a much smaller denominator, so
+      // shares summed to over 1000% instead of 100%. Compare against the
+      // same total the per-state figures are drawn from.
+      const totalStateRevenue = Object.values(states).reduce((acc, d) => acc + d.revenue, 0);
+      const stateDist = Object.entries(states).map(([state, d]) => ({
+          state,
+          ...d,
+          share: totalStateRevenue > 0 ? Math.round((d.revenue / totalStateRevenue) * 100) : 0
       })).sort((a,b) => b.revenue - a.revenue).slice(0, 10);
       // 4. Products & Workflows (Enriched)
       const productMap: Record<string, { units: number; revenue: number }> = {};
@@ -455,11 +466,15 @@ export default function ReportsPage() {
               productMap[name].revenue += (Number(l.price) * (l.quantity || l.qty || 1)) || 0;
           });
       });
-      const topProducts = Object.entries(productMap).map(([name, d]) => ({ 
-          name, 
-          count: d.units, 
-          revenue: d.revenue 
+      const topProducts = Object.entries(productMap).map(([name, d]) => ({
+          name,
+          count: d.units,
+          revenue: d.revenue
       })).sort((a,b) => b.revenue - a.revenue).slice(0, 10);
+      // Same fix as State Distribution's share - the Product Sales Matrix
+      // used stats.totalRevenue (delivered-only) as the denominator for a
+      // line-item revenue that spans every order regardless of status.
+      const totalProductRevenue = Object.values(productMap).reduce((acc, d) => acc + d.revenue, 0);
 
       // 5. Logistics & Metadata Extraction (Shiprocket Grade)
       const courierMap: Record<string, { total: number; delivered: number; rto: number }> = {};
@@ -541,6 +556,7 @@ export default function ReportsPage() {
         totalRevenue: current.revenue,
         reorderRate: reorderRateValue,
         rtoRate: current.totOrders ? Math.round((Number(current.rtoCount) / Number(current.totOrders)) * 100) : 0,
+        rtoRevenue: current.rtoRevenue || 0,
         deliveryBreakdown: breakdown,
         segmentStats: segmentStats,
         rtoOrders: (current.revData || []).filter(o => o.delivery_status === "rto").slice(0, 10),
@@ -549,6 +565,7 @@ export default function ReportsPage() {
         dailyTrends: dailyTrendArr,
         dailyTrendsPrev: [], // Simplified for stability
         topProducts,
+        totalProductRevenue,
         stateDistribution: stateDist,
         funnelData: { 
             total: current.abCount, 
@@ -1399,8 +1416,8 @@ export default function ReportsPage() {
                          <span className="text-[10px] font-bold text-[#fcfbf8]/40 italic">Excl. Returns</span>
                       </div>
                       <div className="flex justify-between items-end border-b border-[#fcfbf8]/10 pb-4">
-                         <div className="flex flex-col"><span className="text-[10px] text-[#fcfbf8]/60 font-bold uppercase tracking-wider">Returns</span><span className="text-xl font-bold tracking-tight text-rose-400">{formatCurrency(stats.totalRevenue * 0.04)}</span></div>
-                         <span className="text-[10px] font-bold text-rose-400">-4% RTO</span>
+                         <div className="flex flex-col"><span className="text-[10px] text-[#fcfbf8]/60 font-bold uppercase tracking-wider">Returns</span><span className="text-xl font-bold tracking-tight text-rose-400">{formatCurrency(stats.rtoRevenue)}</span></div>
+                         <span className="text-[10px] font-bold text-rose-400">-{stats.rtoRate}% RTO</span>
                       </div>
                       <div className="pt-4">
                          <div className="p-4 bg-[#fcfbf8]/10 rounded-xl">
@@ -1509,7 +1526,9 @@ export default function ReportsPage() {
                   Top Automations
                 </SectionTitle>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  {stats.workflowPerformance.map((w: any) => (
+                  {stats.workflowPerformance.length === 0 ? (
+                    <p className="col-span-full text-xs text-[#5f5f5d] italic text-center py-6">No automation conversions in this range.</p>
+                  ) : stats.workflowPerformance.map((w: any) => (
                     <div key={w.name} className="p-4 rounded-2xl bg-[#f7f4ed] border border-[#eceae4] shadow-sm flex items-center justify-between">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">{w.name}</span>
@@ -1705,7 +1724,7 @@ export default function ReportsPage() {
                               <td className="py-4 text-xs font-bold text-[#1c1c1c] text-right">{formatCurrency(p.revenue)}</td>
                               <td className="py-4 text-right">
                                  <span className="text-[10px] font-bold text-[#5f5f5d] bg-[#eceae4]/50 px-2 py-0.5 rounded-full">
-                                    {stats.totalRevenue > 0 ? Math.round((p.revenue / stats.totalRevenue) * 100) : 0}%
+                                    {stats.totalProductRevenue > 0 ? Math.round((p.revenue / stats.totalProductRevenue) * 100) : 0}%
                                  </span>
                               </td>
                            </tr>
