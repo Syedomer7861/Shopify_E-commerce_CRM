@@ -236,6 +236,13 @@ export default function OrdersPage() {
   }
 
   async function handleExportCsv() {
+    // This had zero demo-mode check and queries real orders/customers
+    // directly - a demo session (a real Supabase login) could download up
+    // to 5,000 real customer names/phones/orders as a CSV.
+    if (document.cookie.includes("crm-demo-mode=true")) {
+      toast.error("Export disabled in Demo Mode to protect real customer data");
+      return;
+    }
     setIsExporting(true);
     const toastId = toast.loading("Preparing full dataset export...");
 
