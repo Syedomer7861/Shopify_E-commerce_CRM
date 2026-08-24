@@ -13,21 +13,26 @@ import {
   eachHourOfInterval, setHours, setMinutes
 } from "date-fns";
 import { createClient } from "@/lib/supabase";
-import { cn } from "@/lib/utils";
+import { cn, TASK_TYPE_CONFIG } from "@/lib/utils";
 import { PageHeader } from "@/components/ui";
 import Link from "next/link";
 import ClickToCallModal from "@/components/ClickToCallModal";
 
 // ─── task type colour config ──────────────────────────────────────────────────
-const TYPE_COLORS: Record<string, { bg: string; dot: string; label: string }> = {
-  recovery:         { bg: "bg-violet-100 text-violet-800",  dot: "bg-violet-500",  label: "Recovery" },
-  issue_resolution: { bg: "bg-rose-100   text-rose-800",    dot: "bg-rose-500",    label: "Issue" },
-  review:           { bg: "bg-blue-100   text-blue-800",    dot: "bg-blue-500",    label: "Review" },
-  reorder:          { bg: "bg-emerald-100 text-emerald-800",dot: "bg-emerald-500", label: "Reorder" },
-  transit_update:   { bg: "bg-amber-100  text-amber-800",   dot: "bg-amber-500",   label: "Transit" },
-  final_followup:   { bg: "bg-pink-100   text-pink-800",    dot: "bg-pink-500",    label: "Final FU" },
-  done:             { bg: "bg-gray-100   text-gray-500",    dot: "bg-gray-400",    label: "Done" },
-};
+// Was its own hand-picked map covering 6 of the app's 13 real task types -
+// welcome_call/vip_followup/win_back/cod_verify/ndr/manager_audit all fell
+// through to plain gray with no filter chip, on a calendar whose whole
+// point is "click any day to drill down". Reuse the canonical map from
+// lib/utils (same one TaskTypeBadge uses) instead of maintaining a second,
+// incomplete one; derive a solid dot color from its border-l-* accent so
+// there's only one place task-type colors are ever defined.
+const TYPE_COLORS: Record<string, { bg: string; dot: string; label: string }> = Object.fromEntries(
+  Object.entries(TASK_TYPE_CONFIG).map(([key, cfg]) => [
+    key,
+    { bg: `${cfg.bg} ${cfg.color}`, dot: cfg.accent.replace("border-l-", "bg-"), label: cfg.label },
+  ])
+);
+TYPE_COLORS.done = { bg: "bg-gray-100 text-gray-500", dot: "bg-gray-400", label: "Done" };
 
 const getTaskColor = (task: any) => {
   if (task.status === "done") return TYPE_COLORS.done;
@@ -88,14 +93,28 @@ export default function CalendarPage() {
 
     if (!silent) setLoading(true);
     const { start, end } = getWindow();
-    const { data } = await supabase
-      .from("tasks")
-      .select("id, due_date, status, task_type, priority_score, customer:customers(id, name, phone)")
-      .gte("due_date", start)
-      .lte("due_date", end)
-      .not("status", "in", '("cancelled","skipped")')
-      .order("priority_score", { ascending: false });
-    setTasks(data || []);
+    // PostgREST caps a single select at 1000 rows. A busy month can
+    // genuinely exceed that (one day alone has shown 290+ tasks), and since
+    // the query orders by priority_score DESC, a truncated fetch would
+    // silently drop lower-priority tasks scattered across days - corrupting
+    // both the day-cell counts and the heat map with no visible sign of it.
+    // Page through with .range() so a month view always has every task.
+    const PAGE = 1000;
+    let allTasks: any[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data } = await supabase
+        .from("tasks")
+        .select("id, due_date, status, task_type, priority_score, customer:customers(id, name, phone)")
+        .gte("due_date", start)
+        .lte("due_date", end)
+        .not("status", "in", '("cancelled","skipped")')
+        .order("priority_score", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (!data || data.length === 0) break;
+      allTasks = allTasks.concat(data);
+      if (data.length < PAGE) break;
+    }
+    setTasks(allTasks);
     setLoading(false);
   }, [getWindow, supabase]);
 
