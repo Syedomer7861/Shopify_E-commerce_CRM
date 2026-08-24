@@ -11,6 +11,11 @@ import { syncShopifyData, syncShiprocketData } from "@/lib/sync-logic";
 // resumes on the next tick.
 export const maxDuration = 60;
 
+// Split across the two vendors so neither can eat the whole request. The
+// manual Sync Now button was returning 504 with no report at all; a budget
+// returns partial progress instead, and the button can be pressed again.
+const SHOPIFY_BUDGET_MS = 22_000;
+
 function getSupabase(req?: any) {
   return getServiceSupabase(req);
 }
@@ -58,7 +63,7 @@ export async function POST(req: NextRequest) {
       
       send({ progress: 2, message: `Priority 1: Syncing Direct Store Data (Shopify) [${isFull ? 'FULL' : 'QUICK'}]...` });
       const settings = await getSystemSettings(supabase);
-      const shopifyReport = await syncShopifyData(supabase, send, isFull);
+      const shopifyReport = await syncShopifyData(supabase, send, isFull, { budgetMs: SHOPIFY_BUDGET_MS });
       console.log("Shopify Sync Report:", shopifyReport);
 
       send({ progress: 40, message: "Priority 2: Pulling Logistics Data (Shiprocket)..." });

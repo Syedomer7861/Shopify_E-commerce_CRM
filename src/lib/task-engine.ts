@@ -349,14 +349,20 @@ export async function insertTasksIgnoringDuplicates(
 ): Promise<{ inserted: number; error: string | null }> {
   if (!rows?.length) return { inserted: 0, error: null };
 
-  const { data, error } = await supabase.from("tasks").insert(rows).select("id");
+  // unique_order_task is UNIQUE (order_id, task_type), so naming it as the
+  // conflict target lets Postgres skip the rows that already exist in a single
+  // round trip instead of rejecting the whole batch.
+  const { data, error } = await supabase
+    .from("tasks")
+    .upsert(rows, { onConflict: "order_id,task_type", ignoreDuplicates: true })
+    .select("id");
 
-  if (!error) return { inserted: data?.length ?? rows.length, error: null };
+  if (!error) return { inserted: data?.length ?? 0, error: null };
 
-  // 23505 = unique_violation.
+  // 23505 = unique_violation. Reachable if a row collides on some other
+  // constraint; fall back to one-at-a-time so a single bad row cannot cost
+  // us the whole batch.
   if (error.code === "23505") {
-    // The batch is rejected as a whole, so retry one at a time to keep the
-    // rows that are genuinely new.
     let inserted = 0;
     for (const row of rows) {
       const { error: rowErr } = await supabase.from("tasks").insert(row);

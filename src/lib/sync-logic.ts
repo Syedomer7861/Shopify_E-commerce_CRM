@@ -6,6 +6,17 @@ const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
+ * customers.phone and abandoned_carts.phone are VARCHAR(20). The synthetic
+ * placeholder used when a real number cannot be resolved was
+ * `MISSING-${shopifyId}` = 8 + 13 chars = 21, which Postgres rejected with
+ * 22001 "value too long for type character varying(20)" and silently dropped
+ * the order. Keep every synthetic value inside the column width.
+ */
+export function placeholderPhone(externalId: string | number) {
+  return `NO-${externalId}`.slice(0, 20);
+}
+
+/**
  * Serverless functions are killed at a hard wall (60s on Vercel Hobby, 300s on
  * Pro) and a killed function returns a 504 with no report, so the caller
  * cannot tell what was written. A budget lets the sync stop one record short
@@ -166,12 +177,12 @@ export async function syncShopifyData(
                   phone = resolved;
               } else {
                   // If still no phone, use a unique identifier to allow sync
-                  phone = `MISSING-${shopifyId}`;
+                  phone = placeholderPhone(shopifyId);
               }
           }
 
           // Step A: Upsert Customer
-          const { data: customerArr } = await supabase.from("customers").upsert({
+          const customerRow = {
             name: `${customerData?.first_name || ""} ${customerData?.last_name || ""}`.trim() || "Shopify Customer",
             phone: phone,
             email: order.email || customerData?.email || null,
@@ -180,7 +191,28 @@ export async function syncShopifyData(
             city: order.shipping_address?.city || null,
             state: order.shipping_address?.province || null,
             zip: order.shipping_address?.zip || null,
-          }, { onConflict: "phone" }).select("id, total_orders, rto_flag");
+          };
+
+          let { data: customerArr, error: customerErr } = await supabase
+            .from("customers").upsert(customerRow, { onConflict: "phone" })
+            .select("id, total_orders, rto_flag");
+
+          // One Shopify customer can appear under two phone numbers (an
+          // unmasked number one run, a placeholder the next). The conflict
+          // target is phone, so Postgres tries to INSERT and trips
+          // customers_shopify_customer_id_key. Phone is the identity we key
+          // on, so retry without the Shopify id rather than losing the order.
+          if (customerErr?.code === "23505" && customerRow.shopify_customer_id) {
+            ({ data: customerArr, error: customerErr } = await supabase
+              .from("customers")
+              .upsert({ ...customerRow, shopify_customer_id: null }, { onConflict: "phone" })
+              .select("id, total_orders, rto_flag"));
+          }
+
+          if (customerErr) {
+            report.errors.push(`Customer for order ${order.id}: ${customerErr.message}`);
+            continue;
+          }
 
           const customer = customerArr?.[0];
           if (!customer) continue;
@@ -222,13 +254,18 @@ export async function syncShopifyData(
           };
 
           if (existingOrder) {
-            upsertData.id = existingOrder.id;
+            // Update by primary key. The old code put existingOrder.id into an
+            // upsert whose conflict target was shopify_order_id: when the row
+            // had been matched on order_number instead, Postgres found no
+            // conflict on shopify_order_id, tried to INSERT, and hit
+            // orders_pkey with the id we had just supplied (23505 / HTTP 409).
+            await supabase.from("orders").update(upsertData).eq("id", existingOrder.id);
+          } else {
+            await supabase.from("orders").upsert(upsertData, {
+              onConflict: "shopify_order_id",
+              ignoreDuplicates: false
+            });
           }
-
-          await supabase.from("orders").upsert(upsertData, { 
-            onConflict: "shopify_order_id",
-            ignoreDuplicates: false 
-          });
           report.orders.synced++;
           
           await supabase.from("abandoned_carts").update({ recovery_status: "recovered" }).eq("phone", phone).eq("recovery_status", "pending");
