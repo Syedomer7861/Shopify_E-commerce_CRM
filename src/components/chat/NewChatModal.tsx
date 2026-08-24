@@ -46,6 +46,22 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
 
   const startDM = async (targetUser: any) => {
     if (creating) return;
+
+    // Demo mode is a real Supabase login, so without this guard clicking a
+    // teammate here would create a real row in channels/channel_members -
+    // this modal had no isDemo check at all before.
+    if (document.cookie.includes("crm-demo-mode=true")) {
+      setActiveChannel({
+        id: `demo-dm-${targetUser.id}`,
+        name: targetUser.name,
+        type: "direct",
+        metadata: { is_direct: true },
+      });
+      onClose();
+      toast.success(`Demo: conversation with ${targetUser.name} started (local only)`);
+      return;
+    }
+
     try {
       setCreating(true);
       const { data: { session } } = await supabase.auth.getSession();
@@ -113,6 +129,23 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
 
   const createGroup = async () => {
     if (!groupName.trim()) return;
+
+    // Same gap as startDM, and worse here: the real path fetches every real
+    // profile and adds all of them to the new channel. No guard at all
+    // before - a demo session could have created a live broadcast group
+    // visible to the whole real team.
+    if (document.cookie.includes("crm-demo-mode=true")) {
+      setActiveChannel({
+        id: `demo-group-${Date.now()}`,
+        name: groupName.trim(),
+        type: "group",
+        metadata: { is_announcement: true },
+      });
+      onClose();
+      toast.success(`Demo: "${groupName}" group created (local only)`);
+      return;
+    }
+
     try {
       setCreating(true);
       const { data: { session } } = await supabase.auth.getSession();
