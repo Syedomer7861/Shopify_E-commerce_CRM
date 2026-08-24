@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireInternal } from "@/lib/auth-utils";
+import { requireInternal, hasInternalSecret, getAuthenticatedSession } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
+import { hasPermission } from "@/lib/permissions";
 
 function getSupabase() {
     return createServerClient();
@@ -9,6 +10,16 @@ function getSupabase() {
 export async function GET(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
+
+  // requireInternal only checks "someone is logged in" - this returns
+  // every agent's revenue/productivity/attendance data, same tier as
+  // Manager Hub/Live Floor/Recordings, all of which gate on view_analytics.
+  if (!hasInternalSecret(req)) {
+    const { profile } = await getAuthenticatedSession();
+    if (!hasPermission(profile, "view_analytics")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
 
     const { searchParams } = new URL(req.url);
     const start = searchParams.get("start");

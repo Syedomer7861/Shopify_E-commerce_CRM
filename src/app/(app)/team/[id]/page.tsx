@@ -9,15 +9,18 @@ import {
   Activity, ListChecks, CheckCircle2,
   AlertCircle
 } from "lucide-react";
-import { PageHeader, Avatar, StatCard, SectionTitle } from "@/components/ui";
+import { PageHeader, Avatar, StatCard, SectionTitle, AccessDenied } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { formatCurrency, cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { hasPermission } from "@/lib/permissions";
 
 export default function AgentDetailPage() {
     const { id } = useParams();
     const router = useRouter();
     const supabase = createClient();
+    const { profile: currentProfile, loading: profileLoading } = useCurrentProfile();
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<any>(null);
     const [profile, setProfile] = useState<any>(null);
@@ -86,7 +89,7 @@ export default function AgentDetailPage() {
         };
     }, [id, fetchAgentData]);
 
-    if (loading) return (
+    if (loading || profileLoading) return (
         <div className="h-screen flex items-center justify-center bg-[#fcfbf8]">
             <div className="flex flex-col items-center gap-4">
                 <Loader2 className="w-10 h-10 animate-spin text-[#1c1c1c]" />
@@ -94,6 +97,13 @@ export default function AgentDetailPage() {
             </div>
         </div>
     );
+
+    // This page had no gate at all - any authenticated user who knew or
+    // guessed another agent's UUID could view their revenue, task queue,
+    // and attendance history directly. Same tier as Live Floor/Recordings.
+    if (!hasPermission(currentProfile, "view_analytics")) {
+        return <AccessDenied title="Agent Profile Restricted" desc="Only admins and supervisors can view individual performance dossiers." />;
+    }
 
     if (!profile) return (
         <div className="h-screen flex items-center justify-center bg-[#fcfbf8]">
