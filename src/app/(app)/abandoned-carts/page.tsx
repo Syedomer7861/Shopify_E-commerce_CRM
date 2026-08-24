@@ -28,9 +28,49 @@ export default function AbandonedCartsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("pending");
   const [currentPage, setCurrentPage] = useState(1);
+  const [globalStats, setGlobalStats] = useState({ pendingCount: 0, pendingValue: 0, recoveredValue: 0 });
   const ITEMS_PER_PAGE = 25;
 
   const supabase = createClient();
+
+  // The 3 summary cards must reflect totals across every cart regardless of
+  // which tab is active - they were previously derived from `carts`, the
+  // same tab-filtered list the table below uses. With "Pending" selected
+  // (the default), `carts` only ever held pending rows, so "Recovered
+  // Revenue" computed to ₹0 no matter how many real recoveries existed.
+  // Sums a value across every matching row via .range() paging - PostgREST
+  // caps a single select at 1000, and "Pending Recovery: 1000" was that
+  // cap, not the real count.
+  const fetchGlobalStats = useCallback(async () => {
+    if (document.cookie.includes("crm-demo-mode=true")) return;
+    try {
+      const sumByStatus = async (status: string) => {
+        const PAGE = 1000;
+        let total = 0;
+        for (let from = 0; ; from += PAGE) {
+          const { data } = await supabase
+            .from("abandoned_carts")
+            .select("total_price")
+            .eq("recovery_status", status)
+            .range(from, from + PAGE - 1);
+          if (!data || data.length === 0) break;
+          total += data.reduce((acc, c) => acc + (Number(c.total_price) || 0), 0);
+          if (data.length < PAGE) break;
+        }
+        return total;
+      };
+
+      const [pendingValue, recoveredValue, { count: pendingCount }] = await Promise.all([
+        sumByStatus("pending"),
+        sumByStatus("recovered"),
+        supabase.from("abandoned_carts").select("id", { count: "exact", head: true }).eq("recovery_status", "pending"),
+      ]);
+
+      setGlobalStats({ pendingCount: pendingCount || 0, pendingValue, recoveredValue });
+    } catch (err) {
+      console.error("Failed to load abandoned cart stats:", err);
+    }
+  }, [supabase]);
 
   const fetchCarts = useCallback(async () => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
@@ -44,17 +84,8 @@ export default function AbandonedCartsPage() {
 
     setLoading(true);
     try {
-      let query = supabase
-        .from("abandoned_carts")
-        .select("*, customer:customers(name, phone)")
-        .order("abandoned_at", { ascending: false });
-
-      if (statusFilter !== "all") {
-        query = query.eq("recovery_status", statusFilter);
-      }
-
+      let orFilter: string | null = null;
       if (search) {
-        // Step 1: Find matching customer IDs for carts
         const { data: matchingCustomers } = await supabase
           .from("customers")
           .select("id")
@@ -62,16 +93,33 @@ export default function AbandonedCartsPage() {
 
         const customerIds = (matchingCustomers || []).map(c => c.id);
 
-        let orFilter = `phone.ilike.%${search}%,cart_token.ilike.%${search}%`;
+        orFilter = `phone.ilike.%${search}%,cart_token.ilike.%${search}%`;
         if (customerIds.length > 0) {
           orFilter += `,customer_id.in.(${customerIds.join(",")})`;
         }
-        query = query.or(orFilter);
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      setCarts(data || []);
+      // PostgREST caps a single select at 1000 rows - "Pending Recovery:
+      // 1000" was that cap, not the real count, and the table below could
+      // silently be missing every pending cart past the newest 1000. Page
+      // through with .range() to fetch every matching row.
+      const PAGE = 1000;
+      let allCarts: any[] = [];
+      for (let from = 0; ; from += PAGE) {
+        let pageQuery = supabase
+          .from("abandoned_carts")
+          .select("*, customer:customers(name, phone)")
+          .order("abandoned_at", { ascending: false });
+        if (statusFilter !== "all") pageQuery = pageQuery.eq("recovery_status", statusFilter);
+        if (orFilter) pageQuery = pageQuery.or(orFilter);
+
+        const { data, error } = await pageQuery.range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allCarts = allCarts.concat(data);
+        if (data.length < PAGE) break;
+      }
+      setCarts(allCarts);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load abandoned carts");
@@ -82,24 +130,25 @@ export default function AbandonedCartsPage() {
 
   useEffect(() => {
     fetchCarts();
+    fetchGlobalStats();
 
     // ── 60s polling fallback ──
-    const poll = setInterval(() => fetchCarts(), 60_000);
+    const poll = setInterval(() => { fetchCarts(); fetchGlobalStats(); }, 60_000);
 
     // ── Supabase real-time: new abandoned carts appear instantly ──
     const channel = supabase
       .channel("abandoned-carts-live")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "abandoned_carts" },
-        () => fetchCarts())
+        () => { fetchCarts(); fetchGlobalStats(); })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "abandoned_carts" },
-        () => fetchCarts())
+        () => { fetchCarts(); fetchGlobalStats(); })
       .subscribe();
 
     return () => {
       clearInterval(poll);
       supabase.removeChannel(channel);
     };
-  }, [fetchCarts, supabase]);
+  }, [fetchCarts, fetchGlobalStats, supabase]);
 
   async function deleteCart(id: string) {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
@@ -114,6 +163,7 @@ export default function AbandonedCartsPage() {
       if (error) throw error;
       toast.success("Record deleted");
       fetchCarts();
+      fetchGlobalStats();
     } catch (err) {
       toast.error("Delete failed");
     }
@@ -139,11 +189,6 @@ export default function AbandonedCartsPage() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const stats = {
-    totalValue: carts.reduce((acc, c) => acc + (Number(c.total_price) || 0), 0),
-    recoveredValue: carts.filter(c => c.recovery_status === "recovered").reduce((acc, c) => acc + (Number(c.total_price) || 0), 0),
-    pendingCount: carts.filter(c => c.recovery_status === "pending").length
-  };
 
   return (
     <div className="animate-fade-in pb-10">
@@ -159,7 +204,7 @@ export default function AbandonedCartsPage() {
             <Clock className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Pending Recovery</span>
           </div>
-          <div className="text-2xl font-display text-[#1c1c1c] font-bold">{stats.pendingCount}</div>
+          <div className="text-2xl font-display text-[#1c1c1c] font-bold">{globalStats.pendingCount}</div>
           <div className="text-[10px] text-gray-400 mt-1">Carts waiting for follow-up</div>
         </div>
         <div className="card p-5 border-l-4 border-l-rose-400">
@@ -167,15 +212,15 @@ export default function AbandonedCartsPage() {
             <AlertCircle className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Potential Revenue</span>
           </div>
-          <div className="text-2xl font-display text-[#1c1c1c] font-bold">₹{stats.totalValue.toLocaleString()}</div>
-          <div className="text-[10px] text-gray-400 mt-1">Total value of all abandoned items</div>
+          <div className="text-2xl font-display text-[#1c1c1c] font-bold">₹{globalStats.pendingValue.toLocaleString()}</div>
+          <div className="text-[10px] text-gray-400 mt-1">Value of carts not yet recovered</div>
         </div>
         <div className="card p-5 border-l-4 border-l-[#1c1c1c]">
           <div className="flex items-center gap-3 mb-2 text-gray-500">
             <CheckCircle2 className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Recovered Revenue</span>
           </div>
-          <div className="text-2xl font-display text-[#1c1c1c] font-bold">₹{stats.recoveredValue.toLocaleString()}</div>
+          <div className="text-2xl font-display text-[#1c1c1c] font-bold">₹{globalStats.recoveredValue.toLocaleString()}</div>
           <div className="text-[10px] text-gray-400 mt-1">Orders secured after follow-up</div>
         </div>
       </div>
@@ -252,14 +297,24 @@ export default function AbandonedCartsPage() {
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end gap-2">
-                       <a 
-                        href={getWhatsAppLink(cart)} 
-                        target="_blank" 
-                        className="btn-primary py-1.5 px-3 h-8 text-[10px] bg-[#25D366] border-none hover:bg-[#128C7E] flex items-center gap-1.5 shadow-none"
-                      >
-                        <MessageCircle className="w-3 h-3" /> Follow Up
-                      </a>
-                      <button 
+                       {cart.phone && cart.phone.replace(/\D/g, "").length >= 10 ? (
+                         <a
+                          href={getWhatsAppLink(cart)}
+                          target="_blank"
+                          className="btn-primary py-1.5 px-3 h-8 text-[10px] bg-[#25D366] border-none hover:bg-[#128C7E] flex items-center gap-1.5 shadow-none"
+                        >
+                          <MessageCircle className="w-3 h-3" /> Follow Up
+                        </a>
+                       ) : (
+                         // No real phone to message (e.g. phone: "unknown"
+                         // from ingestion when nothing was resolvable) - the
+                         // button used to render anyway and produce a broken
+                         // wa.me link with no recipient.
+                         <span className="py-1.5 px-3 h-8 text-[10px] text-gray-300 flex items-center gap-1.5" title="No phone number on file">
+                           <MessageCircle className="w-3 h-3" /> No Phone
+                         </span>
+                       )}
+                      <button
                         onClick={() => deleteCart(cart.id)}
                         className="p-1.5 rounded-lg hover:bg-rose-50 text-gray-400 hover:text-rose-500 transition-colors"
                         title="Delete record"
