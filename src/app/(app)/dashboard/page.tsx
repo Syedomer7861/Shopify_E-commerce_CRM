@@ -528,7 +528,12 @@ export default function Dashboard() {
           agent_email: userEmail,
           task_id: id,
           task_type: task?.task_type,
-          outcome: outcome
+          outcome: outcome,
+          // Full linked order value credited on completion - see the same
+          // note in TaskCard.tsx's handleDone for the double-counting
+          // tradeoff (an order with 2+ completed tasks counts its value
+          // once per completion, not split).
+          revenue: task?.order?.total_price || 0
         }
       });
     }

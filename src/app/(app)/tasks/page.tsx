@@ -543,7 +543,11 @@ export default function TasksPage() {
               outcome: outcome,
               note: note, // Added note for Task_Resolutions sheet
               order_id: task.order_id,
-              cart_id: task.abandoned_cart_id
+              cart_id: task.abandoned_cart_id,
+              // Full linked order value credited on completion - see the
+              // same note in TaskCard.tsx's handleDone for the
+              // double-counting tradeoff.
+              revenue: task.order?.total_price || 0
           }
         });
       }

@@ -450,7 +450,15 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                 customer_name: task.customer.name,
                 outcome: outcome,
                 order_id: task.order_id,
-                cart_id: task.abandoned_cart_id
+                cart_id: task.abandoned_cart_id,
+                // Full order value credited to whichever agent completes
+                // ANY task linked to it - an order with 2+ completed tasks
+                // (e.g. review call + reorder call) counts its value once
+                // per completion, not split. Simple and honest about the
+                // tradeoff rather than a more complex first-claim/split
+                // scheme; labeled "Attributed Rev" on the dashboards, not
+                // presented as strict accounting.
+                revenue: task.order?.total_price || 0
             }
         });
     }
