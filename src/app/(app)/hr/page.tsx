@@ -116,6 +116,8 @@ function HRDashboardContent() {
     grievances: any[];
     attendance: any[];
     holidays: any[];
+    benchmark: { slaPct: number; grade: string; doneCount: number; resolutionDeltaPct: number; resolutionDeltaMinutes: number; hasBaseline: boolean };
+    revenueAtRiskByAgent: Record<string, number>;
   }>({
     members: [],
     leaves: [],
@@ -129,7 +131,9 @@ function HRDashboardContent() {
     training: [],
     grievances: [],
     attendance: [],
-    holidays: []
+    holidays: [],
+    benchmark: { slaPct: 0, grade: "—", doneCount: 0, resolutionDeltaPct: 0, resolutionDeltaMinutes: 0, hasBaseline: false },
+    revenueAtRiskByAgent: {}
   });
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isStale, setIsStale] = useState(false);
@@ -222,7 +226,9 @@ function HRDashboardContent() {
           holidays: [
             { id: 'h1', date: '2026-01-26', name: 'Republic Day', type: 'National' },
             { id: 'h2', date: '2026-08-15', name: 'Independence Day', type: 'National' },
-          ]
+          ],
+          benchmark: { slaPct: 94, grade: 'A', doneCount: 38, resolutionDeltaPct: 12, resolutionDeltaMinutes: 22, hasBaseline: true },
+          revenueAtRiskByAgent: { '1': 34500, '2': 18200, '3': 41000 }
         });
         setLastUpdated(new Date());
         setIsStale(false);
@@ -261,7 +267,9 @@ function HRDashboardContent() {
         training: hrData.training || [],
         grievances: hrData.grievances || [],
         attendance: hrData.attendance || [],
-        holidays: hrData.holidays || []
+        holidays: hrData.holidays || [],
+        benchmark: hrData.benchmark || { slaPct: 0, grade: "—", doneCount: 0, resolutionDeltaPct: 0, resolutionDeltaMinutes: 0, hasBaseline: false },
+        revenueAtRiskByAgent: hrData.revenueAtRiskByAgent || {}
       });
       setLastUpdated(new Date());
       setIsStale(false);
@@ -398,7 +406,7 @@ function HRDashboardContent() {
           {/* Top Performance Ribbon */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <MetricCard label="Active Strength" value={onlineMembers.length} icon={UserCheck} sub={`${data.members.length} total profiles`} accent="text-emerald-600" />
-            <MetricCard label="Revenue at Risk" value={`₹${(data.members.reduce((acc, m) => acc + (m.taskCount || 0), 0) * 1250).toLocaleString()}`} icon={ShieldAlert} sub="Backlog value (est.)" accent="text-rose-600" />
+            <MetricCard label="Revenue at Risk" value={`₹${Object.values(data.revenueAtRiskByAgent).reduce((a, b) => a + b, 0).toLocaleString()}`} icon={ShieldAlert} sub="Open orders behind on tasks" accent="text-rose-600" />
             <MetricCard label="Leave Pipeline" value={pendingLeaves.length} icon={Calendar} sub="Awaiting HR approval" accent="text-amber-600" />
             <MetricCard label="Avg Efficiency" value={`${data.stats.avgProductive}m`} icon={TrendingUp} sub="Daily productive avg" accent="text-[#1c1c1c]" />
           </div>
@@ -491,7 +499,9 @@ function HRDashboardContent() {
                    <span className="text-[10px] font-bold text-rose-500 uppercase px-2 py-1 bg-rose-50 rounded-lg animate-pulse">Backlog Alert</span>
                 </div>
                 <div className="space-y-4">
-                   {data.members.filter(m => (m.taskCount || 0) > 0).sort((a,b) => (b.taskCount || 0) - (a.taskCount || 0)).slice(0, 4).map(m => (
+                   {data.members.filter(m => (m.taskCount || 0) > 0).sort((a,b) => (b.taskCount || 0) - (a.taskCount || 0)).slice(0, 4).map(m => {
+                     const atRisk = data.revenueAtRiskByAgent[m.id] || 0;
+                     return (
                      <div key={m.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-gray-200 transition-all group">
                         <div className="flex items-center gap-3">
                            <Avatar name={m.name} size="sm" />
@@ -503,57 +513,76 @@ function HRDashboardContent() {
                         <div className="flex items-center gap-6">
                            <div className="text-right">
                               <div className="text-xs font-black text-[#1c1c1c]">{m.taskCount} Tasks</div>
-                              <div className="text-[9px] font-bold text-rose-500 uppercase tracking-tighter">₹{(m.taskCount! * 1250).toLocaleString()} at risk</div>
+                              <div className="text-[9px] font-bold text-rose-500 uppercase tracking-tighter">
+                                {atRisk > 0 ? `₹${atRisk.toLocaleString()} at risk` : "No order value linked"}
+                              </div>
                            </div>
                            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#1c1c1c] group-hover:translate-x-1 transition-all" />
                         </div>
                      </div>
-                   ))}
+                   );})}
                 </div>
              </div>
 
              {/* Team Performance Card */}
+             {(() => {
+               const b = data.benchmark;
+               const gradeMain = b.grade.replace("+", "");
+               const gradeHasPlus = b.grade.endsWith("+");
+               const agentMembers = data.members.filter(m => m.taskCount !== null);
+               const totalTasks = agentMembers.reduce((acc, m) => acc + (m.taskCount || 0), 0);
+               const totalProductiveHours = agentMembers.reduce((acc, m) => acc + (m.productiveMinutes || 0), 0) / 60;
+               const tasksPerHour = totalProductiveHours > 0 ? totalTasks / totalProductiveHours : 0;
+               return (
              <div className="card p-8 bg-[#1c1c1c] text-white relative overflow-hidden">
                 <div className="relative z-10">
                    <div className="flex justify-between items-start mb-8">
                       <div>
                          <h3 className="text-xs font-black text-white/60 uppercase tracking-widest">Efficiency Benchmark</h3>
-                         <div className="text-5xl font-black mt-2 tracking-tighter">A<span className="text-emerald-400">+</span></div>
+                         <div className="text-5xl font-black mt-2 tracking-tighter">{gradeMain}{gradeHasPlus && <span className="text-emerald-400">+</span>}</div>
                       </div>
                       <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-sm">
                          <Zap className="w-6 h-6 text-emerald-400" />
                       </div>
                    </div>
                    <p className="text-[13px] text-white/70 leading-relaxed mb-10 max-w-[80%]">
-                     The overall system performance is <span className="text-white font-bold">outperforming</span> the monthly baseline by <span className="text-emerald-400 font-bold">18%</span>. Critical path tasks are resolving <span className="text-white font-bold">12.5m</span> faster.
+                     {b.doneCount === 0 ? (
+                       <>No tasks completed in the last 7 days yet - grade and trend will appear once there's data to compute.</>
+                     ) : !b.hasBaseline ? (
+                       <>SLA adherence is <span className="text-white font-bold">{b.slaPct.toFixed(1)}%</span> across <span className="text-white font-bold">{b.doneCount}</span> tasks completed this week. Not enough history last week to compare a trend yet.</>
+                     ) : (
+                       <>The team is <span className="text-white font-bold">{b.resolutionDeltaPct >= 0 ? "outperforming" : "behind"}</span> last week's pace by <span className="text-emerald-400 font-bold">{Math.abs(b.resolutionDeltaPct).toFixed(0)}%</span>. Tasks are resolving <span className="text-white font-bold">{Math.abs(b.resolutionDeltaMinutes).toFixed(0)}m</span> {b.resolutionDeltaMinutes >= 0 ? "faster" : "slower"}.</>
+                     )}
                    </p>
                    <div className="grid grid-cols-2 gap-10">
                       <div className="space-y-3">
                          <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-white/40">
                             <span>SLA Adherence</span>
-                            <span className="text-white">98.2%</span>
+                            <span className="text-white">{b.slaPct.toFixed(1)}%</span>
                          </div>
                          <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                            <div className="h-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)]" style={{ width: '98%' }} />
+                            <div className="h-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)]" style={{ width: `${Math.min(100, b.slaPct)}%` }} />
                          </div>
                       </div>
                       <div className="space-y-3">
                          <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-white/40">
-                            <span>Human Resource ROI</span>
-                            <span className="text-white">4.8x</span>
+                            <span>Tasks / Productive Hr</span>
+                            <span className="text-white">{tasksPerHour.toFixed(1)}x</span>
                          </div>
                          <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" style={{ width: '85%' }} />
+                            <div className="h-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" style={{ width: `${Math.min(100, tasksPerHour * 20)}%` }} />
                          </div>
                       </div>
                    </div>
                 </div>
-                
+
                 {/* Decorative Pattern */}
                 <div className="absolute -right-10 -bottom-10 opacity-[0.05]">
                    <TrendingUp size={240} />
                 </div>
              </div>
+               );
+             })()}
           </div>
         </>
       )}

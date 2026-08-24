@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 import { computeAutoAttendance } from "@/lib/attendance-engine";
+import { computeBenchmark } from "@/lib/hr-benchmark";
 
 export async function GET(req: NextRequest) {
   const unauthorized = await requireInternal(req);
@@ -76,7 +77,7 @@ export async function GET(req: NextRequest) {
 
 
     // Default: Fetch everything for a full sync
-    const [employees, announcements, policies, revisions, expenses, reviews, training, grievances, attendance, rawLogs, holidays] = await Promise.all([
+    const [employees, announcements, policies, revisions, expenses, reviews, training, grievances, attendance, rawLogs, holidays, slaTasks, openTasksWithOrders] = await Promise.all([
       supabase.from("profiles").select("*").order("is_active", { ascending: false }),
       supabase.from("announcements").select("*").order("is_pinned", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from("hr_policies").select("*").order("created_at", { ascending: false }),
@@ -88,6 +89,18 @@ export async function GET(req: NextRequest) {
       supabase.from("attendance_log").select("*"),
       supabase.from("agent_attendance").select("*"),
       supabase.from("holidays").select("*").order("date", { ascending: true }),
+      // Last 14 days of completed tasks, for the real SLA/efficiency
+      // benchmark below (this week vs last week, not an invented baseline).
+      supabase.from("tasks")
+        .select("status, due_date, completed_at, created_at")
+        .eq("status", "done")
+        .gte("completed_at", new Date(Date.now() - 14 * 86_400_000).toISOString()),
+      // Every still-open task that has a real linked order, for real
+      // per-agent "revenue at risk" (was a flat invented ₹1,250/task).
+      supabase.from("tasks")
+        .select("assigned_to, order:orders!inner(total_price)")
+        .not("status", "in", '("done","cancelled","skipped")')
+        .not("order_id", "is", null),
     ]);
 
     const shiftByAgent: Record<string, string> = {};
@@ -98,6 +111,18 @@ export async function GET(req: NextRequest) {
       attendance.data || [],
       shiftByAgent
     );
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
+    const currentWindow = (slaTasks.data || []).filter(t => t.completed_at! >= sevenDaysAgo);
+    const priorWindow = (slaTasks.data || []).filter(t => t.completed_at! < sevenDaysAgo);
+    const benchmark = computeBenchmark(currentWindow as any, priorWindow as any);
+
+    const revenueAtRiskByAgent: Record<string, number> = {};
+    for (const t of openTasksWithOrders.data || []) {
+      if (!t.assigned_to) continue;
+      const price = Number((t.order as any)?.total_price || 0);
+      revenueAtRiskByAgent[t.assigned_to] = (revenueAtRiskByAgent[t.assigned_to] || 0) + price;
+    }
 
     return NextResponse.json({
       employees: employees.data || [],
@@ -110,6 +135,8 @@ export async function GET(req: NextRequest) {
       grievances: grievances.data || [],
       attendance: finalAttendance,
       holidays: holidays.data || [],
+      benchmark,
+      revenueAtRiskByAgent,
     });
 
   } catch (err: any) {
