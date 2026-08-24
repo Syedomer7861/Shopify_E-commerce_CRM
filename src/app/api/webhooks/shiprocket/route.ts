@@ -383,7 +383,7 @@ export async function POST(req: NextRequest) {
             // 1. COD & High Risk Verification (High Priority)
             if (isCod || riskAnalysis.level === "CRITICAL" || riskAnalysis.level === "HIGH") {
                const riskBonus = riskAnalysis.level === "CRITICAL" ? 50 : 20;
-               await supabase.from("tasks").upsert({
+               const { error: codErr } = await supabase.from("tasks").upsert({
                  customer_id: customerId,
                  order_id: internalOrderId,
                  task_type: "cod_verify",
@@ -393,11 +393,12 @@ export async function POST(req: NextRequest) {
                  assigned_to: await assignTaskOwner(supabase, "cod_verify"),
                  metadata: { risk_level: riskAnalysis.level, risk_reasons: riskAnalysis.reasons } as any
                }, { onConflict: "order_id, task_type" });
+               if (codErr) console.error(`cod_verify task upsert failed for order ${internalOrderId}:`, codErr.message);
             }
 
             // 2. VIP / Whale Follow-up (Urgent)
             if (orderTotal >= 25000) {
-               await supabase.from("tasks").upsert({
+               const { error: vipErr } = await supabase.from("tasks").upsert({
                  customer_id: customerId,
                  order_id: internalOrderId,
                  task_type: "vip_followup",
@@ -406,12 +407,13 @@ export async function POST(req: NextRequest) {
                  priority_score: 130,
                  assigned_to: await assignTaskOwner(supabase, "vip_followup")
                }, { onConflict: "order_id, task_type" });
+               if (vipErr) console.error(`vip_followup task upsert failed for order ${internalOrderId}:`, vipErr.message);
             }
 
             // 3. Welcome Call (First-time Customer)
             const { data: customerStats } = await supabase.from("customers").select("total_orders").eq("id", customerId).single();
             if ((customerStats?.total_orders || 0) <= 1) {
-               await supabase.from("tasks").upsert({
+               const { error: welcomeErr } = await supabase.from("tasks").upsert({
                  customer_id: customerId,
                  order_id: internalOrderId,
                  task_type: "welcome_call",
@@ -420,6 +422,7 @@ export async function POST(req: NextRequest) {
                  priority_score: 90,
                  assigned_to: await assignTaskOwner(supabase, "welcome_call")
                }, { onConflict: "customer_id, task_type" });
+               if (welcomeErr) console.error(`welcome_call task upsert failed for customer ${customerId}:`, welcomeErr.message);
             }
 
             // A4. High-Value Order Sentinel (Feature 19)

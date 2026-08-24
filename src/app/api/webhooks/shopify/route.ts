@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
               
               if (isCod || riskAnalysis.level === "CRITICAL" || riskAnalysis.level === "HIGH") {
                  const riskBonus = riskAnalysis.level === "CRITICAL" ? 50 : 20;
-                 await supabase.from("tasks").upsert({
+                 const { error: codErr } = await supabase.from("tasks").upsert({
                    customer_id: customer.id,
                    order_id: order?.id,
                    task_type: "cod_verify",
@@ -190,6 +190,7 @@ export async function POST(req: NextRequest) {
                    assigned_to: await assignTaskOwner(supabase, "cod_verify", customer.segment),
                    metadata: { risk_level: riskAnalysis.level, risk_reasons: riskAnalysis.reasons } as any
                  }, { onConflict: "order_id, task_type" });
+                 if (codErr) console.error(`cod_verify task upsert failed for order ${order?.id}:`, codErr.message);
               }
             }
           }

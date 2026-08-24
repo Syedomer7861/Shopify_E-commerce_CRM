@@ -209,6 +209,7 @@ export async function POST(req: NextRequest) {
      });
      
      if (!winErr) winbackTasks++;
+     else console.error(`win_back task insert failed for customer ${cust.id}:`, winErr.message);
   }
 
   return NextResponse.json({ 
