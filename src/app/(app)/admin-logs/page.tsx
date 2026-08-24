@@ -20,6 +20,14 @@ export default function AdminLogs() {
   const [currentPage, setCurrentPage] = useState(1);
   const [detailsLog, setDetailsLog] = useState<any>(null);
 
+  // "History View" used to be a static <div> with no state or handler at
+  // all - real date-range browsing beyond the live view's 500-row cap.
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyStart, setHistoryStart] = useState("");
+  const [historyEnd, setHistoryEnd] = useState("");
+  const [activeRange, setActiveRange] = useState<{ start: string; end: string } | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
   const { profile, loading: profileLoading } = useCurrentProfile();
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
@@ -46,7 +54,7 @@ export default function AdminLogs() {
         .from("audit_logs")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(500); // Increased limit slightly for pagination
+        .limit(500); // Most-recent live view only - full history uses fetchHistory below
 
       if (error) throw error;
       setLogs(data || []);
@@ -57,9 +65,48 @@ export default function AdminLogs() {
     }
   }, [supabase]);
 
+  // Real date-range browsing, not capped at the live view's 500 rows -
+  // pages through with .range() so an admin can actually search older
+  // audit history instead of only ever seeing "recent activity".
+  const fetchHistory = useCallback(async (start: string, end: string) => {
+    setHistoryLoading(true);
+    try {
+      const PAGE = 1000;
+      let all: any[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+          .from("audit_logs")
+          .select("*")
+          .gte("created_at", `${start}T00:00:00.000Z`)
+          .lte("created_at", `${end}T23:59:59.999Z`)
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE) break;
+      }
+      setLogs(all);
+      setCurrentPage(1);
+      toast.success(`Loaded ${all.length} log entries for ${start} to ${end}`);
+    } catch (err) {
+      toast.error("Failed to load history");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [supabase]);
+
   useEffect(() => {
     if (profileLoading || !profile) return;
     if (!isAdmin(profile)) return;
+
+    // History mode is a one-shot fetch for a fixed range - no live
+    // subscription, since new events streaming in while browsing a past
+    // date range would be confusing, not helpful.
+    if (activeRange) {
+      fetchHistory(activeRange.start, activeRange.end);
+      return;
+    }
 
     fetchLogs();
 
@@ -73,7 +120,7 @@ export default function AdminLogs() {
 
       return () => { supabase.removeChannel(channel); };
     }
-  }, [isPaused, profile, profileLoading, fetchLogs, supabase]);
+  }, [isPaused, profile, profileLoading, fetchLogs, fetchHistory, activeRange, supabase]);
 
   const filteredLogs = logs.filter(log => {
     const matchesSearch = 
@@ -146,16 +193,25 @@ export default function AdminLogs() {
         subtitle="Real-time permanent record of all user activities across the platform"
         actions={
           <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setIsPaused(!isPaused)}
-              className={cn(
-                "btn-secondary flex items-center gap-2",
-                isPaused && "bg-amber-50 border-amber-200 text-amber-700"
-              )}
-            >
-              {isPaused ? <Activity className="w-4 h-4 animate-pulse" /> : <RefreshCw className="w-4 h-4 animate-spin-slow" />}
-              {isPaused ? "Live Paused" : "Live Feed Active"}
-            </button>
+            {activeRange ? (
+              <button
+                onClick={() => { setActiveRange(null); setHistoryStart(""); setHistoryEnd(""); }}
+                className="btn-secondary flex items-center gap-2 bg-[#1c1c1c] text-white border-[#1c1c1c]"
+              >
+                <Clock className="w-4 h-4" /> Back to Live
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsPaused(!isPaused)}
+                className={cn(
+                  "btn-secondary flex items-center gap-2",
+                  isPaused && "bg-amber-50 border-amber-200 text-amber-700"
+                )}
+              >
+                {isPaused ? <Activity className="w-4 h-4 animate-pulse" /> : <RefreshCw className="w-4 h-4 animate-spin-slow" />}
+                {isPaused ? "Live Paused" : "Live Feed Active"}
+              </button>
+            )}
             <button onClick={exportCsv} className="btn-primary flex items-center gap-2">
               <Download className="w-4 h-4" /> Export CSV
             </button>
@@ -194,9 +250,53 @@ export default function AdminLogs() {
             ))}
           </select>
         </div>
-        <div className="flex items-center gap-2 px-3 bg-white border border-[#eceae4] rounded-xl text-xs font-bold text-gray-400">
-           <Clock className="w-3.5 h-3.5" />
-           History View
+        <div className="relative">
+          <button
+            onClick={() => setHistoryOpen(o => !o)}
+            className={cn(
+              "flex items-center gap-2 px-3 h-full w-full rounded-xl text-xs font-bold border transition-colors",
+              activeRange ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-gray-500 border-[#eceae4] hover:border-gray-300"
+            )}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            {activeRange ? `${activeRange.start} → ${activeRange.end}` : "History View"}
+          </button>
+          {historyOpen && (
+            <div className="absolute right-0 mt-2 w-72 bg-white border border-[#eceae4] rounded-xl shadow-lg p-4 z-20 space-y-3">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Browse a date range</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[9px] font-bold text-gray-400 uppercase block mb-1">From</label>
+                  <input type="date" className="input text-xs h-9 w-full" value={historyStart} onChange={e => setHistoryStart(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-[9px] font-bold text-gray-400 uppercase block mb-1">To</label>
+                  <input type="date" className="input text-xs h-9 w-full" value={historyEnd} onChange={e => setHistoryEnd(e.target.value)} />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  disabled={!historyStart || !historyEnd || historyLoading}
+                  onClick={() => {
+                    if (!historyStart || !historyEnd) return;
+                    setActiveRange({ start: historyStart, end: historyEnd });
+                    setHistoryOpen(false);
+                  }}
+                  className="btn-primary flex-1 text-xs py-2 disabled:opacity-50"
+                >
+                  {historyLoading ? "Loading..." : "Apply"}
+                </button>
+                {activeRange && (
+                  <button
+                    onClick={() => { setActiveRange(null); setHistoryStart(""); setHistoryEnd(""); setHistoryOpen(false); }}
+                    className="btn-secondary text-xs py-2 px-3"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
