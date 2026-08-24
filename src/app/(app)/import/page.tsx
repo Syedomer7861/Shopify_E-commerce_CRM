@@ -10,6 +10,8 @@ import { AccessDenied } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
 
+const MAX_ROWS = 5000;
+
 const REQUIRED_COLS = ["Customer Name", "Phone Number", "Order Date", "Product Name"];
 const OPTIONAL_COLS = ["Email", "Order ID", "Delivery Date", "Order Value", "Notes", "Source", "Status"];
 
@@ -56,11 +58,16 @@ export default function ImportPage() {
       const workbook = XLSX.read(buffer, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const fileHeaders = (XLSX.utils.sheet_to_json(sheet, { header: 1 })[0] as string[]) || [];
-      const rawRows = XLSX.utils.sheet_to_json(sheet, { raw: false, defval: "" });
+      let rawRows = XLSX.utils.sheet_to_json(sheet, { raw: false, defval: "" });
 
       if (rawRows.length === 0 && fileHeaders.length === 0) {
         toast.error("File is empty");
         return;
+      }
+
+      if (rawRows.length > MAX_ROWS) {
+        toast.error(`File has ${rawRows.length.toLocaleString()} rows. Only the first ${MAX_ROWS.toLocaleString()} will be imported — split larger files.`);
+        rawRows = rawRows.slice(0, MAX_ROWS);
       }
 
       setHeaders(fileHeaders);
@@ -597,7 +604,7 @@ export default function ImportPage() {
                   </tr>
                 ))}
                 {data.length > 50 && (
-                  <tr><td colSpan={7} className="py-4 text-center text-gray-400 italic">... and {data.length - 50} more rows</td></tr>
+                  <tr><td colSpan={6 + CUSTOMER_COLS.filter(c => columnMapping[c]).length + (metaColumns.size > 0 ? 1 : 0)} className="py-4 text-center text-gray-400 italic">... and {data.length - 50} more rows</td></tr>
                 )}
               </tbody>
             </table>
