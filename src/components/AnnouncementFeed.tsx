@@ -60,6 +60,36 @@ export default function AnnouncementFeed() {
   const supabase = createClient();
 
   const fetchAnnouncements = useCallback(async () => {
+    // Demo mode is a real Supabase login, so this would otherwise fetch
+    // whatever real announcements exist in production - this widget sits on
+    // the Dashboard, the first thing anyone sees in a demo. type must be one
+    // of TYPE_STYLES' keys (Info/Important/Celebration/Alert); real rows
+    // satisfy the DB CHECK constraint, but skip the fetch entirely rather
+    // than showing real internal announcements to a demo audience.
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setAnnouncements([
+        {
+          id: "demo-ann-1",
+          title: "New Product Launch",
+          body: "We are launching a new Krill Oil variant next week!",
+          type: "Celebration",
+          is_pinned: true,
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: "demo-ann-2",
+          title: "System Maintenance",
+          body: "Scheduled downtime this Sunday 2-4 AM for infrastructure upgrades.",
+          type: "Important",
+          is_pinned: false,
+          created_at: new Date(Date.now() - 86400000).toISOString(),
+        },
+      ] as any);
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from("announcements")
@@ -173,9 +203,9 @@ export default function AnnouncementFeed() {
               <>
                 <span className={cn(
                   "text-[9px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border",
-                  TYPE_STYLES[selectedAnnouncement.type].bg,
-                  TYPE_STYLES[selectedAnnouncement.type].border,
-                  TYPE_STYLES[selectedAnnouncement.type].text
+                  (TYPE_STYLES[selectedAnnouncement.type] || TYPE_STYLES.Info).bg,
+                  (TYPE_STYLES[selectedAnnouncement.type] || TYPE_STYLES.Info).border,
+                  (TYPE_STYLES[selectedAnnouncement.type] || TYPE_STYLES.Info).text
                 )}>
                   {selectedAnnouncement.type}
                 </span>
@@ -192,12 +222,12 @@ export default function AnnouncementFeed() {
             <div className="flex items-start gap-4">
               <div className={cn(
                 "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border",
-                TYPE_STYLES[selectedAnnouncement.type].bg,
-                TYPE_STYLES[selectedAnnouncement.type].border,
-                TYPE_STYLES[selectedAnnouncement.type].text
+                (TYPE_STYLES[selectedAnnouncement.type] || TYPE_STYLES.Info).bg,
+                (TYPE_STYLES[selectedAnnouncement.type] || TYPE_STYLES.Info).border,
+                (TYPE_STYLES[selectedAnnouncement.type] || TYPE_STYLES.Info).text
               )}>
                 {(() => {
-                  const Icon = TYPE_STYLES[selectedAnnouncement.type].icon;
+                  const Icon = (TYPE_STYLES[selectedAnnouncement.type] || TYPE_STYLES.Info).icon;
                   return <Icon className="w-6 h-6" />;
                 })()}
               </div>

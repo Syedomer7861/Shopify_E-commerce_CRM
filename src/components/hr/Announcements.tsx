@@ -202,7 +202,9 @@ export default function Announcements({ announcements: dbAnnouncements, onRefres
 }
 
 function AnnouncementCard({ a, onEdit, onDelete, onTogglePin }: { a: Announcement; onEdit: () => void; onDelete: () => void; onTogglePin: () => void }) {
-  const S = TYPE_STYLES[a.type];
+  // a.type missing or outside the enum crashed this component entirely
+  // (TypeError: Cannot read properties of undefined (reading 'bg')).
+  const S = TYPE_STYLES[a.type] || TYPE_STYLES.Info;
   return (
     <div className={cn("card p-5 border transition-all hover:shadow-md", S.bg, a.pinned && "shadow-sm")}>
       <div className="flex items-start justify-between gap-4">

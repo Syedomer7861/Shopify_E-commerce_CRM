@@ -175,7 +175,12 @@ function HRDashboardContent() {
             { id: 'e2', name: 'Agent Priya', email: 'priya@cureforever.com', role: 'Agent', status: 'active', joining_date: '2023-03-10' }
           ],
           announcements: [
-            { id: 'a1', title: 'New Product Launch', content: 'We are launching a new Krill Oil variant next week!', created_at: new Date().toISOString() }
+            // type is required: Announcements.tsx indexes TYPE_STYLES[a.type]
+            // with no fallback, so a missing type throws "Cannot read
+            // properties of undefined (reading 'bg')" and crashes the page.
+            // The real column is `body`, not `content` - Announcements.tsx
+            // reads a.body, so the wrong key was silently rendering blank.
+            { id: 'a1', title: 'New Product Launch', body: 'We are launching a new Krill Oil variant next week!', type: 'Celebration', created_at: new Date().toISOString() }
           ],
           policies: [{ id: 'p1', title: 'Leave Policy 2024', category: 'Compliance' }],
           revisions: [],
