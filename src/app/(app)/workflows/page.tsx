@@ -15,12 +15,6 @@ const TRIGGERS = [
   { id: "cart_abandoned", label: "Cart Abandoned", desc: "When checkout is dropped" },
 ];
 
-const ACTION_TYPES = [
-  { id: "create_task", label: "Create Task", desc: "Assign a follow-up task to an agent" },
-  { id: "message", label: "WhatsApp Message", desc: "Send an automated WhatsApp broadcast" },
-  { id: "add_tag", label: "Tag Customer", desc: "Add a categorization tag to customer" },
-];
-
 export default function WorkflowManager() {
   const { profile, loading: profileLoading } = useCurrentProfile();
   const [workflows, setWorkflows] = useState<any[]>([]);
@@ -102,6 +96,7 @@ export default function WorkflowManager() {
     try {
       const res = await fetch("/api/workflows", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
       });
       if (res.ok) {
@@ -150,6 +145,7 @@ export default function WorkflowManager() {
     try {
       const res = await fetch("/api/workflows", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...wf, is_active: !wf.is_active })
       });
       if (res.ok) {
