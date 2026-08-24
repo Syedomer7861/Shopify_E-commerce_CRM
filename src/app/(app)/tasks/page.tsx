@@ -799,8 +799,11 @@ export default function TasksPage() {
             >
               Reset All
             </button>
-            <button 
-              onClick={() => {}}
+            <button
+              // Filters already apply live as each field changes (see the
+              // fetchTasks dependency array above); this button had no
+              // handler at all. Give it a real job: close the panel.
+              onClick={() => setShowFilters(false)}
               className="btn-primary py-2 px-6 text-xs"
             >
               Apply Filters

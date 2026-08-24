@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase";
+import toast from "react-hot-toast";
 import { 
   Package, 
   Truck, 
@@ -262,7 +263,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                     throw new Error(json.error || "No URL returned");
                   }
                 } catch (err: any) {
-                  alert(`Could not print invoice: ${err.message}`);
+                  toast.error(`Could not print invoice: ${err.message}`);
                 } finally {
                   btn.disabled = false;
                   btn.innerHTML = originalContent;
