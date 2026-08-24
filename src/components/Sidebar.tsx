@@ -249,7 +249,24 @@ export default function Sidebar() {
 
   useEffect(() => {
     fetchProfile();
-  }, [fetchProfile]);
+
+    // supabase.auth.getSession() inside fetchProfile reads the session from
+    // local storage without waiting for it to hydrate. On a fresh page
+    // load it can race and return null even though the user genuinely has
+    // a valid session - middleware already verified that server-side with
+    // getUser() before this page was allowed to render at all. When that
+    // race is lost, this one-shot call was the only trigger, so `profile`
+    // stayed null forever: the sidebar showing "User" / "loading..."
+    // permanently, with no error and no retry. onAuthStateChange fires
+    // reliably once the client actually resolves the session (including
+    // on initial load, via INITIAL_SESSION), so it re-runs fetchProfile
+    // when that resolution lands after the first attempt already missed it.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) fetchProfile();
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchProfile, supabase]);
 
   const fetchMyLeaves = useCallback(async () => {
     if (!profile) return;
