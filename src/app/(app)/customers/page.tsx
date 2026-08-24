@@ -168,7 +168,7 @@ export default function CustomersPage() {
       if (data.success) {
         const r = data.report;
         toast.success(
-          `✅ Healed: ${r.merged} duplicates merged, ${r.unmasked} phones unmasked, ${r.statsRecalculated} stats fixed`,
+          `✅ Healed: ${r.merged} duplicates merged, ${r.namesCleaned} names cleaned, ${r.unmasked} phones unmasked, ${r.statsRecalculated} stats fixed`,
           { duration: 6000 }
         );
       } else {

@@ -49,8 +49,24 @@ export async function POST(req: NextRequest) {
     segmentsUpdated: 0,
     statsRecalculated: 0,
     duplicatesFound: 0,
+    namesCleaned: 0,
     errors: 0,
   };
+
+  // Strips junk tokens (a lone "," or "." etc.) that slipped into a stored
+  // name before the ingestion-side fix existed. Per-word, not whole-string,
+  // since junk is usually stuck to one word ("A ." -> "A", ",subash ." ->
+  // "subash"). Returns null when there's nothing safe to change to, so
+  // callers never overwrite a name with an empty string.
+  function cleanJunkName(raw: string | null): string | null {
+    if (!raw) return null;
+    const cleaned = raw
+      .split(/\s+/)
+      .map(w => w.replace(/^[,.\-_]+|[,.\-_]+$/g, ""))
+      .filter(Boolean)
+      .join(" ");
+    return cleaned && cleaned !== raw ? cleaned : null;
+  }
 
   try {
     // ═══════════════════════════════════════════════════════════
@@ -175,6 +191,28 @@ export async function POST(req: NextRequest) {
             report.merged++;
           } catch (e) {
             console.error(`Phone merge failed for ${dup.id}:`, e);
+            report.errors++;
+          }
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PHASE 1c: CLEAN JUNK NAMES
+    // Standalone rows (no duplicate to merge against) that still carry a
+    // junk fragment from before the ingestion-side fix, e.g. ",subash ."
+    // ═══════════════════════════════════════════════════════════
+    console.log("🔧 Phase 1c: Cleaning junk names...");
+
+    if (phoneCustomers) {
+      for (const c of phoneCustomers) {
+        const cleaned = cleanJunkName(c.name);
+        if (cleaned) {
+          try {
+            await supabase.from("customers").update({ name: cleaned }).eq("id", c.id);
+            report.namesCleaned++;
+          } catch (e) {
+            console.error(`Name cleanup failed for ${c.id}:`, e);
             report.errors++;
           }
         }
