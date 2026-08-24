@@ -35,6 +35,20 @@ export default function Announcements({ announcements: dbAnnouncements, onRefres
   }, [dbAnnouncements]);
 
   const handleAction = async (data: any, action = "insert") => {
+    // Real announcements are visible to every real agent's dashboard
+    // sidebar - without this, a demo session posting/editing/deleting or
+    // pinning one would broadcast to the entire actual staff, not just
+    // corrupt an internal record. This component had no isDemo check at
+    // all.
+    if (document.cookie.includes("crm-demo-mode=true")) {
+      toast.success(`Demo: announcement ${action === "delete" ? "deleted" : action === "update" ? "updated" : "posted"} (local only)`);
+      if (action === "insert" || action === "update") {
+        setShowForm(false);
+        setEditId(null);
+        setNewA({ title: "", body: "", type: "Info", pinned: false, author: "HR Intelligence" });
+      }
+      return;
+    }
     try {
       const res = await fetch("/api/hr/data", {
         method: "POST",

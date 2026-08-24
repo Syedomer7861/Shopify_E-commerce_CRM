@@ -73,6 +73,14 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
   }, [dbReviews, dbAssignments, dbGrievances]);
 
   const handleAction = async (type: string, data: any, action = "insert") => {
+    // Same gap as every other HR write component fixed this session -
+    // this one had no isDemo check at all, so Reviews/Training/Grievances
+    // create/update/delete would all hit the real database from a demo
+    // session.
+    if (document.cookie.includes("crm-demo-mode=true")) {
+      toast.success(`Demo: ${type} ${action === "delete" ? "deleted" : action === "update" ? "updated" : "saved"} (local only)`);
+      return;
+    }
     try {
       const res = await fetch("/api/hr/data", {
         method: "POST",
