@@ -1,10 +1,9 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { 
-  Users, Search, Clock, Shield, 
-  RefreshCcw, AlertCircle, CheckCircle2, 
-  Coffee, UserCheck, BookOpen, Monitor, 
-  MoreHorizontal, Phone, MessageSquare
+import {
+  Users, Search, Clock,
+  RefreshCcw, AlertCircle,
+  Coffee, UserCheck,
 } from "lucide-react";
 import { PageHeader, Avatar, AccessDenied, Pagination } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
@@ -74,10 +73,14 @@ export default function FloorViewPage() {
   useEffect(() => {
     setMounted(true);
     fetchFloorData();
-    
-    return () => {
-      
-    };
+
+    // Page is titled "Live Operations Floor / Real-time monitoring" but
+    // had no auto-refresh at all - only the initial load and a manual
+    // Sync Floor click, so agent status/tasks/revenue silently went stale
+    // the moment someone stopped clicking. 60s polling, matching the
+    // fallback interval every other live-data page in this app already uses.
+    const poll = setInterval(fetchFloorData, 60_000);
+    return () => clearInterval(poll);
   }, [fetchFloorData]);
 
   if (profileLoading) return <div className="p-12 text-center text-[#5f5f5d]">Verifying credentials...</div>;
