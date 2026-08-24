@@ -5,15 +5,29 @@ import type { UserPermissions } from "@/types";
 import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
 
 /**
+ * Next.js Server Actions are reachable directly (their action ID ships in
+ * the client bundle) independent of any page-level UI gate - these three
+ * all immediately reach for the service-role key, so each one needs its
+ * own check that the actual calling session is an admin.
+ */
+async function requireAdminCaller() {
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  return profile?.role === "admin";
+}
+
+/**
  * Creates a new team member with Email & Password.
  * This runs on the server using the SUPABASE_SERVICE_ROLE_KEY.
  */
-export async function createTeamMemberServer({ 
-  email, 
-  password, 
-  name, 
-  role, 
-  permissions 
+export async function createTeamMemberServer({
+  email,
+  password,
+  name,
+  role,
+  permissions
 }: {
   email: string;
   password: string;
@@ -21,6 +35,8 @@ export async function createTeamMemberServer({
   role: "admin" | "agent" | "hr" | "manager";
   permissions: UserPermissions;
 }) {
+  if (!(await requireAdminCaller())) return { success: false, error: "Unauthorized" };
+
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -105,6 +121,8 @@ export async function createTeamMemberServer({
  * This runs on the server using the SUPABASE_SERVICE_ROLE_KEY.
  */
 export async function updateTeamMemberPasswordServer(userId: string, newPassword: string) {
+  if (!(await requireAdminCaller())) return { success: false, error: "Unauthorized" };
+
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -134,6 +152,8 @@ export async function updateTeamMemberPasswordServer(userId: string, newPassword
  * Removes them from both the profiles table and Supabase Auth.
  */
 export async function deleteTeamMemberServer(userId: string) {
+  if (!(await requireAdminCaller())) return { success: false, error: "Unauthorized" };
+
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,

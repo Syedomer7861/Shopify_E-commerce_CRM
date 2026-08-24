@@ -73,9 +73,17 @@ export default function TeamPage() {
   async function handleAddMember() {
     if (!newUser.email || !newUser.password) return toast.error("Email and Password are required");
     if (newUser.password.length < 6) return toast.error("Password must be at least 6 characters");
-    
+
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Team member created (local only)");
+      setAddModal(false);
+      setNewUser({ email: "", password: "", name: "", role: "agent" });
+      return;
+    }
+
     setIsUpdating(true);
-    
+
     const res = await createTeamMemberServer({
       email: newUser.email,
       password: newUser.password,
@@ -123,7 +131,14 @@ export default function TeamPage() {
 
   async function handleRemoveMember(id: string) {
     if (!confirm("Are you sure you want to remove this team member? This action will permanently delete their account and access. This cannot be undone.")) return;
-    
+
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Team member removed (local only)");
+      setProfiles(prev => prev.filter(p => p.id !== id));
+      return;
+    }
+
     setIsUpdating(true);
     const res = await deleteTeamMemberServer(id);
     
@@ -144,8 +159,17 @@ export default function TeamPage() {
 
   async function updateProfile(updates: Partial<Profile>) {
     if (!selectedProfile) return;
+
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Settings updated (local only)");
+      setProfiles(prev => prev.map(p => p.id === selectedProfile.id ? { ...p, ...updates } : p));
+      setSelectedProfile(prev => prev ? { ...prev, ...updates } : null);
+      return;
+    }
+
     setIsUpdating(true);
-    
+
     const { error } = await supabase
       .from("profiles")
       .update(updates)
@@ -192,7 +216,14 @@ export default function TeamPage() {
   async function handleUpdatePassword() {
     if (!selectedProfile) return;
     if (newUpdatePassword.length < 6) return toast.error("Password must be at least 6 characters");
-    
+
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success("Demo: Password reset simulated (local only)");
+      setNewUpdatePassword("");
+      return;
+    }
+
     setIsUpdating(true);
     const res = await updateTeamMemberPasswordServer(selectedProfile.id, newUpdatePassword);
     if (!res.success) {
