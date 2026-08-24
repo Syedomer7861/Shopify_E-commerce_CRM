@@ -337,6 +337,11 @@ export default function Sidebar() {
 
     async function checkReminders() {
       if (!profile?.id) return;
+      // demo-presenter-id isn't a real UUID - this ran unguarded every 60s
+      // for every session, firing a real query against personal_reminders
+      // (a UUID column) that Postgres correctly rejected every time in
+      // demo mode. Harmless (silently swallowed below) but noisy.
+      if (document.cookie.includes("crm-demo-mode=true")) return;
       const now = new Date().toISOString();
       const { data } = await supabase
         .from('personal_reminders')

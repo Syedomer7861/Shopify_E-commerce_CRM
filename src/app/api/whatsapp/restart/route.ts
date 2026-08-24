@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
+import { getSystemSettings } from "@/lib/server-settings";
 
 export async function POST(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
 
   const supabase = createServerClient();
-  const { data: settings } = await supabase.from("settings").select("whatsapp_bridge_url").single();
+  // settings RLS is admin-only now; requireInternal allows any authenticated
+  // caller here, so this needs the service-role fallback.
+  const settings = await getSystemSettings(supabase);
   const bridgeUrl = settings?.whatsapp_bridge_url || "http://127.0.0.1:3001";
 
   try {

@@ -2,6 +2,7 @@
  * WhatsApp messaging via Meta Cloud API (Primary) and Local Bridge (Fallback)
  */
 import { createServerClient } from "./supabase";
+import { getSystemSettings } from "./server-settings";
 
 export interface WhatsAppResponse {
   ok: boolean;
@@ -89,10 +90,13 @@ let lastSentTime = 0;
 
 async function enforceSafeguardDelay(supabase: any) {
   try {
-    const { data: settings } = await supabase.from("settings")
-       .select("wa_min_delay, wa_max_delay")
-       .single();
-       
+    // settings RLS is admin-only now (it holds API secrets) - this is
+    // trusted first-party server code acting on the caller's behalf, not a
+    // client query, so it needs getSystemSettings' built-in fallback to the
+    // service-role client rather than a raw .select() under the caller's
+    // own (often non-admin) session.
+    const settings = await getSystemSettings(supabase);
+
     const minDelay = settings?.wa_min_delay ?? 30;
     const maxDelay = settings?.wa_max_delay ?? 90;
     
@@ -159,11 +163,10 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
   return sendQueue.enqueue(async () => {
     const supabase = createServerClient();
     await enforceSafeguardDelay(supabase);
-    
-    const { data: settings } = await supabase.from("settings")
-       .select("whatsapp_bridge_url, whatsapp_token, whatsapp_phone_id, sms_fallback_enabled, sms_provider, sms_twilio_sid, sms_twilio_token, sms_twilio_number")
-       .single();
-       
+
+    const settings = await getSystemSettings(supabase);
+
+
     let whatsappResult: WhatsAppResponse = { ok: false, error: "No WhatsApp messaging gateway configured" };
 
     // 1. Legacy wa_server.js Local Bridge (Primary Route if configured)
@@ -280,7 +283,7 @@ export async function sendMetaTemplate(
   return sendQueue.enqueue(async () => {
     const supabase = createServerClient();
     await enforceSafeguardDelay(supabase);
-    
+
     // 1. Resolve Template Mapping from DB
     const { data: template } = await supabase
       .from("campaign_templates")
@@ -288,9 +291,7 @@ export async function sendMetaTemplate(
       .eq("name", templateName)
       .single();
 
-    const { data: settings } = await supabase.from("settings")
-       .select("whatsapp_token, whatsapp_phone_id, meta_review_name, meta_reorder_name, meta_recovery_name, meta_final_name, sms_fallback_enabled, sms_provider, sms_twilio_sid, sms_twilio_token, sms_twilio_number")
-       .single();
+    const settings = await getSystemSettings(supabase);
 
     let metaName = template?.meta_template_name;
 

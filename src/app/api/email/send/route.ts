@@ -3,6 +3,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 import { sendGmail } from "@/lib/gmail";
+import { getSystemSettings } from "@/lib/server-settings";
 
 export async function POST(req: Request) {
   const limited = rateLimit(req, "outbound-email", 60, 60000);
@@ -15,11 +16,10 @@ export async function POST(req: Request) {
     const { email, subject, message, attachments } = await req.json();
     const supabase = createServerClient();
 
-    // Check if we have a refresh token
-    const { data: settings } = await supabase
-      .from("settings")
-      .select("gmail_refresh_token")
-      .single();
+    // Check if we have a refresh token. settings RLS is admin-only now, and
+    // this route is reachable by any authenticated caller (requireInternal),
+    // so it needs the service-role fallback rather than a raw .select().
+    const settings = await getSystemSettings(supabase);
 
     if (!settings?.gmail_refresh_token) {
       return NextResponse.json({ 

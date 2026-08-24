@@ -1,14 +1,16 @@
 import { google } from "googleapis";
 import { createServerClient } from "./supabase";
+import { getSystemSettings } from "./server-settings";
 
 export async function getGmailClient() {
   const supabase = createServerClient();
-  const { data: settings, error } = await supabase
-    .from("settings")
-    .select("*")
-    .single();
+  // settings RLS is admin-only now (it holds API secrets); this is called
+  // from automated flows (order-confirmation emails, workflow-engine) that
+  // don't always run under an admin session, so it needs the service-role
+  // fallback rather than a raw .select() under the caller's own session.
+  const settings = await getSystemSettings(supabase);
 
-  if (error || !settings) {
+  if (!settings) {
     throw new Error("Failed to fetch settings from database.");
   }
 

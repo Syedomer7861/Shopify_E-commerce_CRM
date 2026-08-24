@@ -1,4 +1,5 @@
 import { createServerClient } from "@/lib/supabase";
+import { getSystemSettings } from "@/lib/server-settings";
 
 /**
  * Administrative Notification Utility
@@ -9,11 +10,11 @@ export async function notifyAdmin(message: string, type: "alert" | "info" | "err
     const supabase = createServerClient();
 
     // 1. Get Admin Phone from Settings
-    const { data: settings } = await supabase
-      .from("settings")
-      .select("whatsapp_admin_phone")
-      .single();
-
+    // settings RLS is admin-only now (it holds API secrets); this runs for
+    // every agent's task completion/note-save/etc via /api/admin/notify,
+    // not just admin actions, so it needs the service-role fallback rather
+    // than a raw .select() under the caller's own (often non-admin) session.
+    const settings = await getSystemSettings(supabase);
     const adminPhone = settings?.whatsapp_admin_phone;
 
     // 2. Log Internal Alert to Audit Logs

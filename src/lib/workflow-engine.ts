@@ -2,6 +2,7 @@ import { createServerClient } from "@/lib/supabase";
 import { assignTaskOwner, calculateTaskPriority } from "./task-engine";
 import { sendMetaTemplate, sendWhatsApp, personaliseTemplate, getTemplateVariables } from "./whatsapp";
 import { sendGmail } from "./gmail";
+import { getSystemSettings } from "./server-settings";
 
 const supabase = createServerClient();
 
@@ -227,7 +228,7 @@ export class WorkflowEngine {
   }
 
   private static async handleMessageAction(step: any, instance: any) {
-    const { data: settings } = await supabase.from("settings").select("whatsapp_enabled").single();
+    const settings = await getSystemSettings(supabase);
     if (!settings?.whatsapp_enabled) {
       console.log(`[WORKFLOW] Message action skipped: WhatsApp disabled globally.`);
       return;
@@ -316,7 +317,7 @@ export class WorkflowEngine {
    * Checks settings flags and sends immediate WhatsApp messages if enabled.
    */
   private static async processSystemAutomation(trigger: WorkflowTrigger, payload: any) {
-    const { data: settings } = await supabase.from("settings").select("*").single();
+    const settings = await getSystemSettings(supabase);
     if (!settings || !settings.whatsapp_enabled) return;
 
     let flag = false;
