@@ -1,11 +1,17 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FileText, Shield, BookOpen, Download, Search, Plus, ChevronRight, Upload, Printer, Book, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 type DocType = "Offer Letter" | "Appointment Letter" | "Relieving Letter" | "Experience Letter" | "Warning Letter" | "Salary Certificate";
-interface PolicyDoc { id: string; name: string; category: string; uploadedOn: string; size: string; }
+interface PolicyDoc { id: string; name: string; category: string; uploadedOn: string; size: string; fileUrl: string | null; }
+const ALLOWED_UPLOAD_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 const CAT_COLOR: Record<string, string> = {
   Compliance: "bg-blue-50 text-blue-600",
@@ -32,6 +38,10 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
   const [preview, setPreview] = useState("");
   const [policies, setPolicies] = useState<PolicyDoc[]>([]);
   const [newPolicy, setNewPolicy] = useState({ name: "", category: "General" });
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setPolicies(dbPolicies.map(p => ({
@@ -42,32 +52,66 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
       // read properties of undefined (reading 'split')); a bad row here
       // must not take down the whole Documents tab.
       uploadedOn: p.created_at ? p.created_at.split("T")[0] : "—",
-      size: p.file_size || "—"
+      size: p.file_size || "—",
+      fileUrl: p.file_url || null
     })));
   }, [dbPolicies]);
+
+  const pickFile = (file: File | null) => {
+    if (!file) { setUploadFile(null); return; }
+    if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+      toast.error("Only PDF, DOC, and DOCX files are supported");
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast.error("File exceeds the 10MB limit");
+      return;
+    }
+    setUploadFile(file);
+    if (!newPolicy.name) setNewPolicy(p => ({ ...p, name: file.name.replace(/\.[^.]+$/, "") }));
+  };
 
   const generateDoc = () => setPreview(TEMPLATES[docType](formData));
 
   const handleAddPolicy = async () => {
     if (!newPolicy.name) return;
     if (document.cookie.includes("crm-demo-mode=true")) {
-      toast.success("Demo: policy added (local only)");
-      setPolicies(pl => [{ id: `demo-${Date.now()}`, name: newPolicy.name, category: newPolicy.category, uploadedOn: new Date().toISOString().split("T")[0], size: "—" }, ...pl]);
+      toast.success(uploadFile ? "Demo: file uploaded (local only)" : "Demo: policy added (local only)");
+      setPolicies(pl => [{ id: `demo-${Date.now()}`, name: newPolicy.name, category: newPolicy.category, uploadedOn: new Date().toISOString().split("T")[0], size: uploadFile ? `${Math.round(uploadFile.size / 1024)} KB` : "—", fileUrl: null }, ...pl]);
       setNewPolicy({ name: "", category: "General" });
+      setUploadFile(null);
       return;
     }
+    setUploading(true);
     try {
-      const res = await fetch("/api/hr/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "policy", data: { name: newPolicy.name, category: newPolicy.category } })
-      });
-      if (!res.ok) throw new Error("Upload failed");
+      if (uploadFile) {
+        // Real upload: was previously impossible - the dropzone had no
+        // file input or handler at all, so nothing ever actually uploaded
+        // despite the UI claiming "PDF, DOCX supported".
+        const body = new FormData();
+        body.append("file", uploadFile);
+        body.append("name", newPolicy.name);
+        body.append("category", newPolicy.category);
+        const res = await fetch("/api/hr/policies/upload", { method: "POST", body });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "Upload failed");
+      } else {
+        const res = await fetch("/api/hr/data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "policy", data: { name: newPolicy.name, category: newPolicy.category } })
+        });
+        if (!res.ok) throw new Error("Failed to add policy");
+      }
+      toast.success("Policy added");
       setNewPolicy({ name: "", category: "General" });
+      setUploadFile(null);
       onRefresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Failed to add policy");
+      toast.error(err.message || "Failed to add policy");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -219,6 +263,11 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full", CAT_COLOR[p.category] || CAT_COLOR.General)}>{p.category}</span>
+                    {p.fileUrl && (
+                      <a href={p.fileUrl} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-[#1c1c1c] transition-colors" title="Download">
+                        <Download className="w-3.5 h-3.5" />
+                      </a>
+                    )}
                     <button onClick={() => handleDeletePolicy(p.id)} className="text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -243,13 +292,40 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
                 {["Compliance", "Leave", "Operations", "General"].map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
-            <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-[#1c1c1c] transition-colors">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              className="hidden"
+              onChange={e => pickFile(e.target.files?.[0] || null)}
+            />
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={e => { e.preventDefault(); setDragOver(false); pickFile(e.dataTransfer.files?.[0] || null); }}
+              className={cn(
+                "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors",
+                dragOver ? "border-[#1c1c1c] bg-gray-50" : "border-gray-200 hover:border-[#1c1c1c]"
+              )}
+            >
               <Upload className="w-6 h-6 text-gray-300 mx-auto mb-2" />
-              <p className="text-xs text-gray-400">Click or drag file to upload</p>
-              <p className="text-[9px] text-gray-300 mt-1">PDF, DOCX supported</p>
+              {uploadFile ? (
+                <>
+                  <p className="text-xs text-[#1c1c1c] font-bold truncate">{uploadFile.name}</p>
+                  <button onClick={e => { e.stopPropagation(); setUploadFile(null); }} className="text-[9px] text-rose-500 font-bold mt-1 hover:underline">
+                    Remove
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-400">Click or drag file to upload</p>
+                  <p className="text-[9px] text-gray-300 mt-1">PDF, DOCX supported</p>
+                </>
+              )}
             </div>
-            <button onClick={handleAddPolicy} className="btn-primary w-full text-xs py-2.5 gap-2">
-              <Plus className="w-3.5 h-3.5" /> Add to Library
+            <button onClick={handleAddPolicy} disabled={uploading} className="btn-primary w-full text-xs py-2.5 gap-2 disabled:opacity-60">
+              <Plus className="w-3.5 h-3.5" /> {uploading ? "Adding..." : "Add to Library"}
             </button>
           </div>
         </div>
