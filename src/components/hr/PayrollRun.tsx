@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { DollarSign, CheckCircle, Clock, TrendingUp, Plus, FileText, History, X, RotateCcw, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
+import toast from "react-hot-toast";
 
 
 interface PayslipRow { name: string; basic: number; hra: number; special: number; pf: number; pt: number; tds: number; net: number; status: "Paid" | "Pending" }
@@ -57,18 +58,29 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
       const pf = Math.round(basic * 0.12);
       const hra = Math.round(basic * 0.4);
       const special = gross - basic - hra;
-      const pt = 200;
+      // Professional tax was a flat ₹200 applied unconditionally, even to
+      // employees with no salary configured at all (gross=0, meaning HR
+      // never entered it - not that they're paid ₹0). That made every such
+      // row net to -₹200 and the whole payroll total went negative.
+      const pt = gross > 0 ? 200 : 0;
       const tds = gross > 41666 ? Math.round(gross * 0.05) : 0;
-      return { 
-        name: a.name || a.email.split("@")[0], 
-        basic, hra, special, pf, pt, tds, 
-        net: gross - pf - pt - tds, 
-        status: "Pending" 
+      return {
+        name: a.name || a.email.split("@")[0],
+        basic, hra, special, pf, pt, tds,
+        net: gross > 0 ? gross - pf - pt - tds : 0,
+        status: "Pending"
       };
     }));
   }, [employees]);
 
   const handleAction = async (type: string, data: any, action = "insert") => {
+    // Demo mode is a real Supabase login - without this, Add Salary
+    // Revision / Approve or Reject Expense / Add Expense all wrote to the
+    // real database. This component had no isDemo check anywhere.
+    if (document.cookie.includes("crm-demo-mode=true")) {
+      toast.success("Demo: saved (local only)");
+      return;
+    }
     try {
       const res = await fetch("/api/hr/data", {
         method: "POST",
