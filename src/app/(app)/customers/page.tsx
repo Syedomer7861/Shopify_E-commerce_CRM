@@ -234,17 +234,20 @@ export default function CustomersPage() {
               {showFilters ? "Hide Filters" : "Filters"}
             </button>
 
-            <button 
-              onClick={handleGlobalSync} 
-              disabled={syncing}
-              className={cn(
-                "btn-secondary flex items-center gap-1.5 py-1.5 px-3",
-                syncing && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              <RefreshCw className={cn("w-3.5 h-3.5", (syncing || loading) && "animate-spin")} />
-              {syncing ? "Syncing..." : "Sync System"}
-            </button>
+            {canDelete && (
+              <button
+                onClick={handleGlobalSync}
+                disabled={syncing}
+                title="Merges duplicate customers and recalculates stats - admin only"
+                className={cn(
+                  "btn-secondary flex items-center gap-1.5 py-1.5 px-3",
+                  syncing && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                <RefreshCw className={cn("w-3.5 h-3.5", (syncing || loading) && "animate-spin")} />
+                {syncing ? "Syncing..." : "Sync System"}
+              </button>
+            )}
 
             {selectedIds.length > 0 && canDelete ? (
               <button onClick={() => setDeleteModal(true)} className="btn-danger">

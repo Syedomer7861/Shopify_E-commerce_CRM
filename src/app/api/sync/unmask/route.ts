@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings, getShiprocketToken } from "@/lib/server-settings";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
+import { normalizePhone } from "@/lib/phone-utils";
 
 export const dynamic = "force-dynamic";
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
@@ -32,12 +33,7 @@ function extractPhone(sr: any): string | null {
   ].filter(Boolean).map((p: any) => String(p).trim().replace(/\s/g, ""));
   
   const unmasked = candidates.find((p: string) => !p.includes("x") && !p.includes("X") && !p.includes("*"));
-  if (unmasked) {
-    let cleaned = unmasked.replace(/[^\d]/g, "");
-    if (cleaned.startsWith("91") && cleaned.length > 10) cleaned = cleaned.slice(cleaned.length - 10);
-    if (cleaned.length === 10) return cleaned;
-    return cleaned;
-  }
+  if (unmasked) return normalizePhone(unmasked);
   
   const fullJson = JSON.stringify(sr);
   const potentialNumbers = fullJson.match(/(?:(?:\+|91)?)?\b([6-9]\d{9})\b/g);

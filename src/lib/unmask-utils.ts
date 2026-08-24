@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { fetchUnmaskedFromShopify } from "./shopify-unmask";
+import { normalizePhone } from "./phone-utils";
 
 /**
  * Highly aggressive phone number extraction and recovery.
@@ -111,11 +112,7 @@ function extractStandardPhone(sr: any): string | null {
   
   // Prefer unmasked
   const unmasked = candidates.find((p: string) => !isMasked(p));
-  if (unmasked) {
-    let cleaned = unmasked.replace(/[^\d]/g, "");
-    if (cleaned.startsWith("91") && cleaned.length > 10) cleaned = cleaned.slice(cleaned.length - 10);
-    return cleaned;
-  }
+  if (unmasked) return normalizePhone(unmasked);
   
   return candidates[0] || null;
 }

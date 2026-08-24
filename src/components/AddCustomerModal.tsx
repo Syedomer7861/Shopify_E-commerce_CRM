@@ -4,6 +4,7 @@ import { UserPlus, Phone, Mail, FileText, Loader2, ShoppingBag, DollarSign, Cale
 import { Modal } from "./ui";
 import { createClient } from "@/lib/supabase";
 import { logAuditEvent } from "@/lib/audit";
+import { normalizePhone } from "@/lib/phone-utils";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
@@ -60,7 +61,7 @@ export function AddCustomerModal({ open, onClose, onSuccess }: AddCustomerModalP
         .from("customers")
         .insert([{
           name: formData.name,
-          phone: formData.phone.replace(/\s/g, ""),
+          phone: normalizePhone(formData.phone),
           email: formData.email || null,
           notes: formData.notes || null,
           segment: "one_time"

@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { isPhoneMasked } from "@/lib/utils";
+import { normalizePhone } from "@/lib/phone-utils";
 
 export async function GET(req: NextRequest) {
   const unauthorized = await requireInternal(req);
@@ -65,7 +66,7 @@ export async function GET(req: NextRequest) {
       for (const order of orders) {
         const customerData = order.customer;
         const rawPhone = order.phone || customerData?.phone || order.shipping_address?.phone || "";
-        const phone = rawPhone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
+        const phone = normalizePhone(rawPhone);
 
         if (!phone || isPhoneMasked(phone)) {
           report.orders.skipped++;
@@ -131,7 +132,7 @@ export async function GET(req: NextRequest) {
       for (const cart of checkouts) {
         const cartCustomer = cart.customer;
         const rawPhone = cart.phone || cartCustomer?.phone || cart.shipping_address?.phone || "";
-        const phone = rawPhone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
+        const phone = normalizePhone(rawPhone);
 
         if (!phone || isPhoneMasked(phone)) {
           report.abandoned.skipped++;

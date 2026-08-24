@@ -5,6 +5,7 @@ import { getSystemSettings } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { WorkflowEngine } from "@/lib/workflow-engine";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
+import { normalizePhone } from "@/lib/phone-utils";
 import { analyzeRTORisk } from "@/lib/risk-engine";
 import crypto from "crypto";
 import { safeEqual, isSecretConfigured, webhookStrict } from "@/lib/auth-utils";
@@ -66,12 +67,7 @@ export async function POST(req: NextRequest) {
     if (topic === "orders/create" || topic === "orders/updated" || topic === "orders/paid" || topic === "orders/fulfilled" || topic === "orders/cancelled") {
       const customerData = payload.customer;
       const rawPhone = payload.phone || customerData?.phone || payload.shipping_address?.phone || "";
-      let phone = rawPhone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
-
-      // Standardize to 10 digits
-      if (phone.length > 10 && phone.startsWith("91")) {
-          phone = phone.slice(phone.length - 10);
-      }
+      let phone = normalizePhone(rawPhone);
 
       // 🕵️ EXTRA EFFORT: Try to unmask/resolve phone
       const isMasked = !phone || phone.includes("x") || phone.includes("X") || phone.length < 7;
@@ -241,7 +237,7 @@ export async function POST(req: NextRequest) {
     if (topic === "checkouts/create" || topic === "checkouts/update") {
       const customerData = payload.customer;
       const rawPhone = payload.phone || customerData?.phone || payload.shipping_address?.phone || "";
-      const phone = rawPhone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
+      const phone = normalizePhone(rawPhone);
 
       if (phone) {
         const { data: customerArr } = await supabase.from("customers").upsert({

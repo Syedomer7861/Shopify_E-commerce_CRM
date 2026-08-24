@@ -1,4 +1,5 @@
 import { createServerClient } from "@/lib/supabase";
+import { normalizePhone } from "@/lib/phone-utils";
 
 function cleanNumber(val: any): number {
   if (typeof val === "number") return val;
@@ -115,7 +116,7 @@ export async function processAbandonedImport(rows: AbandonedRow[]) {
 
   for (const row of rows) {
     try {
-      const phone = row["Phone Number"]?.toString().trim().replace(/\s/g, "");
+      const phone = normalizePhone(row["Phone Number"]);
       const name = row["Customer Name"] || "Abandoned Customer";
       if (!phone) {
         results.skipped++;
@@ -207,7 +208,7 @@ export async function processImport(rows: ImportRow[]) {
 
   for (const row of rows) {
     try {
-      const phone = row["Phone Number"]?.toString().trim().replace(/\s/g, "");
+      const phone = normalizePhone(row["Phone Number"]);
       if (!phone) {
         results.skipped++;
         continue;

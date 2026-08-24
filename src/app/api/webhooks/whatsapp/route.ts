@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
 import { hasInternalSecret } from "@/lib/auth-utils";
+import { normalizePhone } from "@/lib/phone-utils";
 
 export async function POST(req: NextRequest) {
   const limited = rateLimit(req, "webhook-whatsapp", 300, 60000);
@@ -19,8 +20,7 @@ export async function POST(req: NextRequest) {
     const { from, body, timestamp, type, selectedButtonId } = await req.json();
 
     // 1. Clean the incoming phone number (remove @c.us and non-digits)
-    const phone = from.split("@")[0].replace(/[^\d]/g, "");
-    const cleanPhone = phone.startsWith("91") && phone.length > 10 ? phone.slice(-10) : phone;
+    const cleanPhone = normalizePhone(from.split("@")[0]);
 
     console.log(`📩 WhatsApp Webhook: Received ${type} from ${cleanPhone}`);
 

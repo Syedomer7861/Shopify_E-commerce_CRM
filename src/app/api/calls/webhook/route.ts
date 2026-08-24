@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { hasInternalSecret } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
+import { normalizePhone } from "@/lib/phone-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -42,8 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Standardize Phone
-    let phone = customer_phone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
-    if (phone.length > 10) phone = phone.slice(-10);
+    const phone = normalizePhone(customer_phone);
 
     // 3. Handle Events
     if (event === "started") {

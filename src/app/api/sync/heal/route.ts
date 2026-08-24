@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
-import { requireInternal } from "@/lib/auth-utils";
+import { normalizePhone } from "@/lib/phone-utils";
+import { requireInternal, hasInternalSecret, getAuthenticatedSession } from "@/lib/auth-utils";
 
 export const dynamic = "force-dynamic";
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
@@ -26,6 +27,18 @@ export async function POST(req: NextRequest) {
 
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
+
+  // requireInternal only checks "logged in or has a cron secret" - this
+  // route merges and permanently deletes duplicate customer rows, so a
+  // browser-session caller must additionally be admin (matching the
+  // customers page's own bulk-delete gate, which is admin-only). Cron/sync
+  // secret callers skip this since there's no profile to check.
+  if (!hasInternalSecret(req)) {
+    const { profile } = await getAuthenticatedSession();
+    if (profile?.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
+    }
+  }
 
   const supabase = createAdminClient();
 
@@ -98,6 +111,70 @@ export async function POST(req: NextRequest) {
             report.merged++;
           } catch (e) {
             console.error(`Merge failed for ${dup.id}:`, e);
+            report.errors++;
+          }
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PHASE 1b: MERGE DUPLICATES BY NORMALIZED PHONE
+    // Four independent write paths (Shopify sync, Shiprocket sync, Excel
+    // import, manual add) each cleaned phone numbers differently until they
+    // were unified onto normalizePhone() - before that fix, the same real
+    // number could be stored as "7667724595" from one path and
+    // "917667724595" from another, so Phase 1's email-based merge (and
+    // every onConflict:"phone" upsert) never recognized them as one
+    // customer. This groups by the normalized value to catch what raw
+    // string comparison misses.
+    // ═══════════════════════════════════════════════════════════
+    console.log("🔧 Phase 1b: Merging duplicates by normalized phone...");
+
+    const { data: phoneCustomers } = await supabase
+      .from("customers")
+      .select("id, name, phone, email, total_orders, created_at")
+      .order("created_at", { ascending: true });
+
+    if (phoneCustomers) {
+      const phoneGroups: Record<string, typeof phoneCustomers> = {};
+      for (const c of phoneCustomers) {
+        if (!c.phone || c.phone.includes("x") || c.phone.includes("X") || c.phone.includes("_SR_") || c.phone.startsWith("NO-") || c.phone.startsWith("MISSING")) continue;
+        const key = normalizePhone(c.phone);
+        if (key.length !== 10) continue;
+        if (!phoneGroups[key]) phoneGroups[key] = [];
+        phoneGroups[key].push(c);
+      }
+
+      for (const [normalized, group] of Object.entries(phoneGroups)) {
+        if (group.length <= 1) continue;
+
+        report.duplicatesFound += group.length - 1;
+
+        const golden = group.find(c => c.phone === normalized) || group[0];
+        const duplicates = group.filter(c => c.id !== golden.id);
+
+        for (const dup of duplicates) {
+          try {
+            if (golden.phone !== normalized) {
+              await supabase.from("customers").update({ phone: normalized }).eq("id", golden.id);
+            }
+
+            if ((!golden.name || golden.name === "Shiprocket Customer" || golden.name === "Unknown Customer" || golden.name === "Checkout Guest") &&
+                dup.name && dup.name !== "Shiprocket Customer" && dup.name !== "Unknown Customer" && dup.name !== "Checkout Guest") {
+              await supabase.from("customers").update({ name: dup.name }).eq("id", golden.id);
+            }
+
+            await Promise.all([
+              supabase.from("orders").update({ customer_id: golden.id }).eq("customer_id", dup.id),
+              supabase.from("tasks").update({ customer_id: golden.id }).eq("customer_id", dup.id),
+              supabase.from("abandoned_carts").update({ customer_id: golden.id }).eq("customer_id", dup.id),
+              supabase.from("call_logs").update({ customer_id: golden.id }).eq("customer_id", dup.id),
+            ]);
+
+            await supabase.from("customers").delete().eq("id", dup.id);
+            report.merged++;
+          } catch (e) {
+            console.error(`Phone merge failed for ${dup.id}:`, e);
             report.errors++;
           }
         }

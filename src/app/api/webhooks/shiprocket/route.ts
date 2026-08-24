@@ -5,6 +5,7 @@ import { DeliveryStatus, TaskType } from "@/types";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { WorkflowEngine } from "@/lib/workflow-engine";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
+import { normalizePhone } from "@/lib/phone-utils";
 import { notifyAdmin } from "@/lib/notifications";
 import { analyzeRTORisk } from "@/lib/risk-engine";
 import { safeEqual, isSecretConfigured, webhookStrict } from "@/lib/auth-utils";
@@ -475,7 +476,7 @@ export async function POST(req: NextRequest) {
 
       // Sync Customer
       const phoneCandidates = [body.customer_phone, body.mobile, body.billing_phone, body.shipping_phone].filter(Boolean);
-      let phone = phoneCandidates.map(p => p.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, ""))[0];
+      let phone = phoneCandidates.map(p => normalizePhone(p))[0];
       let customerId: string | null = null;
       
       if (phone) {

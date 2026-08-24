@@ -5,6 +5,7 @@ import { TaskType } from "@/types";
 import { getSystemSettings } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority, reassignOfflineAgentTasks, insertTasksIgnoringDuplicates } from "@/lib/task-engine";
 import { syncShopifyData, syncShiprocketData } from "@/lib/sync-logic";
+import { normalizePhone } from "@/lib/phone-utils";
 
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
 // On Pro this can go to 300. The syncs are incremental, so a cut-off run
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
 
         const rawPhone = data.phone_number || data.mobile || data.phone || data.customer_phone || data.customer_contact ||
                          data.shipping_address?.phone || data.billing_address?.phone || "";
-        const phone = rawPhone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
+        const phone = normalizePhone(rawPhone);
         
         if (!phone && !cartId) {
           await supabase.from("webhook_logs").update({ status: "skipped" }).eq("id", log.id);

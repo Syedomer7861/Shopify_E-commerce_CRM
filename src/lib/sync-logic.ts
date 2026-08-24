@@ -1,6 +1,7 @@
 import { getSystemSettings, getShopifyAccessToken, getShiprocketToken } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { resolveUnmaskedPhone } from "./unmask-utils";
+import { normalizePhone } from "./phone-utils";
 
 const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -65,10 +66,14 @@ function parseShiprocketDate(dateStr: string | null | undefined): string {
   return new Date(dateStr).toISOString();
 }
 
+// Shiprocket sometimes sends a lone "," or "." as a name field - truthy, so
+// .filter(Boolean) alone let it through and joined into garbage like
+// ",subash .". Drop fragments that are only punctuation/whitespace first.
+const isNameJunk = (s: any) => !s || !String(s).replace(/[\s,.\-_]/g, "");
 function extractShiprocketName(sr: any): string {
-  const billing = [sr.billing_customer_name, sr.billing_last_name].filter(Boolean).join(" ").trim();
-  const shipping = [sr.shipping_customer_name, sr.shipping_last_name].filter(Boolean).join(" ").trim();
-  const customer = [sr.customer_first_name, sr.customer_last_name].filter(Boolean).join(" ").trim();
+  const billing = [sr.billing_customer_name, sr.billing_last_name].filter(s => !isNameJunk(s)).join(" ").trim();
+  const shipping = [sr.shipping_customer_name, sr.shipping_last_name].filter(s => !isNameJunk(s)).join(" ").trim();
+  const customer = [sr.customer_first_name, sr.customer_last_name].filter(s => !isNameJunk(s)).join(" ").trim();
   const generic = sr.customer_name?.trim();
   return billing || shipping || customer || generic || "Shiprocket Customer";
 }
@@ -157,7 +162,7 @@ export async function syncShopifyData(
         try {
           const customerData = order.customer;
           const rawPhone = order.phone || customerData?.phone || order.shipping_address?.phone || order.billing_address?.phone || "";
-          let phone = rawPhone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
+          let phone = normalizePhone(rawPhone);
 
           const isMasked = !phone || phone.includes("x") || phone.includes("X") || phone.length < 7;
           const shopifyId = String(order.id);
@@ -340,7 +345,7 @@ export async function syncShopifyData(
 
           const cartCustomer = cart.customer;
           const rawPhone = cart.phone || cartCustomer?.phone || cart.shipping_address?.phone || cart.billing_address?.phone || "";
-          let phone = rawPhone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
+          let phone = normalizePhone(rawPhone);
 
           const isMasked = !phone || phone.includes("x") || phone.includes("X") || phone.length < 7;
           let identityPhone = phone;

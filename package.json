@@ -9,7 +9,7 @@
     "build": "node scripts/check-route-guards.mjs && next build",
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "verify": "node scripts/check-route-guards.mjs && node scripts/check-chat-bus.mjs && node scripts/check-rate-limit.mjs && node scripts/check-attendance-engine.mjs"
+    "verify": "node scripts/check-route-guards.mjs && node scripts/check-chat-bus.mjs && node scripts/check-rate-limit.mjs && node scripts/check-attendance-engine.mjs && node scripts/check-phone-utils.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.4.0",

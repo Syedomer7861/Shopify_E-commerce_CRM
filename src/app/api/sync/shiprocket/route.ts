@@ -3,6 +3,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getServiceSupabase } from "@/lib/supabase";
 import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
+import { normalizePhone } from "@/lib/phone-utils";
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
 import { requireInternal } from "@/lib/auth-utils";
 
@@ -42,10 +43,14 @@ function parseShiprocketDate(dateStr: string | null | undefined): string {
   return new Date(dateStr).toISOString();
 }
 
+// Shiprocket sometimes sends a lone "," or "." as a name field - truthy, so
+// .filter(Boolean) alone let it through and joined into garbage like
+// ",subash .". Drop fragments that are only punctuation/whitespace first.
+const isNameJunk = (s: any) => !s || !String(s).replace(/[\s,.\-_]/g, "");
 function extractCustomerName(sr: any): string {
-  const billing = [sr.billing_customer_name, sr.billing_last_name].filter(Boolean).join(" ").trim();
-  const shipping = [sr.shipping_customer_name, sr.shipping_last_name].filter(Boolean).join(" ").trim();
-  const customer = [sr.customer_first_name, sr.customer_last_name].filter(Boolean).join(" ").trim();
+  const billing = [sr.billing_customer_name, sr.billing_last_name].filter(s => !isNameJunk(s)).join(" ").trim();
+  const shipping = [sr.shipping_customer_name, sr.shipping_last_name].filter(s => !isNameJunk(s)).join(" ").trim();
+  const customer = [sr.customer_first_name, sr.customer_last_name].filter(s => !isNameJunk(s)).join(" ").trim();
   const generic = sr.customer_name?.trim();
   return billing || shipping || customer || generic || "Unknown Customer";
 }
@@ -57,11 +62,7 @@ function extractPhone(sr: any): string | null {
   ].filter(Boolean).map((p: any) => String(p).trim().replace(/\s/g, ""));
   
   const unmasked = candidates.find((p: string) => !p.includes("x") && !p.includes("X") && !p.includes("*"));
-  if (unmasked) {
-    let cleaned = unmasked.replace(/[^\d]/g, "");
-    if (cleaned.startsWith("91") && cleaned.length > 10) cleaned = cleaned.slice(cleaned.length - 10);
-    return cleaned;
-  }
+  if (unmasked) return normalizePhone(unmasked);
   
   const fullJson = JSON.stringify(sr);
   const potentialNumbers = fullJson.match(/(?:(?:\+|91)?)?\b([6-9]\d{9})\b/g);
