@@ -547,11 +547,11 @@ function HRDashboardContent() {
                    </div>
                    <p className="text-[13px] text-white/70 leading-relaxed mb-10 max-w-[80%]">
                      {b.doneCount === 0 ? (
-                       <>No tasks completed in the last 7 days yet - grade and trend will appear once there's data to compute.</>
+                       <>No tasks completed in the last 7 days yet - grade and trend will appear once there&apos;s data to compute.</>
                      ) : !b.hasBaseline ? (
                        <>SLA adherence is <span className="text-white font-bold">{b.slaPct.toFixed(1)}%</span> across <span className="text-white font-bold">{b.doneCount}</span> tasks completed this week. Not enough history last week to compare a trend yet.</>
                      ) : (
-                       <>The team is <span className="text-white font-bold">{b.resolutionDeltaPct >= 0 ? "outperforming" : "behind"}</span> last week's pace by <span className="text-emerald-400 font-bold">{Math.abs(b.resolutionDeltaPct).toFixed(0)}%</span>. Tasks are resolving <span className="text-white font-bold">{Math.abs(b.resolutionDeltaMinutes).toFixed(0)}m</span> {b.resolutionDeltaMinutes >= 0 ? "faster" : "slower"}.</>
+                       <>The team is <span className="text-white font-bold">{b.resolutionDeltaPct >= 0 ? "outperforming" : "behind"}</span> last week&apos;s pace by <span className="text-emerald-400 font-bold">{Math.abs(b.resolutionDeltaPct).toFixed(0)}%</span>. Tasks are resolving <span className="text-white font-bold">{Math.abs(b.resolutionDeltaMinutes).toFixed(0)}m</span> {b.resolutionDeltaMinutes >= 0 ? "faster" : "slower"}.</>
                      )}
                    </p>
                    <div className="grid grid-cols-2 gap-10">
