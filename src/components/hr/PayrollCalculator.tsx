@@ -138,7 +138,9 @@ export default function PayrollCalculator() {
       if (region === "India") {
         const basicEst = grossVal * (policy.basicPct / 100);
         pfDeduction = Math.round(basicEst * (policy.employeePfPct / 100));
-        pt = policy.profTax;
+        // Was applied unconditionally, even with no gross pay entered at
+        // all - "In-Hand Monthly Salary" showed -₹200 on an empty form.
+        pt = grossVal > 0 ? policy.profTax : 0;
         tds = calcIndiaTDS(grossVal * 12, basicEst, taxRegime);
       } else if (region === "US") {
         tds = Math.round(grossVal * 0.22);
@@ -199,7 +201,9 @@ export default function PayrollCalculator() {
       const hra = Math.round(basicPay * (policy.hraPct / 100));
       const special = grossVal - basicPay - hra;
       const pf = region === "India" ? Math.round(basicPay * (policy.employeePfPct / 100)) : Math.round(grossVal * 0.05);
-      const pt = region === "India" ? policy.profTax : 0;
+      // Same fix as the Net Salary branch above: don't charge Prof. Tax
+      // against a zero/unentered gross.
+      const pt = region === "India" && grossVal > 0 ? policy.profTax : 0;
       const tds = region === "India" ? calcIndiaTDS(grossVal * 12, basicPay, taxRegime) : Math.round(grossVal * 0.20);
       const totalDeductions = pf + pt + tds;
       const netPay = grossVal - totalDeductions;
