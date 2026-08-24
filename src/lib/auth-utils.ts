@@ -122,7 +122,16 @@ export async function requireInternal(req: NextRequest | Request): Promise<NextR
 /**
  * Webhook secrets that ship as defaults and must never count as configured.
  */
-const PLACEHOLDER_SECRETS = ["cureforever_secret_2026", "your_secret", "changeme"];
+// Values that have appeared in the repo or the settings UI as examples. A
+// secret anyone can read is not a secret, so treat these as "not configured"
+// even though they look like real tokens.
+const PLACEHOLDER_SECRETS = [
+  "cureforever_secret_2026",
+  "cureforever_shiprocket_sync_2026",
+  "cureforever_sync_secret_2026",
+  "your_secret",
+  "changeme",
+];
 
 export function isSecretConfigured(secret?: string | null): secret is string {
   return !!secret && !PLACEHOLDER_SECRETS.includes(secret);

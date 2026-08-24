@@ -2536,12 +2536,16 @@ export default function SettingsPage() {
                      <div className="flex-1">
                         <p className="text-[11px] text-[#1c1c1c] font-medium">Provision a new webhook for the <strong>&quot;Abandoned Cart&quot;</strong> event:</p>
                         <div className="mt-3 flex items-center gap-3 bg-[#f7f4ed] border border-[#eceae4] rounded-xl p-3">
+                           {/* Was hardcoded to a Tailscale address on one developer
+                               machine, so abandoned-cart webhooks were dropped
+                               whenever that PC was off. Derive it from the current
+                               origin, like every other webhook on this page. */}
                            <code className="text-[10px] text-[#1c1c1c] font-mono flex-1 break-all opacity-70">
-                             https://cureforeverpc.tail1b3337.ts.net/api/webhooks/shiprocket
+                             {typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/shiprocket
                            </code>
-                           <button 
+                           <button
                              onClick={() => {
-                               const url = `https://cureforeverpc.tail1b3337.ts.net/api/webhooks/shiprocket`;
+                               const url = `${window.location.origin}/api/webhooks/shiprocket`;
                                navigator.clipboard.writeText(url);
                                toast.success("URL Captured");
                              }}
@@ -2554,8 +2558,11 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex items-start gap-4">
                      <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">3</div>
+                     {/* This used to print a fixed token. It lives in a public
+                         repo, so anyone could read it and post forged carts.
+                         The value belongs in SHIPROCKET_WEBHOOK_TOKEN. */}
                      <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
-                       Assign Authorization Header: <code className="bg-[#eceae4]/30 px-2 py-0.5 rounded font-mono text-[#1c1c1c]">cureforever_shiprocket_sync_2026</code>
+                       Set header <code className="bg-[#eceae4]/30 px-2 py-0.5 rounded font-mono text-[#1c1c1c]">x-shiprocket-secret</code> to the value of <code className="bg-[#eceae4]/30 px-2 py-0.5 rounded font-mono text-[#1c1c1c]">SHIPROCKET_WEBHOOK_TOKEN</code> from your hosting environment.
                      </p>
                   </div>
                </div>
