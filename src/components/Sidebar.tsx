@@ -188,7 +188,7 @@ export default function Sidebar() {
           id: "demo-presenter-id",
           email: "demo@presentation.com",
           name: "Demo Presenter",
-          role: "manager",
+          role: "admin",
           is_active: true,
           permissions: DEFAULT_PERMISSIONS,
           created_at: new Date().toISOString()

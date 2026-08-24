@@ -1052,6 +1052,16 @@ export default function SettingsPage() {
     );
   }
 
+  // This page shows real Shopify/Shiprocket API credentials and writes to
+  // the real settings row on Save. The demo persona is given role: "admin"
+  // so the rest of the app opens up for a walkthrough, but this specific
+  // page stays blocked even for it - there's nothing here worth showcasing,
+  // and the downside (leaking or overwriting live credentials on screen) is
+  // real.
+  if (profile?.id === "demo-presenter-id") {
+    return <AccessDenied title="Settings Unavailable in Demo Mode" desc="System configuration is disabled during a demo session to protect live API credentials." />;
+  }
+
   if (!isAdmin(profile)) {
     return <AccessDenied title="System Settings Locked" desc="Only administrators can modify system-level configurations and API integrations." />;
   }

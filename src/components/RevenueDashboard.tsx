@@ -9,6 +9,24 @@ export default function RevenueDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Manager Hub allows role === 'manager' through, and the demo persona
+    // has always had that role, so this has been reachable from a demo
+    // login from the start - just fetching live financial data with no
+    // guard. Fake numbers for a demo session instead of real revenue.
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setData({
+        summary: { totalRecovered: 284500, totalPotential: 612000, recoveryRate: 46.5, ndrRate: 38.2 },
+        breakdown: {
+          recovery: { potential: 320000, recovered: 148000 },
+          ndr: { potential: 210000, recovered: 96500 },
+          cod: { potential: 82000, recovered: 40000 },
+        },
+      });
+      setLoading(false);
+      return;
+    }
+
     fetch("/api/analytics/revenue")
       .then(res => res.json())
       .then(d => {

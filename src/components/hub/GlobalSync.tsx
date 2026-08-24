@@ -19,6 +19,31 @@ export default function GlobalSync() {
     setIsComplete(false);
     setError(null);
 
+    // This button has always been reachable from a demo login (the Manager
+    // Hub allows role === 'manager', which the demo persona has always had)
+    // with no guard at all - clicking it during a live demo would kick off
+    // a real Shopify/Shiprocket sync against production. Fake the progress
+    // bar instead.
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      const steps = [
+        [20, "Connecting to Shopify..."],
+        [45, "Syncing orders..."],
+        [70, "Connecting to Shiprocket..."],
+        [90, "Reconciling delivery status..."],
+        [100, "System-wide synchronization complete!"],
+      ] as const;
+      for (const [pct, msg] of steps) {
+        await new Promise((r) => setTimeout(r, 500));
+        setProgress(pct);
+        setMessage(msg);
+      }
+      setIsComplete(true);
+      toast.success("System-wide synchronization complete!");
+      setTimeout(() => setSyncing(false), 3000);
+      return;
+    }
+
     try {
       const response = await fetch("/api/sync/all?stream=true");
       if (!response.body) throw new Error("No response body");

@@ -23,7 +23,7 @@ export function useCurrentProfile() {
           id: "demo-presenter-id",
           email: "demo@presentation.com",
           name: "Demo Presenter",
-          role: "manager",
+          role: "admin",
           is_active: true,
           created_at: new Date().toISOString(),
         } as any);
