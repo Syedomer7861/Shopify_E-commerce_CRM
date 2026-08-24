@@ -282,6 +282,7 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: "customers" | "orders" | "tasks" | "abandoned_carts" | null }>({ open: false, type: null });
+  const [purgeConfirmText, setPurgeConfirmText] = useState("");
   const [waStatus, setWaStatus] = useState<{ ready?: boolean; state?: string; error?: string; qr?: string | null }>({ state: "INITIALISING" });
   const [lastSync, setLastSync] = useState<string | null>(null);
 
@@ -3011,7 +3012,7 @@ export default function SettingsPage() {
                     <div className="text-[11px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1 group-hover:text-rose-500 transition-colors">{d.label}</div>
                     <div className="text-[10px] text-[#5f5f5d] font-medium opacity-60 leading-relaxed">{d.desc}</div>
                   </div>
-                  <button onClick={() => setConfirmModal({ open: true, type: d.type as any })} className="btn-primary bg-rose-500 hover:bg-rose-600 text-white py-2 px-6 text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-rose-500/20">
+                  <button onClick={() => { setPurgeConfirmText(""); setConfirmModal({ open: true, type: d.type as any }); }} className="btn-primary bg-rose-500 hover:bg-rose-600 text-white py-2 px-6 text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-rose-500/20">
                     Purge
                   </button>
                 </div>
@@ -3120,14 +3121,33 @@ export default function SettingsPage() {
       <Modal open={confirmModal.open} onClose={() => setConfirmModal({ open: false, type: null })} title="Confirm Registry Termination"
         footer={<>
           <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setConfirmModal({ open: false, type: null })}>Abort</button>
-          <button className="btn-primary bg-rose-500 text-white py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-rose-500/20" onClick={() => confirmModal.type && handleClearData(confirmModal.type)} disabled={isDeleting}>
+          <button
+            className="btn-primary bg-rose-500 text-white py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-rose-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={() => confirmModal.type && handleClearData(confirmModal.type)}
+            disabled={isDeleting || purgeConfirmText !== confirmModal.type}
+          >
             {isDeleting ? "Terminating..." : "Confirm Purge"}
           </button>
         </>}
       >
-        <div className="p-6 bg-rose-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-2xl flex gap-4 shadow-2xl">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <p className="leading-relaxed">Critical Warning: This administrative action is irreversible. All targeted registry data will be permanently extinguished.</p>
+        <div className="space-y-4">
+          <div className="p-6 bg-rose-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-2xl flex gap-4 shadow-2xl">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <p className="leading-relaxed">Critical Warning: This administrative action is irreversible. All targeted registry data will be permanently extinguished.</p>
+          </div>
+          <div>
+            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-60">
+              Type <span className="font-mono normal-case text-rose-600">{confirmModal.type}</span> to confirm
+            </label>
+            <input
+              type="text"
+              className="input font-mono text-sm"
+              value={purgeConfirmText}
+              onChange={e => setPurgeConfirmText(e.target.value)}
+              placeholder={confirmModal.type || ""}
+              autoComplete="off"
+            />
+          </div>
         </div>
       </Modal>
     </div>
