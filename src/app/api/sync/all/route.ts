@@ -90,7 +90,10 @@ export async function POST(req: NextRequest) {
         const body = log.payload;
         const data = body.data || body.payload || body;
         const cartId = data.cart_id || data.checkout_id || data.cart_token;
-        const orderId = data.order_id || data.channel_order_id || data.shiprocket_order_id || data.checkout_order_id;
+        // channel_order_id (Shopify's order number, as Shiprocket sees it)
+        // must win over Shiprocket's own internal order_id - see the same
+        // fix and full explanation in webhooks/shiprocket/route.ts.
+        const orderId = data.channel_order_id || data.order_id || data.shiprocket_order_id || data.checkout_order_id;
 
         const rawPhone = data.phone_number || data.mobile || data.phone || data.customer_phone || data.customer_contact ||
                          data.shipping_address?.phone || data.billing_address?.phone || "";

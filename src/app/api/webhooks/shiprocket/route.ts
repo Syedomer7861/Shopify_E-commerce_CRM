@@ -85,7 +85,15 @@ export async function POST(req: NextRequest) {
     const rawStage = data.latest_stage || data.stage || data.checkout_stage || data.event || "";
     const stage = String(rawStage).toLowerCase();
     
-    let orderId = data.order_id || data.channel_order_id || data.shiprocket_order_id || data.checkout_order_id || data.order_number || data.id;
+    // channel_order_id is Shiprocket's field for the originating channel's
+    // (Shopify's) order number - it must win over Shiprocket's own internal
+    // order_id, or a store's real Shopify order and this webhook's order
+    // both get created as separate rows under different ids (confirmed:
+    // the Orders page showed a raw Shiprocket-id row - "6a8bf01c240c3" -
+    // duplicating a real numbered order for the same customer/product).
+    // The two pull-based Shiprocket syncs (sync-logic.ts, sync/shiprocket)
+    // already prioritize channel_order_id this way; this handler didn't.
+    let orderId = data.channel_order_id || data.order_id || data.shiprocket_order_id || data.checkout_order_id || data.order_number || data.id;
     
     // FASTTR FIX: If stage is order_placed, treat as order even if orderId is missing
     if (!orderId && (stage === "order_placed" || stage === "completed")) {
@@ -100,13 +108,8 @@ export async function POST(req: NextRequest) {
       // 🕵️ EXTRA ROBUST PHONE/EMAIL/NAME DETECTION
       const rawPhone = data.mobile || data.phone || data.customer_phone || data.phone_number || data.customer_contact ||
                        data.shipping_address?.phone || data.billing_address?.phone || "";
-      let customerPhone = rawPhone.toString().trim().replace(/^\+/, "").replace(/^91/, "").replace(/\s/g, "");
-      
-      // If it looks like it was prefixed with 91 and is longer than 10 digits
-      if (customerPhone.length > 10 && customerPhone.startsWith("91")) {
-          customerPhone = customerPhone.slice(customerPhone.length - 10);
-      }
-      
+      let customerPhone = normalizePhone(rawPhone);
+
       const rawEmail = data.email || data.customer_email || 
                        data.shipping_address?.email || data.billing_address?.email || null;
       

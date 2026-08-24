@@ -19,8 +19,10 @@ const STATUSES: { label: string; value: string }[] = [
   { label: "All", value: "all" },
   { label: "Delivered", value: "delivered" },
   { label: "In Transit", value: "in_transit" },
+  { label: "Out for Delivery", value: "out_for_delivery" },
   { label: "RTO", value: "rto" },
   { label: "Pending", value: "pending" },
+  { label: "Failed", value: "failed" },
 ];
 
 export default function OrdersPage() {
@@ -28,7 +30,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<(Order & { customer: Customer })[]>([]);
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
-  const [stats, setStats] = useState({ delivered: 0, in_transit: 0, rto: 0, pending: 0 });
+  const [stats, setStats] = useState({ delivered: 0, in_transit: 0, out_for_delivery: 0, rto: 0, pending: 0, failed: 0 });
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [deleteModal, setDeleteModal] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -62,8 +64,10 @@ export default function OrdersPage() {
       setStats({
         delivered: 1,
         in_transit: 1,
+        out_for_delivery: 0,
         rto: 0,
         pending: 0,
+        failed: 0,
       });
       setTotalMatching(MOCK_ORDERS.length);
       setLoading(false);
@@ -126,19 +130,23 @@ export default function OrdersPage() {
       return applyAdvancedFilters(q);
     };
 
-    const [d, t, r, p] = await Promise.all([
+    const [d, t, ofd, r, p, f] = await Promise.all([
       countQuery("delivered"),
       countQuery("in_transit"),
+      countQuery("out_for_delivery"),
       countQuery("rto"),
       countQuery("pending"),
+      countQuery("failed"),
     ]);
 
     setOrders((ordersData || []) as any);
     setStats({
       delivered: d.count || 0,
       in_transit: t.count || 0,
+      out_for_delivery: ofd.count || 0,
       rto: r.count || 0,
       pending: p.count || 0,
+      failed: f.count || 0,
     });
     setLoading(false);
   }, [page, pageSize, status, search, startDate, endDate, minAmount, maxAmount, supabase]);
@@ -470,12 +478,14 @@ export default function OrdersPage() {
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-10">
         {[
           { label: "Delivered", value: "delivered", count: stats.delivered, color: "border-l-[#1c1c1c]", active: "shadow-xl border-[#1c1c1c]" },
           { label: "Transit", value: "in_transit", count: stats.in_transit, color: "border-l-[#eceae4]", active: "shadow-xl border-[#1c1c1c]" },
+          { label: "Out for Delivery", value: "out_for_delivery", count: stats.out_for_delivery, color: "border-l-sky-500", active: "shadow-xl border-[#1c1c1c]" },
           { label: "RTO", value: "rto", count: stats.rto, color: "border-l-rose-500", active: "shadow-xl border-[#1c1c1c]" },
           { label: "Pending", value: "pending", count: stats.pending, color: "border-l-amber-500", active: "shadow-xl border-[#1c1c1c]" },
+          { label: "Failed", value: "failed", count: stats.failed, color: "border-l-red-700", active: "shadow-xl border-[#1c1c1c]" },
         ].map(s => (
           <button 
             key={s.label} 
@@ -532,10 +542,11 @@ export default function OrdersPage() {
                     onClick={(e) => e.stopPropagation()}
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <button 
+                <div className="flex items-center gap-2 min-w-0">
+                  <button
                     onClick={() => setSelectedOrderId(o.id)}
-                    className="text-xs font-bold text-[#1c1c1c] hover:underline"
+                    title={`#${o.order_number}`}
+                    className="text-xs font-bold text-[#1c1c1c] hover:underline truncate"
                   >
                     #{o.order_number}
                   </button>
