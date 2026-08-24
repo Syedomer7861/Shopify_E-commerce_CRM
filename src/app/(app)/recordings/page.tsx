@@ -2,14 +2,17 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
-import { PageHeader, EmptyState, Modal, Avatar } from "@/components/ui";
+import { PageHeader, EmptyState, Modal, Avatar, AccessDenied } from "@/components/ui";
 import { Headphones, Play, PhoneCall, Clock, CheckCircle2, User, Search, Loader2, Calendar } from "lucide-react";
 import { formatDateTime, timeAgo } from "@/lib/utils";
 import type { RawCallLog } from "@/types";
 import toast from "react-hot-toast";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { hasPermission } from "@/lib/permissions";
 
 export default function CallRecordingsPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { profile, loading: profileLoading } = useCurrentProfile();
   const [logs, setLogs] = useState<RawCallLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -25,21 +28,31 @@ export default function CallRecordingsPage() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from("raw_call_logs")
-        .select(`
-          *,
-          agent:profiles(name, email)
-        `)
-        .not("recording_url", "is", null)
-        .order("created_at", { ascending: false });
+      // PostgREST caps a single select at 1000 rows - recordings accumulate
+      // over months, so paginate rather than silently dropping older calls
+      // past the cap.
+      const PAGE = 1000;
+      let all: any[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+          .from("raw_call_logs")
+          .select(`
+            *,
+            agent:profiles(name, email)
+          `)
+          .not("recording_url", "is", null)
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE - 1);
 
-      if (error) {
-        console.warn("Error fetching call recordings, table might be missing:", error);
-        setLogs([]);
-      } else {
-        setLogs(data || []);
+        if (error) {
+          console.warn("Error fetching call recordings, table might be missing:", error);
+          break;
+        }
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE) break;
       }
+      setLogs(all);
     } catch (err) {
       console.error(err);
       setLogs([]);
@@ -66,6 +79,23 @@ export default function CallRecordingsPage() {
     const phone = log.customer_phone?.toLowerCase() || "";
     return agentName.includes(s) || phone.includes(s);
   });
+
+  if (profileLoading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-300" />
+      </div>
+    );
+  }
+
+  // Call recordings are real customer conversation audio - genuinely
+  // sensitive PII - but this page had no role check at all, unlike Live
+  // Floor/Alert Logs/Manager Hub which all restrict access. Same gate Live
+  // Floor uses: agents can't browse recordings, HR/manager/admin can for
+  // quality oversight.
+  if (!hasPermission(profile, "view_analytics")) {
+    return <AccessDenied title="Call Recordings Restricted" desc="Only admins and supervisors can access call recordings." />;
+  }
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
