@@ -1348,11 +1348,11 @@ export default function ReportsPage() {
                trend={getTrend(stats.abandonedStats.recovered, prevStats?.abRecovered)} 
                trendValue={getTrendValue(stats.abandonedStats.recovered, prevStats?.abRecovered)} 
             />
-            <StatCard 
-               label="Meta Sales" 
-               value={formatCurrency(stats.metaRevenue)} 
-               sub="WhatsApp Attribution" 
-               accent="text-[#1c1c1c]" 
+            <StatCard
+               label="Gross Volume"
+               value={formatCurrency(stats.metaRevenue)}
+               sub="All orders, any status"
+               accent="text-[#1c1c1c]"
                trend={getTrend(stats.metaRevenue, prevStats?.metaRev)}
                trendValue={getTrendValue(stats.metaRevenue, prevStats?.metaRev)}
             />
@@ -1408,12 +1408,8 @@ export default function ReportsPage() {
                   <h2 className="text-[10px] font-bold uppercase tracking-[2px] opacity-60 mb-6">Financial Ledger</h2>
                   <div className="space-y-6">
                       <div className="flex justify-between items-end border-b border-[#fcfbf8]/10 pb-4">
-                         <div className="flex flex-col"><span className="text-[10px] text-[#fcfbf8]/60 font-bold uppercase tracking-wider">Gross Sales</span><span className="text-xl font-bold tracking-tight">{formatCurrency(stats.totalRevenue * 1.12)}</span></div>
-                         <span className="text-[10px] font-bold text-emerald-400">+12% GST</span>
-                      </div>
-                      <div className="flex justify-between items-end border-b border-[#fcfbf8]/10 pb-4">
                          <div className="flex flex-col"><span className="text-[10px] text-[#fcfbf8]/60 font-bold uppercase tracking-wider">Net Sales</span><span className="text-xl font-bold tracking-tight">{formatCurrency(stats.totalRevenue)}</span></div>
-                         <span className="text-[10px] font-bold text-[#fcfbf8]/40 italic">Excl. Returns</span>
+                         <span className="text-[10px] font-bold text-[#fcfbf8]/40 italic">Delivered orders</span>
                       </div>
                       <div className="flex justify-between items-end border-b border-[#fcfbf8]/10 pb-4">
                          <div className="flex flex-col"><span className="text-[10px] text-[#fcfbf8]/60 font-bold uppercase tracking-wider">Returns</span><span className="text-xl font-bold tracking-tight text-rose-400">{formatCurrency(stats.rtoRevenue)}</span></div>
@@ -1421,8 +1417,9 @@ export default function ReportsPage() {
                       </div>
                       <div className="pt-4">
                          <div className="p-4 bg-[#fcfbf8]/10 rounded-xl">
-                            <span className="text-[9px] font-bold text-[#fcfbf8]/60 uppercase block mb-1 tracking-widest">AUM Portfolio</span>
+                            <span className="text-[9px] font-bold text-[#fcfbf8]/60 uppercase block mb-1 tracking-widest">Revenue Impact</span>
                             <span className="text-2xl font-bold tracking-tighter text-emerald-400">{formatCurrency(stats.totalRevenue + stats.abandonedStats.recovered)}</span>
+                            <span className="text-[9px] text-[#fcfbf8]/40 italic block mt-1">Net Sales + Recovered Carts</span>
                          </div>
                       </div>
                   </div>
