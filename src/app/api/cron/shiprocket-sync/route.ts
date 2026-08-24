@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 import { WorkflowEngine } from "@/lib/workflow-engine";
 import { requireInternal } from "@/lib/auth-utils";
+import { makeDeadline } from "@/lib/sync-logic";
 
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
 // On Pro this can go to 300. The syncs are incremental, so a cut-off run
@@ -47,10 +48,20 @@ export async function POST(req: NextRequest) {
     const { token } = await authRes.json();
 
     // 2. Fetch Active Orders from CRM (Pending or In Transit)
+    // This makes one sequential external Shiprocket API call per order - with
+    // hundreds of active orders that alone exceeds Vercel's 60s cap on every
+    // run (confirmed: this endpoint runs alone, nothing else chained, and
+    // still timed out repeatedly). Oldest-updated first + a per-run cap +
+    // a deadline bail means an oversized backlog is worked off incrementally
+    // across the hourly cron runs instead of restarting from scratch and
+    // never finishing.
+    const BATCH_LIMIT = 300;
     const { data: activeOrders, error: orderErr } = await supabase
       .from("orders")
       .select("id, shopify_order_id, delivery_status, customer_id")
-      .in("delivery_status", ["pending", "in_transit", "out_for_delivery"]);
+      .in("delivery_status", ["pending", "in_transit", "out_for_delivery"])
+      .order("updated_at", { ascending: true })
+      .limit(BATCH_LIMIT);
 
     if (orderErr) throw orderErr;
     if (!activeOrders || activeOrders.length === 0) {
@@ -60,9 +71,12 @@ export async function POST(req: NextRequest) {
     console.log(`🔄 Shiprocket Cron: Syncing ${activeOrders.length} active orders...`);
 
     let updatedCount = 0;
+    let truncated = false;
+    const deadline = makeDeadline({ budgetMs: 45_000 });
 
     // 3. Sync each order
     for (const order of activeOrders) {
+      if (deadline.expired()) { truncated = true; break; }
       try {
         // Fetch specific order status from Shiprocket
         const res = await fetch(`${SHIPROCKET_BASE_URL}/orders/show/${order.shopify_order_id}`, {
@@ -102,9 +116,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ 
-      processed: activeOrders.length, 
-      updated: updatedCount 
+    return NextResponse.json({
+      processed: activeOrders.length,
+      updated: updatedCount,
+      truncated,
     });
 
   } catch (err: any) {

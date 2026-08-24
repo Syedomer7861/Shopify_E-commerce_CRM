@@ -474,10 +474,17 @@ export async function syncShopifyData(
 /**
  * PULL DATA FROM SHIPROCKET API
  */
-export async function syncShiprocketData(supabase: any, send: (data: any) => void, full: boolean = false) {
+export async function syncShiprocketData(supabase: any, send: (data: any) => void, full: boolean = false, opts?: SyncBudget) {
+  // Had no budget at all, unlike syncShopifyData - each order does a
+  // resolveUnmaskedPhone lookup plus 2-3 DB round trips, and full sync
+  // pages up to 20 x 50 orders. Confirmed by production logs: the
+  // dedicated /api/cron/shiprocket-sync endpoint (nothing else chained)
+  // was timing out on its own, and this function is the same shape.
+  const deadline = makeDeadline(opts);
   const report = {
     orders: { synced: 0, failed: 0 },
     customers: { created: 0, updated: 0 },
+    truncated: false,
     errors: [] as string[]
   };
 
@@ -490,8 +497,14 @@ export async function syncShiprocketData(supabase: any, send: (data: any) => voi
     const MAX_PAGES = full ? 20 : 2; // Pull more if full sync
 
     while (hasMore && currentPage <= MAX_PAGES) {
+      if (deadline.expired()) {
+        report.truncated = true;
+        send({ message: `Budget reached after ${report.orders.synced} orders; the next run continues from here.` });
+        break;
+      }
+
       send({ progress: 45 + (currentPage * 2), message: `Shiprocket Sync: Fetching page ${currentPage}...` });
-      
+
       const res = await fetch(`${SHIPROCKET_BASE_URL}/orders?per_page=50&page=${currentPage}&sort=created_at&sort_dir=desc`, {
         headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
       });
@@ -499,10 +512,14 @@ export async function syncShiprocketData(supabase: any, send: (data: any) => voi
       if (!res.ok) throw new Error(`Shiprocket API error: ${res.status}`);
       const orderData = await res.json();
       const srOrders = orderData.data || [];
-      
+
       if (srOrders.length === 0) break;
 
       for (const sr of srOrders) {
+        if (deadline.expired()) {
+          report.truncated = true;
+          break;
+        }
         try {
           const orderId = String(sr.channel_order_id || sr.id);
           const email = sr.billing_email || sr.shipping_email || sr.customer_email || null;

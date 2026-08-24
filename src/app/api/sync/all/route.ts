@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { getServiceSupabase } from "@/lib/supabase";
 import { TaskType } from "@/types";
-import { getSystemSettings } from "@/lib/server-settings";
+import { getSystemSettings, SETTINGS_ID } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority, reassignOfflineAgentTasks, insertTasksIgnoringDuplicates } from "@/lib/task-engine";
 import { syncShopifyData, syncShiprocketData } from "@/lib/sync-logic";
 import { normalizePhone } from "@/lib/phone-utils";
@@ -16,6 +16,10 @@ export const maxDuration = 60;
 // manual Sync Now button was returning 504 with no report at all; a budget
 // returns partial progress instead, and the button can be pressed again.
 const SHOPIFY_BUDGET_MS = 22_000;
+// syncShiprocketData had no budget at all before - unbounded on a 60s
+// function, chained after Shopify's own 22s. Leaves ~15s for Priority 3
+// (webhook backlog + task generation) below.
+const SHIPROCKET_BUDGET_MS = 20_000;
 
 function getSupabase(req?: any) {
   return getServiceSupabase(req);
@@ -68,7 +72,7 @@ export async function POST(req: NextRequest) {
       console.log("Shopify Sync Report:", shopifyReport);
 
       send({ progress: 40, message: "Priority 2: Pulling Logistics Data (Shiprocket)..." });
-      const shiprocketReport = await syncShiprocketData(supabase, send, isFull);
+      const shiprocketReport = await syncShiprocketData(supabase, send, isFull, { budgetMs: SHIPROCKET_BUDGET_MS });
       console.log("Shiprocket Sync Report:", shiprocketReport);
 
       send({ progress: 70, message: "Priority 3: Processing Webhook Log Backlog..." });
@@ -498,8 +502,18 @@ export async function POST(req: NextRequest) {
       }).catch(() => {});
     } catch {}
 
-    // Update settings table with last sync timestamp to signal ALL users
-    await supabase.from("settings").update({ updated_at: new Date().toISOString() }).eq("id", "00000000-0000-0000-0000-000000000000");
+    // Touch settings to fire the realtime UPDATE event Sidebar/Dashboard
+    // listen for (signals "a sync just finished", not the value itself).
+    // Was a bare await with no local try/catch, so a failure here (e.g. the
+    // fixed-id row not existing under this id in a given environment) threw
+    // past this point and landed in the outer catch below - which reports
+    // the WHOLE sync as failed even though Shopify/Shiprocket/webhook work
+    // above already completed. Best-effort, same as the Sheets log above.
+    try {
+      await supabase.from("settings").update({ updated_at: new Date().toISOString() }).eq("id", SETTINGS_ID);
+    } catch (e) {
+      console.error("Settings touch (realtime signal) failed:", e);
+    }
 
     send({ progress: 100, message: "Sync Complete!", ...report });
     close();
