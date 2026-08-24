@@ -59,9 +59,6 @@ function extractPhone(sr: any): string | null {
 }
 
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
-
-import fs from 'fs';
-import path from 'path';
 import { requireInternal } from "@/lib/auth-utils";
 
 export async function POST(req: NextRequest) {
@@ -70,14 +67,17 @@ export async function POST(req: NextRequest) {
 
   const { stream, send, close } = createSyncStream();
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
-  const logPath = path.join(process.cwd(), 'unmask_audit.log');
 
   const supabase = createAdminClient();
 
   const runSync = async () => {
+    // process.cwd() is read-only on Vercel's serverless runtime (only /tmp
+    // is writable) - fs.appendFileSync here threw EROFS on every call and
+    // crashed the whole handler with a 500. console.log lands in the same
+    // Vercel log viewer this was meant to be read from anyway.
     const log = (msg: string) => {
         const time = new Date().toISOString();
-        fs.appendFileSync(logPath, `[${time}] ${msg}\n`);
+        console.log(`[unmask] [${time}] ${msg}`);
     };
     
     try {
