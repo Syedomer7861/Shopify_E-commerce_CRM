@@ -10,6 +10,13 @@ import { isAdmin } from "@/lib/permissions";
 
 const SEGMENTS = ["repeat", "one_time", "inactive", "risky", "all"];
 
+function toDatetimeLocal(iso?: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default function CampaignManager() {
   const { profile, loading: profileLoading } = useCurrentProfile();
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,8 +29,30 @@ export default function CampaignManager() {
   // Detailed Recipient Logs Modal States
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [logSearchQuery, setLogSearchQuery] = useState("");
+  const [logRecipients, setLogRecipients] = useState<any[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
 
   const selectedCampaignForLogs = campaigns.find(c => c.id === selectedCampaignId) || null;
+
+  const openLogs = async (campaignId: string) => {
+    setSelectedCampaignId(campaignId);
+    setLogSearchQuery("");
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setLogRecipients(campaigns.find(c => c.id === campaignId)?.recipients || []);
+      return;
+    }
+    setLogsLoading(true);
+    try {
+      const res = await fetch(`/api/campaigns?logs=${campaignId}`);
+      const data = await res.json();
+      setLogRecipients(data.recipients || []);
+    } catch {
+      toast.error("Failed to load delivery logs");
+    } finally {
+      setLogsLoading(false);
+    }
+  };
 
   // Deletion Modal States
   const [deleteCampaignId, setDeleteCampaignId] = useState<string | null>(null);
@@ -82,6 +111,7 @@ export default function CampaignManager() {
     if (activeCampaignsExist || selectedCampaignId) {
       const timer = setInterval(() => {
         fetchData();
+        if (selectedCampaignId) openLogs(selectedCampaignId);
       }, 3000); // Poll every 3 seconds for smooth real-time updates!
       return () => clearInterval(timer);
     }
@@ -137,10 +167,10 @@ export default function CampaignManager() {
       preset,
       min_delay: c.min_delay ?? 30,
       max_delay: c.max_delay ?? 90,
-      scheduled_start: c.scheduled_start || "",
+      scheduled_start: toDatetimeLocal(c.scheduled_at),
       send_window_start: c.send_window_start || "09:00",
       send_window_end: c.send_window_end || "21:00",
-      is_scheduled: !!c.scheduled_start
+      is_scheduled: !!c.scheduled_at
     });
     setEditId(c.id);
     setShowModal(true);
@@ -178,18 +208,21 @@ export default function CampaignManager() {
   const handleCreate = async () => {
     if (!formData.name || !formData.template_id) return toast.error("Name and Template are required");
     const isDemo = document.cookie.includes("crm-demo-mode=true");
+    // datetime-local has no timezone suffix so JS parses it as local time -
+    // toISOString() converts it to the correct UTC instant for storage.
+    const scheduledIso = formData.is_scheduled && formData.scheduled_start ? new Date(formData.scheduled_start).toISOString() : "";
 
     if (editId) {
       if (isDemo) {
         toast.success("Demo: Campaign settings updated (local simulation)");
-        setCampaigns(prev => prev.map(c => c.id === editId ? { 
-          ...c, 
-          name: formData.name, 
-          template_id: formData.template_id, 
+        setCampaigns(prev => prev.map(c => c.id === editId ? {
+          ...c,
+          name: formData.name,
+          template_id: formData.template_id,
           target_segment: formData.target_segment,
           min_delay: formData.min_delay,
           max_delay: formData.max_delay,
-          scheduled_start: formData.is_scheduled ? formData.scheduled_start : "",
+          scheduled_at: scheduledIso,
           send_window_start: formData.send_window_start,
           send_window_end: formData.send_window_end
         } : c));
@@ -206,7 +239,7 @@ export default function CampaignManager() {
             target_segment: formData.target_segment,
             min_delay: formData.min_delay,
             max_delay: formData.max_delay,
-            scheduled_start: formData.is_scheduled ? formData.scheduled_start : "",
+            scheduled_start: scheduledIso,
             send_window_start: formData.send_window_start,
             send_window_end: formData.send_window_end
           })
@@ -237,7 +270,7 @@ export default function CampaignManager() {
             target_segment: formData.target_segment,
             min_delay: formData.min_delay,
             max_delay: formData.max_delay,
-            scheduled_start: formData.is_scheduled ? formData.scheduled_start : "",
+            scheduled_start: scheduledIso,
             send_window_start: formData.send_window_start,
             send_window_end: formData.send_window_end
           })
@@ -312,25 +345,10 @@ export default function CampaignManager() {
         <StatCard label="Active Campaigns" value={campaigns.filter(c => c.status === "running").length} sub="Currently sending" accent="text-[#1c1c1c]" />
         <StatCard label="Completed" value={campaigns.filter(c => c.status === "completed").length} sub="Lifetime total" accent="text-[#5f5f5d]" />
         <StatCard label="Total Messages" value={campaigns.reduce((s, c) => s + (c.delivered_count || 0), 0)} sub="Across all campaigns" accent="text-[#1c1c1c]" />
-        {(() => {
-          if (campaigns.length === 0) {
-            return <StatCard label="Avg. Open Rate" value="N/A" sub="No campaigns launched" accent="text-[#5f5f5d]" />;
-          }
-          const totalDelivered = campaigns.reduce((acc, c) => acc + (c.delivered_count || 0), 0);
-          const totalRead = campaigns.reduce((acc, c) => acc + (c.read_count || 0), 0);
-          if (totalDelivered === 0) {
-            return <StatCard label="Avg. Open Rate" value="N/A" sub="Waiting for delivery" accent="text-[#5f5f5d]" />;
-          }
-          const rate = Math.round((totalRead / totalDelivered) * 100);
-          return (
-            <StatCard 
-              label="Avg. Open Rate" 
-              value={`${rate}%`} 
-              sub={rate > 50 ? "High engagement" : "Average engagement"} 
-              accent="text-[#1c1c1c]" 
-            />
-          );
-        })()}
+        {/* No WhatsApp read-receipt webhook is wired up anywhere in this app,
+            so read_count never gets written - a computed rate here would
+            always read as real (and always 0%). */}
+        <StatCard label="Avg. Open Rate" value="—" sub="Not tracked" accent="text-[#5f5f5d]" />
       </div>
 
       <div className="card overflow-hidden">
@@ -353,9 +371,9 @@ export default function CampaignManager() {
                   <div className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
                     <Clock className="w-2.5 h-2.5" /> Created {new Date(c.created_at).toLocaleDateString()}
                   </div>
-                  {c.scheduled_start && (
+                  {c.scheduled_at && (
                     <div className="text-[9px] text-indigo-600 font-bold flex items-center gap-1 mt-1 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded w-max">
-                      <Clock className="w-2.5 h-2.5" /> Scheduled: {new Date(c.scheduled_start).toLocaleString()}
+                      <Clock className="w-2.5 h-2.5" /> Scheduled: {new Date(c.scheduled_at).toLocaleString()}
                     </div>
                   )}
                 </td>
@@ -413,19 +431,16 @@ export default function CampaignManager() {
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <button 
-                      onClick={() => {
-                        setSelectedCampaignId(c.id);
-                        setLogSearchQuery("");
-                      }} 
+                    <button
+                      onClick={() => openLogs(c.id)}
                       title="Inspect Delivery Logs"
                       className="p-2 bg-[#1c1c1c]/5 text-[#1c1c1c] rounded-lg hover:bg-[#1c1c1c]/10 transition-colors shadow-sm border border-[#1c1c1c]/10"
                     >
                        <Eye className="w-3.5 h-3.5" />
                     </button>
-                    {(c.status === "draft" || c.status === "paused") && (
-                       <button 
-                         onClick={() => handleEditClick(c)} 
+                    {(c.status === "draft" || c.status === "paused" || c.status === "scheduled") && (
+                       <button
+                         onClick={() => handleEditClick(c)}
                          title="Edit Settings"
                          className="p-2 bg-[#1c1c1c]/5 text-gray-600 rounded-lg hover:bg-[#1c1c1c]/10 transition-colors shadow-sm border border-[#1c1c1c]/10"
                        >
@@ -433,8 +448,8 @@ export default function CampaignManager() {
                        </button>
                     )}
                     {(c.status === "draft" || c.status === "paused") && (
-                       <button 
-                         onClick={() => handleRun(c.id)} 
+                       <button
+                         onClick={() => handleRun(c.id)}
                          title="Start Campaign"
                          className="p-2 bg-[#1c1c1c]/5 text-[#1c1c1c] rounded-lg hover:bg-[#1c1c1c]/10 transition-colors shadow-sm border border-[#1c1c1c]/10"
                        >
@@ -453,9 +468,9 @@ export default function CampaignManager() {
                     {c.status === "completed" && (
                       <BarChart3 className="w-4 h-4 text-gray-300 ml-auto" />
                     )}
-                    {(c.status === "draft" || c.status === "paused" || c.status === "completed") && (
-                       <button 
-                         onClick={() => handleDeleteClick(c.id)} 
+                    {(c.status === "draft" || c.status === "paused" || c.status === "completed" || c.status === "scheduled") && (
+                       <button
+                         onClick={() => handleDeleteClick(c.id)}
                          title="Delete Campaign"
                          className="p-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 transition-colors shadow-sm border border-rose-100"
                        >
@@ -754,12 +769,21 @@ export default function CampaignManager() {
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {(() => {
-                      const allRecs = selectedCampaignForLogs.recipients || [];
-                      const filtered = allRecs.filter((r: any) =>
+                      if (logsLoading) {
+                        return (
+                          <tr>
+                            <td colSpan={4} className="py-8 text-center text-gray-400 italic">
+                              Loading recipients...
+                            </td>
+                          </tr>
+                        );
+                      }
+
+                      const filtered = logRecipients.filter((r: any) =>
                         r.name.toLowerCase().includes(logSearchQuery.toLowerCase()) ||
                         r.phone.includes(logSearchQuery)
                       );
-                      
+
                       if (filtered.length === 0) {
                         return (
                           <tr>

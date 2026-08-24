@@ -70,6 +70,9 @@ order_*.json
 mukesh.json
 sync_progress.json
 docs/
+# Real customer PII was leaking into git via campaign send state before it
+# moved to Supabase (campaign_recipients table) - see 20260826_campaign_engine.sql
+src/data/campaign-settings.json
 
 # Temporary Root Scripts
 debug_tasks.ts
