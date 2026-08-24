@@ -77,7 +77,8 @@ export async function GET(req: NextRequest) {
 
 
     // Default: Fetch everything for a full sync
-    const [employees, announcements, policies, revisions, expenses, reviews, training, grievances, attendance, rawLogs, holidays, slaTasks, openTasksWithOrders] = await Promise.all([
+    const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
+    const [employees, announcements, policies, revisions, expenses, reviews, training, grievances, attendance, rawLogs, holidays, slaTasks, openTasksWithOrders, payrollRuns] = await Promise.all([
       supabase.from("profiles").select("*").order("is_active", { ascending: false }),
       supabase.from("announcements").select("*").order("is_pinned", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from("hr_policies").select("*").order("created_at", { ascending: false }),
@@ -101,6 +102,9 @@ export async function GET(req: NextRequest) {
         .select("assigned_to, order:orders!inner(total_price)")
         .not("status", "in", '("done","cancelled","skipped")')
         .not("order_id", "is", null),
+      // Real persisted Mark Paid / Toggle status for the current month -
+      // was pure local React state before, reset on every page refresh.
+      supabase.from("payroll_runs").select("agent_id, status, marked_at").eq("month", currentMonth),
     ]);
 
     const shiftByAgent: Record<string, string> = {};
@@ -124,6 +128,11 @@ export async function GET(req: NextRequest) {
       revenueAtRiskByAgent[t.assigned_to] = (revenueAtRiskByAgent[t.assigned_to] || 0) + price;
     }
 
+    const payrollStatus: Record<string, { status: string; marked_at: string | null }> = {};
+    for (const r of payrollRuns.data || []) {
+      payrollStatus[r.agent_id] = { status: r.status, marked_at: r.marked_at };
+    }
+
     return NextResponse.json({
       employees: employees.data || [],
       announcements: announcements.data || [],
@@ -137,6 +146,8 @@ export async function GET(req: NextRequest) {
       holidays: holidays.data || [],
       benchmark,
       revenueAtRiskByAgent,
+      payrollStatus,
+      payrollMonth: currentMonth,
     });
 
   } catch (err: any) {
@@ -155,11 +166,13 @@ export async function POST(req: NextRequest) {
   // agent session calling this endpoint directly could delete or edit any
   // employee profile. The HR Dashboard itself is admin/hr only, so enforce
   // that here too.
+  let currentUserId: string | null = null;
   if (!hasInternalSecret(req)) {
     const { profile } = await getAuthenticatedSession();
     if (profile?.role !== "admin" && profile?.role !== "hr") {
       return NextResponse.json({ error: "Forbidden: Admin or HR access required" }, { status: 403 });
     }
+    currentUserId = profile?.id || null;
   }
 
   const supabase = createServerClient();
@@ -237,6 +250,38 @@ export async function POST(req: NextRequest) {
       const { data: res, error } = await supabase.from("training_assignments").insert([data]).select();
       if (error) throw error;
       return NextResponse.json(res);
+    }
+
+    if (type === "payroll") {
+      // Mark All Paid / per-row Toggle used to be pure local React state
+      // with no database write at all - refreshing the page reset every
+      // payslip back to "Pending". This persists real status per
+      // (agent, month), with who marked it and when.
+      if (action === "mark_all_paid") {
+        const { agent_ids, month } = data;
+        if (!Array.isArray(agent_ids) || !month) {
+          return NextResponse.json({ error: "agent_ids and month are required" }, { status: 400 });
+        }
+        const rows = agent_ids.map((agent_id: string) => ({
+          agent_id, month, status: "paid", marked_by: currentUserId, marked_at: new Date().toISOString(),
+        }));
+        const { error } = await supabase.from("payroll_runs").upsert(rows, { onConflict: "agent_id,month" });
+        if (error) throw error;
+        return NextResponse.json({ success: true });
+      }
+
+      // mark_paid / mark_pending (per-row Toggle)
+      const { agent_id, month, status } = data;
+      if (!agent_id || !month || !status) {
+        return NextResponse.json({ error: "agent_id, month, and status are required" }, { status: 400 });
+      }
+      const { error } = await supabase.from("payroll_runs").upsert({
+        agent_id, month, status,
+        marked_by: status === "paid" ? currentUserId : null,
+        marked_at: status === "paid" ? new Date().toISOString() : null,
+      }, { onConflict: "agent_id,month" });
+      if (error) throw error;
+      return NextResponse.json({ success: true });
     }
 
     if (type === "grievance") {

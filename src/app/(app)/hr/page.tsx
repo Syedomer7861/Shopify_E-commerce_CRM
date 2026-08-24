@@ -118,6 +118,8 @@ function HRDashboardContent() {
     holidays: any[];
     benchmark: { slaPct: number; grade: string; doneCount: number; resolutionDeltaPct: number; resolutionDeltaMinutes: number; hasBaseline: boolean };
     revenueAtRiskByAgent: Record<string, number>;
+    payrollStatus: Record<string, { status: string; marked_at: string | null }>;
+    payrollMonth: string;
   }>({
     members: [],
     leaves: [],
@@ -133,7 +135,9 @@ function HRDashboardContent() {
     attendance: [],
     holidays: [],
     benchmark: { slaPct: 0, grade: "—", doneCount: 0, resolutionDeltaPct: 0, resolutionDeltaMinutes: 0, hasBaseline: false },
-    revenueAtRiskByAgent: {}
+    revenueAtRiskByAgent: {},
+    payrollStatus: {},
+    payrollMonth: new Date().toISOString().slice(0, 7)
   });
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isStale, setIsStale] = useState(false);
@@ -228,7 +232,9 @@ function HRDashboardContent() {
             { id: 'h2', date: '2026-08-15', name: 'Independence Day', type: 'National' },
           ],
           benchmark: { slaPct: 94, grade: 'A', doneCount: 38, resolutionDeltaPct: 12, resolutionDeltaMinutes: 22, hasBaseline: true },
-          revenueAtRiskByAgent: { '1': 34500, '2': 18200, '3': 41000 }
+          revenueAtRiskByAgent: { '1': 34500, '2': 18200, '3': 41000 },
+          payrollStatus: { '1': { status: 'paid', marked_at: new Date().toISOString() } },
+          payrollMonth: new Date().toISOString().slice(0, 7)
         });
         setLastUpdated(new Date());
         setIsStale(false);
@@ -269,7 +275,9 @@ function HRDashboardContent() {
         attendance: hrData.attendance || [],
         holidays: hrData.holidays || [],
         benchmark: hrData.benchmark || { slaPct: 0, grade: "—", doneCount: 0, resolutionDeltaPct: 0, resolutionDeltaMinutes: 0, hasBaseline: false },
-        revenueAtRiskByAgent: hrData.revenueAtRiskByAgent || {}
+        revenueAtRiskByAgent: hrData.revenueAtRiskByAgent || {},
+        payrollStatus: hrData.payrollStatus || {},
+        payrollMonth: hrData.payrollMonth || new Date().toISOString().slice(0, 7)
       });
       setLastUpdated(new Date());
       setIsStale(false);
@@ -860,7 +868,7 @@ function HRDashboardContent() {
       )}
 
       {activeTab === 'payroll' && (
-        <PayrollRun revisions={data.revisions} expenses={data.expenses} employees={data.employees} onRefresh={fetchData} />
+        <PayrollRun revisions={data.revisions} expenses={data.expenses} employees={data.employees} payrollStatus={data.payrollStatus} payrollMonth={data.payrollMonth} onRefresh={fetchData} />
       )}
 
       {activeTab === 'documents' && (
