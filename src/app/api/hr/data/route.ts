@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
+import { computeAutoAttendance } from "@/lib/attendance-engine";
 
 export async function GET(req: NextRequest) {
   const unauthorized = await requireInternal(req);
@@ -66,10 +67,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(data);
     }
 
+    if (type === "holidays") {
+      const { data, error } = await supabase.from("holidays").select("*").order("date", { ascending: true });
+      if (error) throw error;
+      return NextResponse.json(data);
+    }
+
 
 
     // Default: Fetch everything for a full sync
-    const [employees, announcements, policies, revisions, expenses, reviews, training, grievances, attendance, rawLogs] = await Promise.all([
+    const [employees, announcements, policies, revisions, expenses, reviews, training, grievances, attendance, rawLogs, holidays] = await Promise.all([
       supabase.from("profiles").select("*").order("is_active", { ascending: false }),
       supabase.from("announcements").select("*").order("is_pinned", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from("hr_policies").select("*").order("created_at", { ascending: false }),
@@ -80,60 +87,17 @@ export async function GET(req: NextRequest) {
       supabase.from("grievances").select("*, profiles(name)").order("created_at", { ascending: false }),
       supabase.from("attendance_log").select("*"),
       supabase.from("agent_attendance").select("*"),
+      supabase.from("holidays").select("*").order("date", { ascending: true }),
     ]);
 
-    const syncAttendance = (manualLogs: any[], rawLogs: any[]) => {
-      const result = [...manualLogs];
-      
-      // Calculate actual durations from raw logs
-      const calculatedAttendance: any[] = [];
-      const agents = Array.from(new Set(rawLogs?.map((l: any) => l.agent_id) || []));
-      
-      agents.forEach(agentId => {
-        const agentLogs = rawLogs.filter((l: any) => l.agent_id === agentId).sort((a: any, b: any) => a.created_at.localeCompare(b.created_at));
-        const dailyProductive: Record<string, number> = {};
+    const shiftByAgent: Record<string, string> = {};
+    for (const p of employees.data || []) shiftByAgent[p.id] = p.shift_type || "Morning";
 
-        for (let i = 0; i < agentLogs.length; i++) {
-          const curr = agentLogs[i];
-          const next = agentLogs[i+1];
-          const dateStr = curr.created_at.split("T")[0];
-          
-          const start = new Date(curr.created_at).getTime();
-          let end = next ? new Date(next.created_at).getTime() : Date.now();
-          
-          const dayEnd = new Date(curr.created_at);
-          dayEnd.setHours(23, 59, 59, 999);
-          if (end > dayEnd.getTime()) end = dayEnd.getTime();
-
-          const durationMins = Math.max(0, Math.floor((end - start) / 60000));
-          
-          if (["online", "meeting", "training"].includes(curr.status?.toLowerCase())) {
-            dailyProductive[dateStr] = (dailyProductive[dateStr] || 0) + durationMins;
-          }
-        }
-
-        Object.entries(dailyProductive).forEach(([date, mins]) => {
-          const exists = manualLogs.find((m: any) => m.agent_id === agentId && m.date === date);
-          if (!exists) {
-            let status = "Absent";
-            if (mins >= 360) status = "Present"; 
-            else if (mins >= 180) status = "Half Day";
-            else if (mins > 0) status = "Late";
-
-            calculatedAttendance.push({
-              agent_id: agentId,
-              date: date,
-              status: status,
-              isAuto: true
-            });
-          }
-        });
-      });
-
-      return [...result, ...calculatedAttendance];
-    };
-
-    const finalAttendance = syncAttendance(attendance.data || [], rawLogs.data || []);
+    const finalAttendance = computeAutoAttendance(
+      rawLogs.data || [],
+      attendance.data || [],
+      shiftByAgent
+    );
 
     return NextResponse.json({
       employees: employees.data || [],
@@ -145,6 +109,7 @@ export async function GET(req: NextRequest) {
       training: training.data || [],
       grievances: grievances.data || [],
       attendance: finalAttendance,
+      holidays: holidays.data || [],
     });
 
   } catch (err: any) {
@@ -401,6 +366,50 @@ export async function POST(req: NextRequest) {
         console.error("Failed to log attendance activity:", logErr);
       }
 
+      return NextResponse.json(res);
+    }
+
+    if (type === "shift") {
+      // Shift Assignment used to be pure React state - every reload reset
+      // every agent back to "Morning" and any change was gone. Persisted on
+      // profiles.shift_type now.
+      const { agent_id, shift_type } = data;
+      if (!["Morning", "Afternoon", "Night", "Off"].includes(shift_type)) {
+        return NextResponse.json({ error: "Invalid shift_type" }, { status: 400 });
+      }
+      const { data: res, error } = await supabase
+        .from("profiles")
+        .update({ shift_type })
+        .eq("id", agent_id)
+        .select("id, shift_type");
+      if (error) throw error;
+      return NextResponse.json(res);
+    }
+
+    if (type === "holiday") {
+      if (action === "delete") {
+        const { id } = data;
+        const { error } = await supabase.from("holidays").delete().eq("id", id);
+        if (error) throw error;
+        return NextResponse.json({ success: true });
+      }
+
+      // Holiday Calendar used to be pure React state too - "Add Holiday"
+      // appeared to save, then vanished on the next reload.
+      const { date, name, holidayType } = data;
+      if (!date || !name) {
+        return NextResponse.json({ error: "date and name are required" }, { status: 400 });
+      }
+      const { data: res, error } = await supabase
+        .from("holidays")
+        .insert({ date, name, type: holidayType || "National" })
+        .select();
+      if (error) {
+        if (error.code === "23505") {
+          return NextResponse.json({ error: "A holiday is already set for this date" }, { status: 409 });
+        }
+        throw error;
+      }
       return NextResponse.json(res);
     }
 

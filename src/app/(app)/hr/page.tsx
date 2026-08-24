@@ -115,6 +115,7 @@ function HRDashboardContent() {
     training: any[];
     grievances: any[];
     attendance: any[];
+    holidays: any[];
   }>({
     members: [],
     leaves: [],
@@ -127,7 +128,8 @@ function HRDashboardContent() {
     reviews: [],
     training: [],
     grievances: [],
-    attendance: []
+    attendance: [],
+    holidays: []
   });
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isStale, setIsStale] = useState(false);
@@ -159,6 +161,28 @@ function HRDashboardContent() {
     if (isDemo) {
       setLoading(true);
       setTimeout(() => {
+        // Built off today's date, not a hardcoded string, so the Monthly
+        // Register in AttendanceRegister.tsx (which opens on the current
+        // month) has something to show whenever the demo actually runs,
+        // rather than an empty grid undercutting the auto-detection UI.
+        const demoAttendance: any[] = [];
+        for (let back = 1; back <= 5; back++) {
+          const d = new Date();
+          d.setDate(d.getDate() - back);
+          const dateStr = d.toISOString().slice(0, 10);
+          demoAttendance.push({
+            agent_id: "e1", date: dateStr, status: back === 3 ? "Late" : "Present", is_auto: true,
+            clock_in: `${dateStr}T${back === 3 ? "09:40" : "08:55"}:00.000Z`,
+            clock_out: `${dateStr}T13:10:00.000Z`,
+            productive_minutes: 480, break_minutes: 40,
+          });
+          demoAttendance.push({
+            agent_id: "e2", date: dateStr, status: back === 2 ? "Half Day" : "Present", is_auto: true,
+            clock_in: `${dateStr}T09:05:00.000Z`,
+            clock_out: `${dateStr}T${back === 2 ? "12:30" : "13:15"}:00.000Z`,
+            productive_minutes: back === 2 ? 195 : 450, break_minutes: 35,
+          });
+        }
         setData({
           members: [
             { id: '1', name: 'Agent Rahul', email: 'rahul@cureforever.com', role: 'agent', status: 'Online', lastSeenMinutes: 0, shiftStart: '09:00 AM', statusSince: '2h ago', productiveMinutes: 405, breakMinutes: 45, taskCount: 42, timeline: [{ status: 'online', time: '09:00 AM' }, { status: 'break', time: '01:00 PM', reason: 'Lunch' }, { status: 'online', time: '01:45 PM' }] },
@@ -171,8 +195,8 @@ function HRDashboardContent() {
           ],
           stats: { totalBreak: 150, avgProductive: 390 },
           employees: [
-            { id: 'e1', name: 'Agent Rahul', email: 'rahul@cureforever.com', role: 'Agent', status: 'active', joining_date: '2023-01-15' },
-            { id: 'e2', name: 'Agent Priya', email: 'priya@cureforever.com', role: 'Agent', status: 'active', joining_date: '2023-03-10' }
+            { id: 'e1', name: 'Agent Rahul', email: 'rahul@cureforever.com', role: 'Agent', status: 'active', joining_date: '2023-01-15', shift_type: 'Morning' },
+            { id: 'e2', name: 'Agent Priya', email: 'priya@cureforever.com', role: 'Agent', status: 'active', joining_date: '2023-03-10', shift_type: 'Afternoon' }
           ],
           announcements: [
             // type is required: Announcements.tsx indexes TYPE_STYLES[a.type]
@@ -188,7 +212,11 @@ function HRDashboardContent() {
           reviews: [],
           training: [],
           grievances: [],
-          attendance: []
+          attendance: demoAttendance,
+          holidays: [
+            { id: 'h1', date: '2026-01-26', name: 'Republic Day', type: 'National' },
+            { id: 'h2', date: '2026-08-15', name: 'Independence Day', type: 'National' },
+          ]
         });
         setLastUpdated(new Date());
         setIsStale(false);
@@ -226,7 +254,8 @@ function HRDashboardContent() {
         reviews: hrData.reviews || [],
         training: hrData.training || [],
         grievances: hrData.grievances || [],
-        attendance: hrData.attendance || []
+        attendance: hrData.attendance || [],
+        holidays: hrData.holidays || []
       });
       setLastUpdated(new Date());
       setIsStale(false);
@@ -790,6 +819,7 @@ function HRDashboardContent() {
           members={data.members} 
           employees={data.employees}
           attendanceLogs={data.attendance}
+          holidays={data.holidays}
           onRefresh={fetchData} 
         />
       )}
