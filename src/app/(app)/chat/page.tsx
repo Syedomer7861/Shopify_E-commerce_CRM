@@ -11,11 +11,17 @@ import { cn } from '@/lib/utils';
 
 import { createClient } from '@/lib/supabase';
 import toast from 'react-hot-toast';
+import { useCurrentProfile } from '@/hooks/useCurrentProfile';
 
 export default function ChatPage() {
   const { activeChannel, connected } = useChat();
   const router = useRouter();
   const supabase = createClient();
+  const { profile } = useCurrentProfile();
+  // messages RLS (admin_manager_all_messages) only grants DELETE to
+  // admin/manager - a regular agent's delete here silently affects 0 rows
+  // while the UI still claimed success. Gate the control to match.
+  const canClearHistory = profile?.role === 'admin' || profile?.role === 'manager';
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [showRightPanel, setShowRightPanel] = React.useState(true);
@@ -53,6 +59,7 @@ export default function ChatPage() {
 
   const handleClearHistory = async () => {
     if (!activeChannel) return;
+    if (!canClearHistory) return toast.error("Only admins and managers can clear conversation history");
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       toast.success("Demo: History cleared (local only)");
@@ -265,14 +272,16 @@ export default function ChatPage() {
                   )} />
                 </button>
               </div>
-              <div className="pt-4 border-t border-[#eceae4]">
-                <button 
-                  onClick={handleClearHistory}
-                  className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:opacity-80 transition-opacity"
-                >
-                  Clear Conversation History
-                </button>
-              </div>
+              {canClearHistory && (
+                <div className="pt-4 border-t border-[#eceae4]">
+                  <button
+                    onClick={handleClearHistory}
+                    className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:opacity-80 transition-opacity"
+                  >
+                    Clear Conversation History
+                  </button>
+                </div>
+              )}
             </div>
             <div className="p-6 bg-gray-50 flex justify-end">
               <button 
