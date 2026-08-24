@@ -37,7 +37,10 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
       id: p.id,
       name: p.name,
       category: p.category,
-      uploadedOn: p.created_at.split("T")[0],
+      // Demo data has been missing created_at before (TypeError: Cannot
+      // read properties of undefined (reading 'split')); a bad row here
+      // must not take down the whole Documents tab.
+      uploadedOn: p.created_at ? p.created_at.split("T")[0] : "—",
       size: p.file_size || "—"
     })));
   }, [dbPolicies]);

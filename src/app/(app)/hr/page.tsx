@@ -206,7 +206,13 @@ function HRDashboardContent() {
             // reads a.body, so the wrong key was silently rendering blank.
             { id: 'a1', title: 'New Product Launch', body: 'We are launching a new Krill Oil variant next week!', type: 'Celebration', created_at: new Date().toISOString() }
           ],
-          policies: [{ id: 'p1', title: 'Leave Policy 2024', category: 'Compliance' }],
+          // Real columns are name/category/created_at (schema:
+          // supabase/migrations/20260423_hr_suite_sync.sql). This object had
+          // title instead of name and no created_at at all - HRDocuments.tsx
+          // calls p.created_at.split("T")[0] unconditionally, so the missing
+          // field crashed the whole Documents tab with "Cannot read
+          // properties of undefined (reading 'split')".
+          policies: [{ id: 'p1', name: 'Leave Policy 2026', category: 'Compliance', created_at: new Date().toISOString() }],
           revisions: [],
           expenses: [],
           reviews: [],
