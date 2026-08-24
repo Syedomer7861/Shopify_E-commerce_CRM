@@ -131,6 +131,14 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
   }, [mappedEmployees, selected]);
 
   const handleUpdate = async (id: string, updates: any) => {
+    // Demo mode is a real Supabase login, so without this every path that
+    // routes through here - onboarding/offboarding checklist toggles,
+    // Start Notice Period, and the profile edit form - would write to a
+    // real employee's profile. This component had no isDemo check at all.
+    if (document.cookie.includes("crm-demo-mode=true")) {
+      toast.success("Demo: employee updated (local only)");
+      return;
+    }
     try {
       const res = await fetch("/api/hr/data", {
         method: "POST",
@@ -153,6 +161,12 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
   };
 
   const handleDelete = async (id: string) => {
+    if (document.cookie.includes("crm-demo-mode=true")) {
+      toast.success("Demo: employee deleted (local only)");
+      setEmployees(prev => prev.filter(e => e.id !== id));
+      setSelected(null);
+      return;
+    }
     try {
       const res = await fetch("/api/hr/data", {
         method: "POST",
@@ -195,7 +209,31 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
       toast.error("Name and Email are required");
       return;
     }
-    
+
+    if (document.cookie.includes("crm-demo-mode=true")) {
+      const optimisticEmployee: Employee = {
+        id: `demo-${Date.now()}`,
+        name: newEmp.name,
+        email: newEmp.email,
+        phone: newEmp.phone || "—",
+        role: newEmp.role,
+        designation: newEmp.designation || newEmp.role,
+        department: newEmp.department || "General",
+        joinDate: newEmp.joinDate || "—",
+        status: "Active",
+        salary: Number(newEmp.salary) || 0,
+        location: [newEmp.city, newEmp.state, newEmp.country].filter(Boolean).join(", "),
+        emergencyContact: "—",
+        onboarding: ONBOARDING_TASKS.map(t => ({ task: t, done: false })),
+        offboarding: OFFBOARDING_TASKS.map(t => ({ task: t, done: false })),
+      };
+      setEmployees(prev => [optimisticEmployee, ...prev]);
+      toast.success("Demo: employee added (local only)");
+      setShowAdd(false);
+      setNewEmp({ name: "", email: "", phone: "", role: "agent", designation: "", department: "IT", joinDate: "", salary: "", location: "", city: "", state: "", country: "India" });
+      return;
+    }
+
     try {
       const locationStr = [newEmp.city, newEmp.state, newEmp.country].filter(Boolean).join(", ");
       const res = await fetch("/api/hr/data", {

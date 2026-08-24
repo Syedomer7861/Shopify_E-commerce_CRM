@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireInternal } from "@/lib/auth-utils";
+import { requireInternal, hasInternalSecret, getAuthenticatedSession } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 import { computeAutoAttendance } from "@/lib/attendance-engine";
 import { computeBenchmark } from "@/lib/hr-benchmark";
@@ -147,6 +147,20 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
+
+  // requireInternal only checks "logged in or has a cron secret" - every
+  // mutation below (employee insert/update/delete, announcements, policies,
+  // expenses, reviews, grievances...) had no role check at all, relying
+  // entirely on the HR page's client-side gate (admin/hr only). A plain
+  // agent session calling this endpoint directly could delete or edit any
+  // employee profile. The HR Dashboard itself is admin/hr only, so enforce
+  // that here too.
+  if (!hasInternalSecret(req)) {
+    const { profile } = await getAuthenticatedSession();
+    if (profile?.role !== "admin" && profile?.role !== "hr") {
+      return NextResponse.json({ error: "Forbidden: Admin or HR access required" }, { status: 403 });
+    }
+  }
 
   const supabase = createServerClient();
 
