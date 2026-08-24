@@ -91,10 +91,15 @@ export default function MyHubPage() {
           {activeTab === 'reminders' && <ReminderSection />}
         </div>
         
-        {/* Live Pulse Sidebar in Hub */}
-        <div className="hidden lg:block">
-           <LivePulseFeed />
-        </div>
+        {/* Live Pulse Sidebar in Hub - company-wide activity feed, same
+            component Dashboard restricts to admin only. This is a personal
+            workspace page, not an ops-monitoring one, so match that gate
+            instead of showing every agent's/webhook's activity to everyone. */}
+        {profile?.role === "admin" && (
+          <div className="hidden lg:block">
+             <LivePulseFeed />
+          </div>
+        )}
       </div>
     </div>
   );
