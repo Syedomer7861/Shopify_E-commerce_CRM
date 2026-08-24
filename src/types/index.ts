@@ -199,6 +199,14 @@ export interface Settings {
   wa_order_delivered_template?: string;
   wa_cart_abandoned_template?: string;
   wa_reorder_template?: string;
+  wa_auto_out_for_delivery?: boolean;
+  wa_out_for_delivery_template?: string;
+  wa_auto_delivery_failed?: boolean;
+  wa_delivery_failed_template?: string;
+  wa_auto_stale_shipment?: boolean;
+  wa_stale_shipment_template?: string;
+  wa_auto_final_followup?: boolean;
+  wa_final_followup_template?: string;
   shopify_store_domain?: string;
   shopify_api_key?: string;
   shopify_client_id?: string;
