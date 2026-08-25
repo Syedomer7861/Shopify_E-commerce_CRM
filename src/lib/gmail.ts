@@ -76,14 +76,23 @@ export async function sendGmail({
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="color-scheme" content="light dark">
-      <meta name="supported-color-schemes" content="light dark">
+      <!-- Deliberately light-only, not "light dark": the logo is a
+           transparent-background PNG (icon + wordmark), and Gmail's mobile
+           apps apply their own automatic dark-mode recoloring to table/cell
+           backgrounds that's inconsistent enough to leave parts of a
+           transparent logo unreadable even with explicit white backgrounds
+           set on every wrapping element. Declaring light-only tells clients
+           not to auto-darken this email at all, which is the standard fix
+           for exactly this failure mode - the template is white/cream by
+           design anyway, so there's no dark variant worth maintaining. -->
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
       <style>
         :root {
-          color-scheme: light dark;
-          supported-color-schemes: light dark;
+          color-scheme: light;
+          supported-color-schemes: light;
         }
-        body { 
+        body {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
           background-color: #f7f4ed; 
           margin: 0; 
@@ -150,25 +159,25 @@ export async function sendGmail({
           background: linear-gradient(to right, transparent, #eceae4, transparent);
           margin: 40px 0;
         }
-
-        @media (prefers-color-scheme: dark) {
-          body { background-color: #1c1c1c !important; color: #f7f4ed !important; }
-          .container { background-color: #262626 !important; border-color: #333333 !important; }
-          .header-td { background-color: #ffffff !important; } 
-          .content { color: #f7f4ed !important; }
-          .footer { background-color: #1c1c1c !important; color: #888888 !important; border-top-color: #333333 !important; }
-          .signature { border-top-color: #333333 !important; }
-          .status-badge { background-color: #ffffff !important; color: #1c1c1c !important; }
-        }
       </style>
     </head>
     <body>
       <div class="container">
-        <!-- Using Table for Header to force white background in Dark Mode -->
+        <!-- The light-only color-scheme meta above is the real fix (stops
+             clients from auto-darkening this email at all - the transparent
+             PNG logo was going invisible against Gmail's auto-dark
+             background). This nested white table is a second safety net for
+             any client that ignores that meta tag anyway. -->
         <table width="100%" border="0" cellspacing="0" cellpadding="0">
           <tr>
             <td align="center" bgcolor="#ffffff" class="header-td" style="background-color: #ffffff; padding: 50px 20px; border-bottom: 1px solid #f7f4ed;">
-              <img src="https://cureforever.in/cdn/shop/files/Cureforever_TM_Logo_1.png?v=1751527749&width=600" width="220" alt="CureForever" class="logo-img" style="display: block; border: 0;">
+              <table border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px;">
+                <tr>
+                  <td bgcolor="#ffffff" align="center" style="background-color: #ffffff; padding: 16px 24px; border-radius: 16px;">
+                    <img src="https://cureforever.in/cdn/shop/files/Cureforever_TM_Logo_1.png?v=1751527749&width=600" width="220" alt="CureForever" class="logo-img" style="display: block; border: 0; background-color: #ffffff;">
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
         </table>
