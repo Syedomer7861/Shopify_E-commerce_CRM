@@ -19,9 +19,9 @@ export async function POST(req: NextRequest) {
   // them - see the dead escalation code in api/webhooks/whatsapp/route.ts),
   // so they're accepted from the caller like rtoProbability rather than
   // selected from the DB.
-  const { taskId, mode, disposition, rtoProbability, sentiment, isUrgent } = await req.json();
+  const { taskId, mode, disposition, rtoProbability, sentiment, isUrgent, agentName } = await req.json();
 
-  if (!taskId || !["battle_script", "call_note"].includes(mode)) {
+  if (!taskId || !["battle_script", "call_note", "upsell"].includes(mode)) {
     return NextResponse.json({ error: "taskId and a valid mode are required" }, { status: 400 });
   }
 
@@ -40,6 +40,8 @@ export async function POST(req: NextRequest) {
     const firstName = (customer?.name || "there").split(" ")[0];
     const product = order?.line_items?.[0]?.name || "your order";
 
+    if (mode === "upsell") return await handleUpsell(supabase, order, product);
+
     const context = `
 Customer: ${customer?.name || "Unknown"} (segment: ${customer?.segment || "one_time"})
 Task type: ${task.task_type}
@@ -52,7 +54,7 @@ ${typeof rtoProbability === "number" ? `RTO risk: ${rtoProbability}%` : ""}
 
     const outputRules = "Output ONLY the final text itself - no quotes, no labels, no word counts, no draft numbers, no meta-commentary, no explanation of what you're doing.";
     const prompt = mode === "battle_script"
-      ? `You are a sales/retention coach for "CureForever", a premium wellness brand. Write ONE short spoken call-opening line (under 45 words) an agent can read verbatim to ${firstName} for this task. Match tone to sentiment/urgency. ${outputRules}\n\nContext:\n${context}`
+      ? `You are ${agentName || "an agent"}, a sales/retention rep for "CureForever", a premium wellness brand, about to call or WhatsApp ${firstName} about this task. Write ONE short, professional opening (under 45 words) that starts with a proper greeting introducing yourself by name and company - e.g. "Hello ${firstName === "there" ? "sir/ma'am" : firstName}, this is ${agentName || "[agent]"} calling from CureForever regarding your order..." - then gets to the point for this specific task. Professional and courteous tone, never casual or salesy-desperate. Match urgency/sentiment in word choice, not in dropping the greeting. ${outputRules}\n\nContext:\n${context}`
       : `You are logging a customer support call outcome for "CureForever". Write a short internal call note (1-2 sentences, under 40 words) describing what happened, consistent with a "${disposition || "general"}" outcome for ${firstName} regarding ${product}. ${outputRules}\n\nContext:\n${context}`;
 
     const result = await generateAiText(prompt);
@@ -63,4 +65,67 @@ ${typeof rtoProbability === "number" ? `RTO risk: ${rtoProbability}%` : ""}
     console.error("task-assist endpoint error:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
+}
+
+async function handleUpsell(supabase: any, order: any, currentProduct: string) {
+  const { data: catalog } = await supabase
+    .from("product_catalog")
+    .select("name, price, description, tags, product_type")
+    .eq("active", true)
+    .not("price", "is", null)
+    .order("name")
+    .limit(300);
+
+  if (!catalog || catalog.length === 0) {
+    return NextResponse.json({ suggestions: [], isMock: true, reason: "product catalog empty - run /api/cron/refresh-product-catalog" });
+  }
+
+  const cartNames = new Set(
+    (order?.line_items || []).map((i: any) => String(i.name || i.title || "").toLowerCase())
+  );
+  const candidates = catalog.filter((p: any) => !cartNames.has(p.name.toLowerCase()));
+
+  const catalogList = candidates
+    .map((p: any) => `- ${p.name} | Rs.${p.price} | ${p.product_type || ""} ${(p.tags || []).join(", ")} | ${(p.description || "").slice(0, 120)}`)
+    .join("\n");
+
+  const prompt = `You are a product-pairing expert for "CureForever", a wellness/supplement brand. A customer is buying: "${currentProduct}".
+
+Here is CureForever's REAL current product catalog (name | price | type/tags | description) - you may ONLY suggest products from this exact list, using the EXACT name and price shown:
+${catalogList}
+
+Pick 1-3 products from that list that genuinely complement "${currentProduct}" (real health/use-case synergy, not random). For each, give a short customer-facing reason and a natural one-line upsell script an agent could say. Keep reason and script each under 25 words.
+
+Your entire response must be nothing but the raw JSON array below - the first character must be [ and the last must be ]. No markdown fences, no preamble like "Here are...", no commentary before or after.
+[{"product_name":"...","reason":"...","script":"..."}]`;
+
+  const result = await generateAiText(prompt, 3000);
+  if (!result) return NextResponse.json({ suggestions: [], isMock: true });
+
+  let parsed: any[] = [];
+  try {
+    // Models routinely wrap the array in prose or ```json fences despite
+    // being told not to - pull out the first [...] block rather than
+    // trusting the whole response to be bare JSON.
+    const match = result.text.match(/\[[\s\S]*\]/);
+    parsed = JSON.parse(match ? match[0] : result.text);
+  } catch {
+    console.error("upsell: AI response wasn't valid JSON:", result.text.slice(0, 500));
+    return NextResponse.json({ suggestions: [], isMock: true, reason: "AI response wasn't valid JSON" });
+  }
+
+  // Never trust the model's price - resolve every suggestion back to the
+  // real catalog row by name so a hallucinated or drifted price/product can
+  // never reach an agent's screen.
+  const byName = new Map<string, any>(candidates.map((p: any) => [p.name.toLowerCase(), p]));
+  const suggestions = (Array.isArray(parsed) ? parsed : [])
+    .map((s: any) => {
+      const real = byName.get(String(s.product_name || "").toLowerCase());
+      if (!real) return null;
+      return { product_name: real.name, price: real.price, reason: s.reason || "", script: s.script || "" };
+    })
+    .filter(Boolean)
+    .slice(0, 3);
+
+  return NextResponse.json({ suggestions, isMock: false, provider: result.provider });
 }

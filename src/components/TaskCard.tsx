@@ -45,6 +45,7 @@ import { useRouter } from "next/navigation";
 import RTOClaimGenerator from "./RTOClaimGenerator";
 import { WhatsAppChat } from "./chat/WhatsAppChat";
 import ClickToCallModal from "./ClickToCallModal";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 
 interface TaskCardProps {
   task: Task & { customer: Customer; order?: Order; abandoned_cart?: AbandonedCart };
@@ -202,8 +203,10 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     }
   };
 
+  const { profile: currentAgentProfile } = useCurrentProfile();
   const [logistics, setLogistics] = useState<LogisticsRecommendation | null>(null);
   const [upsells, setUpsells] = useState<UpsellSuggestion[]>([]);
+  const [aiUpsellsLoaded, setAiUpsellsLoaded] = useState(false);
   const [aiScript, setAiScript] = useState<string | null>(null);
   const [aiScriptLoading, setAiScriptLoading] = useState(false);
 
@@ -233,7 +236,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     fetch("/api/ai/task-assist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ taskId: task.id, mode: "battle_script", rtoProbability: logistics?.rto_probability, sentiment: (task as any).sentiment, isUrgent: (task as any).is_urgent }),
+      body: JSON.stringify({ taskId: task.id, mode: "battle_script", rtoProbability: logistics?.rto_probability, sentiment: (task as any).sentiment, isUrgent: (task as any).is_urgent, agentName: currentAgentProfile?.name }),
     })
       .then(res => res.json())
       .then(data => { if (!cancelled && data.text) setAiScript(data.text); })
@@ -246,6 +249,24 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     // before its own .finally() can clear the flag - loading gets stuck true
     // forever). The guard above already reads their current values.
   }, [showDetail, task.id, logistics?.rto_probability]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Real AI upsell picks from the actual product_catalog (synced from
+  // Shopify, refreshed ~3x/month - see /api/cron/refresh-product-catalog),
+  // fetched once when the detail panel opens. `upsells` already holds the
+  // instant local rule-based fallback from the effect above; this only
+  // replaces it if the AI returns real, catalog-verified suggestions.
+  useEffect(() => {
+    if (!showDetail || aiUpsellsLoaded) return;
+    setAiUpsellsLoaded(true);
+    fetch("/api/ai/task-assist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId: task.id, mode: "upsell" }),
+    })
+      .then(res => res.json())
+      .then(data => { if (data.suggestions?.length > 0) setUpsells(data.suggestions); })
+      .catch(() => {});
+  }, [showDetail, task.id, aiUpsellsLoaded]);
 
   const abandonedCart = (Array.isArray(task.abandoned_cart) ? task.abandoned_cart[0] : task.abandoned_cart) as AbandonedCart | undefined;
   const order = (Array.isArray(task.order) ? task.order[0] : task.order) as Order | undefined;
