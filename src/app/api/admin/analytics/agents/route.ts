@@ -147,10 +147,18 @@ export async function GET(req: NextRequest) {
 
         dStats.clockOut = log.created_at;
 
-        if (stats.lastStatus && stats.lastTime) {
+        // Only accumulate the gap when the previous event and this one fall
+        // on the SAME IST calendar day. Without this, the first event of a
+        // new day (e.g. today's 10:15am login) computed its gap against
+        // whatever status the agent left off in YESTERDAY (e.g. "online" at
+        // 6:53pm) - the entire overnight gap (agent asleep, ~15+ hours) got
+        // added as "online" time to TODAY's bucket. Confirmed against real
+        // data: a 15h22m overnight gap plus a genuine ~3h34m trailing
+        // session summed to the exact "18:55" impossible total seen live.
+        if (stats.lastStatus && stats.lastTime && toISTDateKey(stats.lastTime) === dateKey) {
             const gap = currentTime - stats.lastTime;
             const diff = Math.max(0, gap / 1000);
-            
+
             const isProductive = ["online", "meeting", "training"].includes(stats.lastStatus);
             const isBreak = ["break", "lunch", "away"].includes(stats.lastStatus);
 
@@ -173,8 +181,14 @@ export async function GET(req: NextRequest) {
     // 5. Handle Trailing Open Sessions
     Object.values(agentStats).forEach(stats => {
         if (stats.lastStatus && stats.lastTime && stats.lastSeen) {
-            const now = stats.lastSeen; 
-            if (now > stats.lastTime) {
+            const now = stats.lastSeen;
+            // Same cross-day guard as the main loop above: if last_seen_at
+            // (a live heartbeat) landed on a LATER IST calendar day than the
+            // agent's last real attendance row - e.g. a stale profile whose
+            // heartbeat only ticked over much later, or a genuine
+            // past-midnight shift - the gap spans a day boundary and must
+            // not be credited to either day as one continuous session.
+            if (now > stats.lastTime && toISTDateKey(now) === toISTDateKey(stats.lastTime)) {
                 const gap = now - stats.lastTime;
                 const activeMs = Math.min(gap, 50400000); // 14 hour max trailing for long shifts
                 const diff = activeMs / 1000;
