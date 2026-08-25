@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   TrendingUp, Phone, MessageSquare, CheckCircle2, Clock, Coffee,
   Zap, Calendar, User, Loader2, ChevronDown, Download, FileSpreadsheet,
@@ -119,7 +119,15 @@ export default function PerformancePage() {
       });
   }, [canBrowseAgents, supabase]);
 
+  // Switching agent/preset fires a new fetch without cancelling the
+  // previous one - a slower earlier request (e.g. for the prior agent)
+  // could resolve AFTER a faster newer one and overwrite it with stale
+  // data. requestSeq guards against that: only the response matching the
+  // most recently issued request is allowed to setState.
+  const requestSeq = useRef(0);
+
   const fetchPerformance = useCallback(async () => {
+    const mySeq = ++requestSeq.current;
     const isDemo = document.cookie.includes("crm-demo-mode=true");
     if (isDemo) {
       setLoading(true);
@@ -153,6 +161,7 @@ export default function PerformancePage() {
     try {
       const res = await fetch(`/api/admin/analytics/agents?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&agentId=${targetAgentId}`);
       const json = await res.json();
+      if (mySeq !== requestSeq.current) return; // a newer request superseded this one
       if (json.success) {
         setSummary(json.data?.[0] || null);
         setDailyLogs(json.dailyLogs || []);
@@ -161,7 +170,7 @@ export default function PerformancePage() {
     } catch (e) {
       console.error("Performance fetch failed:", e);
     } finally {
-      setLoading(false);
+      if (mySeq === requestSeq.current) setLoading(false);
     }
   }, [preset, customStart, customEnd, selectedAgentId, canBrowseAgents, profile?.id]);
 
