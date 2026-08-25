@@ -180,6 +180,16 @@ export async function GET(req: NextRequest) {
                 if (dailyStats[dKey]) {
                     if (isProductive) dailyStats[dKey].onlineSeconds += diff;
                     else if (isBreak) dailyStats[dKey].breakSeconds += diff;
+                    // agent_attendance only gets one row per agent per day (an
+                    // "online" status insert), not periodic heartbeats - so
+                    // clockOut was set once at row-creation time (line ~119)
+                    // and never touched again. This trailing-session block is
+                    // what extends onlineSeconds/breakSeconds using the
+                    // agent's live last_seen_at, but it never extended
+                    // clockOut to match - so a still-active agent's ledger
+                    // row showed "Login/Logout" as the identical login
+                    // timestamp twice, forever, even hours into a real shift.
+                    dailyStats[dKey].clockOut = new Date(now).toISOString();
                 }
             }
         }
