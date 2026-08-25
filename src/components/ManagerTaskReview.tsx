@@ -12,6 +12,7 @@ import ShiprocketOrderView from "./ShiprocketOrderView";
 import NDRActionModal from "./NDRActionModal";
 import toast from "react-hot-toast";
 import type { Task, Customer, Order, AbandonedCart } from "@/types";
+import { SEGMENT_CONFIG } from "@/lib/utils";
 
 export default function ManagerTaskReview() {
   const supabase = useMemo(() => createClient(), []);
@@ -24,6 +25,13 @@ export default function ManagerTaskReview() {
   const [uzmaOnly, setUzmaOnly] = useState(false);
   const [typeFilter, setTypeFilter] = useState("all");
   const [outcomeFilter, setOutcomeFilter] = useState("all");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [minPriority, setMinPriority] = useState("");
+  const [segmentFilter, setSegmentFilter] = useState("all");
+  const [deliveryStatusFilter, setDeliveryStatusFilter] = useState("all");
+  const [courierFilter, setCourierFilter] = useState("");
   const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -110,7 +118,11 @@ export default function ManagerTaskReview() {
       if (agentFilter !== "all") query = query.eq("assigned_to", agentFilter);
       if (typeFilter !== "all") query = query.eq("task_type", typeFilter);
       if (outcomeFilter !== "all") query = query.eq("call_logs.outcome", outcomeFilter);
-      
+      if (segmentFilter !== "all") query = query.filter("customer.segment", "eq", segmentFilter);
+      if (minPriority) query = query.gte("priority_score", Number(minPriority));
+      if (dateFrom) query = query.gte("completed_at", `${dateFrom}T00:00:00`);
+      if (dateTo) query = query.lte("completed_at", `${dateTo}T23:59:59`);
+
       if (searchTerm) {
         query = query.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`, { foreignTable: 'customers' });
       }
@@ -137,7 +149,7 @@ export default function ManagerTaskReview() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, agentFilter, typeFilter, outcomeFilter, uzmaOnly, searchTerm, supabase, tasks.length]);
+  }, [currentPage, agentFilter, typeFilter, outcomeFilter, uzmaOnly, searchTerm, segmentFilter, minPriority, dateFrom, dateTo, supabase, tasks.length]);
 
   const fetchNdrOrders = useCallback(async (silent = false) => {
     const isDemo = document.cookie.includes("crm-demo-mode=true");
@@ -174,8 +186,15 @@ export default function ManagerTaskReview() {
       // three values in the list still matched real rows.
       let query = supabase
         .from("orders")
-        .select("*, customer:customers!inner(*)", { count: "exact" })
-        .in("delivery_status", ["rto", "failed", "out_for_delivery"]);
+        .select("*, customer:customers!inner(*)", { count: "exact" });
+
+      query = deliveryStatusFilter !== "all"
+        ? query.eq("delivery_status", deliveryStatusFilter)
+        : query.in("delivery_status", ["rto", "failed", "out_for_delivery"]);
+
+      if (courierFilter) query = query.ilike("courier_name", `%${courierFilter}%`);
+      if (dateFrom) query = query.gte("ordered_at", `${dateFrom}T00:00:00`);
+      if (dateTo) query = query.lte("ordered_at", `${dateTo}T23:59:59`);
 
       if (searchTerm) {
         // Pre-fetch customer IDs to avoid PostgREST cross-table OR errors
@@ -207,7 +226,7 @@ export default function ManagerTaskReview() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, supabase, ndrOrders.length]);
+  }, [currentPage, searchTerm, deliveryStatusFilter, courierFilter, dateFrom, dateTo, supabase, ndrOrders.length]);
 
   useEffect(() => {
     async function fetchAgents() {
@@ -224,11 +243,11 @@ export default function ManagerTaskReview() {
   useEffect(() => {
     if (viewMode === 'audit') fetchTasks();
     else fetchNdrOrders();
-  }, [currentPage, agentFilter, uzmaOnly, typeFilter, outcomeFilter, viewMode, searchTerm, fetchTasks, fetchNdrOrders]);
+  }, [currentPage, agentFilter, uzmaOnly, typeFilter, outcomeFilter, viewMode, searchTerm, segmentFilter, minPriority, dateFrom, dateTo, deliveryStatusFilter, courierFilter, fetchTasks, fetchNdrOrders]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [agentFilter, uzmaOnly, typeFilter, outcomeFilter, viewMode, searchTerm]);
+  }, [agentFilter, uzmaOnly, typeFilter, outcomeFilter, viewMode, searchTerm, segmentFilter, minPriority, dateFrom, dateTo, deliveryStatusFilter, courierFilter]);
 
   const handleProcess = async (taskId: string, action: 'approved' | 'rejected' | 'shiprocket_updated') => {
     setProcessing(taskId);
@@ -349,6 +368,94 @@ export default function ManagerTaskReview() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className={cn(
+            "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border",
+            showAdvanced || segmentFilter !== 'all' || minPriority || dateFrom || dateTo || deliveryStatusFilter !== 'all' || courierFilter
+              ? "bg-[#1c1c1c] text-[#f7f4ed] border-[#1c1c1c]"
+              : "bg-[#f7f4ed] text-[#5f5f5d]/60 border-[#eceae4] hover:border-[#1c1c1c]/40"
+          )}
+        >
+          Advanced Filters
+        </button>
+
+        {(segmentFilter !== 'all' || minPriority || dateFrom || dateTo || deliveryStatusFilter !== 'all' || courierFilter || searchTerm) && (
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setSegmentFilter('all');
+              setMinPriority('');
+              setDateFrom('');
+              setDateTo('');
+              setDeliveryStatusFilter('all');
+              setCourierFilter('');
+            }}
+            className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:underline px-2"
+          >
+            Reset Advanced Filters
+          </button>
+        )}
+      </div>
+
+      {showAdvanced && (
+        <div className="flex flex-wrap items-end gap-4 bg-[#f7f4ed] p-4 rounded-xl border border-[#eceae4]">
+          <div className="flex flex-col gap-1">
+            <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">
+              {viewMode === 'audit' ? 'Completed From' : 'Ordered From'}
+            </label>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+              className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">
+              {viewMode === 'audit' ? 'Completed To' : 'Ordered To'}
+            </label>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+              className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white" />
+          </div>
+
+          {viewMode === 'audit' ? (
+            <>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Min Priority</label>
+                <input type="number" placeholder="e.g. 100" value={minPriority} onChange={(e) => setMinPriority(e.target.value)}
+                  className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white w-28" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Customer Segment</label>
+                <select value={segmentFilter} onChange={(e) => setSegmentFilter(e.target.value)}
+                  className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white">
+                  <option value="all">All Segments</option>
+                  {Object.entries(SEGMENT_CONFIG).map(([key, cfg]) => (
+                    <option key={key} value={key}>{cfg.label}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Delivery Status</label>
+                <select value={deliveryStatusFilter} onChange={(e) => setDeliveryStatusFilter(e.target.value)}
+                  className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white">
+                  <option value="all">RTO / Failed / Out for Delivery</option>
+                  <option value="rto">RTO Only</option>
+                  <option value="failed">Failed (NDR) Only</option>
+                  <option value="out_for_delivery">Out for Delivery Only</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Courier</label>
+                <input type="text" placeholder="e.g. Delhivery" value={courierFilter} onChange={(e) => setCourierFilter(e.target.value)}
+                  className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white w-40" />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
         {viewMode === 'audit' ? (
           <>
             <div className="flex flex-wrap items-center gap-3 bg-[#eceae4]/40 p-2 rounded-xl border border-[#eceae4]">
@@ -404,18 +511,17 @@ export default function ManagerTaskReview() {
                 </select>
               </div>
 
-              {(agentFilter !== 'all' || uzmaOnly || typeFilter !== 'all' || outcomeFilter !== 'all' || searchTerm) && (
-                <button 
+              {(agentFilter !== 'all' || uzmaOnly || typeFilter !== 'all' || outcomeFilter !== 'all') && (
+                <button
                   onClick={() => {
                     setAgentFilter('all');
                     setUzmaOnly(false);
                     setTypeFilter('all');
                     setOutcomeFilter('all');
-                    setSearchTerm('');
                   }}
                   className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:underline px-2"
                 >
-                  Reset Filters
+                  Reset
                 </button>
               )}
             </div>
