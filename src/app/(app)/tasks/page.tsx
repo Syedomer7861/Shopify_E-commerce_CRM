@@ -71,6 +71,16 @@ export default function TasksPage() {
   const [agentFilter, setAgentFilter] = useState("all");
   const PAGE_SIZE = 20;
   const { profile, loading: profileLoading } = useCurrentProfile();
+  // useCurrentProfile hands back a new profile object on every auth token
+  // refresh, and live_state (the shift timer etc.) genuinely changes on
+  // every heartbeat - so `profile` churns constantly even when the fields
+  // that actually affect this page's query (id/role/segments/types) haven't
+  // moved. Depending on this stable key instead of `profile` itself keeps
+  // fetchTasks (and its mount effect) from tearing down and re-fetching on
+  // every heartbeat, which used to silently close whatever task card was open.
+  const profileKey = useMemo(() => (
+    profile ? JSON.stringify({ id: profile.id, role: profile.role, segs: profile.assigned_segments, types: profile.assigned_task_types }) : null
+  ), [profile]);
   const requestIdRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -399,7 +409,8 @@ export default function TasksPage() {
     setTasks(healedTasks);
     setCounts(c);
     setLoading(false);
-  }, [profile, debouncedSearch, typeFilter, agentFilter, dueStart, dueEnd, statusFilter, page, supabase, applyAgentFilters]);
+    // profileKey, not profile: see the comment on profileKey above.
+  }, [profileKey, debouncedSearch, typeFilter, agentFilter, dueStart, dueEnd, statusFilter, page, supabase, applyAgentFilters]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (profileLoading) return; // Wait for the security profile to establish identity before fetching tasks
@@ -446,7 +457,8 @@ export default function TasksPage() {
       clearTimeout(refreshTimeout);
       supabase.removeChannel(channel);
     };
-  }, [profile, profileLoading, fetchTasks, supabase]);
+    // profileKey, not profile: see the comment on profileKey above.
+  }, [profileKey, profileLoading, fetchTasks, supabase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleReassign(id: string, newOwnerId: string) {
     if (!newOwnerId) return;

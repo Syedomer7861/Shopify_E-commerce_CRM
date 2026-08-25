@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireInternal } from "@/lib/auth-utils";
 import { getServiceSupabase } from "@/lib/supabase";
+import { generateAiText } from "@/lib/ai";
 
 export async function POST(req: NextRequest) {
   const unauthorized = await requireInternal(req);
@@ -34,12 +35,8 @@ export async function POST(req: NextRequest) {
     let suggestion = "";
     let isMock = true;
 
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    if (apiKey) {
-      try {
-        // Compile Context for AI
-        const context = `
+    // Compile Context for AI
+    const context = `
 Customer Profile:
 - Name: ${customer.name}
 - Segment: ${segment}
@@ -59,7 +56,7 @@ Conversation/Task Context:
 - Customer Last Message: "${lastMessage || "None (Initiating conversation)"}"
 `;
 
-        const systemPrompt = `
+    const systemPrompt = `
 You are an expert customer support agent for "CureForever", a premium wellness, health, and supplement brand.
 Generate a highly personalized, warm, helpful, and professional response to the customer based on the provided context.
 
@@ -73,47 +70,10 @@ Guidelines:
 7. Use 1-2 positive emojis to increase engagement (e.g. 👋, 🌿, 💊, 🛒, ✅) naturally, matching the CureForever brand style.
 `;
 
-        // Direct fetch call to Gemini API (dependency-free)
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  role: "user",
-                  parts: [{ text: `${systemPrompt}\n\nContext:\n${context}` }],
-                },
-              ],
-              generationConfig: {
-                maxOutputTokens: 600,
-                temperature: 0.7,
-              },
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          const errText = await response.text();
-          console.error("Gemini API Error Response:", errText);
-          throw new Error(`Gemini API returned status ${response.status}`);
-        }
-
-        const data = await response.json();
-        const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        
-        if (generatedText && generatedText.trim()) {
-          suggestion = generatedText.trim().replace(/^["']|["']$/g, ''); // strip outer quotes if any
-          isMock = false;
-        }
-      } catch (geminiError) {
-        console.error("Error calling Gemini API, falling back to rule-based:", geminiError);
-      }
-    } else {
-      console.warn("GEMINI_API_KEY is not defined. Falling back to local rule-based mock responses. Get a free API key at https://aistudio.google.com/");
+    const result = await generateAiText(`${systemPrompt}\n\nContext:\n${context}`);
+    if (result) {
+      suggestion = result.text;
+      isMock = false;
     }
 
     // Fallback rule-based logic

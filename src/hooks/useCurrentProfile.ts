@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase";
 import type { Profile } from "@/types";
 import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
@@ -9,6 +9,20 @@ export function useCurrentProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = useMemo(() => createClient(), []);
+  // onAuthStateChange fires on every silent token refresh (and again with
+  // INITIAL_SESSION right after subscribing), each time re-querying the
+  // profile row and building a brand-new object. Every page that depends on
+  // `profile` by reference (e.g. Tasks' data-fetch effect) was tearing down
+  // and re-running on each of those - closing whatever modal was open -
+  // even though the actual profile data hadn't changed. Only publish a new
+  // reference when the content actually differs.
+  const lastSerialized = useRef<string | null>(null);
+  const publishProfile = (next: Profile | null) => {
+    const serialized = JSON.stringify(next);
+    if (serialized === lastSerialized.current) return;
+    lastSerialized.current = serialized;
+    setProfile(next);
+  };
 
   useEffect(() => {
     let active = true;
@@ -19,7 +33,7 @@ export function useCurrentProfile() {
       // Check for Demo Mode first
       const isDemo = document.cookie.includes("crm-demo-mode=true");
       if (isDemo) {
-        setProfile({
+        publishProfile({
           id: "demo-presenter-id",
           email: "demo@presentation.com",
           name: "Demo Presenter",
@@ -46,6 +60,7 @@ export function useCurrentProfile() {
 
       if (!user) {
         if (active) {
+          lastSerialized.current = null;
           setProfile(null);
           setLoading(false);
         }
@@ -73,7 +88,7 @@ export function useCurrentProfile() {
           return;
         }
 
-        setProfile(finalProfile);
+        publishProfile(finalProfile);
         setLoading(false);
       }
     }

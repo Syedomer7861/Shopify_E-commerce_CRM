@@ -204,6 +204,8 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
   const [logistics, setLogistics] = useState<LogisticsRecommendation | null>(null);
   const [upsells, setUpsells] = useState<UpsellSuggestion[]>([]);
+  const [aiScript, setAiScript] = useState<string | null>(null);
+  const [aiScriptLoading, setAiScriptLoading] = useState(false);
 
   useEffect(() => {
     async function fetchIntelligence() {
@@ -220,6 +222,30 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     }
     fetchIntelligence();
   }, [task, supabase]);
+
+  // Real AI battle script, fetched once when the detail panel opens.
+  // aiScript stays null (falls back to the static template below) if no
+  // provider is configured or all three fail.
+  useEffect(() => {
+    if (!showDetail || aiScript || aiScriptLoading) return;
+    let cancelled = false;
+    setAiScriptLoading(true);
+    fetch("/api/ai/task-assist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId: task.id, mode: "battle_script", rtoProbability: logistics?.rto_probability, sentiment: (task as any).sentiment, isUrgent: (task as any).is_urgent }),
+    })
+      .then(res => res.json())
+      .then(data => { if (!cancelled && data.text) setAiScript(data.text); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setAiScriptLoading(false); });
+    return () => { cancelled = true; };
+    // aiScript/aiScriptLoading deliberately excluded: this effect sets both,
+    // so depending on them creates a self-cancelling race (setting loading
+    // re-runs the effect, whose cleanup marks the in-flight fetch cancelled
+    // before its own .finally() can clear the flag - loading gets stuck true
+    // forever). The guard above already reads their current values.
+  }, [showDetail, task.id, logistics?.rto_probability]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const abandonedCart = (Array.isArray(task.abandoned_cart) ? task.abandoned_cart[0] : task.abandoned_cart) as AbandonedCart | undefined;
   const order = (Array.isArray(task.order) ? task.order[0] : task.order) as Order | undefined;
@@ -266,11 +292,33 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
   useEffect(() => {
     const isNoteEmpty = !note || note.length < 10;
-    if (isNoteEmpty && disposition && disposition !== "interested") {
-      const suggestion = generateAiSuggestion(task.task_type, disposition, task.customer.name, product);
-      if (suggestion) setNote(suggestion);
-    }
-  }, [disposition, task.task_type, task.customer.name, product, note]);
+    if (!isNoteEmpty || !disposition || disposition === "interested") return;
+
+    // Instant local template so the field is never empty while the real
+    // AI call is in flight.
+    const fallback = generateAiSuggestion(task.task_type, disposition, task.customer.name, product);
+    if (!fallback) return;
+    setNote(fallback);
+
+    // No cancellation flag here on purpose: `note` is a dependency (so
+    // clearing it re-triggers a fresh suggestion), but this effect also
+    // sets `note` - a cleanup-driven cancelled flag would race with that
+    // re-render and always mark the in-flight fetch cancelled before its
+    // result could land. The content-equality check below ("still showing
+    // the fallback I set") is what actually guards against clobbering a
+    // newer fallback or a manual edit, and it's race-proof either way.
+    fetch("/api/ai/task-assist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId: task.id, mode: "call_note", disposition, sentiment: (task as any).sentiment, isUrgent: (task as any).is_urgent }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.text) return;
+        setNote(current => (current === fallback ? data.text : current));
+      })
+      .catch(() => {});
+  }, [disposition, task.task_type, task.customer.name, task.id, product, note]);
   
   const rawItems = order?.line_items || abandonedCart?.line_items || [];
   const metaItem = rawItems.find((i: any) => i.__metadata);
@@ -760,6 +808,19 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     return { successRate, riskLevel };
   }, [logistics]);
 
+  // Real AI script when available, otherwise the static template - used
+  // everywhere the card offers a "battle script" (detail panel, WA/Email presets).
+  const effectiveScript = aiScript || getBattleScript(
+    task.task_type,
+    task.customer.segment,
+    task.customer.name.split(' ')[0],
+    product,
+    order?.delivery_status,
+    (task as any).sentiment,
+    (task as any).is_urgent,
+    logistics?.rto_probability
+  );
+
   return (
     <>
       <div 
@@ -1168,32 +1229,13 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                     
                     <div className="bg-[#0b0b0b]/60 border border-[#222] p-4 rounded-xl mb-4 flex-1 flex flex-col justify-center">
                       <p className="text-xs font-bold leading-relaxed italic text-gray-200">
-                        &ldquo;{getBattleScript(
-                          task.task_type, 
-                          task.customer.segment, 
-                          task.customer.name.split(' ')[0], 
-                          product,
-                          order?.delivery_status,
-                          (task as any).sentiment,
-                          (task as any).is_urgent,
-                          logistics?.rto_probability
-                        )}&rdquo;
+                        {aiScriptLoading && !aiScript ? "Generating personalized script..." : <>&ldquo;{effectiveScript}&rdquo;</>}
                       </p>
                     </div>
 
-                    <button 
+                    <button
                       onClick={() => {
-                        const script = getBattleScript(
-                          task.task_type, 
-                          task.customer.segment, 
-                          task.customer.name.split(' ')[0], 
-                          product, 
-                          order?.delivery_status,
-                          (task as any).sentiment,
-                          (task as any).is_urgent,
-                          logistics?.rto_probability
-                        );
-                        navigator.clipboard.writeText(script);
+                        navigator.clipboard.writeText(effectiveScript);
                         toast.success("Script copied!");
                       }}
                       className="w-full text-[9px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 hover:scale-[1.01] active:scale-[0.99] border border-white/5 px-3 py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
@@ -1322,21 +1364,9 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
             <button 
               className={cn(
                 "text-[10px] px-2.5 py-1 rounded bg-blue-600 text-white font-black uppercase tracking-wider hover:bg-blue-700 transition-all flex items-center gap-1 shadow-sm",
-                waMessage === getBattleScript(task.task_type, task.customer.segment, task.customer.name.split(' ')[0], product, order?.delivery_status, (task as any).sentiment, (task as any).is_urgent, logistics?.rto_probability) && "ring-2 ring-blue-400"
-              )} 
-              onClick={() => {
-                const msg = getBattleScript(
-                  task.task_type, 
-                  task.customer.segment, 
-                  task.customer.name.split(' ')[0], 
-                  product, 
-                  order?.delivery_status,
-                  (task as any).sentiment,
-                  (task as any).is_urgent,
-                  logistics?.rto_probability
-                );
-                setWaMessage(msg);
-              }}
+                waMessage === effectiveScript && "ring-2 ring-blue-400"
+              )}
+              onClick={() => setWaMessage(effectiveScript)}
             >
               🚀 AI Tactical Script
             </button>
@@ -1421,20 +1451,10 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
             <button 
               className={cn(
                 "text-[10px] px-2.5 py-1 rounded bg-blue-600 text-white font-black uppercase tracking-wider hover:bg-blue-700 transition-all flex items-center gap-1 shadow-sm",
-                emailMessage === getBattleScript(task.task_type, task.customer.segment, task.customer.name.split(' ')[0], product, order?.delivery_status, (task as any).sentiment, (task as any).is_urgent, logistics?.rto_probability) && "ring-2 ring-blue-400"
-              )} 
+                emailMessage === effectiveScript && "ring-2 ring-blue-400"
+              )}
               onClick={() => {
-                const msg = getBattleScript(
-                  task.task_type, 
-                  task.customer.segment, 
-                  task.customer.name.split(' ')[0], 
-                  product, 
-                  order?.delivery_status,
-                  (task as any).sentiment,
-                  (task as any).is_urgent,
-                  logistics?.rto_probability
-                );
-                setEmailMessage(msg);
+                setEmailMessage(effectiveScript);
                 setEmailSubject(`AI Tactical Script - CureForever`);
               }}
             >
