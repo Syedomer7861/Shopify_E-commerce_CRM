@@ -1372,6 +1372,15 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
       <Modal open={waModal} onClose={() => { setWaModal(false); setWaFile(null); }} title={`WhatsApp — ${task.customer.name}`}
         footer={<>
           <button className="btn-secondary" onClick={() => { setWaModal(false); setWaFile(null); }}>Cancel</button>
+          <button
+            className="btn-secondary"
+            onClick={() => {
+              const digits = task.customer.phone.replace(/\D/g, "").slice(-10);
+              window.open(`https://wa.me/91${digits}?text=${encodeURIComponent(waMessage)}`, "_blank");
+            }}
+          >
+            Open WhatsApp
+          </button>
           <button className="btn-primary" onClick={handleSendWa} disabled={sendingWa}>
             {sendingWa ? "Sending..." : "Send via Bridge"}
           </button>
