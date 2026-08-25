@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       await sendGmail({
         to: email,
         subject,
-        body: message.replace(/\n/g, '<br/>'),
+        body: message, // sendGmail builds both the plain-text and HTML parts from this
         attachments
       });
 

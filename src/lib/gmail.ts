@@ -47,16 +47,26 @@ export async function sendGmail({
   const auth = await getGmailClient();
   const gmail = google.gmail({ version: "v1", auth });
 
-  const boundary = "__CUREFOREVER_BOUNDARY__";
+  // An HTML-only message (no text/plain alternative) is a real spam-score
+  // factor - most filters treat "html with no plain fallback" as a signal.
+  // Structure: multipart/mixed (attachments) wrapping multipart/alternative
+  // (plain + html), which is the conventional nesting mail clients expect;
+  // multipart/alternative alone when there's nothing to attach.
+  const mixedBoundary = "__CUREFOREVER_MIXED__";
+  const altBoundary = "__CUREFOREVER_ALT__";
   const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
+  const plainText = body; // caller passes the raw, unescaped message text
+  const htmlBody = body.replace(/\n/g, '<br/>');
 
-  let message = [
-    `To: ${to}`,
-    `Subject: ${utf8Subject}`,
+  const alternativePart = [
+    `--${altBoundary}`,
+    'Content-Type: text/plain; charset=utf-8',
     'MIME-Version: 1.0',
-    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    'Content-Transfer-Encoding: 7bit',
     '',
-    `--${boundary}`,
+    plainText,
+    '',
+    `--${altBoundary}`,
     'Content-Type: text/html; charset=utf-8',
     'MIME-Version: 1.0',
     'Content-Transfer-Encoding: 7bit',
@@ -166,7 +176,7 @@ export async function sendGmail({
         <div class="content">
           <div class="status-badge">Official Communication</div>
           <div style="margin-bottom: 30px;">
-            ${body}
+            ${htmlBody}
           </div>
           
           <div class="signature">
@@ -185,22 +195,49 @@ export async function sendGmail({
     </body>
     </html>`,
     '',
+    `--${altBoundary}--`,
   ].join('\r\n');
 
-  for (const attachment of attachments) {
-    message += [
-      `--${boundary}`,
-      `Content-Type: ${attachment.contentType}; name="${attachment.filename}"`,
+  let message: string;
+  if (attachments.length === 0) {
+    message = [
+      `To: ${to}`,
+      `Subject: ${utf8Subject}`,
       'MIME-Version: 1.0',
-      'Content-Transfer-Encoding: base64',
-      `Content-Disposition: attachment; filename="${attachment.filename}"`,
+      `Content-Type: multipart/alternative; boundary="${altBoundary}"`,
       '',
-      attachment.content,
+      alternativePart,
+    ].join('\r\n');
+  } else {
+    let mixed = [
+      `To: ${to}`,
+      `Subject: ${utf8Subject}`,
+      'MIME-Version: 1.0',
+      `Content-Type: multipart/mixed; boundary="${mixedBoundary}"`,
+      '',
+      `--${mixedBoundary}`,
+      `Content-Type: multipart/alternative; boundary="${altBoundary}"`,
+      '',
+      alternativePart,
       '',
     ].join('\r\n');
-  }
 
-  message += `--${boundary}--`;
+    for (const attachment of attachments) {
+      mixed += [
+        `--${mixedBoundary}`,
+        `Content-Type: ${attachment.contentType}; name="${attachment.filename}"`,
+        'MIME-Version: 1.0',
+        'Content-Transfer-Encoding: base64',
+        `Content-Disposition: attachment; filename="${attachment.filename}"`,
+        '',
+        attachment.content,
+        '',
+      ].join('\r\n');
+    }
+
+    mixed += `--${mixedBoundary}--`;
+    message = mixed;
+  }
 
   // The body needs to be base64url encoded.
   const encodedMessage = Buffer.from(message)
