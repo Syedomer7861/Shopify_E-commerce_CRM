@@ -218,7 +218,7 @@ export function Modal({
 }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[#1c1c1c]/40 backdrop-blur-[2px] transition-all" onClick={onClose} />
       <div className={cn("relative bg-[#f7f4ed] rounded-xl shadow-2xl w-full animate-slide-up border border-[#eceae4]", maxWidth)}>
         <div className="px-6 py-5 border-b border-[#eceae4] flex items-center justify-between">
