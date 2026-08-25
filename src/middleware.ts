@@ -77,7 +77,12 @@ export async function middleware(request: NextRequest) {
   // instead, regardless of role.
   if (user && isLoginPage) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    return NextResponse.redirect(new URL(profile?.role === 'manager' ? '/manager' : '/dashboard', request.url))
+    // Matches src/app/page.tsx and login/page.tsx's own role routing exactly.
+    const landingPage = profile?.role === 'manager' ? '/manager'
+      : profile?.role === 'admin' ? '/my-hub'
+      : profile?.role === 'hr' ? '/hr'
+      : '/dashboard'
+    return NextResponse.redirect(new URL(landingPage, request.url))
   }
 
   return response

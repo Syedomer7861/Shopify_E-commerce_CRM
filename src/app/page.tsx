@@ -15,6 +15,8 @@ export default function Home() {
           router.replace("/manager");
         } else if (profile.role === "admin") {
           router.replace("/my-hub");
+        } else if (profile.role === "hr") {
+          router.replace("/hr");
         } else {
           router.replace("/dashboard");
         }
