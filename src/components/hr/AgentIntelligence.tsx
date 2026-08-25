@@ -188,9 +188,8 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
           label="Active Strength" 
           value={stats.onlineCount} 
           icon={UserCheck} 
-          sub="Agents currently online" 
+          sub="Agents currently online"
           accent="text-emerald-600"
-          trend="+12%"
         />
         <MetricCard 
           label="Cumulative Tasks" 

@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireInternal } from "@/lib/auth-utils";
+import { requireInternal, hasInternalSecret, getAuthenticatedSession } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
+
+  // The leaves RLS policies already block a plain agent's UPDATE here (no
+  // agent-level UPDATE policy exists, only admin/hr's), so this could never
+  // actually approve/reject someone else's leave - but a non-privileged
+  // caller still got back {success:true} for a write that silently affected
+  // 0 rows. Checking the role explicitly makes the response honest.
+  if (!hasInternalSecret(req)) {
+    const { profile } = await getAuthenticatedSession();
+    if (profile?.role !== "admin" && profile?.role !== "hr") {
+      return NextResponse.json({ error: "Forbidden: Admin or HR access required" }, { status: 403 });
+    }
+  }
 
   const supabase = createServerClient();
 

@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireInternal } from "@/lib/auth-utils";
+import { requireInternal, hasInternalSecret, getAuthenticatedSession } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
+
+  // requireInternal only checks "logged in or has a cron secret" - this
+  // route is the HR Dashboard's live-floor feed and returns full profiles
+  // rows (including monthly_salary/emergency_contact) plus every leave
+  // request's reason text. Only the callers who legitimately land here
+  // (the HR page, admin/hr only) should get it.
+  if (!hasInternalSecret(req)) {
+    const { profile } = await getAuthenticatedSession();
+    if (profile?.role !== "admin" && profile?.role !== "hr") {
+      return NextResponse.json({ error: "Forbidden: Admin or HR access required" }, { status: 403 });
+    }
+  }
 
   const supabase = createServerClient();
 

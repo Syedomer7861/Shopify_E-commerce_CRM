@@ -51,7 +51,7 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
       rating: Number(r.rating) || 0,
       feedback: r.feedback || "",
       status: r.status as ReviewStatus,
-      date: r.reviewed_at?.split("T")[0] || ""
+      date: r.created_at?.split("T")[0] || ""
     })));
     setTraining(dbAssignments.map(t => ({
       id: t.id,

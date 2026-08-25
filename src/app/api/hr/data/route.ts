@@ -1,12 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireInternal, hasInternalSecret, getAuthenticatedSession } from "@/lib/auth-utils";
-import { createServerClient } from "@/lib/supabase";
+import { createServerClient, createAdminClient } from "@/lib/supabase";
 import { computeAutoAttendance } from "@/lib/attendance-engine";
 import { computeBenchmark } from "@/lib/hr-benchmark";
 
 export async function GET(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
+
+  // requireInternal only checks "logged in or has a cron secret" - this
+  // returns salary_revisions, expenses, performance reviews, grievances,
+  // and full profiles rows (which include monthly_salary/emergency_contact,
+  // see 20260423_hr_suite_sync.sql) to anyone. POST already got this check
+  // when its mutations were hardened; GET was missed.
+  if (!hasInternalSecret(req)) {
+    const { profile } = await getAuthenticatedSession();
+    if (profile?.role !== "admin" && profile?.role !== "hr") {
+      return NextResponse.json({ error: "Forbidden: Admin or HR access required" }, { status: 403 });
+    }
+  }
 
   const supabase = createServerClient();
 
@@ -305,13 +317,22 @@ export async function POST(req: NextRequest) {
     }
 
     if (type === "employee") {
+      // The Auth Admin API (listUsers/createUser/deleteUser below) requires
+      // the service-role key - `supabase` here is createServerClient(),
+      // which in a real request resolves to the anon key + caller's own
+      // session cookie (see src/lib/supabase.ts), not service role. Every
+      // one of these calls was rejected by Supabase Auth: Add Employee
+      // failed outright, and Delete Employee silently never revoked the
+      // ex-employee's real login (the error was caught and only logged).
+      const adminAuth = createAdminClient();
+
       if (action === "insert") {
         const { email, name, role, designation, ...profileData } = data;
 
         let authUserId: string | null = null;
 
         // ── Step 1: Check if auth user already exists ────────────────
-        const { data: existingUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+        const { data: existingUsers } = await adminAuth.auth.admin.listUsers({ perPage: 1000 });
         const existingAuthUser = existingUsers?.users?.find(
           (u: any) => u.email?.toLowerCase() === email?.toLowerCase()
         );
@@ -322,7 +343,7 @@ export async function POST(req: NextRequest) {
           console.log(`[HR] Auth user for ${email} already exists (${authUserId}), reusing.`);
         } else {
           // ── Step 2: Create new auth user ─────────────────────────────
-          const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          const { data: authData, error: authError } = await adminAuth.auth.admin.createUser({
             email,
             password: process.env.HR_EMPLOYEE_DEFAULT_KEY || ["Welcome", "@", "123"].join(""),
             email_confirm: true,
@@ -342,7 +363,7 @@ export async function POST(req: NextRequest) {
               // ── Recovery: trigger crashed but auth user WAS created ──
               // Wait a moment then find the user by email
               await new Promise(r => setTimeout(r, 500));
-              const { data: retryList } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+              const { data: retryList } = await adminAuth.auth.admin.listUsers({ perPage: 1000 });
               const recoveredUser = retryList?.users?.find(
                 (u: any) => u.email?.toLowerCase() === email?.toLowerCase()
               );
@@ -425,7 +446,7 @@ export async function POST(req: NextRequest) {
         if (profileError) throw profileError;
 
         // 2. Delete Auth User to revoke access permanently
-        const { error: authError } = await supabase.auth.admin.deleteUser(id);
+        const { error: authError } = await adminAuth.auth.admin.deleteUser(id);
         if (authError) {
           console.error("Auth Deletion Error:", authError);
           // Don't throw, we already deleted the profile so the user is functionally gone
