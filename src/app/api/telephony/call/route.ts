@@ -3,6 +3,30 @@ import { rateLimit } from "@/lib/rate-limit";
 import { requireInternal } from "@/lib/auth-utils";
 import { createAdminClient } from "@/lib/supabase";
 
+// Every raw_call_logs row inserted here used to omit agent_id entirely, and
+// nothing on this route (or elsewhere) ever transitions these rows to
+// "completed" - the /api/calls/webhook "ended" event only closes rows it
+// can match by agent_id, which was always null here. Every click-to-call
+// via this route left a permanent "on call" ghost with no owner and no way
+// to ever close it (found live: a phantom call from 3 months ago still
+// showing as active in CallMonitor.tsx). Clearing any stale in_progress
+// row for this agent before inserting the new one - same pattern the
+// webhook route already uses on its "started" event - keeps at most one
+// live entry per agent instead of accumulating orphans forever.
+async function logOutboundCall(supabase: ReturnType<typeof createAdminClient>, agentId: string | null, customerPhone: string, taskId?: string | null) {
+  if (agentId) {
+    await supabase.from("raw_call_logs").delete().eq("agent_id", agentId).eq("status", "in_progress");
+  }
+  await supabase.from("raw_call_logs").insert({
+    agent_id: agentId,
+    customer_phone: customerPhone,
+    task_id: taskId || null,
+    status: "in_progress",
+    start_time: new Date().toISOString(),
+    recording_url: null
+  });
+}
+
 export async function POST(req: Request) {
   const limited = rateLimit(req, "outbound-call", 30, 60000);
   if (limited) return limited;
@@ -47,9 +71,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "No cloud telephony provider is configured in Settings" }, { status: 400 });
     }
 
-    // 3. Resolve Agent Phone Number
+    // 3. Resolve Agent Phone Number (and identity, for raw_call_logs below)
     let agentPhone = agentPhoneOverride;
-    
+    let agentId: string | null = null;
+
     if (!agentPhone) {
       // In a real session, we can verify the agent using user token
       // For now, let's try to get current user from session
@@ -67,19 +92,21 @@ export async function POST(req: Request) {
         // Since we are server-side, let's query the last active profile or default to caller setting
         const { data: lastProfile } = await supabase
           .from("profiles")
-          .select("phone")
+          .select("id, phone")
           .eq("role", "agent")
           .eq("is_active", true)
           .limit(1)
           .maybeSingle();
         agentPhone = lastProfile?.phone;
+        agentId = lastProfile?.id || null;
       } else {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("phone")
+          .select("id, phone")
           .eq("id", userId)
           .maybeSingle();
         agentPhone = profile?.phone;
+        agentId = profile?.id || null;
       }
     }
 
@@ -101,12 +128,7 @@ export async function POST(req: Request) {
     if (provider === "demo") {
       // Log Demo Call
       try {
-        await supabase.from("raw_call_logs").insert({
-          customer_phone: finalCustomerPhone,
-          task_id: taskId || null,
-          status: "in_progress",
-          recording_url: null
-        });
+        await logOutboundCall(supabase, agentId, finalCustomerPhone, taskId);
       } catch (err) {
         console.error("Failed to log Demo call:", err);
       }
@@ -151,12 +173,7 @@ export async function POST(req: Request) {
 
       // 5. Audit Log standard
       try {
-        await supabase.from("raw_call_logs").insert({
-          customer_phone: finalCustomerPhone,
-          task_id: taskId || null,
-          status: "in_progress",
-          recording_url: null
-        });
+        await logOutboundCall(supabase, agentId, finalCustomerPhone, taskId);
       } catch (err) {
         console.error("Failed to log click-to-call in raw_call_logs:", err);
       }
@@ -194,12 +211,7 @@ export async function POST(req: Request) {
 
       // Log Exotel Call
       try {
-        await supabase.from("raw_call_logs").insert({
-          customer_phone: finalCustomerPhone,
-          task_id: taskId || null,
-          status: "in_progress",
-          recording_url: null
-        });
+        await logOutboundCall(supabase, agentId, finalCustomerPhone, taskId);
       } catch (err) {
         console.error("Failed to log Exotel call:", err);
       }
