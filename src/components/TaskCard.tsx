@@ -224,7 +224,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     }
   };
 
-  const { profile: currentAgentProfile } = useCurrentProfile();
+  const { profile: currentAgentProfile, loading: agentProfileLoading } = useCurrentProfile();
   const [logistics, setLogistics] = useState<LogisticsRecommendation | null>(null);
   const [upsells, setUpsells] = useState<UpsellSuggestion[]>([]);
   const [aiUpsellsLoaded, setAiUpsellsLoaded] = useState(false);
@@ -249,15 +249,18 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
   // Real AI battle script, fetched once when the detail panel opens.
   // aiScript stays null (falls back to the static template below) if no
-  // provider is configured or all three fail.
+  // provider is configured or all three fail. Waits for the agent's own
+  // profile to finish loading first - firing before it resolved sent
+  // agentName as undefined, and the model would invent a fake name (e.g.
+  // "Alex") to fill the greeting rather than leave it blank.
   useEffect(() => {
-    if (!showDetail || aiScript || aiScriptLoading) return;
+    if (!showDetail || aiScript || aiScriptLoading || agentProfileLoading) return;
     let cancelled = false;
     setAiScriptLoading(true);
     fetch("/api/ai/task-assist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ taskId: task.id, mode: "battle_script", rtoProbability: logistics?.rto_probability, sentiment: (task as any).sentiment, isUrgent: (task as any).is_urgent, agentName: currentAgentProfile?.name }),
+      body: JSON.stringify({ taskId: task.id, mode: "battle_script", rtoProbability: logistics?.rto_probability, sentiment: (task as any).sentiment, isUrgent: (task as any).is_urgent, agentName: currentAgentProfile?.name, agentId: currentAgentProfile?.id }),
     })
       .then(res => res.json())
       .then(data => { if (!cancelled && data.text) setAiScript(data.text); })
@@ -269,7 +272,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     // re-runs the effect, whose cleanup marks the in-flight fetch cancelled
     // before its own .finally() can clear the flag - loading gets stuck true
     // forever). The guard above already reads their current values.
-  }, [showDetail, task.id, logistics?.rto_probability]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showDetail, task.id, logistics?.rto_probability, agentProfileLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Real AI upsell picks from the actual product_catalog (synced from
   // Shopify, refreshed ~3x/month - see /api/cron/refresh-product-catalog),

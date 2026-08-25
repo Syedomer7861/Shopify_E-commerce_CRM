@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   // them - see the dead escalation code in api/webhooks/whatsapp/route.ts),
   // so they're accepted from the caller like rtoProbability rather than
   // selected from the DB.
-  const { taskId, mode, disposition, rtoProbability, sentiment, isUrgent, agentName } = await req.json();
+  const { taskId, mode, disposition, rtoProbability, sentiment, isUrgent, agentName, agentId } = await req.json();
 
   if (!taskId || !["battle_script", "call_note", "upsell"].includes(mode)) {
     return NextResponse.json({ error: "taskId and a valid mode are required" }, { status: 400 });
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   try {
     const { data: task, error: taskErr } = await supabase
       .from("tasks")
-      .select("task_type, customer:customers!inner(name, segment), order:orders(order_number, total_price, delivery_status, line_items)")
+      .select("task_type, metadata, customer:customers!inner(name, segment), order:orders(order_number, total_price, delivery_status, line_items)")
       .eq("id", taskId)
       .maybeSingle();
 
@@ -39,8 +39,18 @@ export async function POST(req: NextRequest) {
     const order = Array.isArray(task.order) ? task.order[0] : task.order;
     const firstName = (customer?.name || "there").split(" ")[0];
     const product = order?.line_items?.[0]?.name || "your order";
+    const aiCache = task.metadata?.ai_cache || {};
 
-    if (mode === "upsell") return await handleUpsell(supabase, order, product);
+    if (mode === "upsell") return await handleUpsell(supabase, taskId, task.metadata, aiCache, order, product);
+
+    // Battle script is cached per (task, agent) - the greeting names the
+    // calling agent, so a cached script only reuses cleanly for the same
+    // agent reopening the same task, not for a different agent. This is
+    // what turns a repeat open of the same task from a several-second AI
+    // call into an instant response.
+    if (mode === "battle_script" && aiCache.battle_script && aiCache.battle_script_agent_id === agentId) {
+      return NextResponse.json({ text: aiCache.battle_script, isMock: false, cached: true });
+    }
 
     const context = `
 Customer: ${customer?.name || "Unknown"} (segment: ${customer?.segment || "one_time"})
@@ -53,12 +63,21 @@ ${typeof rtoProbability === "number" ? `RTO risk: ${rtoProbability}%` : ""}
 `;
 
     const outputRules = "Output ONLY the final text itself - no quotes, no labels, no word counts, no draft numbers, no meta-commentary, no explanation of what you're doing.";
+    const greetingInstruction = agentName
+      ? `Start with a proper greeting introducing yourself by name and company - e.g. "Hello ${firstName === "there" ? "sir/ma'am" : firstName}, this is ${agentName} calling from CureForever regarding your order..."`
+      : `No agent name was given - do NOT invent one. Start with a proper greeting introducing yourself as a member of the CureForever team (no personal name), e.g. "Hello ${firstName === "there" ? "sir/ma'am" : firstName}, this is the CureForever team reaching out regarding your order..."`;
     const prompt = mode === "battle_script"
-      ? `You are ${agentName || "an agent"}, a sales/retention rep for "CureForever", a premium wellness brand, about to call or WhatsApp ${firstName} about this task. Write ONE short, professional opening (under 45 words) that starts with a proper greeting introducing yourself by name and company - e.g. "Hello ${firstName === "there" ? "sir/ma'am" : firstName}, this is ${agentName || "[agent]"} calling from CureForever regarding your order..." - then gets to the point for this specific task. Professional and courteous tone, never casual or salesy-desperate. Match urgency/sentiment in word choice, not in dropping the greeting. ${outputRules}\n\nContext:\n${context}`
+      ? `You are ${agentName || "a CureForever team member"}, a sales/retention rep for "CureForever", a premium wellness brand, about to call or WhatsApp ${firstName} about this task. Write ONE short, professional opening (under 45 words). ${greetingInstruction} - then get to the point for this specific task. Professional and courteous tone, never casual or salesy-desperate. Match urgency/sentiment in word choice, not in dropping the greeting. ${outputRules}\n\nContext:\n${context}`
       : `You are logging a customer support call outcome for "CureForever". Write a short internal call note (1-2 sentences, under 40 words) describing what happened, consistent with a "${disposition || "general"}" outcome for ${firstName} regarding ${product}. ${outputRules}\n\nContext:\n${context}`;
 
     const result = await generateAiText(prompt);
     if (!result) return NextResponse.json({ text: null, isMock: true });
+
+    if (mode === "battle_script") {
+      await supabase.from("tasks").update({
+        metadata: { ...task.metadata, ai_cache: { ...aiCache, battle_script: result.text, battle_script_agent_id: agentId } },
+      }).eq("id", taskId);
+    }
 
     return NextResponse.json({ text: result.text, isMock: false, provider: result.provider });
   } catch (e: any) {
@@ -67,7 +86,14 @@ ${typeof rtoProbability === "number" ? `RTO risk: ${rtoProbability}%` : ""}
   }
 }
 
-async function handleUpsell(supabase: any, order: any, currentProduct: string) {
+async function handleUpsell(supabase: any, taskId: string, taskMetadata: any, aiCache: any, order: any, currentProduct: string) {
+  // Unlike battle_script, upsell picks aren't tied to a specific agent -
+  // the same task always gets the same real product-pairing answer, so
+  // this is safe to reuse for any agent who reopens the task.
+  if (aiCache.upsell) {
+    return NextResponse.json({ suggestions: aiCache.upsell, isMock: false, cached: true });
+  }
+
   const { data: catalog } = await supabase
     .from("product_catalog")
     .select("name, price, description, tags, product_type")
@@ -126,6 +152,12 @@ Your entire response must be nothing but the raw JSON array below - the first ch
     })
     .filter(Boolean)
     .slice(0, 3);
+
+  if (suggestions.length > 0) {
+    await supabase.from("tasks").update({
+      metadata: { ...taskMetadata, ai_cache: { ...aiCache, upsell: suggestions } },
+    }).eq("id", taskId);
+  }
 
   return NextResponse.json({ suggestions, isMock: false, provider: result.provider });
 }
