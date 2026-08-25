@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireInternal } from "@/lib/auth-utils";
+import { requireInternal, hasInternalSecret, getAuthenticatedSession } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
+
+  // requireInternal only checks "logged in" - this page is manager/admin
+  // only client-side (ManagerHubPage), but the route itself had no matching
+  // check. tasks RLS (20260427_rls_hardening.sql) happens to cap a plain
+  // agent's own query to their own rows, so this wasn't a full data leak,
+  // but relying on that as the only backstop is fragile - add the explicit
+  // check other manager/admin routes already use.
+  if (!hasInternalSecret(req)) {
+    const { profile } = await getAuthenticatedSession();
+    if (profile?.role !== "admin" && profile?.role !== "manager") {
+      return NextResponse.json({ error: "Forbidden: Admin or Manager access required" }, { status: 403 });
+    }
+  }
 
   const supabase = createServerClient();
 

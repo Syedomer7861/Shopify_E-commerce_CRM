@@ -183,16 +183,37 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   const handleManagerAction = async (e: React.MouseEvent, action: 'approved' | 'rejected') => {
     e.stopPropagation();
     if (processingManager) return;
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success(action === 'approved' ? "Demo: Task Approved (local only)" : "Demo: Task Flagged for Revision (local only)");
+      return;
+    }
     setProcessingManager(true);
     try {
       const { error } = await supabase.from("tasks").update({
-        is_processed_by_manager: action !== 'rejected', 
+        is_processed_by_manager: action !== 'rejected',
         manager_processed_at: new Date().toISOString(),
         manager_action: action,
-        status: action === 'rejected' ? 'due' : 'done' 
+        status: action === 'rejected' ? 'due' : 'done'
       }).eq("id", task.id);
-      
+
       if (error) throw error;
+
+      // This manager_audit task is a reminder pointing back at the task it
+      // reviews (task-engine.ts's triggerAuditTask sets
+      // metadata.original_task_id) - ManagerTaskReview.tsx's Audit Queue
+      // lists that ORIGINAL task by is_processed_by_manager=false, so
+      // without also resolving it here, approving/flagging from this card
+      // never clears the item from the Manager Hub's queue.
+      const originalTaskId = (task as any).metadata?.original_task_id;
+      if (originalTaskId) {
+        await supabase.from("tasks").update({
+          is_processed_by_manager: action !== 'rejected',
+          manager_processed_at: new Date().toISOString(),
+          manager_action: action,
+        }).eq("id", originalTaskId);
+      }
+
       toast.success(action === 'approved' ? "Task Approved" : "Task Flagged for Revision");
       if (showDetail) setShowDetail(false);
       window.location.reload();

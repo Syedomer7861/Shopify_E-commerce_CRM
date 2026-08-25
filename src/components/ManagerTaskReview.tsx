@@ -31,7 +31,6 @@ export default function ManagerTaskReview() {
   const [ndrOrderForModal, setNdrOrderForModal] = useState<any>(null);
   const [reviewNote, setReviewNote] = useState("");
   const [processing, setProcessing] = useState<string | null>(null);
-  const [stats, setStats] = useState({ pending: 0, approvedToday: 0, rejectedToday: 0, activeAgents: 0, activeNdr: 0 });
   const [totalTasksCount, setTotalTasksCount] = useState(0);
   const [totalNdrCount, setTotalNdrCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,7 +49,6 @@ export default function ManagerTaskReview() {
       if (!silent && !tasks.length) setLoading(true);
       setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
       setTimeout(() => {
-        setStats({ pending: 8, approvedToday: 24, rejectedToday: 2, activeAgents: 5, activeNdr: 12 });
         setTasks([
           { 
             id: 't1', task_type: 'ndr', status: 'done', is_processed_by_manager: false, completed_at: new Date(Date.now() - 3600000).toISOString(),
@@ -76,25 +74,12 @@ export default function ManagerTaskReview() {
     if (!silent) setLoading(true);
     setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     try {
-      // 1. Fetch Stats for Header (Silent)
-      const today = new Date().toISOString().split('T')[0];
-      const [pendingRes, approvedRes, rejectedRes, activeRes, ndrCountRes] = await Promise.all([
-        supabase.from("tasks").select("id", { count: "exact", head: true }).eq("status", "done").eq("is_processed_by_manager", false),
-        supabase.from("tasks").select("id", { count: "exact", head: true }).eq("manager_action", "approved").gte("manager_processed_at", today),
-        supabase.from("tasks").select("id", { count: "exact", head: true }).eq("manager_action", "rejected").gte("manager_processed_at", today),
-        supabase.from("agent_activity_logs").select("agent_id", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 3600000).toISOString()),
-        supabase.from("orders").select("id", { count: "exact", head: true }).in("delivery_status", ["ndr", "rto", "failed"])
-      ]);
+      // Header stats card is ManagerStatsGrid.tsx, backed by
+      // /api/manager/stats - this component used to also compute its own
+      // copy of the same numbers every fetch (including the 60s poll) but
+      // never rendered them anywhere. Removed rather than fixed in place.
 
-      setStats({
-        pending: pendingRes.count || 0,
-        approvedToday: approvedRes.count || 0,
-        rejectedToday: rejectedRes.count || 0,
-        activeAgents: activeRes.count || 0,
-        activeNdr: ndrCountRes.count || 0
-      });
-
-      // 2. Fetch Audit Queue with Server-side Pagination & Filters
+      // Fetch Audit Queue with Server-side Pagination & Filters
       let selectStr = `
         *,
         customer:customers!inner(*),
@@ -181,10 +166,16 @@ export default function ManagerTaskReview() {
     if (!silent) setLoading(true);
     setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     try {
+      // orders.delivery_status only allows pending/in_transit/out_for_delivery/
+      // delivered/rto/failed (supabase/schema.sql) - "ndr" and
+      // "delivered_exception" can never actually appear (Shiprocket webhook
+      // mapping normalizes any NDR status to "failed"), so they were dead
+      // filter values that happened to be harmless only because the other
+      // three values in the list still matched real rows.
       let query = supabase
         .from("orders")
         .select("*, customer:customers!inner(*)", { count: "exact" })
-        .in("delivery_status", ["ndr", "rto", "failed", "out_for_delivery", "delivered_exception"]);
+        .in("delivery_status", ["rto", "failed", "out_for_delivery"]);
 
       if (searchTerm) {
         // Pre-fetch customer IDs to avoid PostgREST cross-table OR errors
@@ -266,7 +257,20 @@ export default function ManagerTaskReview() {
         .eq("id", taskId);
 
       if (error) throw error;
-      
+
+      // task-engine.ts's triggerAuditTask creates a separate manager_audit
+      // reminder task pointing back at this one via
+      // metadata.original_task_id, assigned directly to the manager's own
+      // task list (TaskCard's Approve/Flag Revision buttons). Without also
+      // resolving it here, approving from this Audit Queue leaves that
+      // reminder open forever even though it's already been handled.
+      await supabase.from("tasks").update({
+        is_processed_by_manager: action !== 'rejected',
+        manager_processed_at: new Date().toISOString(),
+        manager_action: action,
+        status: action === 'rejected' ? 'due' : 'done',
+      }).eq("task_type", "manager_audit").eq("metadata->>original_task_id", taskId);
+
       toast.success(action === 'approved' ? "Task Approved" : action === 'shiprocket_updated' ? "NDR Action Logged" : "Task Flagged for Revision");
       setTasks(prev => prev.filter(t => t.id !== taskId));
       setSelectedTask(null);
@@ -383,7 +387,6 @@ export default function ManagerTaskReview() {
                   <option value="transit_update">Transit Update</option>
                   <option value="recovery">Abandoned Cart</option>
                   <option value="review">Order Review</option>
-                  <option value="fulfillment">Fulfillment</option>
                 </select>
               </div>
 
