@@ -40,7 +40,7 @@ export function makeDeadline(opts?: SyncBudget) {
   };
 }
 
-function mapShiprocketStatus(status: string | number) {
+export function mapShiprocketStatus(status: string | number) {
   const s = String(status).toLowerCase();
   if (s.includes("rto") || s === "9") return "rto";
   if (s.includes("delivered") || s === "7" || s === "10") return "delivered";
@@ -51,7 +51,7 @@ function mapShiprocketStatus(status: string | number) {
   return "pending";
 }
 
-function parseShiprocketDate(dateStr: string | null | undefined): string {
+export function parseShiprocketDate(dateStr: string | null | undefined): string {
   if (!dateStr) return new Date().toISOString();
   if (dateStr.includes("-")) {
     const parts = dateStr.split(" ")[0].split("-");
@@ -70,7 +70,7 @@ function parseShiprocketDate(dateStr: string | null | undefined): string {
 // .filter(Boolean) alone let it through and joined into garbage like
 // ",subash .". Drop fragments that are only punctuation/whitespace first.
 const isNameJunk = (s: any) => !s || !String(s).replace(/[\s,.\-_]/g, "");
-function extractShiprocketName(sr: any): string {
+export function extractShiprocketName(sr: any): string {
   const billing = [sr.billing_customer_name, sr.billing_last_name].filter(s => !isNameJunk(s)).join(" ").trim();
   const shipping = [sr.shipping_customer_name, sr.shipping_last_name].filter(s => !isNameJunk(s)).join(" ").trim();
   const customer = [sr.customer_first_name, sr.customer_last_name].filter(s => !isNameJunk(s)).join(" ").trim();
@@ -78,7 +78,7 @@ function extractShiprocketName(sr: any): string {
   return billing || shipping || customer || generic || "Shiprocket Customer";
 }
 
-function extractShiprocketLineItems(sr: any): any[] {
+export function extractShiprocketLineItems(sr: any): any[] {
   const items = sr.order_items || sr.products || sr.line_items || [];
   if (!Array.isArray(items) || items.length === 0) {
     return [{ name: "Order Item", qty: 1, price: parseFloat(sr.total || sr.sub_total || 0) }];
@@ -586,7 +586,7 @@ export async function syncShiprocketData(supabase: any, send: (data: any) => voi
 /**
  * PHASE 2: Logic to categorize customers into high-value personas
  */
-async function reclusterCustomer(supabase: any, customerId: string) {
+export async function reclusterCustomer(supabase: any, customerId: string) {
   try {
     // 1. Fetch metrics
     const { data: customer } = await supabase

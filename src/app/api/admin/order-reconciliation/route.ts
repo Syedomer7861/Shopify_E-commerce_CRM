@@ -99,9 +99,47 @@ export async function GET(req: NextRequest) {
     shiprocket.error = err.message || String(err);
   }
 
+  // Diagnostic: pull a small sample of missing orders' raw Shopify data to
+  // look for a common trait (no customer, weird status, etc.) that would
+  // explain why sync-logic.ts's per-order try/catch skipped them.
+  const sample: any[] = [];
+  if (shopify.ok && shopify.missing.length > 0) {
+    const domain = String(settings?.shopify_store_domain).replace(/^https?:\/\//, "").replace(/\/$/, "");
+    const token = await getShopifyAccessToken(supabase!);
+    const pick = [shopify.missing[0], shopify.missing[Math.floor(shopify.missing.length / 2)], shopify.missing[shopify.missing.length - 1]];
+    for (const m of pick) {
+      try {
+        const res = await fetch(`https://${domain}/admin/api/2024-04/orders/${m.id}.json`, { headers: { "X-Shopify-Access-Token": token } });
+        const json: any = await res.json();
+        const o = json.order;
+        sample.push({
+          id: m.id,
+          name: o?.name,
+          has_customer: !!o?.customer,
+          customer_id: o?.customer?.id || null,
+          email: o?.email || null,
+          phone: o?.phone || o?.customer?.phone || o?.shipping_address?.phone || null,
+          financial_status: o?.financial_status,
+          fulfillment_status: o?.fulfillment_status,
+          test: o?.test,
+          cancelled_at: o?.cancelled_at,
+          created_at: o?.created_at,
+          updated_at: o?.updated_at,
+          tags: o?.tags,
+        });
+      } catch (e: any) {
+        sample.push({ id: m.id, fetchError: e.message });
+      }
+    }
+  }
+
+  const full = req.nextUrl.searchParams.get("full") === "true";
+  const cap = full ? Infinity : 50;
+
   return NextResponse.json({
     ourOrderCount: ourIds.size,
-    shopify: { ...shopify, missingCount: shopify.missing.length, missing: shopify.missing.slice(0, 50) },
-    shiprocket: { ...shiprocket, missingCount: shiprocket.missing.length, missing: shiprocket.missing.slice(0, 50) },
+    shopify: { ...shopify, missingCount: shopify.missing.length, missing: shopify.missing.slice(0, cap) },
+    shiprocket: { ...shiprocket, missingCount: shiprocket.missing.length, missing: shiprocket.missing.slice(0, cap) },
+    sample,
   });
 }
