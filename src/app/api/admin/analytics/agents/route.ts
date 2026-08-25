@@ -7,6 +7,19 @@ function getSupabase() {
     return createServerClient();
 }
 
+// This is an India-only business, but every date/time computation here used
+// UTC (.toISOString() and no timeZone on toLocaleTimeString - server
+// functions run in UTC). Any event before 5:30am IST is still "yesterday"
+// in UTC, so early-morning clock-ins were bucketed under the wrong
+// calendar day, and the gap-based hours calculation could merge two real
+// business days into one bucket (producing impossible 28+ hour totals) -
+// confirmed against real attendance rows. IST has no DST, so a fixed
+// offset is safe indefinitely.
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+function toISTDateKey(dateInput: string | number): string {
+    return new Date(new Date(dateInput).getTime() + IST_OFFSET_MS).toISOString().split('T')[0];
+}
+
 export async function GET(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
@@ -106,7 +119,7 @@ export async function GET(req: NextRequest) {
 
     logs?.forEach(log => {
         const agentId = log.agent_id;
-        const dateKey = new Date(log.created_at).toISOString().split('T')[0];
+        const dateKey = toISTDateKey(log.created_at);
         const key = `${dateKey}_${agentId}`;
 
         if (!dailyStats[key]) {
@@ -175,7 +188,7 @@ export async function GET(req: NextRequest) {
                     stats.breakSeconds += diff;
                 }
 
-                const dateKey = new Date(stats.lastTime).toISOString().split('T')[0];
+                const dateKey = toISTDateKey(stats.lastTime);
                 const dKey = `${dateKey}_${stats.id}`;
                 if (dailyStats[dKey]) {
                     if (isProductive) dailyStats[dKey].onlineSeconds += diff;
@@ -200,7 +213,7 @@ export async function GET(req: NextRequest) {
         const stats = Object.values(agentStats).find(s => s.name === call.agent_name);
         if (stats) {
             stats.taskCount++;
-            const callDate = new Date(call.called_at).toISOString().split("T")[0];
+            const callDate = toISTDateKey(call.called_at);
             const dKey = `${callDate}_${stats.id}`;
             if (dailyStats[dKey]) dailyStats[dKey].taskCount++;
         }
@@ -216,7 +229,7 @@ export async function GET(req: NextRequest) {
             // real call sites never counted toward taskCount/revenue here.
             if (["whatsapp", "task_completion", "task_completed"].includes(act.activity_type)) {
                 stats.taskCount++;
-                const logDate = new Date(act.created_at).toISOString().split("T")[0];
+                const logDate = toISTDateKey(act.created_at);
                 const dKey = `${logDate}_${act.agent_id}`;
                 if (dailyStats[dKey]) dailyStats[dKey].taskCount++;
             }
@@ -224,7 +237,7 @@ export async function GET(req: NextRequest) {
             const rev = Number((act.metadata as any)?.revenue || 0);
             if (rev > 0) {
                 stats.revenue += rev;
-                const logDate = new Date(act.created_at).toISOString().split("T")[0];
+                const logDate = toISTDateKey(act.created_at);
                 const dKey = `${logDate}_${act.agent_id}`;
                 if (dailyStats[dKey]) dailyStats[dKey].revenue += rev;
             }
@@ -284,8 +297,16 @@ export async function GET(req: NextRequest) {
             // row silently dropped. The Daily Performance Ledger table
             // could never show data, for any agent, on any date.
             email: d.email || "",
-            clockIn: new Date(d.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            clockOut: new Date(d.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            // Pre-formatted IST 12h string for AgentIntelligence.tsx (no
+            // toggle there); raw ISO alongside it so Performance's own
+            // 12h/24h toggle can format client-side without a second
+            // round-trip. Both were previously formatted with no timeZone
+            // at all, i.e. in whatever zone the server process runs in
+            // (UTC on Vercel) - off by 5:30 from real IST wall-clock time.
+            clockIn: new Date(d.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }),
+            clockOut: new Date(d.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }),
+            clockInISO: d.clockIn,
+            clockOutISO: d.clockOut,
             workHours: formatDuration(d.onlineSeconds),
             breakHours: formatDuration(d.breakSeconds),
             netHours: formatDuration(Math.max(0, d.onlineSeconds - d.breakSeconds)),
@@ -297,12 +318,24 @@ export async function GET(req: NextRequest) {
 
     const dailyLogsSorted = finalDailyLogs.sort((a,b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name));
 
-    if (selfOnlyId) {
+    // selfOnlyId only ever restricted a non-privileged caller's own view -
+    // for a privileged caller (admin/manager/hr) who picked a SPECIFIC
+    // agent via the Performance page's dropdown, requestedAgentId was
+    // never applied to the response at all. Every field below (summary
+    // stat cards, the Daily Attendance Ledger, Recent Activity) silently
+    // returned every agent mixed together regardless of which one was
+    // selected - confirmed live, the ledger showed 3 different agents'
+    // rows all under the one agent name chosen in the picker. A request
+    // with no agentId at all (AgentIntelligence.tsx's full-roster view)
+    // still gets everyone, unchanged.
+    const scopeId = selfOnlyId || requestedAgentId || null;
+
+    if (scopeId) {
         return NextResponse.json({
             success: true,
-            data: summary.filter(s => s.id === selfOnlyId),
-            dailyLogs: dailyLogsSorted.filter(d => d.email && d.email === agentStats[selfOnlyId]?.email),
-            recentActivity: (activityLogs || []).filter((a: any) => a.agent_id === selfOnlyId)
+            data: summary.filter(s => s.id === scopeId),
+            dailyLogs: dailyLogsSorted.filter(d => d.email && d.email === agentStats[scopeId]?.email),
+            recentActivity: (activityLogs || []).filter((a: any) => a.agent_id === scopeId)
         });
     }
 
