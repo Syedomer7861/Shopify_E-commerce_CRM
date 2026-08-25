@@ -64,12 +64,27 @@ export async function POST(req: NextRequest) {
         
         // Example logic: Update related tasks or orders
         if (selectedButtonId === "confirm_delivery") {
-          // Find the most recent transit_update task and mark as resolved
-          await supabase.from("tasks")
-            .update({ status: "completed", outcome: "Customer confirmed delivery via WhatsApp" })
+          // Find the most recent transit_update task and mark as resolved.
+          // "completed" isn't a valid tasks.status (constraint only allows
+          // pending/due/in_progress/done/skipped/cancelled) and tasks has no
+          // "outcome" column - this update has always failed silently.
+          const { data: resolvedTasks } = await supabase.from("tasks")
+            .update({ status: "done" })
             .eq("customer_id", customer.id)
             .eq("task_type", "transit_update")
-            .eq("status", "pending");
+            .eq("status", "pending")
+            .select("id");
+
+          for (const t of resolvedTasks || []) {
+            await supabase.from("call_logs").insert({
+              task_id: t.id,
+              customer_id: customer.id,
+              outcome: "done",
+              note: "Customer confirmed delivery via WhatsApp button",
+              agent_name: "WhatsApp Bot",
+              called_at: new Date().toISOString(),
+            });
+          }
         } else if (selectedButtonId === "reschedule") {
           // Create an urgent task for the agent to call for rescheduling
           await supabase.from("tasks").insert({
