@@ -11,7 +11,9 @@ export default function Home() {
   useEffect(() => {
     if (!loading) {
       if (profile) {
-        if (profile.role === "manager" || profile.role === "admin") {
+        if (profile.role === "manager") {
+          router.replace("/manager");
+        } else if (profile.role === "admin") {
           router.replace("/my-hub");
         } else {
           router.replace("/dashboard");

@@ -69,9 +69,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // If user is logged in and tries to access login page, redirect to dashboard
+  // If user is logged in and tries to access login page, redirect to their
+  // real landing page - login/page.tsx's own post-login redirect already
+  // sends managers to /manager, but that only covers the form submit path.
+  // A manager who's already authenticated and lands on /login some other
+  // way (bookmark, reopened tab) was always bounced to /dashboard here
+  // instead, regardless of role.
   if (user && isLoginPage) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    return NextResponse.redirect(new URL(profile?.role === 'manager' ? '/manager' : '/dashboard', request.url))
   }
 
   return response
