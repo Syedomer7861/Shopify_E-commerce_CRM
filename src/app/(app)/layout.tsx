@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import { usePathname } from "next/navigation";
 import { AgentHeartbeat } from "@/components/AgentHeartbeat";
 import { AdminNotifier } from "@/components/AdminNotifier";
+import { CommandPalette } from "@/components/CommandPalette";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
@@ -20,6 +21,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-[#f8f7f4]">
         <AgentHeartbeat />
         <AdminNotifier />
+        <CommandPalette />
         <Suspense fallback={<div className="w-64 bg-[#f7f4ed] animate-pulse" />}>
           <Sidebar />
         </Suspense>
