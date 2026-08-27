@@ -53,3 +53,34 @@ export async function sendAdminNotification(message: string, type: "alert" | "in
     console.error("Failed to send admin notification:", err);
   }
 }
+
+/**
+ * Server-side: insert a per-user in-app notification (see notifications
+ * table, migrations/20260827_notifications_table.sql). Uses the admin
+ * client - the table has no insert policy for authenticated users, only
+ * select/update-own, so this only works from server code.
+ */
+export async function notifyUser(userId: string, title: string, body?: string, link?: string, type: "info" | "success" | "warning" | "alert" = "info") {
+  try {
+    const { createAdminClient } = await import("./supabase");
+    const supabase = createAdminClient();
+    await supabase.from("notifications").insert({ user_id: userId, title, body: body || null, link: link || null, type });
+  } catch (err) {
+    console.error("Failed to create user notification:", err);
+  }
+}
+
+/**
+ * Client-side helper to trigger a per-user notification via the API route.
+ */
+export async function sendUserNotification(userId: string, title: string, body?: string, link?: string, type: "info" | "success" | "warning" | "alert" = "info") {
+  try {
+    await fetch("/api/notifications/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, title, body, link, type })
+    });
+  } catch (err) {
+    console.error("Failed to send user notification:", err);
+  }
+}

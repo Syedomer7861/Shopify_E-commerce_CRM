@@ -13,6 +13,7 @@ import NDRActionModal from "./NDRActionModal";
 import toast from "react-hot-toast";
 import type { Task, Customer, Order, AbandonedCart } from "@/types";
 import { SEGMENT_CONFIG } from "@/lib/utils";
+import { sendUserNotification } from "@/lib/notifications";
 
 export default function ManagerTaskReview() {
   const supabase = useMemo(() => createClient(), []);
@@ -289,6 +290,18 @@ export default function ManagerTaskReview() {
         manager_action: action,
         status: action === 'rejected' ? 'due' : 'done',
       }).eq("task_type", "manager_audit").eq("metadata->>original_task_id", taskId);
+
+      // The agent who did the work has no other way to learn their task
+      // got flagged besides re-opening this same Audit Queue themselves.
+      if (action === 'rejected' && selectedTask?.assigned_to) {
+        sendUserNotification(
+          selectedTask.assigned_to,
+          `Task flagged for revision`,
+          reviewNote || `Your ${selectedTask.task_type?.replace(/_/g, " ")} task for ${selectedTask.customer?.name || "a customer"} needs another look.`,
+          `/tasks?id=${selectedTask.id}`,
+          "warning"
+        );
+      }
 
       toast.success(action === 'approved' ? "Task Approved" : action === 'shiprocket_updated' ? "NDR Action Logged" : "Task Flagged for Revision");
       setTasks(prev => prev.filter(t => t.id !== taskId));
