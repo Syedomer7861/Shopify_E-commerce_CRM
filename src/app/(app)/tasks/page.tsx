@@ -72,6 +72,7 @@ export default function TasksPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkReassignTo, setBulkReassignTo] = useState("");
   const [bulkActing, setBulkActing] = useState(false);
+  const [onCallByTaskId, setOnCallByTaskId] = useState<Record<string, string>>({});
   const PAGE_SIZE = 20;
   const { profile, loading: profileLoading } = useCurrentProfile();
   // useCurrentProfile hands back a new profile object on every auth token
@@ -469,6 +470,33 @@ export default function TasksPage() {
   useEffect(() => {
     setSelectedIds([]);
   }, [page, typeFilter, statusFilter, agentFilter, debouncedSearch, dueStart, dueEnd]);
+
+  // Collision warning: two agents could call the same customer at once
+  // with no signal either way. /api/calls/webhook (see that route) already
+  // sets profiles.live_state = {action: "on_call", entityId: task_id} the
+  // moment a real call starts and clears it when the call ends - this
+  // reuses that existing signal instead of building new presence infra.
+  // A ~20s poll is plenty fresh for a courtesy heads-up; not wired to
+  // realtime to avoid subscribing to the whole (high-churn) profiles table.
+  useEffect(() => {
+    if (profileLoading) return;
+    let active = true;
+    async function fetchOnCall() {
+      const { data } = await supabase.from("profiles").select("id, name, live_state").not("live_state", "is", null);
+      if (!active) return;
+      const map: Record<string, string> = {};
+      (data || []).forEach((p: any) => {
+        if (p.id === profile?.id) return; // don't warn agents about their own call
+        if (p.live_state?.action === "on_call" && p.live_state?.entityId) {
+          map[p.live_state.entityId] = p.name || "Another agent";
+        }
+      });
+      setOnCallByTaskId(map);
+    }
+    fetchOnCall();
+    const interval = setInterval(fetchOnCall, 20000);
+    return () => { active = false; clearInterval(interval); };
+  }, [profileLoading, profile?.id, supabase]);
 
   const canBulkManage = profile?.role === "admin" || profile?.role === "manager";
 
@@ -1003,6 +1031,12 @@ export default function TasksPage() {
                   onChange={() => toggleSelected(task.id)} />
               )}
               <div className="flex-1 min-w-0">
+                {onCallByTaskId[task.id] && (
+                  <div className="flex items-center gap-1.5 mb-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold w-fit">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    {onCallByTaskId[task.id]} is on a call for this task right now
+                  </div>
+                )}
                 <TaskCard task={task as any}
                   onComplete={handleComplete}
                   onReschedule={handleReschedule}
