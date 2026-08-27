@@ -1162,9 +1162,9 @@ export default function SettingsPage() {
             <div className="px-6 py-4 bg-[#1c1c1c] text-[#f7f4ed] flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Smartphone className="w-4 h-4 text-emerald-400" />
-                <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Enterprise Cloud Telephony</h3>
+                <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Cloud Telephony</h3>
               </div>
-              <span className="text-[9px] font-black bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-lg border border-emerald-500/30 tracking-widest">ACTIVE GATEWAY</span>
+              <span className="text-[9px] font-black bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-lg border border-emerald-500/30 tracking-widest">ACTIVE</span>
             </div>
             
             <div className="p-6 space-y-6">
@@ -1428,7 +1428,7 @@ export default function SettingsPage() {
               {/* SMS Test Connection */}
               <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-4 flex items-center justify-between gap-4 mt-4">
                 <div className="flex-1">
-                  <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">Verify SMS Gateway</h4>
+                  <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">Test SMS Connection</h4>
                   <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed opacity-70">
                     Send a test SMS to confirm API permissions and verify outbound mobile routing.
                   </p>
@@ -1542,10 +1542,10 @@ export default function SettingsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-1">
                     <div className={cn("w-2 h-2 rounded-full", settings.whatsapp_enabled ? "bg-emerald-500 animate-pulse" : "bg-gray-300")} />
-                    <h3 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest">Master WhatsApp Gateway</h3>
+                    <h3 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest">WhatsApp Master Switch</h3>
                   </div>
                   <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed italic opacity-60">
-                    Enable or disable the entire WhatsApp communication infrastructure. When OFF, all automated broadcasts and manual triggers are suspended.
+                    Turns all WhatsApp messaging on or off. When OFF, no automated or manual WhatsApp messages will send.
                   </p>
                 </div>
                 <button 
@@ -1555,12 +1555,12 @@ export default function SettingsPage() {
                   {settings.whatsapp_enabled ? (
                     <div className="flex items-center gap-2 px-4 py-2 bg-[#1c1c1c] border border-[#1c1c1c] rounded-2xl shadow-lg shadow-black/10">
                       <ToggleRight className="w-5 h-5 text-white" />
-                      <span className="text-[10px] font-black text-white uppercase tracking-widest">SYSTEM ACTIVE</span>
+                      <span className="text-[10px] font-black text-white uppercase tracking-widest">ON</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 px-4 py-2 bg-white border border-[#eceae4] rounded-2xl shadow-sm">
                       <ToggleLeft className="w-5 h-5 text-gray-400" />
-                      <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">GATEWAY CLOSED</span>
+                      <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">OFF</span>
                     </div>
                   )}
                 </button>
@@ -1699,7 +1699,7 @@ export default function SettingsPage() {
                 <summary className="px-6 py-4 text-[10px] font-bold text-[#5f5f5d] cursor-pointer hover:text-[#1c1c1c] transition-colors flex items-center justify-between uppercase tracking-widest list-none">
                   <div className="flex items-center gap-3">
                     <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Local Bridge Infrastructure</span>
+                    <span>WhatsApp Bridge (Local)</span>
                   </div>
                   <span className="text-[9px] bg-[#eceae4] text-[#1c1c1c] px-2 py-0.5 rounded-lg tracking-widest">v2.0</span>
                 </summary>
@@ -1708,16 +1708,16 @@ export default function SettingsPage() {
                   {waStatus.ready ? (
                     <div className="p-4 rounded-xl bg-[#1c1c1c] text-[#f7f4ed] flex items-center justify-between shadow-lg shadow-black/10">
                       <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Infrastructure Live
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Connected
                       </div>
-                      <button onClick={fetchStatus} className="text-[9px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 underline underline-offset-4">Recalibrate</button>
+                      <button onClick={fetchStatus} className="text-[9px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 underline underline-offset-4">Refresh Status</button>
                     </div>
                   ) : (
-                    <div className="p-4 text-center text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest opacity-40">Awaiting Service Discovery</div>
+                    <div className="p-4 text-center text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest opacity-40">Not Connected</div>
                   )}
                   
                   <div>
-                    <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-60">Service Endpoint</label>
+                    <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-60">Bridge Server URL</label>
                     <input 
                       type="text" 
                       value={settings.whatsapp_bridge_url || ""} 
@@ -1731,7 +1731,7 @@ export default function SettingsPage() {
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Management Channel</label>
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Admin WhatsApp Number</label>
                   <input 
                     type="text" 
                     value={settings.whatsapp_admin_phone || ""} 
@@ -1741,7 +1741,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Broadcast Window</label>
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Daily Send Time</label>
                   <input 
                     type="time" 
                     value={settings.whatsapp_send_time || "10:00"} 
@@ -2390,7 +2390,7 @@ export default function SettingsPage() {
             
             <div className="space-y-8">
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Canonical Store URL</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Store URL</label>
                 <input 
                   type="text" 
                   value={settings.shopify_store_domain || ""} 
@@ -2402,7 +2402,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Infrastructure Access Token</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Admin API Access Token</label>
                 <input 
                   type="password" 
                   value={settings.shopify_api_key || ""} 
@@ -2414,7 +2414,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Webhook Verification Crypt</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Webhook Signing Secret</label>
                 <input 
                   type="password" 
                   value={settings.shopify_webhook_secret || ""} 
@@ -2427,7 +2427,7 @@ export default function SettingsPage() {
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">OAuth Principal ID</label>
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">OAuth Client ID</label>
                   <input
                     type="text"
                     value={settings.shopify_client_id || ""}
@@ -2437,7 +2437,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">OAuth Secret</label>
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">OAuth Client Secret</label>
                   <input
                     type="password"
                     value={settings.shopify_api_secret || ""}
@@ -2449,7 +2449,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Refresh Token Persistence</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Refresh Token</label>
                 <input
                   type="password"
                   value={settings.shopify_refresh_token || ""}
@@ -2502,7 +2502,7 @@ export default function SettingsPage() {
               onClick={() => startSyncStream("/api/sync/shopify")}
               disabled={saving || !settings.shopify_api_key}
             >
-              <RefreshCw className={cn("w-3.5 h-3.5 mr-2", syncStatus.active && "animate-spin")} /> Ingest Catalog
+              <RefreshCw className={cn("w-3.5 h-3.5 mr-2", syncStatus.active && "animate-spin")} /> Sync Catalog
             </button>
           </div>
         </div>
@@ -2513,12 +2513,12 @@ export default function SettingsPage() {
       {tab === "shiprocket" && (
         <div className="space-y-6">
           <div className="card p-6">
-            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 opacity-60">Logistics API Gateway</h3>
-            <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Establish a high-priority link to Shiprocket for real-time shipment tracking and delivery status reconciliation.</p>
+            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 opacity-60">Shiprocket Integration</h3>
+            <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Connect to Shiprocket for real-time shipment tracking and delivery status updates.</p>
             
             <div className="grid grid-cols-2 gap-6 mb-8">
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Identity Principal (Email)</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Email</label>
                 <input 
                   type="email" 
                   value={settings.shiprocket_email || ""} 
@@ -2528,7 +2528,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Access Key</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Password</label>
                 <input 
                   type="password" 
                   value={settings.shiprocket_password || ""} 
@@ -2543,9 +2543,9 @@ export default function SettingsPage() {
                <div className="flex items-center justify-between mb-6">
                   <div>
                      <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest flex items-center gap-2">
-                       <Zap className="w-3.5 h-3.5 text-[#1c1c1c]" /> Fastrr Checkout Synchronicity
+                       <Zap className="w-3.5 h-3.5 text-[#1c1c1c]" /> Fastrr Checkout Sync
                      </h4>
-                     <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">High-fidelity abandoned cart extraction via Fastrr Solution stack</p>
+                     <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">Import abandoned carts from Fastrr checkout</p>
                   </div>
                </div>
 
@@ -2559,7 +2559,7 @@ export default function SettingsPage() {
                   <div className="flex items-start gap-4">
                      <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">2</div>
                      <div className="flex-1">
-                        <p className="text-[11px] text-[#1c1c1c] font-medium">Provision a new webhook for the <strong>&quot;Abandoned Cart&quot;</strong> event:</p>
+                        <p className="text-[11px] text-[#1c1c1c] font-medium">Create a new webhook for the <strong>&quot;Abandoned Cart&quot;</strong> event:</p>
                         <div className="mt-3 flex items-center gap-3 bg-[#f7f4ed] border border-[#eceae4] rounded-xl p-3">
                            {/* Was hardcoded to a Tailscale address on one developer
                                machine, so abandoned-cart webhooks were dropped
@@ -2572,7 +2572,7 @@ export default function SettingsPage() {
                              onClick={() => {
                                const url = `${window.location.origin}/api/webhooks/shiprocket`;
                                navigator.clipboard.writeText(url);
-                               toast.success("URL Captured");
+                               toast.success("URL Copied");
                              }}
                              className="w-8 h-8 flex items-center justify-center hover:bg-[#eceae4] rounded-lg text-[#1c1c1c] transition-all"
                            >
@@ -2600,10 +2600,10 @@ export default function SettingsPage() {
               <div className="flex gap-4 relative z-10">
                 <AlertCircle className="w-5 h-5 text-white shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-[10px] font-bold uppercase tracking-widest mb-2 opacity-60">Webhook Provisioning Protocol</h4>
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest mb-2 opacity-60">Webhook Setup Instructions</h4>
                   <p className="text-[11px] leading-relaxed opacity-80 font-medium">
-                    1. Direct to Shiprocket &gt; Settings &gt; Webhooks.<br />
-                    2. Instantiate a secure endpoint with the URL below.<br />
+                    1. Go to Shiprocket &gt; Settings &gt; Webhooks.<br />
+                    2. Add a webhook using the URL below.<br />
                     3. Subscribe to: <strong>Order/Shipment Creation, Tracking Updates,</strong> and <strong>Abandoned Carts</strong>.
                   </p>
                 </div>
@@ -2616,7 +2616,7 @@ export default function SettingsPage() {
                 <div className="flex gap-4">
                   <WifiOff className="w-5 h-5 text-rose-500 shrink-0" />
                   <div>
-                    <h4 className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-2">Local Development Impasse</h4>
+                    <h4 className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-2">Can&apos;t Reach Localhost</h4>
                     <p className="text-[11px] text-[#f7f4ed] leading-relaxed font-medium">
                       Administrative oversight is compromised. Shiprocket cannot reach <span className="underline decoration-rose-500/50 italic text-[#eceae4]">localhost</span> from the cloud.
                       <br /><br />
@@ -2629,7 +2629,7 @@ export default function SettingsPage() {
 
             <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Operational Endpoint</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Webhook URL</label>
                 <div className="flex gap-3">
                   <input 
                     type="text" 
@@ -2640,7 +2640,7 @@ export default function SettingsPage() {
                   <button 
                     onClick={() => {
                       navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/shiprocket`);
-                      toast.success("Endpoint Captured");
+                      toast.success("URL Copied");
                     }}
                     className="w-10 h-10 flex items-center justify-center border border-[#eceae4] rounded-xl hover:bg-[#1c1c1c] hover:text-[#f7f4ed] hover:border-[#1c1c1c] text-[#5f5f5d] transition-all"
                   >
@@ -2650,7 +2650,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Verification Token (X-Shiprocket-Secret)</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Webhook Secret (X-Shiprocket-Secret)</label>
                 <input 
                   type="text" 
                   value={settings.shiprocket_webhook_secret || ""} 
@@ -2664,12 +2664,12 @@ export default function SettingsPage() {
               <div className="pt-10 mt-8 border-t border-[#eceae4]">
                  <div className="flex items-center gap-3 mb-6">
                     <Database className="w-4 h-4 text-[#1c1c1c]" />
-                    <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Historical Fastrr Ingestion</h3>
+                    <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Import Past Fastrr Carts</h3>
                  </div>
                  <div className="flex items-center gap-8 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-6">
                     <div className="flex-1">
                         <p className="text-[11px] text-[#5f5f5d] leading-relaxed font-medium">
-                        Reconstruct historical abandoned cart sequences by importing a CSV from <strong>Checkout &gt; Abandoned Cart</strong>. Missing identities will be automatically mapped and tasks generated.
+                        Import old abandoned carts from a CSV exported from <strong>Checkout &gt; Abandoned Cart</strong>. Customers will be matched automatically and recovery tasks created.
                         </p>
                     </div>
                     <div className="flex items-center gap-4">
@@ -2728,7 +2728,7 @@ export default function SettingsPage() {
                             className="btn-primary bg-[#1c1c1c] hover:bg-[#1c1c1c]/90 text-[#f7f4ed] py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10"
                             disabled={saving}
                         >
-                            <Plus className="w-3.5 h-3.5 mr-2" /> Upload Registry
+                            <Plus className="w-3.5 h-3.5 mr-2" /> Upload CSV
                         </button>
                     </div>
                  </div>
@@ -2738,22 +2738,22 @@ export default function SettingsPage() {
                 <div className="space-y-8">
                   <div className="flex items-center justify-between">
                      <div>
-                        <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Manual API Synchronization</h4>
-                        <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">Execute a deep scan of Shiprocket GraphQL endpoints for identity resolution</p>
+                        <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Manual Sync</h4>
+                        <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">Pull the latest orders and customer data directly from Shiprocket</p>
                      </div>
-                      <button 
+                      <button
                         onClick={() => startSyncStream("/api/sync/shiprocket")}
                         className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10"
                         disabled={saving}
                       >
-                        <RefreshCw className={cn("w-3.5 h-3.5 mr-2", syncStatus.active && "animate-spin")} /> Execute Sync
+                        <RefreshCw className={cn("w-3.5 h-3.5 mr-2", syncStatus.active && "animate-spin")} /> Run Sync
                       </button>
                   </div>
-                  
+
                   <div className="flex items-center justify-between border-t border-[#eceae4]/50 pt-8">
                      <div className="flex-1 pr-12">
                         <div className="flex items-center gap-3 mb-2">
-                           <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Global Identity Resolver</h4>
+                           <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Phone Number Recovery</h4>
                            {maskedCount !== null && maskedCount > 0 && (
                              <span className="px-2 py-0.5 bg-rose-500 text-white text-[9px] font-black rounded-lg tracking-widest uppercase">
                                {maskedCount} Masked
@@ -2766,33 +2766,33 @@ export default function SettingsPage() {
                            )}
                         </div>
                         <p className="text-[11px] text-[#5f5f5d] leading-relaxed font-medium opacity-60">
-                          Attempts to resolve real phone numbers from secondary data clusters. 
-                          <span className="text-[#1c1c1c] block mt-1 font-bold">Duplicate records will be automatically reconciled.</span>
+                          Attempts to recover real phone numbers for masked orders.
+                          <span className="text-[#1c1c1c] block mt-1 font-bold">Duplicate customer records will be merged automatically.</span>
                         </p>
                      </div>
-                     <button 
+                     <button
                       onClick={() => {
-                        if (confirm("Initiate global identity resolution? (Processes up to 100 records per cycle)")) {
+                        if (confirm("Run phone number recovery? (Processes up to 100 records per run)")) {
                           startSyncStream("/api/sync/unmask");
                         }
                       }}
                       className={cn(
                         "btn-primary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl transition-all",
-                        maskedCount && maskedCount > 0 
-                          ? "bg-[#1c1c1c] text-[#f7f4ed] shadow-black/10" 
+                        maskedCount && maskedCount > 0
+                          ? "bg-[#1c1c1c] text-[#f7f4ed] shadow-black/10"
                           : "bg-[#eceae4]/50 text-[#5f5f5d] shadow-none cursor-not-allowed border-[#eceae4]"
                       )}
                       disabled={syncStatus.active || maskedCount === 0}
                      >
                        {syncStatus.active ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Smartphone className="w-3.5 h-3.5 mr-2" />}
-                       {syncStatus.active ? "Resolving..." : "Run Unmask Tool"}
+                       {syncStatus.active ? "Recovering..." : "Recover Phone Numbers"}
                      </button>
                   </div>
-                  
+
                   <div className="flex items-center justify-between border-t border-[#eceae4]/50 pt-8">
                      <div>
-                        <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Webhook Queue Manifest</h4>
-                        <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">Force reconcile any pending event logs in the administrative pipeline</p>
+                        <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Pending Webhooks</h4>
+                        <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">Process any webhook events that are still waiting</p>
                      </div>
                      <button 
                       onClick={() => startSyncStream("/api/sync/all")}
@@ -2810,19 +2810,19 @@ export default function SettingsPage() {
           <div className="flex justify-end pt-8 mt-8 border-t border-[#eceae4]">
             <button className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-3 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Save className="w-3.5 h-3.5 mr-2" />}
-              {saving ? "Commiting..." : "Finalize Infrastructure"}
+              {saving ? "Saving..." : "Save Settings"}
             </button>
           </div>
         </div>
       )}
 
       {/* Manual Dispatch Modal */}
-      <Modal open={manualWaModal} onClose={() => setManualWaModal(false)} title="Administrative Dispatch"
+      <Modal open={manualWaModal} onClose={() => setManualWaModal(false)} title="Send Manual Message"
         footer={<>
-          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setManualWaModal(false)}>Abort</button>
+          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setManualWaModal(false)}>Cancel</button>
           <button className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleManualSend} disabled={sendingManualWa}>
             {sendingManualWa ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Send className="w-3.5 h-3.5 mr-2" />}
-            {sendingManualWa ? "Executing..." : "Send Immediately"}
+            {sendingManualWa ? "Sending..." : "Send Now"}
           </button>
         </>}
       >
@@ -2830,26 +2830,26 @@ export default function SettingsPage() {
           <div className="bg-[#1c1c1c] text-[#f7f4ed] p-5 rounded-2xl flex gap-4 shadow-xl">
              <AlertCircle className="w-4 h-4 text-white shrink-0 mt-0.5" />
              <div className="text-[10px] font-bold uppercase tracking-widest leading-relaxed opacity-80">
-                Manual override initiated for <span className="text-white">{manualWaCustomerName}</span>. This sequence bypasses standard latency and marks the task as <span className="text-white">Resolved</span>.
+                Sends a message to <span className="text-white">{manualWaCustomerName}</span> right now and marks this task as <span className="text-white">Resolved</span>.
              </div>
           </div>
-          
+
           <div>
-            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Message Payload</label>
-            <textarea 
-              className="input text-xs h-40 leading-relaxed bg-[#fcfbf8] border-[#eceae4] rounded-2xl p-5" 
-              value={manualWaMessage} 
+            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Message</label>
+            <textarea
+              className="input text-xs h-40 leading-relaxed bg-[#fcfbf8] border-[#eceae4] rounded-2xl p-5"
+              value={manualWaMessage}
               onChange={e => setManualWaMessage(e.target.value)}
-              placeholder="Refine communication strategy..."
+              placeholder="Type your message..."
             />
           </div>
 
           <div>
-            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Digital Assets (Optional)</label>
+            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Attachment (Optional)</label>
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-3 px-5 py-3 border border-dashed border-[#eceae4] rounded-xl hover:border-[#1c1c1c] hover:bg-[#eceae4]/30 transition-all cursor-pointer text-[#5f5f5d]">
                 <Paperclip className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">{manualWaFile ? "Replace Asset" : "Attach Asset"}</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">{manualWaFile ? "Replace File" : "Attach File"}</span>
                 <input type="file" className="hidden" onChange={e => setManualWaFile(e.target.files?.[0] || null)} />
               </label>
               {manualWaFile && (
@@ -2883,7 +2883,7 @@ export default function SettingsPage() {
                   <button 
                     className="w-10 h-10 flex items-center justify-center border border-[#eceae4] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] hover:border-[#1c1c1c] transition-all" 
                     onClick={() => document.getElementById('bulk-import')?.click()}
-                    title="Bulk Schema Ingestion"
+                    title="Bulk Import"
                   >
                     <RefreshCw className="w-4 h-4" />
                   </button>
@@ -2913,14 +2913,14 @@ export default function SettingsPage() {
                     setShowAddOverride(true);
                   }}
                 >
-                  <Plus className="w-3.5 h-3.5 mr-2" /> Add Protocol
+                  <Plus className="w-3.5 h-3.5 mr-2" /> Add Override
                 </button>
              </div>
           </div>
 
           {overrides.length === 0 ? (
             <div className="card p-20 text-center border-dashed border-[#eceae4]">
-              <p className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest opacity-20">No protocol overrides defined.</p>
+              <p className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest opacity-20">No product overrides defined.</p>
             </div>
           ) : overrides.map(o => (
             <div key={o.id} className="card p-6 border-[#eceae4] hover:border-[#1c1c1c]/30 transition-all">
@@ -2948,11 +2948,11 @@ export default function SettingsPage() {
                     <Sliders className="w-3.5 h-3.5" />
                   </button>
                   <button className="w-8 h-8 flex items-center justify-center bg-[#fcfbf8] border border-[#eceae4] rounded-lg text-rose-500 hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all shadow-sm" onClick={async () => {
-                     if (confirm("Permanently delete this product protocol?")) {
+                     if (confirm("Permanently delete this product override?")) {
                        await supabase.from("product_overrides").delete().eq("id", o.id);
                        await recalculateTasks(settings);
                        fetchSettings();
-                       toast.success("Protocol Extinguished");
+                       toast.success("Override Deleted");
                      }
                   }}>
                     <Trash2 className="w-3.5 h-3.5" />
@@ -3010,16 +3010,16 @@ export default function SettingsPage() {
             <div className="bg-rose-500 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <AlertCircle className="w-4 h-4 text-white" />
-                <h3 className="text-[10px] font-bold text-white uppercase tracking-widest">Administrative Termination</h3>
+                <h3 className="text-[10px] font-bold text-white uppercase tracking-widest">Danger Zone</h3>
               </div>
-              <span className="text-[9px] font-black text-white/50 uppercase tracking-widest">High Risk Operations</span>
+              <span className="text-[9px] font-black text-white/50 uppercase tracking-widest">Irreversible</span>
             </div>
             <div className="p-8 space-y-8 bg-[#fcfbf8]">
               {[
-                { type: "customers", label: "Registry Purge: Customers", desc: "Permanently extinguish all customer records, associated orders, and task history." },
-                { type: "orders", label: "Registry Purge: Orders", desc: "Remove all historical order data from internal storage clusters." },
-                { type: "tasks", label: "Registry Purge: Tasks", desc: "Delete all scheduled communication sequences and dispatch logs." },
-                { type: "abandoned_carts", label: "Registry Purge: Abandoned Carts", desc: "Permanently remove all recovered cart data and revenue leads." },
+                { type: "customers", label: "Delete All Customers", desc: "Permanently deletes every customer record, their orders, and task history." },
+                { type: "orders", label: "Delete All Orders", desc: "Permanently deletes all historical order data." },
+                { type: "tasks", label: "Delete All Tasks", desc: "Permanently deletes all scheduled messages and call logs." },
+                { type: "abandoned_carts", label: "Delete All Abandoned Carts", desc: "Permanently deletes all recovered cart data and recovery leads." },
               ].map(d => (
                 <div key={d.type} className="flex items-center justify-between gap-12 group">
                   <div className="flex-1">
@@ -3027,7 +3027,7 @@ export default function SettingsPage() {
                     <div className="text-[10px] text-[#5f5f5d] font-medium opacity-60 leading-relaxed">{d.desc}</div>
                   </div>
                   <button onClick={() => { setPurgeConfirmText(""); setConfirmModal({ open: true, type: d.type as any }); }} className="btn-primary bg-rose-500 hover:bg-rose-600 text-white py-2 px-6 text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-rose-500/20">
-                    Purge
+                    Delete
                   </button>
                 </div>
               ))}
@@ -3037,18 +3037,18 @@ export default function SettingsPage() {
       )}
 
       {/* Add/Edit Override Modal */}
-      <Modal open={showAddOverride} onClose={() => setShowAddOverride(false)} title={editingId ? "Modify Protocol" : "Define Protocol"} 
+      <Modal open={showAddOverride} onClose={() => setShowAddOverride(false)} title={editingId ? "Edit Override" : "Add Override"}
         footer={<>
-          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setShowAddOverride(false)}>Discard</button>
+          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setShowAddOverride(false)}>Cancel</button>
           <button className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleAddOverride} disabled={saving}>
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : (editingId ? <CheckCircle2 className="w-3.5 h-3.5 mr-2" /> : <Plus className="w-3.5 h-3.5 mr-2" />)}
-            {saving ? "Aligning..." : (editingId ? "Commit Changes" : "Activate Protocol")}
+            {saving ? "Saving..." : (editingId ? "Save Changes" : "Add Override")}
           </button>
         </>}
       >
         <div className="space-y-6 py-4">
           <div>
-            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Catalog Entity</label>
+            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Product</label>
             <select 
               className="input text-[11px] font-bold bg-[#fcfbf8] border-[#eceae4] rounded-xl h-12 disabled:opacity-30"
               disabled={!!editingId}
@@ -3089,23 +3089,23 @@ export default function SettingsPage() {
 
           <div className="grid grid-cols-2 gap-6">
              <div>
-                <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Operational Notes</label>
-                <textarea 
+                <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Notes</label>
+                <textarea
                   value={newOverride.usage_notes}
                   onChange={e => setNewOverride({...newOverride, usage_notes: e.target.value})}
                   className="input text-[10px] h-20 resize-none bg-[#fcfbf8] border-[#eceae4] rounded-xl p-3 font-medium"
-                  placeholder="e.g. Tactical usage instructions..."
+                  placeholder="e.g. usage instructions..."
                 />
              </div>
              <div className="space-y-4">
                 <div>
-                  <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Upsell Logic</label>
-                  <input 
+                  <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Upsell Product</label>
+                  <input
                     type="text"
                     value={newOverride.upsell_product_name}
                     onChange={e => setNewOverride({...newOverride, upsell_product_name: e.target.value})}
                     className="input text-[10px] font-bold bg-[#fcfbf8] h-11"
-                    placeholder="Complementary SKU..."
+                    placeholder="Complementary product..."
                   />
                 </div>
                 
@@ -3126,28 +3126,28 @@ export default function SettingsPage() {
 
           <div className="p-4 bg-[#1c1c1c] text-[#f7f4ed] text-[10px] font-bold uppercase tracking-widest rounded-2xl flex gap-4 shadow-xl">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <p className="opacity-80 leading-relaxed">Infrastructure Update: Pendency realignment will occur instantly upon commitment.</p>
+            <p className="opacity-80 leading-relaxed">Task due dates for orders using this product will update immediately when saved.</p>
           </div>
         </div>
       </Modal>
 
       {/* Clear Confirmation Modal */}
-      <Modal open={confirmModal.open} onClose={() => setConfirmModal({ open: false, type: null })} title="Confirm Registry Termination"
+      <Modal open={confirmModal.open} onClose={() => setConfirmModal({ open: false, type: null })} title="Confirm Deletion"
         footer={<>
-          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setConfirmModal({ open: false, type: null })}>Abort</button>
+          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setConfirmModal({ open: false, type: null })}>Cancel</button>
           <button
             className="btn-primary bg-rose-500 text-white py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-rose-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={() => confirmModal.type && handleClearData(confirmModal.type)}
             disabled={isDeleting || purgeConfirmText !== confirmModal.type}
           >
-            {isDeleting ? "Terminating..." : "Confirm Purge"}
+            {isDeleting ? "Deleting..." : "Permanently Delete"}
           </button>
         </>}
       >
         <div className="space-y-4">
           <div className="p-6 bg-rose-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-2xl flex gap-4 shadow-2xl">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p className="leading-relaxed">Critical Warning: This administrative action is irreversible. All targeted registry data will be permanently extinguished.</p>
+            <p className="leading-relaxed">Warning: this cannot be undone. All matching data will be permanently deleted.</p>
           </div>
           <div>
             <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-60">

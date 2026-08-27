@@ -84,13 +84,13 @@ export default function LoginPage() {
         {/* Login Card */}
         <div className="bg-white rounded-[2rem] p-10 border border-[#eceae4] shadow-[0_20px_50px_rgba(28,28,28,0.05)] relative overflow-hidden animate-slide-up">
           <div className="mb-10">
-            <h2 className="text-xl font-bold text-[#1c1c1c] mb-1">Authorization Required</h2>
-            <p className="text-[#5f5f5d] text-[11px] font-medium uppercase tracking-wider">Please authenticate to access the command center</p>
+            <h2 className="text-xl font-bold text-[#1c1c1c] mb-1">Welcome Back</h2>
+            <p className="text-[#5f5f5d] text-[11px] font-medium uppercase tracking-wider">Sign in to your account</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest ml-1">Terminal ID (Email)</label>
+              <label className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest ml-1">Email</label>
               <input 
                 type="email" 
                 className="w-full h-14 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-5 text-[#1c1c1c] placeholder:text-[#1c1c1c]/20 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c]/20 transition-all text-sm font-medium" 
@@ -103,7 +103,7 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
-                <label className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">Access Key</label>
+                <label className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">Password</label>
                 <button type="button" className="text-[10px] font-bold text-[#1c1c1c]/40 hover:text-[#1c1c1c] transition-colors">Recover</button>
               </div>
               <div className="relative">
@@ -134,7 +134,7 @@ export default function LoginPage() {
                 <div className="w-5 h-5 border-2 border-[#f7f4ed]/20 border-t-[#f7f4ed] rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>Initialize Session</span>
+                  <span>Sign In</span>
                 </>
               )}
             </button>

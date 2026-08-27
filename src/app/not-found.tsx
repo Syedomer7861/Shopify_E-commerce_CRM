@@ -27,7 +27,7 @@ export default function NotFound() {
             className="w-full h-14 bg-[#1c1c1c] text-[#f7f4ed] font-black uppercase tracking-widest rounded-2xl shadow-xl hover:shadow-[#1c1c1c]/10 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 flex items-center justify-center gap-3"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Command Center</span>
+            <span>Back to Home</span>
           </Link>
         </div>
 
