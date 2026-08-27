@@ -43,28 +43,25 @@ export async function resolveUnmaskedPhone(
     return cartMatches[0].phone;
   }
 
-  // 3b. Aggressive Address Match (Technique from #19256)
-  const address = srData ? (srData.shipping_address?.address1 || srData.billing_address?.address1 || 
-                  srData.customer_address || srData.address || "") : "";
-  if (address && address.length > 10) {
-    const searchAddr = address.substring(0, 20).trim();
-    const { data: addrMatch } = await supabase
-      .from("customers")
-      .select("phone")
-      .ilike("address", `%${searchAddr}%`)
-      .not("phone", "ilike", "%x%")
-      .not("phone", "ilike", "%_SR_%")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+  // 3b (removed - "Aggressive Address Match", #19256): matched any existing
+  // customer whose stored address shared the incoming order's first 20
+  // address characters via ILIKE. Two unrelated real people can easily
+  // share a 20-char prefix (a landmark, a building, a common locality
+  // phrase) - this silently reattached one customer's real order to a
+  // completely different, unrelated customer with no name check at all.
+  // Confirmed as a live cause of exactly that: a real order for one
+  // person ended up merged into an unrelated customer record that had
+  // been accumulating other people's orders the same way. Address
+  // proximity is not identity - removed rather than tightened, since
+  // there's no threshold that makes a free-text substring match safe.
 
-    if (addrMatch?.phone) {
-        console.log(`🔓 Unmasked via Address Match [${searchAddr}...]: ${addrMatch.phone}`);
-        return addrMatch.phone;
-    }
-  }
-
-  // 4. Try Deep-Mining Webhook Logs
+  // 4. Try Deep-Mining Webhook Logs - was blind full-text regex over the
+  // ENTIRE stored JSON payload for any 10-digit number, which could just
+  // as easily pick up an unrelated tracking id, order id fragment, or a
+  // different person's number mentioned in a note as the real customer's
+  // phone. Now only reads the same known phone-shaped fields
+  // extractStandardPhone already trusts, just from an earlier webhook
+  // event for the same order rather than the current one.
   if (orderId) {
     const { data: logs } = await supabase
       .from("webhook_logs")
@@ -74,8 +71,9 @@ export async function resolveUnmaskedPhone(
 
     if (logs) {
       for (const log of logs) {
-        const found = find10DigitPhone(JSON.stringify(log.payload));
-        if (found) return found;
+        const data = (log.payload as any)?.data || (log.payload as any)?.payload || log.payload;
+        const found = extractStandardPhone(data);
+        if (found && !isMasked(found)) return found;
       }
     }
   }
@@ -115,18 +113,4 @@ function extractStandardPhone(sr: any): string | null {
   if (unmasked) return normalizePhone(unmasked);
   
   return candidates[0] || null;
-}
-
-function find10DigitPhone(str: string): string | null {
-  // Extract real 10-digit numbers (starting with 6-9)
-  const matches = str.match(/(?:(?:\+|91)?)?\b([6-9]\d{9})\b/g);
-  if (matches) {
-      // Return the first one that isn't a known static number
-      for (const m of matches) {
-          const c = m.replace(/[^\d]/g, "");
-          const clean = c.length > 10 ? c.slice(c.length - 10) : c;
-          if (!['8008313180', '7907022556'].includes(clean)) return clean;
-      }
-  }
-  return null;
 }
