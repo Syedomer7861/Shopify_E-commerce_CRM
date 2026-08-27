@@ -17,7 +17,7 @@ import {
   CheckSquare,
   Info
 } from "lucide-react";
-import { PageHeader, EmptyState, TaskTypeBadge, Pagination, Modal } from "@/components/ui";
+import { PageHeader, EmptyState, TaskTypeBadge, Pagination, Modal, Select } from "@/components/ui";
 import TaskCard from "@/components/TaskCard";
 import { createClient } from "@/lib/supabase";
 import { sendAdminNotification } from "@/lib/notifications";
@@ -892,11 +892,16 @@ export default function TasksPage() {
             {(profile?.role === "admin" || profile?.role === "manager") && (
               <div>
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Assigned To</label>
-                <select className="select text-xs" value={agentFilter} onChange={e => setAgentFilter(e.target.value)}>
-                  <option value="all">All Agents</option>
-                  <option value="unassigned">Unassigned Only</option>
-                  {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                </select>
+                <Select
+                  triggerClassName="text-xs"
+                  value={agentFilter}
+                  onChange={setAgentFilter}
+                  options={[
+                    { value: "all", label: "All Agents" },
+                    { value: "unassigned", label: "Unassigned Only" },
+                    ...agents.map(a => ({ value: a.id, label: a.name })),
+                  ]}
+                />
               </div>
             )}
           </div>
@@ -1007,9 +1012,13 @@ export default function TasksPage() {
 
         {/* Statuses */}
         <div className="flex-shrink-0 w-full lg:w-auto">
-          <select className="select w-full text-xs h-[38px] bg-white border-gray-200" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
+          <Select
+            className="w-full lg:w-auto"
+            triggerClassName="w-full text-xs h-[38px] bg-white border-gray-200"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={STATUSES}
+          />
         </div>
       </div>
 
@@ -1085,15 +1094,14 @@ export default function TasksPage() {
               <span className="hidden xs:inline text-[9px] md:text-[10px] font-bold uppercase tracking-widest opacity-60">Selected</span>
             </div>
 
-            <select
-              className="bg-white/10 text-white text-[10px] font-bold rounded-lg px-2 py-1.5 outline-none border border-white/10"
+            <Select
+              triggerClassName="bg-white/10 text-white text-[10px] font-bold rounded-lg px-2 py-1.5 border border-white/10 min-w-[120px]"
+              placeholder="Reassign to..."
               value={bulkReassignTo}
-              onChange={e => setBulkReassignTo(e.target.value)}
+              onChange={setBulkReassignTo}
               disabled={bulkActing}
-            >
-              <option value="">Reassign to...</option>
-              {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
+              options={agents.map(a => ({ value: a.id, label: a.name }))}
+            />
             <button
               onClick={handleBulkReassign}
               disabled={!bulkReassignTo || bulkActing}

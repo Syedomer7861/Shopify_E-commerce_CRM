@@ -1,7 +1,8 @@
 "use client";
+import { useState, useRef, useEffect } from "react";
 import { cn, SEGMENT_CONFIG, DELIVERY_CONFIG, TASK_TYPE_CONFIG, TASK_STATUS_CONFIG, initials } from "@/lib/utils";
 import type { CustomerSegment, DeliveryStatus, TaskType, TaskStatus } from "@/types";
-import { Download, TrendingUp, TrendingDown, Loader2, ShoppingBag, BarChart3, ClipboardCheck, Users, Info, Sun, Moon, Clock, Truck, Zap, CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft } from "lucide-react";
+import { Download, TrendingUp, TrendingDown, Loader2, ShoppingBag, BarChart3, ClipboardCheck, Users, Info, Sun, Moon, Clock, Truck, Zap, CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft, ChevronDown } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import Link from "next/link";
 
@@ -228,6 +229,107 @@ export function Modal({
         <div className="px-6 py-6 overflow-y-auto max-h-[80vh]">{children}</div>
         {footer && <div className="px-6 py-5 border-t border-[#eceae4] flex items-center justify-end gap-3 bg-[#eceae4]/20 rounded-b-xl">{footer}</div>}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Custom-styled dropdown replacing the native <select> - the CLOSED
+ * trigger of a native select is stylable with CSS, but the OPEN options
+ * list is rendered by the OS/browser itself and can't be restyled by any
+ * CSS in most browsers (confirmed live: a plain unstyled white popup even
+ * inside an otherwise fully-themed dark bulk-action bar). This renders
+ * both states itself, so it's consistent everywhere it's used.
+ *
+ * triggerClassName lets each call site keep its own current closed-state
+ * look (light form select, dark bulk-bar select, etc.) - only the open
+ * list is unified.
+ */
+export function Select({
+  value, onChange, options, placeholder = "Select...", className, triggerClassName, disabled,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  // Optional `group` renders a non-interactive header whenever it changes
+  // from the previous option - replaces <optgroup> for the one caller that
+  // used it (TaskCard's disposition select).
+  options: { value: string; label: string; disabled?: boolean; group?: string }[];
+  placeholder?: string;
+  className?: string;
+  triggerClassName?: string;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    if (open) {
+      document.addEventListener("mousedown", onClickOutside);
+      document.addEventListener("keydown", onKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  const selected = options.find(o => o.value === value);
+
+  return (
+    <div ref={ref} className={cn("relative", className)}>
+      <button
+        type="button"
+        onClick={() => !disabled && setOpen(o => !o)}
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={cn(
+          "select flex items-center justify-between gap-2 text-left disabled:opacity-50 disabled:cursor-not-allowed",
+          triggerClassName
+        )}
+      >
+        <span className={cn("truncate", !selected && "opacity-60")}>{selected?.label || placeholder}</span>
+        <ChevronDown className={cn("w-3.5 h-3.5 shrink-0 transition-transform", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          className="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto bg-[#f7f4ed] border border-[#eceae4] rounded-lg shadow-xl py-1 animate-slide-up"
+        >
+          {options.map((o, i) => (
+            <div key={o.value}>
+              {o.group && o.group !== options[i - 1]?.group && (
+                <div className="px-3 pt-2 pb-1 text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]/60">{o.group}</div>
+              )}
+              <button
+                type="button"
+                role="option"
+                aria-selected={o.value === value}
+                disabled={o.disabled}
+                onClick={() => {
+                  if (o.disabled) return;
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "w-full text-left px-3 py-2 text-sm text-[#1c1c1c] hover:bg-[#eceae4]/60 transition-colors truncate",
+                  o.value === value && "bg-[#eceae4] font-semibold",
+                  o.disabled && "opacity-40 cursor-not-allowed"
+                )}
+              >
+                {o.label}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

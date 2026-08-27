@@ -33,7 +33,7 @@ import { getLogisticsIntelligence, LogisticsRecommendation } from "@/lib/logisti
 import { getUpsellSuggestions, UpsellSuggestion } from "@/lib/upsell-engine";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Avatar, TaskTypeBadge, TaskStatusBadge, Modal } from "./ui";
+import { Avatar, TaskTypeBadge, TaskStatusBadge, Modal, Select } from "./ui";
 import ShiprocketOrderView from "./ShiprocketOrderView";
 import NDRActionModal from "./NDRActionModal";
 import { createClient } from "@/lib/supabase";
@@ -950,15 +950,15 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   </div>
                 )}
                 {isAdmin && agents && agents.length > 0 && (
-                  <select 
-                    value={task.assigned_to || ""} 
-                    onChange={(e) => { e.stopPropagation(); onReassign?.(task.id, e.target.value); }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="badge bg-sky-50 border-sky-200 text-sky-700 cursor-pointer outline-none hover:bg-sky-100 font-medium"
-                  >
-                    <option value="" disabled>Unassigned</option>
-                    {agents.map(a => <option key={a.id} value={a.id}>Owner {a.name}</option>)}
-                  </select>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Select
+                      value={task.assigned_to || ""}
+                      onChange={(newOwnerId) => onReassign?.(task.id, newOwnerId)}
+                      placeholder="Unassigned"
+                      triggerClassName="badge bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100 font-medium"
+                      options={agents.map(a => ({ value: a.id, label: `Owner ${a.name}` }))}
+                    />
+                  </div>
                 )}
                 {daysSince !== null && (
                   <span className="badge bg-gray-50 border-gray-200 text-gray-500">{daysSince}d since delivery</span>
@@ -1651,31 +1651,37 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Outcome</label>
-              <select className="select py-1 text-xs font-semibold" value={outcome} onChange={e => setOutcome(e.target.value)}>
-                <option value="done" className="text-blue-600 font-bold">✔ Successful / Resolved</option>
-                <option value="no_answer" className="text-orange-600">⚠ No Answer / Unreachable</option>
-                <option value="rescheduled" className="text-blue-600">📅 Will Call Back / Rescheduled</option>
-              </select>
+              <Select
+                triggerClassName="py-1 text-xs font-semibold"
+                value={outcome}
+                onChange={setOutcome}
+                options={[
+                  { value: "done", label: "✔ Successful / Resolved" },
+                  { value: "no_answer", label: "⚠ No Answer / Unreachable" },
+                  { value: "rescheduled", label: "📅 Will Call Back / Rescheduled" },
+                ]}
+              />
             </div>
             <div>
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Disposition</label>
-              <select className="select py-1 text-xs" value={disposition} onChange={e => setDisposition(e.target.value)}>
-                <optgroup label="Success/Connected">
-                  <option value="connected_interested">Interested / Hot Lead</option>
-                  <option value="connected_bought">Purchased / Already Bought</option>
-                  <option value="connected_support">Support Needed / Query</option>
-                  <option value="callback_requested">Callback Requested</option>
-                  <option value="busy_call_later">Busy - Call Later</option>
-                </optgroup>
-                <optgroup label="Rejections / Flags">
-                  <option value="not_interested">Not Interested / Reject</option>
-                  <option value="fake_order">Fake Order / Fraud / Junk</option>
-                  <option value="rto_requested">RTO Requested by Customer</option>
-                  <option value="wrong_number">Wrong Number / Invalid</option>
-                  <option value="invalid_lead">Spam / Invalid Lead</option>
-                  <option value="language_barrier">Language Barrier</option>
-                </optgroup>
-              </select>
+              <Select
+                triggerClassName="py-1 text-xs"
+                value={disposition}
+                onChange={setDisposition}
+                options={[
+                  { group: "Success/Connected", value: "connected_interested", label: "Interested / Hot Lead" },
+                  { group: "Success/Connected", value: "connected_bought", label: "Purchased / Already Bought" },
+                  { group: "Success/Connected", value: "connected_support", label: "Support Needed / Query" },
+                  { group: "Success/Connected", value: "callback_requested", label: "Callback Requested" },
+                  { group: "Success/Connected", value: "busy_call_later", label: "Busy - Call Later" },
+                  { group: "Rejections / Flags", value: "not_interested", label: "Not Interested / Reject" },
+                  { group: "Rejections / Flags", value: "fake_order", label: "Fake Order / Fraud / Junk" },
+                  { group: "Rejections / Flags", value: "rto_requested", label: "RTO Requested by Customer" },
+                  { group: "Rejections / Flags", value: "wrong_number", label: "Wrong Number / Invalid" },
+                  { group: "Rejections / Flags", value: "invalid_lead", label: "Spam / Invalid Lead" },
+                  { group: "Rejections / Flags", value: "language_barrier", label: "Language Barrier" },
+                ]}
+              />
             </div>
           </div>
           <div>
