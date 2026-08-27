@@ -174,7 +174,7 @@ export function CommandPalette() {
             <button onClick={() => goTo(`/tasks?id=${encodeURIComponent(cleanQuery)}`)}
               className="w-full flex items-center gap-3 px-5 py-3 border-t border-[#eceae4] hover:bg-[#eceae4]/50 transition-colors text-left">
               <ListChecks className="w-3.5 h-3.5 text-[#5f5f5d] shrink-0" />
-              <span className="text-xs font-bold text-[#1c1c1c]">Search tasks for "{cleanQuery}"</span>
+              <span className="text-xs font-bold text-[#1c1c1c]">Search tasks for &quot;{cleanQuery}&quot;</span>
             </button>
           )}
         </div>

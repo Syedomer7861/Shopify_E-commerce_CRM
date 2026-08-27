@@ -235,7 +235,7 @@ export function NotificationBell() {
           )}
           <div className="max-h-[60vh] overflow-y-auto divide-y divide-[#eceae4]">
             {items.length === 0 ? (
-              <div className="p-8 text-center text-[#5f5f5d] text-xs font-medium">You're all caught up.</div>
+              <div className="p-8 text-center text-[#5f5f5d] text-xs font-medium">You&apos;re all caught up.</div>
             ) : (
               items.map(n => (
                 <button
