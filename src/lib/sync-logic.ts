@@ -546,19 +546,43 @@ export async function syncShiprocketData(supabase: any, send: (data: any) => voi
           if (!customer) continue;
 
           // 2. Upsert Order
-          const { error: orderErr } = await supabase.from("orders").upsert({
+          // orderId falls back to sr.id (Shiprocket's own internal order
+          // id) when sr.channel_order_id is missing - common for orders
+          // routed through third-party checkouts (e.g. Fastrr) that don't
+          // always get linked back to Shopify. That fallback id has no
+          // relationship to the real order's shopify_order_id, so
+          // upserting on onConflict: "shopify_order_id" alone found no
+          // conflict against the already-synced Shopify-sourced row and
+          // inserted a second row instead - confirmed live: 2,592 orders
+          // duplicated this way (2,592 order_numbers with both a
+          // "shopify" and a "shiprocket" row), including several created
+          // today, well after this file's other sync function (just
+          // above) was already fixed for the identical class of bug.
+          // Mirroring that same reconciliation-by-order_number pattern here.
+          const orderNumber = String(sr.order_no || orderId);
+          const { data: existingSrOrder } = await supabase
+            .from("orders")
+            .select("id, source")
+            .or(`shopify_order_id.eq.${orderId},order_number.eq.${orderNumber}`)
+            .maybeSingle();
+
+          const orderPayload: any = {
             shopify_order_id: orderId,
-            order_number: sr.order_no || orderId,
+            order_number: orderNumber,
             customer_id: customer.id,
             total_price: parseFloat(sr.total || 0),
             ordered_at: parseShiprocketDate(sr.created_at),
-            source: "shiprocket",
+            source: existingSrOrder?.source || "shiprocket",
             delivery_status: crmStatus,
             fulfillment_status: ["delivered", "in_transit", "out_for_delivery"].includes(crmStatus) ? "fulfilled" : "unfulfilled",
             tracking_number: sr.shipments?.[0]?.awb || sr.awb_code || null,
             courier_name: sr.shipments?.[0]?.courier || sr.courier_name || null,
             line_items: extractShiprocketLineItems(sr),
-          }, { onConflict: "shopify_order_id" });
+          };
+
+          const { error: orderErr } = existingSrOrder
+            ? await supabase.from("orders").update(orderPayload).eq("id", existingSrOrder.id)
+            : await supabase.from("orders").upsert(orderPayload, { onConflict: "shopify_order_id" });
 
           if (orderErr) {
             report.orders.failed++;
