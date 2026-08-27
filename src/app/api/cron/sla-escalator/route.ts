@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { requireInternal } from "@/lib/auth-utils";
 import { getEscalationLevel } from "@/lib/task-engine";
-import { notifyUser } from "@/lib/notifications";
+import { notifyUser } from "@/lib/notifications-server";
 
 // SLA escalation: a task that's sat open past its due date too long gets
 // flagged - the assigned agent is nudged, and a badly overdue one also

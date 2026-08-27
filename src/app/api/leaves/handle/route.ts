@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       const { data: profile } = await supabase.from("profiles").select("name").eq("id", updatedLeave.agent_id).single();
       const agentName = profile?.name || "An Agent";
       
-      const { notifyAdmin } = await import("@/lib/notifications");
+      const { notifyAdmin } = await import("@/lib/notifications-server");
       await notifyAdmin(
         `✅ *Leave ${status.toUpperCase()}*\n\nAgent: *${agentName}*\nDates: ${updatedLeave.start_date} to ${updatedLeave.end_date}\nAction by: HR\nRemarks: ${remarks || "None"}`,
         "info"

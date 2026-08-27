@@ -6,7 +6,7 @@ import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { WorkflowEngine } from "@/lib/workflow-engine";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { normalizePhone } from "@/lib/phone-utils";
-import { notifyAdmin } from "@/lib/notifications";
+import { notifyAdmin } from "@/lib/notifications-server";
 import { analyzeRTORisk } from "@/lib/risk-engine";
 import { safeEqual, isSecretConfigured, webhookStrict } from "@/lib/auth-utils";
 

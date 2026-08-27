@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireInternal } from "@/lib/auth-utils";
-import { notifyAdmin } from "@/lib/notifications";
+import { notifyAdmin } from "@/lib/notifications-server";
 import { createServerClient } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {

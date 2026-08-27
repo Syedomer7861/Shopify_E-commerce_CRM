@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const agentName = profile?.name || "An Agent";
 
     // Alert Admin
-    const { notifyAdmin } = await import("@/lib/notifications");
+    const { notifyAdmin } = await import("@/lib/notifications-server");
     await notifyAdmin(
       `📅 *New Leave Request*\n\nAgent: *${agentName}*\nDates: ${startDate} to ${endDate}\nReason: ${reason}`,
       "info"

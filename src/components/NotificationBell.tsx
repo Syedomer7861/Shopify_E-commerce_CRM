@@ -1,11 +1,12 @@
 "use client";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Check } from "lucide-react";
+import { Bell, Check, BellRing, BellOff } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { cn, isTypingInField } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import toast from "react-hot-toast";
 
 // Per-user in-app notifications (see notifications table,
 // migrations/20260827_notifications_table.sql). Previously the only
@@ -30,10 +31,21 @@ const TYPE_DOT: Record<Notification["type"], string> = {
   alert: "bg-rose-500",
 };
 
+// Web Push needs the VAPID public key as a raw Uint8Array, not the
+// base64url string it's distributed as. Standard conversion snippet.
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
 export function NotificationBell() {
   const { profile } = useCurrentProfile();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notification[]>([]);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -95,6 +107,76 @@ export function NotificationBell() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [userId]);
 
+  // Real OS-level push, on top of the in-app bell above - works even with
+  // the tab/app closed. Opt-in only: browsers largely ignore/auto-deny a
+  // permission prompt fired without a user gesture, so this only checks
+  // existing state on mount; actual subscribe happens from the button
+  // click in enablePush().
+  const pushSupported = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window
+    && !!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
+  useEffect(() => {
+    if (!userId || !pushSupported) return;
+    navigator.serviceWorker.register("/sw.js")
+      .then(reg => reg.pushManager.getSubscription())
+      .then(sub => setPushSubscribed(!!sub))
+      .catch(err => console.error("Service worker registration failed:", err));
+    // pushSupported is derived from a static env var + browser feature
+    // check, not state - safe to omit from deps.
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const enablePush = useCallback(async () => {
+    if (!pushSupported) return;
+    setPushBusy(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        toast.error("Notifications permission was not granted");
+        return;
+      }
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
+      });
+      const json = sub.toJSON();
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
+      });
+      setPushSubscribed(true);
+      toast.success("Push notifications enabled on this device");
+    } catch (err) {
+      console.error("Push subscribe failed:", err);
+      toast.error("Couldn't enable push notifications");
+    } finally {
+      setPushBusy(false);
+    }
+  }, [pushSupported]);
+
+  const disablePush = useCallback(async () => {
+    setPushBusy(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await fetch("/api/push/unsubscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: sub.endpoint }),
+        });
+        await sub.unsubscribe();
+      }
+      setPushSubscribed(false);
+      toast.success("Push notifications disabled on this device");
+    } catch (err) {
+      console.error("Push unsubscribe failed:", err);
+    } finally {
+      setPushBusy(false);
+    }
+  }, []);
+
   const unreadCount = items.filter(n => !n.read).length;
 
   const markRead = useCallback(async (id: string) => {
@@ -141,6 +223,16 @@ export function NotificationBell() {
               </button>
             )}
           </div>
+          {pushSupported && (
+            <button
+              onClick={pushSubscribed ? disablePush : enablePush}
+              disabled={pushBusy}
+              className="w-full flex items-center gap-2 px-4 py-2.5 border-b border-[#eceae4] text-[10px] font-bold text-[#5f5f5d] hover:text-[#1c1c1c] hover:bg-[#eceae4]/30 transition-colors disabled:opacity-50"
+            >
+              {pushSubscribed ? <BellOff className="w-3 h-3" /> : <BellRing className="w-3 h-3" />}
+              {pushSubscribed ? "Turn off push on this device" : "Get notified even when the app's closed"}
+            </button>
+          )}
           <div className="max-h-[60vh] overflow-y-auto divide-y divide-[#eceae4]">
             {items.length === 0 ? (
               <div className="p-8 text-center text-[#5f5f5d] text-xs font-medium">You're all caught up.</div>

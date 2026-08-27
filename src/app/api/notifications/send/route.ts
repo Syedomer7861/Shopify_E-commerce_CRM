@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireInternal } from "@/lib/auth-utils";
 import { rateLimit } from "@/lib/rate-limit";
-import { notifyUser } from "@/lib/notifications";
+import { notifyUser } from "@/lib/notifications-server";
 
 const bodySchema = z.object({
   userId: z.string().uuid(),
