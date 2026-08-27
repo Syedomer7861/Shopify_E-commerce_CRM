@@ -94,11 +94,22 @@ export async function POST(req: NextRequest) {
     // The two pull-based Shiprocket syncs (sync-logic.ts, sync/shiprocket)
     // already prioritize channel_order_id this way; this handler didn't.
     let orderId = data.channel_order_id || data.order_id || data.shiprocket_order_id || data.checkout_order_id || data.order_number || data.id;
-    
-    // FASTTR FIX: If stage is order_placed, treat as order even if orderId is missing
-    if (!orderId && (stage === "order_placed" || stage === "completed")) {
-      orderId = cartId;
-    }
+
+    // A "FASTTR FIX" here used to fall back to `orderId = cartId` when stage
+    // was order_placed/completed but no real order identifier was present
+    // (e.g. Fastrr checkout events, which carry only their own Mongo-style
+    // cart_id, never a Shopify/Shiprocket order id). That created a phantom
+    // order row keyed on the cart_id - shopify_order_id and order_number
+    // both got set to it - which the real Shopify order webhook (arriving
+    // moments later with the correct numeric id) could never match, so both
+    // rows lived on forever as duplicates (confirmed: 118 such rows,
+    // identical customer/product pairs, ~hourly). Leaving orderId unset
+    // here is intentional: isAbandonedStage below already excludes
+    // order_placed/completed by design, and the A3 order-persist block
+    // below requires a truthy orderId, so this event now just upserts the
+    // customer and stops - no cart-abandoned task, no fake order. The real
+    // Shopify webhook creates the correct order shortly after and already
+    // auto-resolves any pending cart/task for this phone on arrival.
 
     // --- CASE A: Checkout / Abandoned / Order Placed Events ---
     // If we have either a cartId OR an orderId, process it
