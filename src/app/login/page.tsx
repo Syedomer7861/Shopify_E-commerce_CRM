@@ -17,7 +17,7 @@ export default function LoginPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -45,7 +45,7 @@ export default function LoginPage() {
 
     setLoading(false);
     sendAdminNotification(`👤 Agent Log-in: ${email}${profile?.is_demo ? ' (Demo Mode)' : ''}`, "info").catch(console.error);
-    
+
     // Force a clean hard-redirect to guarantee cookies sync with Next.js SSR
     // middleware. Matches src/app/page.tsx's role routing exactly - this
     // only checked for "manager" before, so admin/hr landed on /dashboard
@@ -53,17 +53,17 @@ export default function LoginPage() {
     // them there.
     const landingPage = profile?.role === "manager" ? "/manager"
       : profile?.role === "admin" ? "/my-hub"
-      : profile?.role === "hr" ? "/hr"
-      : "/dashboard";
+        : profile?.role === "hr" ? "/hr"
+          : "/dashboard";
     window.location.href = landingPage;
   }
 
   return (
     <div className="min-h-screen bg-[#f7f4ed] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Editorial Decorative Background */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none" 
-           style={{ backgroundImage: `radial-gradient(#1c1c1c 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
-      
+      <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none"
+        style={{ backgroundImage: `radial-gradient(#1c1c1c 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
+
       <div className="w-full max-w-[420px] relative z-10">
         {/* Logo Section */}
         <div className="text-center mb-12 animate-fade-in">
@@ -91,13 +91,13 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest ml-1">Email</label>
-              <input 
-                type="email" 
-                className="w-full h-14 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-5 text-[#1c1c1c] placeholder:text-[#1c1c1c]/20 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c]/20 transition-all text-sm font-medium" 
+              <input
+                type="email"
+                className="w-full h-14 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-5 text-[#1c1c1c] placeholder:text-[#1c1c1c]/20 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c]/20 transition-all text-sm font-medium"
                 placeholder="admin@cureforever.in"
-                value={email} 
-                onChange={e => setEmail(e.target.value)} 
-                required 
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
               />
             </div>
 
@@ -107,16 +107,16 @@ export default function LoginPage() {
                 <button type="button" className="text-[10px] font-bold text-[#1c1c1c]/40 hover:text-[#1c1c1c] transition-colors">Recover</button>
               </div>
               <div className="relative">
-                <input 
-                  type={show ? "text" : "password"} 
-                  className="w-full h-14 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-5 pr-12 text-[#1c1c1c] placeholder:text-[#1c1c1c]/20 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c]/20 transition-all text-sm font-medium" 
+                <input
+                  type={show ? "text" : "password"}
+                  className="w-full h-14 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-5 pr-12 text-[#1c1c1c] placeholder:text-[#1c1c1c]/20 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c]/20 transition-all text-sm font-medium"
                   placeholder="••••••••"
-                  value={password} 
-                  onChange={e => setPassword(e.target.value)} 
-                  required 
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setShow(s => !s)}
                   className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1c1c1c]/20 hover:text-[#1c1c1c] transition-colors"
                 >
@@ -125,8 +125,8 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="w-full h-14 bg-[#1c1c1c] text-[#f7f4ed] font-black uppercase tracking-widest rounded-2xl shadow-xl hover:shadow-[#1c1c1c]/10 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-3"
             >
@@ -145,12 +145,12 @@ export default function LoginPage() {
         {/* Footer Info */}
         <div className="mt-12 text-center">
           <div className="flex items-center justify-center gap-6 mb-4">
-            <span className="text-[9px] font-black text-[#1c1c1c]/20 uppercase tracking-[0.2em]">V_01 Stable</span>
+            <span className="text-[9px] font-black text-[#1c1c1c]/20 uppercase tracking-[0.2em]">V_01</span>
             <div className="w-1 h-1 rounded-full bg-[#1c1c1c]/10" />
-            <span className="text-[9px] font-black text-[#1c1c1c]/20 uppercase tracking-[0.2em]">Encrypted Session</span>
+            <span className="text-[9px] font-black text-[#1c1c1c]/20 uppercase tracking-[0.2em]">Created By <a className="text-[9px] font-black text-[#1c1c1c]/20 uppercase tracking-[0.2em]" href="https://codecreststudio.vercel.app/">Codecrest_Studio</a></span>
           </div>
           <p className="text-[9px] text-[#1c1c1c]/20 font-bold uppercase tracking-widest leading-relaxed">
-            &copy; 2026 CureForever Administrative Control
+            &copy; 2026 Cureforever Administrative Control
           </p>
         </div>
       </div>
