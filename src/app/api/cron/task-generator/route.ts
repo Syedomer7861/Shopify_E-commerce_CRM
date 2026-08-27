@@ -28,7 +28,7 @@ export const maxDuration = 60;
 // never itself exceed the 60s budget even on a large backlog - the
 // existing-task skip check above already makes this safely incremental
 // across daily runs (see the comment on that block).
-const BATCH_LIMIT = 150;
+const BATCH_LIMIT = 50;
 
 function getSupabase() {
   return createAdminClient();
@@ -43,17 +43,28 @@ export async function POST(req: NextRequest) {
   // scanning the real backlog.
   const onlyOrderId = req.nextUrl.searchParams.get("orderId");
 
-  // Find delivered orders AND orders with status "Delivered" (case-insensitive query via ilike or in)
-  let orderQuery = supabase
-    .from("orders")
-    .select("id, customer_id, delivered_at, line_items, delivery_status")
-    .in("delivery_status", ["delivered", "Delivered"])
-    .not("delivered_at", "is", null);
-  orderQuery = onlyOrderId ? orderQuery.eq("id", onlyOrderId) : orderQuery.limit(BATCH_LIMIT);
+  let orders: any[] | null;
+  if (onlyOrderId) {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("id, customer_id, delivered_at, line_items, delivery_status, customer:customers(rto_flag, segment)")
+      .eq("id", onlyOrderId)
+      .in("delivery_status", ["delivered", "Delivered"])
+      .not("delivered_at", "is", null);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    orders = (data || []).map((o: any) => ({ ...o, rto_flag: o.customer?.rto_flag, segment: o.customer?.segment }));
+  } else {
+    // orders_needing_review_tasks (migrations/20260827e_task_backlog_rpcs.sql)
+    // already excludes orders that have the tasks, RTO-flagged customers,
+    // and orders by id - a plain .limit(N) with no ordering and no
+    // exclusion filter was confirmed live (on the sibling
+    // issue-task-generator route) to make zero real progress across
+    // repeated calls.
+    const { data, error } = await supabase.rpc("orders_needing_review_tasks", { limit_n: BATCH_LIMIT });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    orders = data;
+  }
 
-  const { data: orders, error: orderErr } = await orderQuery;
-
-  if (orderErr) return NextResponse.json({ error: orderErr.message }, { status: 500 });
   if (!orders?.length) return NextResponse.json({ generated: 0, checked: 0 });
 
   // Fetch global settings
@@ -66,30 +77,7 @@ export async function POST(req: NextRequest) {
   const { data: overrideData } = await supabase.from("product_overrides").select("*");
 
   for (const order of orders) {
-    // 1. Double check: Does this order already have standard tasks?
-    // We check for "review" specifically as a proxy for the standard set
-    const { data: existing } = await supabase
-      .from("tasks")
-      .select("id")
-      .eq("order_id", order.id)
-      .in("task_type", ["review", "reorder", "final_followup"])
-      .limit(1);
-
-    if (existing?.length) {
-      skipped++;
-      continue;
-    }
-
-    // 2. Check Customer RTO Flag
-    const { data: customer } = await supabase
-      .from("customers")
-      .select("rto_flag, segment")
-      .eq("id", order.customer_id)
-      .single();
-    if (customer?.rto_flag) {
-      skipped++;
-      continue;
-    }
+    const customer = { rto_flag: order.rto_flag, segment: order.segment };
 
     // 3. Resolve Offsets
     const lineItem = order.line_items?.[0];

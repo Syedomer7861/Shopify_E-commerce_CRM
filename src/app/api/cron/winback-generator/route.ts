@@ -11,7 +11,7 @@ import { requireInternal } from "@/lib/auth-utils";
 // phases ahead of it in that shared 60s budget starved it of any
 // execution time.
 export const maxDuration = 60;
-const BATCH_LIMIT = 150;
+const BATCH_LIMIT = 50;
 
 export async function POST(req: NextRequest) {
   const unauthorized = await requireInternal(req);
@@ -22,33 +22,31 @@ export async function POST(req: NextRequest) {
   // of scanning the real backlog.
   const onlyCustomerId = req.nextUrl.searchParams.get("customerId");
 
-  const sixtyDaysAgo = new Date();
-  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-  const sixtyDaysAgoStr = sixtyDaysAgo.toISOString();
-
-  let dormantQuery = supabase
-    .from("customers")
-    .select("id, name, last_order_date, segment")
-    .lt("last_order_date", sixtyDaysAgoStr)
-    .not("last_order_date", "is", null);
-  dormantQuery = onlyCustomerId ? dormantQuery.eq("id", onlyCustomerId) : dormantQuery.limit(BATCH_LIMIT);
-
-  const { data: dormantCustomers, error } = await dormantQuery;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  let dormantCustomers: any[] | null;
+  if (onlyCustomerId) {
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+    const { data, error } = await supabase
+      .from("customers")
+      .select("id, name, last_order_date, segment")
+      .eq("id", onlyCustomerId)
+      .lt("last_order_date", sixtyDaysAgo.toISOString());
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    dormantCustomers = data;
+  } else {
+    // customers_needing_winback (migrations/20260827e_task_backlog_rpcs.sql)
+    // already excludes customers who have the task and orders by id - a
+    // plain .limit(N) with no ordering and no exclusion filter was
+    // confirmed live (on the sibling issue-task-generator route) to make
+    // zero real progress across repeated calls.
+    const { data, error } = await supabase.rpc("customers_needing_winback", { limit_n: BATCH_LIMIT });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    dormantCustomers = data;
+  }
 
   let winbackTasks = 0;
 
   for (const cust of dormantCustomers || []) {
-    // Check if they already have an active win_back task
-    const { count: existingWinback } = await supabase
-      .from("tasks")
-      .select("id", { count: "exact", head: true })
-      .eq("customer_id", cust.id)
-      .eq("task_type", "win_back")
-      .not("status", "in", '("done","cancelled","skipped")');
-
-    if ((existingWinback || 0) > 0) continue;
-
     // Assign to best available agent for re-engagement
     const assignedTo = await assignTaskOwner(supabase, "win_back", cust.segment);
     const { error: winErr } = await supabase.from("tasks").insert({
