@@ -8,6 +8,7 @@ import { AgentHeartbeat } from "@/components/AgentHeartbeat";
 import { AdminNotifier } from "@/components/AdminNotifier";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NotificationBell } from "@/components/NotificationBell";
+import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
@@ -24,6 +25,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <AdminNotifier />
         <CommandPalette />
         <NotificationBell />
+        <KeyboardShortcutsHelp />
         <Suspense fallback={<div className="w-64 bg-[#f7f4ed] animate-pulse" />}>
           <Sidebar />
         </Suspense>

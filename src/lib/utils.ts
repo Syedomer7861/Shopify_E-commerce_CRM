@@ -7,6 +7,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Guards single-letter global keyboard shortcuts (/, n, ?) from hijacking
+// normal typing anywhere an agent is filling out a form, note, or search box.
+export function isTypingInField(target: EventTarget | null) {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  const tag = el.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+}
+
 export function formatDate(dateStr: string) {
   try { return format(parseISO(dateStr), "d MMM yyyy"); } catch { return dateStr; }
 }

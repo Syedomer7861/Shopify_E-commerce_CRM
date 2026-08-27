@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Search, User, Package, ListChecks, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { isTypingInField } from "@/lib/utils";
 
 // Global Cmd+K / Ctrl+K search - jump to any customer or order from
 // anywhere in the app, without hunting through pages. Task search reuses
@@ -27,6 +28,9 @@ export function CommandPalette() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen(o => !o);
+      } else if (e.key === "/" && !isTypingInField(e.target) && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        setOpen(true);
       } else if (e.key === "Escape") {
         setOpen(false);
       }

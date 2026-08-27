@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Bell, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
-import { cn } from "@/lib/utils";
+import { cn, isTypingInField } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
 // Per-user in-app notifications (see notifications table,
@@ -78,6 +78,22 @@ export function NotificationBell() {
     if (open) document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [open]);
+
+  // "n" toggles notifications, "Esc" closes - mirrors CommandPalette's own
+  // shortcut/guard pattern (Ctrl/Cmd+K, "/", Esc).
+  useEffect(() => {
+    if (!userId) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key.toLowerCase() === "n" && !isTypingInField(e.target) && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        setOpen(o => !o);
+      } else if (e.key === "Escape") {
+        setOpen(false);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [userId]);
 
   const unreadCount = items.filter(n => !n.read).length;
 
