@@ -14,9 +14,10 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
-  CheckSquare
+  CheckSquare,
+  Info
 } from "lucide-react";
-import { PageHeader, EmptyState, TaskTypeBadge, Pagination } from "@/components/ui";
+import { PageHeader, EmptyState, TaskTypeBadge, Pagination, Modal } from "@/components/ui";
 import TaskCard from "@/components/TaskCard";
 import { createClient } from "@/lib/supabase";
 import { sendAdminNotification } from "@/lib/notifications";
@@ -25,20 +26,26 @@ import type { Task, Customer, Order, TaskType, TaskStatus } from "@/types";
 import toast from "react-hot-toast";
 import { logAuditEvent } from "@/lib/audit";
 
-const TYPES: { label: string; value: string }[] = [
-  { label: "All Types", value: "all" },
-  { label: "Recovery", value: "recovery" },
-  { label: "Welcome Call", value: "welcome_call" },
-  { label: "VIP / Whale", value: "vip_followup" },
-  { label: "Win-back", value: "win_back" },
-  { label: "COD Verify", value: "cod_verify" },
-  { label: "NDR / Issue", value: "ndr" },
-  { label: "Review", value: "review" },
-  { label: "Reorder", value: "reorder" },
-  { label: "Flagged", value: "flagged" },
-  { label: "Final Follow-up", value: "final_followup" },
-  { label: "Issue Resolution", value: "issue_resolution" },
-  { label: "Transit Inform", value: "transit_update" },
+// The "NDR / Issue" tab used to filter on task_type "ndr" - no code path
+// anywhere in the app has ever created a task with that value (grepped
+// the whole codebase and confirmed against production: zero rows,
+// ever). Every real NDR/delivery-exception task is created as
+// "issue_resolution" instead, so that tab was permanently, silently
+// empty. Removed rather than "fixed" - Issue Resolution already covers
+// the real thing.
+const TYPES: { label: string; value: string; description: string }[] = [
+  { label: "All Types", value: "all", description: "Every task across every category, in one queue." },
+  { label: "Recovery", value: "recovery", description: "Abandoned checkout - items were added but the order was never completed." },
+  { label: "Welcome Call", value: "welcome_call", description: "A first-time customer's very first order - greet them before the sale goes cold." },
+  { label: "VIP / Whale", value: "vip_followup", description: "A high-value order (₹25,000+) that deserves a personal, priority follow-up." },
+  { label: "Win-back", value: "win_back", description: "A customer who hasn't ordered in 60+ days - worth a re-engagement nudge." },
+  { label: "COD Verify", value: "cod_verify", description: "Cash-on-delivery, or flagged as risky - confirm with the customer before it ships." },
+  { label: "Review", value: "review", description: "Delivered - ask the customer for a review a few days after arrival." },
+  { label: "Reorder", value: "reorder", description: "Delivered a while ago - nudge a repurchase now that they've likely run out." },
+  { label: "Flagged", value: "flagged", description: "Sent back by a manager in the Audit Queue - needs another look before it's approved." },
+  { label: "Final Follow-up", value: "final_followup", description: "Delivered - the last check-in before the order is considered fully closed." },
+  { label: "Issue Resolution", value: "issue_resolution", description: "Delivery failed (RTO), returned to origin, or stuck in transit 7+ days." },
+  { label: "Transit Inform", value: "transit_update", description: "Order is in transit - proactively update the customer on shipping status." },
 ];
 const STATUSES: { label: string; value: string }[] = [
   { label: "All Statuses", value: "all" },
@@ -73,6 +80,7 @@ export default function TasksPage() {
   const [bulkReassignTo, setBulkReassignTo] = useState("");
   const [bulkActing, setBulkActing] = useState(false);
   const [onCallByTaskId, setOnCallByTaskId] = useState<Record<string, string>>({});
+  const [showTypeInfo, setShowTypeInfo] = useState(false);
   const PAGE_SIZE = 20;
   const { profile, loading: profileLoading } = useCurrentProfile();
   // useCurrentProfile hands back a new profile object on every auth token
@@ -963,6 +971,7 @@ export default function TasksPage() {
               <button
                 key={t.value}
                 onClick={() => setTypeFilter(t.value)}
+                title={t.description}
                 className={cn(
                   "px-4 py-2 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all uppercase tracking-widest flex-shrink-0",
                   typeFilter === t.value
@@ -984,7 +993,18 @@ export default function TasksPage() {
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-        
+
+        {/* Tab hover title="" only reaches desktop mouse users - this
+            covers mobile/PWA, where nothing else exposes what each tab
+            actually means. */}
+        <button
+          onClick={() => setShowTypeInfo(true)}
+          aria-label="What do these tabs mean?"
+          className="flex-shrink-0 w-9 h-9 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-gray-700 hover:bg-gray-50 flex items-center justify-center transition-colors"
+        >
+          <Info className="w-4 h-4" />
+        </button>
+
         {/* Statuses */}
         <div className="flex-shrink-0 w-full lg:w-auto">
           <select className="select w-full text-xs h-[38px] bg-white border-gray-200" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
@@ -1098,12 +1118,23 @@ export default function TasksPage() {
         </div>
       )}
 
-      <Pagination 
-        current={page} 
-        total={totalCount} 
-        pageSize={PAGE_SIZE} 
-        onChange={(p) => { setPage(p); window.scrollTo(0, 0); }} 
+      <Pagination
+        current={page}
+        total={totalCount}
+        pageSize={PAGE_SIZE}
+        onChange={(p) => { setPage(p); window.scrollTo(0, 0); }}
       />
+
+      <Modal open={showTypeInfo} onClose={() => setShowTypeInfo(false)} title="What each tab means" maxWidth="max-w-lg">
+        <div className="space-y-4">
+          {TYPES.filter(t => t.value !== "all").map(t => (
+            <div key={t.value}>
+              <div className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest">{t.label}</div>
+              <div className="text-xs text-[#5f5f5d] mt-0.5">{t.description}</div>
+            </div>
+          ))}
+        </div>
+      </Modal>
     </div>
   );
 }
