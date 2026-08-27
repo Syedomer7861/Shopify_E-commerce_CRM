@@ -152,14 +152,29 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        // resolveUnmaskedPhone() above updates customerPhone when it finds
+        // a real number, but identityPhone (computed before unmasking, at
+        // line ~135) was never re-derived from it - every lookup/upsert
+        // below kept matching against the STALE masked value. Confirmed
+        // live: dozens of genuinely distinct real orders (different order
+        // numbers, different products, spread across a whole day) all
+        // permanently merged onto one customer record via the phone
+        // onConflict upsert, because they all shared the same masked
+        // identityPhone that never got corrected to each order's real,
+        // actually-distinct unmasked phone. Preferring the resolved real
+        // phone here (falling back to identityPhone only when unmasking
+        // never ran/found nothing, e.g. the GUEST-<cartId> case) fixes
+        // that identity split going forward.
+        const resolvedIdentity = customerPhone || identityPhone;
+
         // Fetch existing to protect name OR handle unmasking
         let existingCust: any = null;
-        
+
         // Try match by phone first (standard)
         const { data: byPhone } = await supabase
           .from("customers")
           .select("id, name, phone")
-          .eq("phone", identityPhone)
+          .eq("phone", resolvedIdentity)
           .maybeSingle();
         existingCust = byPhone;
 
@@ -183,7 +198,7 @@ export async function POST(req: NextRequest) {
           .from("customers")
           .upsert({
             name: nameToSave,
-            phone: identityPhone,
+            phone: resolvedIdentity,
             email: rawEmail,
             city: data.city || shipAddr.city || billAddr.city || null,
             state: data.state || shipAddr.state || billAddr.state || null,
