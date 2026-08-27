@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Search, Package, RefreshCw, Trash2, Download, MessageSquare, ExternalLink, Filter } from "lucide-react";
 import Link from "next/link";
-import { PageHeader, DeliveryBadge, Avatar, EmptyState, Modal, Pagination } from "@/components/ui";
+import { PageHeader, DeliveryBadge, RiskBadge, Avatar, EmptyState, Modal, Pagination } from "@/components/ui";
 import dynamic from 'next/dynamic';
 const ShiprocketOrderView = dynamic(() => import("@/components/ShiprocketOrderView"), { 
   loading: () => <div className="p-8 text-center"><RefreshCw className="w-6 h-6 animate-spin mx-auto text-gray-300" /></div>
@@ -567,7 +567,10 @@ export default function OrdersPage() {
                   <div className="text-xs font-bold text-[#1c1c1c] truncate hover:underline">{o.customer?.name}</div>
                 </Link>
                   <div className="flex items-center text-[11px] text-[#5f5f5d] font-bold truncate opacity-60">{o.line_items.map(l => l.name || l.title || "Unknown").join(", ")}</div>
-                <div className="flex items-center"><DeliveryBadge status={o.delivery_status} /></div>
+                <div className="flex items-center gap-1.5">
+                  <DeliveryBadge status={o.delivery_status} />
+                  <RiskBadge level={o.custom_meta?.risk_analysis?.level} />
+                </div>
                 <span className="flex items-center text-xs font-bold text-[#1c1c1c]">{formatCurrency(o.total_price ?? 0)}</span>
                 <span className="flex items-center text-[10px] text-[#5f5f5d] font-bold">{formatDate(o.ordered_at)}</span>
                 <span className="flex items-center text-[10px] text-[#5f5f5d] font-bold">{o.delivered_at ? formatDate(o.delivered_at) : "—"}</span>

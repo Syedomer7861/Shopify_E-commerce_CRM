@@ -74,6 +74,7 @@ export interface Order {
   created_at: string;
   updated_at: string;
   customer?: Customer;
+  custom_meta?: Record<string, any>;
 }
 
 export interface AbandonedCart {

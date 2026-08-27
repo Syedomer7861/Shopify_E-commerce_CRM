@@ -21,6 +21,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
   const [calls, setCalls] = useState<CallLog[]>([]);
   const [audits, setAudits] = useState<AuditLog[]>([]);
   const [recordings, setRecordings] = useState<RawCallLog[]>([]);
+  const [whatsappMessages, setWhatsappMessages] = useState<any[]>([]);
   const [tab, setTab] = useState<"timeline" | "orders" | "calls" | "recordings" | "tasks" | "notes">("timeline");
   const [notes, setNotes] = useState("");
   const [clearRtoModal, setClearRtoModal] = useState(false);
@@ -98,12 +99,21 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
       }
     }
 
+    // 5. WhatsApp message history - stored keyed by customer_id, falls back
+    // to phone for older rows sent before customer_id was resolved.
+    const { data: waData } = await supabase
+      .from("whatsapp_messages")
+      .select("*")
+      .or([`customer_id.eq.${id}`, `phone.eq.${custData.phone}`].filter(Boolean).join(","))
+      .order("created_at", { ascending: false });
+
     setCustomer(custData as any);
     setOrders((ordersData || []) as any);
     setTasks((tasksData || []) as any);
     setCalls((callsData || []) as any);
     setAudits(((auditData || []).filter((audit: any) => audit.entity_id === id || audit.metadata?.customerId === id)) as any);
     setRecordings((recordingsData || []) as any);
+    setWhatsappMessages((waData || []) as any);
     setNotes(custData.notes || "");
     setLoading(false);
   }, [id, supabase]);
@@ -224,7 +234,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
   const totalSpent = orders.reduce((s, o) => s + (Number(o.total_price) || 0), 0);
 
   const tabs = [
-    { key: "timeline", label: "Timeline", icon: Info, count: orders.length + calls.length + tasks.length + audits.length },
+    { key: "timeline", label: "Timeline", icon: Info, count: orders.length + calls.length + tasks.length + audits.length + whatsappMessages.length },
     { key: "orders", label: "Orders", icon: ShoppingBag, count: orders.length },
     { key: "calls", label: "Call Logs", icon: PhoneCall, count: calls.length },
     { key: "recordings", label: "Recordings", icon: Headphones, count: recordings.length },
@@ -253,6 +263,13 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
       at: call.called_at,
       title: `Call outcome: ${call.outcome.replace("_", " ")}`,
       detail: [call.disposition?.replace(/_/g, " "), call.follow_up_action, call.note].filter(Boolean).join(" · "),
+    })),
+    ...whatsappMessages.map((msg) => ({
+      id: `wa-${msg.id}`,
+      type: "whatsapp",
+      at: msg.created_at,
+      title: msg.direction === "inbound" ? "WhatsApp reply received" : "WhatsApp message sent",
+      detail: (msg.body || `[${msg.type}]`).slice(0, 140),
     })),
     ...audits.map((audit) => ({
       id: `audit-${audit.id}`,
@@ -534,7 +551,8 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                 <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0",
                   item.type === "order" ? "bg-[#1c1c1c]" :
                   item.type === "task" ? "bg-amber-500" :
-                  item.type === "call" ? "bg-[#1c1c1c]/60" : "bg-violet-500"
+                  item.type === "call" ? "bg-[#1c1c1c]/60" :
+                  item.type === "whatsapp" ? "bg-emerald-500" : "bg-violet-500"
                 )} />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">

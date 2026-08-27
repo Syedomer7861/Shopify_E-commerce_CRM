@@ -31,6 +31,29 @@ export function DeliveryBadge({ status }: { status: DeliveryStatus }) {
   );
 }
 
+// Reads the RTO risk our own engine computed at order-create time
+// (src/lib/risk-engine.ts, stored as order.custom_meta.risk_analysis).
+// LOW isn't worth a badge - only flag what an agent should act on.
+const RISK_CONFIG: Record<string, { bg: string; color: string }> = {
+  CRITICAL: { bg: "bg-rose-50 border-rose-200", color: "text-rose-600" },
+  HIGH: { bg: "bg-rose-50 border-rose-100", color: "text-rose-600" },
+  MEDIUM: { bg: "bg-amber-50 border-amber-100", color: "text-amber-600" },
+};
+
+export function RiskBadge({ level }: { level?: string }) {
+  const c = level ? RISK_CONFIG[level] : undefined;
+  if (!c) return null;
+  return (
+    <span
+      title="RTO risk (order-create prediction)"
+      className={cn("badge flex gap-1 items-center px-1.5 py-0.5 whitespace-nowrap", c.bg, c.color)}
+    >
+      <AlertTriangle className="w-3 h-3" />
+      {level}
+    </span>
+  );
+}
+
 export function TaskTypeBadge({ type }: { type: TaskType }) {
   const c = TASK_TYPE_CONFIG[type];
   return <span className={cn("badge border-transparent", c.bg, c.color)}>{c.label}</span>;
