@@ -69,6 +69,9 @@ export default function TasksPage() {
   const [dueStart, setDueStart] = useState("");
   const [dueEnd, setDueEnd] = useState("");
   const [agentFilter, setAgentFilter] = useState("all");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkReassignTo, setBulkReassignTo] = useState("");
+  const [bulkActing, setBulkActing] = useState(false);
   const PAGE_SIZE = 20;
   const { profile, loading: profileLoading } = useCurrentProfile();
   // useCurrentProfile hands back a new profile object on every auth token
@@ -459,6 +462,63 @@ export default function TasksPage() {
     };
     // profileKey, not profile: see the comment on profileKey above.
   }, [profileKey, profileLoading, fetchTasks, supabase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Selection references this page's rows only - clear it whenever the
+  // page or filters change so a stale id from a previous view can't be
+  // silently carried into a bulk action on a different set of tasks.
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [page, typeFilter, statusFilter, agentFilter, debouncedSearch, dueStart, dueEnd]);
+
+  const canBulkManage = profile?.role === "admin" || profile?.role === "manager";
+
+  function toggleSelected(id: string) {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
+
+  function toggleSelectAll() {
+    setSelectedIds(prev => prev.length === tasks.length ? [] : tasks.map(t => t.id));
+  }
+
+  async function handleBulkCancel() {
+    if (selectedIds.length === 0 || !canBulkManage) return;
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success(`Demo: Cancelled ${selectedIds.length} tasks (local only)`);
+      setTasks(prev => prev.filter(t => !selectedIds.includes(t.id)));
+      setSelectedIds([]);
+      return;
+    }
+    setBulkActing(true);
+    const { error } = await supabase.from("tasks").update({ status: "cancelled" } as any).in("id", selectedIds);
+    setBulkActing(false);
+    if (error) return toast.error("Bulk cancel failed");
+    await logAuditEvent({ entityType: "task", entityId: selectedIds.join(","), action: "bulk_cancel", summary: `Bulk-cancelled ${selectedIds.length} tasks`, metadata: { ids: selectedIds } });
+    toast.success(`Cancelled ${selectedIds.length} tasks`);
+    setSelectedIds([]);
+    fetchTasks(true);
+  }
+
+  async function handleBulkReassign() {
+    if (selectedIds.length === 0 || !bulkReassignTo || !canBulkManage) return;
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      toast.success(`Demo: Reassigned ${selectedIds.length} tasks (local only)`);
+      setTasks(prev => prev.map(t => selectedIds.includes(t.id) ? { ...t, assigned_to: bulkReassignTo } : t));
+      setSelectedIds([]);
+      setBulkReassignTo("");
+      return;
+    }
+    setBulkActing(true);
+    const { error } = await supabase.from("tasks").update({ assigned_to: bulkReassignTo } as any).in("id", selectedIds);
+    setBulkActing(false);
+    if (error) return toast.error("Bulk reassign failed");
+    await logAuditEvent({ entityType: "task", entityId: selectedIds.join(","), action: "bulk_reassign", summary: `Bulk-reassigned ${selectedIds.length} tasks`, metadata: { ids: selectedIds, newOwnerId: bulkReassignTo } });
+    toast.success(`Reassigned ${selectedIds.length} tasks`);
+    setSelectedIds([]);
+    setBulkReassignTo("");
+    fetchTasks(true);
+  }
 
   async function handleReassign(id: string, newOwnerId: string) {
     if (!newOwnerId) return;
@@ -921,6 +981,14 @@ export default function TasksPage() {
       </div>
 
       {/* Task list */}
+      {canBulkManage && tasks.length > 0 && (
+        <label className="flex items-center gap-2 mb-2 text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] cursor-pointer w-fit">
+          <input type="checkbox" className="checkbox w-3.5 h-3.5"
+            checked={selectedIds.length === tasks.length && tasks.length > 0}
+            onChange={toggleSelectAll} />
+          Select all on this page
+        </label>
+      )}
       <div className="space-y-3">
         {loading ? (
           <div className="p-12 text-center text-gray-400 text-sm">Searching tasks...</div>
@@ -928,19 +996,73 @@ export default function TasksPage() {
           <EmptyState icon={<CheckSquare className="w-5 h-5" />} title="No tasks found" desc="Try adjusting your filters" />
         ) : (
           tasks.map(task => (
-            <TaskCard key={task.id} task={task as any}
-              onComplete={handleComplete}
-              onReschedule={handleReschedule}
-              onSkip={handleSkip}
-              onWhatsApp={() => fetchTasks(true)}
-              whatsappSettings={waSettings}
-              isAdmin={profile?.role === "admin" || profile?.role === "manager"}
-              agents={agents}
-              onReassign={handleReassign}
-            />
+            <div key={task.id} className="flex items-start gap-2">
+              {canBulkManage && (
+                <input type="checkbox" className="checkbox w-3.5 h-3.5 mt-5 shrink-0"
+                  checked={selectedIds.includes(task.id)}
+                  onChange={() => toggleSelected(task.id)} />
+              )}
+              <div className="flex-1 min-w-0">
+                <TaskCard task={task as any}
+                  onComplete={handleComplete}
+                  onReschedule={handleReschedule}
+                  onSkip={handleSkip}
+                  onWhatsApp={() => fetchTasks(true)}
+                  whatsappSettings={waSettings}
+                  isAdmin={profile?.role === "admin" || profile?.role === "manager"}
+                  agents={agents}
+                  onReassign={handleReassign}
+                />
+              </div>
+            </div>
           ))
         )}
       </div>
+
+      {/* Floating Bulk Action Bar - admin/manager only, mirrors the pattern
+          already used on Customers and Orders pages. */}
+      {canBulkManage && selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-slide-up w-[calc(100%-2rem)] md:w-auto">
+          <div className="bg-[#1c1c1c] text-white flex flex-wrap items-center gap-3 md:gap-4 px-4 md:px-6 py-3 rounded-2xl shadow-2xl min-w-0 md:min-w-[480px]">
+            <div className="flex items-center gap-2 md:gap-3 border-r border-white/10 pr-3 md:pr-4">
+              <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#f7f4ed] text-[#1c1c1c] flex items-center justify-center text-[9px] md:text-[10px] font-bold">
+                {selectedIds.length}
+              </div>
+              <span className="hidden xs:inline text-[9px] md:text-[10px] font-bold uppercase tracking-widest opacity-60">Selected</span>
+            </div>
+
+            <select
+              className="bg-white/10 text-white text-[10px] font-bold rounded-lg px-2 py-1.5 outline-none border border-white/10"
+              value={bulkReassignTo}
+              onChange={e => setBulkReassignTo(e.target.value)}
+              disabled={bulkActing}
+            >
+              <option value="">Reassign to...</option>
+              {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+            <button
+              onClick={handleBulkReassign}
+              disabled={!bulkReassignTo || bulkActing}
+              className="text-[10px] font-bold uppercase tracking-widest hover:text-[#eceae4] transition-colors disabled:opacity-30"
+            >
+              Apply
+            </button>
+
+            <button
+              onClick={handleBulkCancel}
+              disabled={bulkActing}
+              className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-rose-400 hover:text-rose-300 transition-colors disabled:opacity-30"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Cancel Selected
+            </button>
+
+            <button onClick={() => setSelectedIds([])} className="ml-auto text-[10px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity">
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
 
       <Pagination 
         current={page} 
