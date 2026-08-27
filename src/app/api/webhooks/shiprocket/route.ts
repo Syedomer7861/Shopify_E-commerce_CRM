@@ -425,7 +425,7 @@ export async function POST(req: NextRequest) {
                  status: "pending",
                  priority_score: 90,
                  assigned_to: await assignTaskOwner(supabase, "welcome_call")
-               }, { onConflict: "customer_id, task_type" });
+               }, { onConflict: "order_id, task_type" });
                if (welcomeErr) console.error(`welcome_call task upsert failed for customer ${customerId}:`, welcomeErr.message);
             }
 
