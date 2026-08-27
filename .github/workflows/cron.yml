@@ -67,7 +67,7 @@ jobs:
             # cron schedule.
             # refresh-product-catalog self-gates to the 1st/11th/21st inside
             # the route, so it rides the daily trigger for a ~3x/month cadence.
-            daily)     paths="/api/cron/unresponsive-handler /api/cron/segment-updater /api/cron/recovery-reminder /api/cron/reorder-reminder /api/cron/review-reminder /api/cron/daily-digest /api/cron/analytics-digest?range=daily /api/cron/analytics-digest?range=weekly /api/cron/refresh-product-catalog" ;;
+            daily)     paths="/api/cron/unresponsive-handler /api/cron/segment-updater /api/cron/recovery-reminder /api/cron/reorder-reminder /api/cron/review-reminder /api/cron/daily-digest /api/cron/analytics-digest?range=daily /api/cron/analytics-digest?range=weekly /api/cron/refresh-product-catalog /api/cron/sla-escalator" ;;
           esac
 
           echo "group=$group" >> "$GITHUB_OUTPUT"
