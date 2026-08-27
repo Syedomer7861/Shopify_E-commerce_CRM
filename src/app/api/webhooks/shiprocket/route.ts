@@ -380,7 +380,17 @@ export async function POST(req: NextRequest) {
             }
 
             // --- [NEW] Task Generation Sentinel ---
-            const orderTotal = parseFloat(data.total_price || data.cart_value || 0);
+            // Was independently re-parsed from the raw webhook payload with
+            // a narrower fallback chain (data.total_price/cart_value only)
+            // than the one that actually computed upsertData.total_price
+            // above (which also checks data.cart_amount, body.total_price,
+            // body.cart_value). Any order whose total only appeared in one
+            // of those extra fields saved correctly but read as 0 here -
+            // orderTotal >= 25000 could never be true, so vip_followup was
+            // never created even once despite real orders crossing it.
+            // Reusing the already-computed, already-persisted value is the
+            // single source of truth and can't drift out of sync again.
+            const orderTotal = upsertData.total_price;
             const paymentGateway = (data.payment_gateway || body.payment_method || "").toLowerCase();
             const isCod = paymentGateway.includes("cod") || paymentGateway.includes("cash");
             
