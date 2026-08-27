@@ -282,19 +282,40 @@ export async function POST(req: NextRequest) {
             }
 
             const crmStatus = mapShiprocketStatus(sr.status || "");
-            const { error: upsertErr } = await supabase.from("orders").upsert({
+
+            // onConflict:"shopify_order_id" alone misses it whenever
+            // orderId (channel_order_id/sr.id) doesn't match the real
+            // Shopify order's shopify_order_id - the two pull syncs
+            // already fixed this same way (sync-logic.ts, commit ea67b13)
+            // after it produced 2,640 duplicate rows; this route had the
+            // identical gap and kept producing new ones (confirmed live:
+            // 189 duplicate order_numbers, most created in one batch run
+            // through this exact route). Matching by order_number too, and
+            // updating the existing row instead of blindly upserting, closes it.
+            const orderNumberStr = String(sr.order_no || orderId);
+            const { data: existingSrOrder } = await supabase
+              .from("orders")
+              .select("id, source")
+              .or(`shopify_order_id.eq.${orderId},order_number.eq.${orderNumberStr}`)
+              .maybeSingle();
+
+            const orderPayload: any = {
               shopify_order_id: orderId.toString(),
-              order_number: sr.order_no || orderId.toString(),
+              order_number: orderNumberStr,
               customer_id: customerId,
               total_price: parseFloat(sr.total || 0),
               ordered_at: parseShiprocketDate(sr.created_at),
-              source: "shiprocket",
+              source: existingSrOrder?.source || "shiprocket",
               delivery_status: crmStatus,
               fulfillment_status: ["delivered", "in_transit", "out_for_delivery"].includes(crmStatus) ? "fulfilled" : "unfulfilled",
               tracking_number: sr.shipments?.[0]?.awb || sr.awb_code || null,
               courier_name: sr.shipments?.[0]?.courier || sr.courier_name || null,
               line_items: extractLineItems(sr),
-            }, { onConflict: "shopify_order_id" });
+            };
+
+            const { error: upsertErr } = existingSrOrder
+              ? await supabase.from("orders").update(orderPayload).eq("id", existingSrOrder.id)
+              : await supabase.from("orders").upsert(orderPayload, { onConflict: "shopify_order_id" });
 
             if (upsertErr) throw upsertErr;
 
