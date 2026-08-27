@@ -67,7 +67,12 @@ jobs:
             # cron schedule.
             # refresh-product-catalog self-gates to the 1st/11th/21st inside
             # the route, so it rides the daily trigger for a ~3x/month cadence.
-            daily)     paths="/api/cron/unresponsive-handler /api/cron/segment-updater /api/cron/recovery-reminder /api/cron/reorder-reminder /api/cron/review-reminder /api/cron/daily-digest /api/cron/analytics-digest?range=daily /api/cron/analytics-digest?range=weekly /api/cron/refresh-product-catalog /api/cron/sla-escalator" ;;
+            # issue-task-generator and winback-generator were split out of
+            # task-generator (see that route's own comment) - task-generator
+            # itself stays on Vercel's native cron (vercel.json, both of its
+            # 2 Hobby-plan slots already taken), but these two new phases
+            # need a home and ride the daily GitHub Actions trigger instead.
+            daily)     paths="/api/cron/unresponsive-handler /api/cron/segment-updater /api/cron/recovery-reminder /api/cron/reorder-reminder /api/cron/review-reminder /api/cron/daily-digest /api/cron/analytics-digest?range=daily /api/cron/analytics-digest?range=weekly /api/cron/refresh-product-catalog /api/cron/sla-escalator /api/cron/issue-task-generator /api/cron/winback-generator" ;;
           esac
 
           echo "group=$group" >> "$GITHUB_OUTPUT"

@@ -7,7 +7,28 @@ import { requireInternal } from "@/lib/auth-utils";
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
 // On Pro this can go to 300. The syncs are incremental, so a cut-off run
 // resumes on the next tick.
+//
+// This route used to also generate issue_resolution tasks (RTO/failed/
+// stale-in-transit orders) and win_back tasks (dormant customers) in the
+// same invocation, after this order loop. Confirmed live: win_back had
+// ZERO rows ever despite 1,224 real dormant customers qualifying, and
+// review/reorder/final_followup (this loop's own output) hadn't produced
+// anything new in 2 days despite 1,132 real delivered orders to process -
+// each order here costs several sequential DB round-trips
+// (existing-check, customer fetch, assignTaskOwner's own 2+ queries,
+// insert), so the combined three-phase workload was easily 10,000+
+// sequential round-trips against a single 60s budget. The order loop
+// alone was starving the later phases of any execution time, probably
+// every single day. Split into three routes - see
+// /api/cron/issue-task-generator and /api/cron/winback-generator - so
+// each phase gets its own full 60s budget instead of sharing one.
 export const maxDuration = 60;
+
+// Caps how many orders one invocation processes, so a single run can
+// never itself exceed the 60s budget even on a large backlog - the
+// existing-task skip check above already makes this safely incremental
+// across daily runs (see the comment on that block).
+const BATCH_LIMIT = 150;
 
 function getSupabase() {
   return createAdminClient();
@@ -18,13 +39,19 @@ export async function POST(req: NextRequest) {
   if (unauthorized) return unauthorized;
 
   const supabase = getSupabase();
+  // Ops/testing escape hatch: process exactly one order by id instead of
+  // scanning the real backlog.
+  const onlyOrderId = req.nextUrl.searchParams.get("orderId");
 
   // Find delivered orders AND orders with status "Delivered" (case-insensitive query via ilike or in)
-  const { data: orders, error: orderErr } = await supabase
+  let orderQuery = supabase
     .from("orders")
     .select("id, customer_id, delivered_at, line_items, delivery_status")
     .in("delivery_status", ["delivered", "Delivered"])
     .not("delivered_at", "is", null);
+  orderQuery = onlyOrderId ? orderQuery.eq("id", onlyOrderId) : orderQuery.limit(BATCH_LIMIT);
+
+  const { data: orders, error: orderErr } = await orderQuery;
 
   if (orderErr) return NextResponse.json({ error: orderErr.message }, { status: 500 });
   if (!orders?.length) return NextResponse.json({ generated: 0, checked: 0 });
@@ -34,7 +61,6 @@ export async function POST(req: NextRequest) {
 
   let generated = 0;
   let skipped = 0;
-  let issueTasks = 0;
 
   // Fetch product overrides once for the entire batch
   const { data: overrideData } = await supabase.from("product_overrides").select("*");
@@ -67,9 +93,9 @@ export async function POST(req: NextRequest) {
 
     // 3. Resolve Offsets
     const lineItem = order.line_items?.[0];
-    const override = overrideData?.find(o => 
-      o.shopify_product_id === String(lineItem?.product_id) || 
-      o.shopify_product_id === String(lineItem?.id) || 
+    const override = overrideData?.find(o =>
+      o.shopify_product_id === String(lineItem?.product_id) ||
+      o.shopify_product_id === String(lineItem?.id) ||
       o.shopify_product_id === lineItem?.title ||
       o.product_name === lineItem?.title
     );
@@ -105,10 +131,17 @@ export async function POST(req: NextRequest) {
         totalOrders: customer?.rto_flag ? 0 : undefined,
         isPriorityOverride: override?.is_priority || false,
       }),
-      note: override?.usage_notes ? `COURSE NOTE: ${override.usage_notes}` : undefined,
+      // tasks has no "note" column (only manager_note, a different concept -
+      // manager review comments, not product usage instructions). That key
+      // was set explicitly (even to undefined), so Object.keys() always
+      // included it and every insert here was rejected outright by
+      // PostgREST with "Could not find the 'note' column" - confirmed live.
+      // Folding it into metadata (a real jsonb column already used for
+      // course_duration/upsell_logic below) instead of dropping the data.
       metadata: {
         course_duration: override?.course_duration_days || 30,
-        upsell_logic: override?.upsell_product_name || null
+        upsell_logic: override?.upsell_product_name || null,
+        usage_notes: override?.usage_notes ? `COURSE NOTE: ${override.usage_notes}` : null
       },
       status: "pending",
     }));
@@ -121,103 +154,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const staleCutoff = new Date();
-  staleCutoff.setDate(staleCutoff.getDate() - 7);
-  const staleDate = staleCutoff.toISOString();
-
-  const { data: issueOrders } = await supabase
-    .from("orders")
-    .select("id, customer_id, total_price, delivery_status, ordered_at")
-    .in("delivery_status", ["rto", "failed", "in_transit"]);
-
-  for (const order of issueOrders || []) {
-    const requiresIssueTask =
-      order.delivery_status === "rto" ||
-      order.delivery_status === "failed" ||
-      (order.delivery_status === "in_transit" && order.ordered_at <= staleDate);
-
-    if (!requiresIssueTask) continue;
-
-    const { count: existingIssue } = await supabase
-      .from("tasks")
-      .select("id", { count: "exact", head: true })
-      .eq("order_id", order.id)
-      .eq("task_type", "issue_resolution")
-      .not("status", "in", '("done","cancelled","skipped")');
-
-    if ((existingIssue || 0) > 0) continue;
-
-    const { data: customer } = await supabase
-      .from("customers")
-      .select("total_orders, rto_flag, segment")
-      .eq("id", order.customer_id)
-      .maybeSingle();
-
-    const assignedTo = await assignTaskOwner(supabase, "issue_resolution", customer?.segment);
-    const dueDate = new Date().toISOString().split("T")[0];
-
-    const { error: issueErr } = await supabase.from("tasks").insert({
-      order_id: order.id,
-      customer_id: order.customer_id,
-      assigned_to: assignedTo,
-      task_type: "issue_resolution",
-      due_date: dueDate,
-      priority_score: calculateTaskPriority({
-        taskType: "issue_resolution",
-        totalPrice: Number(order.total_price) || 0,
-        totalOrders: customer?.total_orders || 0,
-        rtoFlag: customer?.rto_flag || order.delivery_status === "rto",
-      }),
-      status: "pending",
-    });
-
-    if (!issueErr) issueTasks++;
-  }
-
-  // 5. [NEW] Win-back Task Generation (Dormant Customers)
-  const sixtyDaysAgo = new Date();
-  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-  const sixtyDaysAgoStr = sixtyDaysAgo.toISOString();
-
-  const { data: dormantCustomers } = await supabase
-    .from("customers")
-    .select("id, name, last_order_date, segment")
-    .lt("last_order_date", sixtyDaysAgoStr)
-    .not("last_order_date", "is", null);
-
-  let winbackTasks = 0;
-  for (const cust of dormantCustomers || []) {
-     // Check if they already have an active win_back task
-     const { count: existingWinback } = await supabase
-       .from("tasks")
-       .select("id", { count: "exact", head: true })
-       .eq("customer_id", cust.id)
-       .eq("task_type", "win_back")
-       .not("status", "in", '("done","cancelled","skipped")');
-
-     if ((existingWinback || 0) > 0) continue;
-
-     // Assign to best available agent for re-engagement
-     const assignedTo = await assignTaskOwner(supabase, "win_back", cust.segment);
-     const { error: winErr } = await supabase.from("tasks").insert({
-       customer_id: cust.id,
-       assigned_to: assignedTo,
-       task_type: "win_back",
-       due_date: new Date().toISOString().split("T")[0],
-       priority_score: 60,
-       status: "pending"
-     });
-     
-     if (!winErr) winbackTasks++;
-     else console.error(`win_back task insert failed for customer ${cust.id}:`, winErr.message);
-  }
-
-  return NextResponse.json({ 
-    generated, 
-    checked: orders.length, 
-    skipped,
-    issueTasks,
-    winbackTasks
+  return NextResponse.json({
+    generated,
+    checked: orders.length,
+    skipped
   });
 }
 
