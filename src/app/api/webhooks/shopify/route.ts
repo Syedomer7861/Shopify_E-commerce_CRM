@@ -111,10 +111,18 @@ export async function POST(req: NextRequest) {
           }));
 
           // Map fulfillment and delivery status
+          // Shopify "fulfilled" only means a shipping label was created in
+          // Shopify - it says nothing about a courier actually having the
+          // package. This used to stamp delivery_status "in_transit" right
+          // here, with no tracking_number, before Shiprocket ever confirmed
+          // a real shipment - confirmed live, 12,876 orders stuck exactly
+          // that way (source=shopify, in_transit, tracking_number null),
+          // permanently invisible to the AWB-based sync since there's no
+          // AWB to check. "in_transit" is only real once Shiprocket's own
+          // webhook/sync confirms it, which sets tracking_number in the
+          // same write - so this path no longer claims it.
           let deliveryStatus = "pending";
-          if (topic === "orders/fulfilled" || payload.fulfillment_status === "fulfilled") {
-            deliveryStatus = "in_transit";
-          } else if (topic === "orders/cancelled") {
+          if (topic === "orders/cancelled") {
             deliveryStatus = "failed";
           }
 
@@ -225,7 +233,13 @@ export async function POST(req: NextRequest) {
               await WorkflowEngine.trigger("order_placed", { order_id: order?.id, customer_id: customer.id, total: payload.total_price });
             } else if (topic === "orders/paid") {
                // Handle paid events
-            } else if (topic === "orders/fulfilled") {
+            } else if (topic === "orders/fulfilled" && statusToSave === "in_transit") {
+              // Same fix as delivery_status above: "fulfilled" in Shopify
+              // isn't a real shipment confirmation on its own, so only fire
+              // this when statusToSave actually reflects a Shiprocket-
+              // confirmed in_transit (i.e. an existing shiprocket-sourced
+              // order already at that status), not on the Shopify label
+              // alone.
               await WorkflowEngine.trigger("order_in_transit", { order_id: order?.id, customer_id: customer.id });
             } else if (topic === "orders/cancelled") {
               await WorkflowEngine.trigger("order_rto", { order_id: order?.id, customer_id: customer.id });
