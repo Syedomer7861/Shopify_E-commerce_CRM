@@ -46,7 +46,12 @@ export async function POST(req: NextRequest) {
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();
-  const deadline = makeDeadline({ budgetMs: 45_000 });
+  // cron-job.org's free tier hard-caps its own wait at 30s (confirmed live
+  // on shiprocket-sync - no way to raise it), well under Vercel's 60s
+  // ceiling this was originally sized for. 20s leaves real margin for
+  // Shopify/Shiprocket auth + Vercel cold start overhead so the route
+  // always replies before the caller gives up.
+  const deadline = makeDeadline({ budgetMs: 20_000 });
 
   const report = {
     checked: 0,

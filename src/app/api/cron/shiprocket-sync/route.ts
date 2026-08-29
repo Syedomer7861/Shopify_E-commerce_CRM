@@ -78,7 +78,15 @@ export async function POST(req: NextRequest) {
 
     let updatedCount = 0;
     let truncated = false;
-    const deadline = makeDeadline({ budgetMs: 45_000 });
+    // cron-job.org's free tier hard-caps its own wait at 30s (confirmed
+    // live - "The maximum timeout is 30 seconds", no way to raise it) -
+    // well under Vercel's 60s ceiling this budget was originally sized
+    // for. 20s leaves real margin for Shiprocket auth + Vercel cold start
+    // overhead (observed ~2-8s beyond the deadline itself) so the route
+    // always finishes and replies before the caller gives up. Same
+    // resumable design either way - a smaller budget just means more
+    // hourly runs to work through a big backlog, not a functional change.
+    const deadline = makeDeadline({ budgetMs: 20_000 });
 
     // 3. Sync each order
     for (const order of activeOrders) {
