@@ -39,12 +39,16 @@ function mapShopifyShipmentStatus(status: string | null | undefined) {
  * tracking_number ever written - permanently invisible to the AWB-based
  * cron/shiprocket-sync fix, which can only check orders that HAVE an AWB.
  *
+ * Also covers "pending" orders with no tracking_number, not just
+ * "in_transit" - sampling those against real Shopify data found 41% were
+ * actually cancelled in Shopify and never got flipped to "failed" here.
+ *
  * Recovers the real tracking_number from Shopify's own fulfillment
  * records (which the original webhook never bothered to save), then
  * checks Shiprocket for the real current status using that AWB - the
  * same lookup already proven correct in cron/shiprocket-sync. Orders with
- * genuinely no fulfillment in Shopify get reset to "pending" (honest: no
- * evidence they ever shipped). Cancelled orders get "failed".
+ * genuinely no fulfillment in Shopify stay/get set to "pending" (honest:
+ * no evidence they ever shipped). Cancelled orders get "failed".
  */
 export async function POST(req: NextRequest) {
   const unauthorized = await requireInternal(req);
@@ -93,7 +97,12 @@ export async function POST(req: NextRequest) {
     const { data: ghostOrders, error: fetchErr } = await supabase
       .from("orders")
       .select("id, shopify_order_id, order_number")
-      .eq("delivery_status", "in_transit")
+      // "pending" is in scope too, not just "in_transit": sampling old
+      // pending orders against real Shopify data found 41% were actually
+      // cancelled in Shopify (cancelled_at set) but never got flipped to
+      // "failed" here - same reconciliation logic below already handles
+      // that correctly, it just never used to look at this status.
+      .in("delivery_status", ["in_transit", "pending"])
       .is("tracking_number", null)
       .eq("source", "shopify")
       .order("ordered_at", { ascending: true })
@@ -101,7 +110,7 @@ export async function POST(req: NextRequest) {
 
     if (fetchErr) throw fetchErr;
     if (!ghostOrders || ghostOrders.length === 0) {
-      return NextResponse.json({ processed: 0, message: "No ghost transit orders left", report });
+      return NextResponse.json({ processed: 0, message: "No ghost transit or mislabeled pending orders left", report });
     }
 
     // Shopify supports a comma-separated ids filter, up to 250 at a time -
