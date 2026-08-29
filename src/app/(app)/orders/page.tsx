@@ -199,9 +199,17 @@ export default function OrdersPage() {
     setSyncing(true);
     try {
       const res = await fetch("/api/sync/shiprocket", { method: "POST" });
-      const data = await res.json();
+      // A platform-level failure (function timeout, gateway error) returns
+      // Vercel's own plain-text page, not JSON - res.json() throwing a raw
+      // SyntaxError on that is where the old "Unexpected token 'A'..." toast
+      // came from. Read as text first so a non-JSON response shows a real
+      // message instead of a parser error.
+      const raw = await res.text();
+      let data: any;
+      try { data = JSON.parse(raw); } catch { throw new Error(res.ok ? "Server sent an unreadable response" : `Server error (${res.status}) - the sync may have taken too long`); }
       if (data.success) {
-        toast.success(`Shiprocket Sync Complete! Updated ${data.report.orders_processed} tracking statuses.`);
+        const msg = `Shiprocket Sync Complete! Updated ${data.report.orders_processed} tracking statuses.`;
+        toast.success(data.report.truncated ? `${msg} (ran out of time - rerun to continue)` : msg);
       } else throw new Error(data.error);
     } catch (err: any) {
       toast.error("Shiprocket Sync Failed: " + err.message);

@@ -6,6 +6,7 @@ import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { normalizePhone } from "@/lib/phone-utils";
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
 import { requireInternal } from "@/lib/auth-utils";
+import { makeDeadline } from "@/lib/sync-logic";
 
 export const dynamic = "force-dynamic";
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
@@ -148,13 +149,14 @@ export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("x-sync-secret");
   const isInternal = authHeader === process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  const report = { 
-    orders_processed: 0, 
+  const report = {
+    orders_processed: 0,
     orders_failed: 0,
-    customers_created: 0, 
-    customers_updated: 0, 
+    customers_created: 0,
+    customers_updated: 0,
     abandoned_carts: 0,
-    pages_fetched: 0 
+    pages_fetched: 0,
+    truncated: false,
   };
 
   const runSync = async () => {
@@ -185,9 +187,19 @@ export async function POST(req: NextRequest) {
       let currentPage = 1;
       let hasMore = true;
       const MAX_SHALLOW_PAGES = 5;
+      // The non-streaming caller (the Orders page's "Sync Shiprocket"
+      // button) awaits this whole function before it can send anything
+      // back - even "shallow" mode's 250 orders, each doing several
+      // sequential Supabase round trips, reliably ran past Vercel's 60s
+      // ceiling under real latency. A killed function returns Vercel's own
+      // plain-text error page, not JSON, which crashed the client's blind
+      // res.json() call. Bailing early and returning real JSON with
+      // truncated:true beats that every time.
+      const deadline = makeDeadline({ budgetMs: 45_000 });
 
       while (hasMore) {
         if (!full && currentPage > MAX_SHALLOW_PAGES) break;
+        if (deadline.expired()) { report.truncated = true; break; }
 
         const currentMax = full ? 500 : MAX_SHALLOW_PAGES;
         const pageProgress = 5 + Math.round((currentPage / currentMax) * 75);
@@ -207,6 +219,7 @@ export async function POST(req: NextRequest) {
         const pageWeight = 90 / totalPages;
 
         for (let i = 0; i < srOrders.length; i++) {
+          if (deadline.expired()) { report.truncated = true; hasMore = false; break; }
           const sr = srOrders[i];
           try {
             // Granular Progress Update
@@ -353,7 +366,7 @@ export async function POST(req: NextRequest) {
         }
 
         const totalCountPages = orderData.meta?.pagination?.total_pages || Math.ceil((orderData.meta?.pagination?.total || 0) / 50);
-        hasMore = currentPage < (full ? totalCountPages : MAX_SHALLOW_PAGES);
+        hasMore = !report.truncated && currentPage < (full ? totalCountPages : MAX_SHALLOW_PAGES);
         currentPage++;
         
         if (full) await sleep(500); // Backoff for full sync
