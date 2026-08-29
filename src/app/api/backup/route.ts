@@ -1,74 +1,121 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 import { hasInternalSecret } from "@/lib/auth-utils";
 import { uploadToDrive } from "@/lib/google-drive";
+import { makeDeadline } from "@/lib/sync-logic";
+
+// Vercel Hobby caps functions at 60s; a higher value fails the deploy.
+export const maxDuration = 60;
+// Leaves room for the response to actually return before the platform
+// kills the function - a killed function returns a 504 with no report at
+// all, so the caller never learns which tables made it.
+const BACKUP_BUDGET_MS = 50_000;
 
 /**
- * GET /api/backup
- * Triggers a full database backup to Google Drive.
- * Secure this with the CRON_SECRET (header only - see below).
+ * GET/POST /api/backup
+ * Backs up every business-critical table to Google Drive as CSV.
+ *
+ * This previously listed 16 tables, 4 of which didn't exist in the real
+ * schema at all (system_settings, leave_requests, agent_performance_metrics,
+ * templates - guessed names, never verified against information_schema),
+ * had no maxDuration (defaults well under what 16 sequential Drive
+ * uploads need, so it likely never completed a single real run), fetched
+ * with a flat .limit(5000) that silently truncates orders/webhook_logs
+ * (20,000+ / 11,000+ real rows), and aborted the entire run on the first
+ * table that errored. Scheduling something this broken would have just
+ * produced a green "backup ran" checkmark that lied - fixed all four
+ * before wiring this into the daily cron (see .github/workflows/cron.yml).
  */
-export async function GET(req: NextRequest) {
-  // The old ?secret= query-string form was removed: a secret in the URL
-  // gets written into Vercel access logs, browser history, and any proxy
-  // in between, in plaintext, forever. Nothing was found calling it (not
-  // scheduled anywhere, no other code references this route at all), so
-  // there was nothing to migrate - just a real leak vector with no live
-  // caller to break.
+async function handleBackup(req: NextRequest) {
   if (!hasInternalSecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = createServerClient();
+  // Service-role client, not the cookie-scoped one: this route has no
+  // session to inherit (cron calls it directly), and the anon key gets
+  // silently RLS-blocked on most tables - confirmed live, every table but
+  // abandoned_carts came back "empty" under the cookie-scoped client.
+  const supabase = createAdminClient();
+  // Ordered by importance - if the time budget runs out partway (a real
+  // possibility on Hobby with a database this size), the tables that
+  // matter most were backed up first, not whatever happened to sort
+  // alphabetically.
   const tables = [
-    "customers", 
-    "orders", 
-    "tasks", 
-    "call_logs", 
-    "agent_activity_logs", 
-    "abandoned_carts", 
-    "webhook_logs", 
-    "system_settings", 
-    "workflows", 
-    "workflow_logs",
-    "attendance_logs",
-    "leave_requests",
-    "agent_performance_metrics",
+    "customers",
+    "orders",
+    "order_revenue_attribution",
+    "tasks",
+    "profiles",
+    "call_logs",
+    "abandoned_carts",
+    "settings",
     "campaigns",
-    "templates",
-    "audit_logs"
+    "campaign_templates",
+    "audit_logs",
+    "agent_activity_logs",
+    "agent_attendance",
+    "leaves",
+    "webhook_logs",
+    "workflows",
+    "workflow_instances",
+    "workflow_logs",
   ];
   const timestamp = new Date().toISOString().split("T")[0];
   const results: any[] = [];
+  const deadline = makeDeadline({ budgetMs: BACKUP_BUDGET_MS });
 
-  try {
-    for (const table of tables) {
-      // Fetch all data from table (max 1000 for backup safety, 
-      // or implement pagination if your DB is massive)
-      const { data, error } = await supabase.from(table).select("*").limit(5000);
-      
+  const PAGE = 1000;
+  async function fetchAllRows(table: string): Promise<any[]> {
+    const rows: any[] = [];
+    for (let from = 0; ; from += PAGE) {
+      if (deadline.expired()) break;
+      const { data, error } = await supabase.from(table).select("*").range(from, from + PAGE - 1);
       if (error) throw error;
+      if (!data || data.length === 0) break;
+      rows.push(...data);
+      if (data.length < PAGE) break;
+    }
+    return rows;
+  }
 
-      if (data && data.length > 0) {
-        const csv = jsonToCsv(data);
-        const filename = `${table}_backup_${timestamp}.csv`;
-        const driveId = await uploadToDrive(filename, csv);
-        results.push({ table, filename, driveId });
-      } else {
-        results.push({ table, status: "empty" });
-      }
+  for (const table of tables) {
+    if (deadline.expired()) {
+      results.push({ table, status: "skipped", reason: "out of time budget - will run next scheduled backup" });
+      continue;
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      timestamp: new Date().toISOString(),
-      backups: results 
-    });
-  } catch (error: any) {
-    console.error("Backup failed:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    try {
+      const data = await fetchAllRows(table);
+      if (data.length === 0) {
+        results.push({ table, status: "empty" });
+        continue;
+      }
+      const csv = jsonToCsv(data);
+      const filename = `${table}_backup_${timestamp}.csv`;
+      const driveId = await uploadToDrive(filename, csv);
+      results.push({ table, filename, driveId, rows: data.length });
+    } catch (error: any) {
+      // One bad table (a permissions issue, a transient Drive API error)
+      // must not cost every table after it in the list - each table's
+      // outcome is independent and reported on its own.
+      console.error(`Backup failed for table ${table}:`, error.message);
+      results.push({ table, status: "error", error: error.message });
+    }
   }
+
+  const failed = results.filter(r => r.status === "error").length;
+  return NextResponse.json({
+    success: failed === 0,
+    timestamp: new Date().toISOString(),
+    truncated: results.some(r => r.status === "skipped"),
+    backups: results,
+  });
 }
+
+export const GET = handleBackup;
+// The cron workflow POSTs every scheduled endpoint (see .github/workflows/
+// cron.yml).
+export const POST = handleBackup;
 
 /**
  * Simple JSON to CSV converter
@@ -76,7 +123,7 @@ export async function GET(req: NextRequest) {
 function jsonToCsv(data: any[]) {
   if (data.length === 0) return "";
   const headers = Object.keys(data[0]);
-  const rows = data.map(obj => 
+  const rows = data.map(obj =>
     headers.map(header => {
       let val = obj[header];
       if (val === null || val === undefined) return "";
