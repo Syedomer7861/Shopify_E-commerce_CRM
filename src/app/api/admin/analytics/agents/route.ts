@@ -97,13 +97,24 @@ export async function GET(req: NextRequest) {
     }
 
     // 3. Fetch Work Performance & Heartbeats
-    const [callsRes, activityRes] = await Promise.all([
-        supabase.from("call_logs").select("called_at, agent_name").gte("called_at", start).lte("called_at", end),
-        supabase.from("agent_activity_logs").select("created_at, agent_id, activity_type, metadata").gte("created_at", start).lte("created_at", end)
+    const [callsRes, activityRes, tasksRes] = await Promise.all([
+        supabase.from("call_logs").select("called_at, agent_name, outcome").gte("called_at", start).lte("called_at", end),
+        supabase.from("agent_activity_logs").select("created_at, agent_id, activity_type, metadata").gte("created_at", start).lte("created_at", end),
+        // "Worked on" = actually resolved (done/skipped/cancelled) in this
+        // window, not just assigned - a still-pending task isn't something
+        // an agent DID yet, and would otherwise swamp the breakdown with
+        // whatever's sitting in everyone's queue regardless of date range.
+        supabase.from("tasks")
+          .select("id, task_type, status, completed_at, assigned_to, order:orders(order_number, delivery_status, total_price), customer:customers(name)")
+          .in("status", ["done", "skipped", "cancelled"])
+          .gte("completed_at", start)
+          .lte("completed_at", end)
     ]);
 
     const callsData = callsRes.data || [];
     const activityData = activityRes.data || [];
+    const tasksData = tasksRes.data || [];
+    if (tasksRes.error) console.error("Tasks-worked fetch failed:", tasksRes.error.message);
 
     // 4. Pre-group activity data by agent for efficient lookup
     const activityByAgent: Record<string, any[]> = {};
@@ -258,6 +269,47 @@ export async function GET(req: NextRequest) {
         }
     });
 
+    // 6b. Task/Order breakdowns - what KIND of work each agent resolved,
+    // not just how much. taskTypeBreakdown/taskStatusBreakdown/
+    // outcomeBreakdown feed the new distribution charts; orderStatusBreakdown
+    // answers "which delivery-status orders did they actually work" (only
+    // tasks with a linked order count here - cart-recovery tasks have none).
+    // tasksWorkedByAgent is the raw per-task list, trimmed to the requested
+    // agent's rows before the response goes out, same as dailyLogs/
+    // recentActivity below - no reason to ship every agent's task list when
+    // only one is being viewed.
+    const tasksWorkedByAgent: Record<string, any[]> = {};
+    callsData.forEach(call => {
+        const stats = Object.values(agentStats).find((s: any) => s.name === call.agent_name);
+        if (!stats) return;
+        (stats.outcomeBreakdown ||= {});
+        const key = call.outcome || "unspecified";
+        stats.outcomeBreakdown[key] = (stats.outcomeBreakdown[key] || 0) + 1;
+    });
+
+    tasksData.forEach((t: any) => {
+        const stats = agentStats[t.assigned_to];
+        if (!stats) return;
+        (stats.taskTypeBreakdown ||= {});
+        (stats.taskStatusBreakdown ||= {});
+        (stats.orderStatusBreakdown ||= {});
+        stats.taskTypeBreakdown[t.task_type] = (stats.taskTypeBreakdown[t.task_type] || 0) + 1;
+        stats.taskStatusBreakdown[t.status] = (stats.taskStatusBreakdown[t.status] || 0) + 1;
+        if (t.order?.delivery_status) {
+            stats.orderStatusBreakdown[t.order.delivery_status] = (stats.orderStatusBreakdown[t.order.delivery_status] || 0) + 1;
+        }
+        (tasksWorkedByAgent[t.assigned_to] ||= []).push({
+            id: t.id,
+            taskType: t.task_type,
+            taskStatus: t.status,
+            completedAt: t.completed_at,
+            orderNumber: t.order?.order_number || null,
+            orderStatus: t.order?.delivery_status || null,
+            orderValue: t.order?.total_price || 0,
+            customerName: t.customer?.name || "Unknown",
+        });
+    });
+
     // 7. Fetch Recent Activity Logs
     const { data: activityLogs } = await supabase
         .from("agent_activity_logs")
@@ -295,7 +347,11 @@ export async function GET(req: NextRequest) {
             revenue: s.revenue,
             role: s.role,
             productivity: s.onlineSeconds > 0 ? (s.taskCount / (s.onlineSeconds / 3600)).toFixed(1) : 0,
-            liveState: effectiveStatus === 'offline' ? null : s.live_state 
+            liveState: effectiveStatus === 'offline' ? null : s.live_state,
+            taskTypeBreakdown: s.taskTypeBreakdown || {},
+            taskStatusBreakdown: s.taskStatusBreakdown || {},
+            orderStatusBreakdown: s.orderStatusBreakdown || {},
+            outcomeBreakdown: s.outcomeBreakdown || {},
         };
     });
 
@@ -349,7 +405,8 @@ export async function GET(req: NextRequest) {
             success: true,
             data: summary.filter(s => s.id === scopeId),
             dailyLogs: dailyLogsSorted.filter(d => d.email && d.email === agentStats[scopeId]?.email),
-            recentActivity: (activityLogs || []).filter((a: any) => a.agent_id === scopeId)
+            recentActivity: (activityLogs || []).filter((a: any) => a.agent_id === scopeId),
+            tasksWorked: tasksWorkedByAgent[scopeId] || []
         });
     }
 
@@ -357,6 +414,7 @@ export async function GET(req: NextRequest) {
         success: true,
         data: summary,
         dailyLogs: dailyLogsSorted,
-        recentActivity: activityLogs || []
+        recentActivity: activityLogs || [],
+        tasksWorked: []
     });
 }

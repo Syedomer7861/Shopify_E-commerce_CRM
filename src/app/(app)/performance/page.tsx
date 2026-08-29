@@ -3,20 +3,36 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   TrendingUp, Phone, MessageSquare, CheckCircle2, Clock, Coffee,
   Zap, Calendar, User, Loader2, ChevronDown, Download, FileSpreadsheet,
-  FileText, Sliders
+  FileText, Sliders, Package, Target, ListChecks
 } from "lucide-react";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Cell
 } from "recharts";
-import { PageHeader, StatCard, Modal } from "@/components/ui";
+import { PageHeader, StatCard, Modal, Pagination, TaskTypeBadge, DeliveryBadge, TaskStatusBadge } from "@/components/ui";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { createClient } from "@/lib/supabase";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
-import { cn, formatCurrency, toDbDateString } from "@/lib/utils";
+import { cn, formatCurrency, toDbDateString, TASK_TYPE_CONFIG, DELIVERY_CONFIG, TASK_STATUS_CONFIG } from "@/lib/utils";
+import type { TaskType, DeliveryStatus, TaskStatus } from "@/types";
 import toast from "react-hot-toast";
+
+// Chart-specific fills - the shared *_CONFIG objects carry Tailwind classes
+// (right for badges, useless as a recharts `fill`), so these are a small
+// parallel hex palette just for the two breakdown bar charts. Labels still
+// come from the shared config below, so a badge and its matching bar always
+// say the same thing.
+const TASK_TYPE_CHART_COLORS: Record<TaskType, string> = {
+  review: "#1c1c1c", reorder: "#1c1c1c", final_followup: "#9c9a94", recovery: "#1c1c1c",
+  issue_resolution: "#e11d48", transit_update: "#5f5f5d", ndr: "#d97706", cod_verify: "#1c1c1c",
+  manager_audit: "#4f46e5", welcome_call: "#2563eb", win_back: "#ea580c", vip_followup: "#d97706", flagged: "#dc2626",
+};
+const DELIVERY_CHART_COLORS: Record<DeliveryStatus, string> = {
+  pending: "#9c9a94", in_transit: "#1c1c1c", out_for_delivery: "#5f5f5d",
+  delivered: "#16a34a", rto: "#e11d48", failed: "#dc2626",
+};
 
 type RangePreset = "today" | "7d" | "30d" | "90d" | "custom";
 
@@ -91,6 +107,10 @@ export default function PerformancePage() {
   const [summary, setSummary] = useState<any>(null);
   const [dailyLogs, setDailyLogs] = useState<any[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [tasksWorked, setTasksWorked] = useState<any[]>([]);
+  const [taskTypeFilter, setTaskTypeFilter] = useState<string>("");
+  const [orderStatusFilter, setOrderStatusFilter] = useState<string>("");
+  const [tasksPage, setTasksPage] = useState(1);
   const [timeFormat, setTimeFormat] = useState<"12h" | "24h">("12h");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [minNetHours, setMinNetHours] = useState("");
@@ -149,6 +169,7 @@ export default function PerformancePage() {
       });
       setDailyLogs(mockDaily);
       setRecentActivity([]);
+      setTasksWorked([]);
       setLoading(false);
       return;
     }
@@ -166,6 +187,7 @@ export default function PerformancePage() {
         setSummary(json.data?.[0] || null);
         setDailyLogs(json.dailyLogs || []);
         setRecentActivity(json.recentActivity || []);
+        setTasksWorked(json.tasksWorked || []);
       }
     } catch (e) {
       console.error("Performance fetch failed:", e);
@@ -200,6 +222,67 @@ export default function PerformancePage() {
     });
   }, [dailyLogs]);
 
+  // Distribution charts: what KIND of work, not just how much. Sorted
+  // descending so the biggest slice of an agent's workload reads first.
+  const taskTypeChartData = useMemo(() => {
+    const breakdown = summary?.taskTypeBreakdown || {};
+    return Object.entries(breakdown)
+      .map(([type, count]) => ({
+        key: type,
+        name: TASK_TYPE_CONFIG[type as TaskType]?.label || type,
+        count: count as number,
+        fill: TASK_TYPE_CHART_COLORS[type as TaskType] || "#1c1c1c",
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [summary]);
+
+  const orderStatusChartData = useMemo(() => {
+    const breakdown = summary?.orderStatusBreakdown || {};
+    return Object.entries(breakdown)
+      .map(([status, count]) => ({
+        key: status,
+        name: DELIVERY_CONFIG[status as DeliveryStatus]?.label || status,
+        count: count as number,
+        fill: DELIVERY_CHART_COLORS[status as DeliveryStatus] || "#1c1c1c",
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [summary]);
+
+  const outcomeChartData = useMemo(() => {
+    const breakdown = summary?.outcomeBreakdown || {};
+    return Object.entries(breakdown)
+      .map(([outcome, count]) => ({ name: outcome.replace(/_/g, " "), count: count as number }))
+      .sort((a, b) => b.count - a.count);
+  }, [summary]);
+
+  const taskStatusSummary = useMemo(() => {
+    const breakdown: Record<string, number> = summary?.taskStatusBreakdown || {};
+    const total = Object.values(breakdown).reduce((sum, n) => sum + n, 0);
+    const done = breakdown.done || 0;
+    return { total, done, doneRate: total > 0 ? Math.round((done / total) * 100) : 0 };
+  }, [summary]);
+
+  const ordersWorkedCount = useMemo(
+    () => new Set(tasksWorked.filter(t => t.orderNumber).map(t => t.orderNumber)).size,
+    [tasksWorked]
+  );
+
+  // Tasks Worked table - its own filters, independent of the ledger's.
+  const filteredTasksWorked = useMemo(() => {
+    return tasksWorked.filter(t =>
+      (!taskTypeFilter || t.taskType === taskTypeFilter) &&
+      (!orderStatusFilter || t.orderStatus === orderStatusFilter)
+    );
+  }, [tasksWorked, taskTypeFilter, orderStatusFilter]);
+
+  const TASKS_PAGE_SIZE = 10;
+  const paginatedTasksWorked = useMemo(
+    () => filteredTasksWorked.slice((tasksPage - 1) * TASKS_PAGE_SIZE, tasksPage * TASKS_PAGE_SIZE),
+    [filteredTasksWorked, tasksPage]
+  );
+
+  useEffect(() => { setTasksPage(1); }, [taskTypeFilter, orderStatusFilter, tasksWorked]);
+
   // Advanced filters + sort apply only to the ledger table (and its
   // export) - the charts above stay showing the full unfiltered range for
   // context.
@@ -225,6 +308,7 @@ export default function PerformancePage() {
 
   const EXPORT_HEADERS = ["Date", "Clock In", "Clock Out", "Work Hours", "Break Hours", "Net Hours", "Tasks", "Revenue"];
   const ACTIVITY_HEADERS = ["Time", "Type", "Description"];
+  const TASKS_WORKED_HEADERS = ["Completed", "Task Type", "Task Status", "Order #", "Order Status", "Order Value", "Customer"];
   const buildExportRows = () => filteredLogs.map(d => [
     d.date,
     formatClockTime(d.clockInISO, timeFormat === "24h"),
@@ -256,6 +340,19 @@ export default function PerformancePage() {
     (a.activity_type || "").replace(/_/g, " "),
     a.description || a.metadata?.customer_name || "",
   ]);
+  // Respects the same task-type/order-status filters as the on-screen
+  // table, matching the existing convention (the ledger export already
+  // respects ITS filters via filteredLogs) - what you're looking at is
+  // what you export.
+  const buildTasksWorkedRows = () => filteredTasksWorked.map(t => [
+    t.completedAt ? new Date(t.completedAt).toLocaleString([], { timeZone: "Asia/Kolkata", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "",
+    TASK_TYPE_CONFIG[t.taskType as TaskType]?.label || t.taskType || "",
+    TASK_STATUS_CONFIG[t.taskStatus as TaskStatus]?.label || t.taskStatus || "",
+    t.orderNumber || "—",
+    t.orderStatus ? (DELIVERY_CONFIG[t.orderStatus as DeliveryStatus]?.label || t.orderStatus) : "—",
+    t.orderValue ? formatCurrency(t.orderValue) : "—",
+    t.customerName || "",
+  ]);
   const exportFileBase = () => {
     const agentPart = (selectedAgentName || "Agent").replace(/[^a-zA-Z0-9]/g, "_");
     const { start, end } = getRange(preset, customStart, customEnd);
@@ -263,7 +360,7 @@ export default function PerformancePage() {
   };
 
   async function handleExport(exportFormat: "csv" | "xlsx" | "pdf") {
-    if (filteredLogs.length === 0 && recentActivity.length === 0) {
+    if (filteredLogs.length === 0 && recentActivity.length === 0 && filteredTasksWorked.length === 0) {
       toast.error("Nothing to export - no data in this range");
       return;
     }
@@ -273,6 +370,7 @@ export default function PerformancePage() {
       const summaryRows = buildSummaryRows();
       const ledgerRows = buildExportRows();
       const activityRows = buildActivityRows();
+      const tasksWorkedRows = buildTasksWorkedRows();
 
       if (exportFormat === "pdf") {
         const pdf = new jsPDF("p", "mm", "a4");
@@ -324,6 +422,22 @@ export default function PerformancePage() {
           nextY = (pdf as any).lastAutoTable.finalY + 8;
         }
 
+        if (tasksWorkedRows.length > 0) {
+          if (nextY > 250) { pdf.addPage(); nextY = 20; }
+          pdf.setFontSize(11);
+          pdf.text("Tasks Worked", 10, nextY);
+          autoTable(pdf, {
+            startY: nextY + 4,
+            head: [TASKS_WORKED_HEADERS],
+            body: tasksWorkedRows,
+            theme: "grid",
+            headStyles: { fillColor: [28, 28, 28] },
+            styles: { fontSize: 7, cellPadding: 2.5 },
+            margin: { left: 10, right: 10 },
+          });
+          nextY = (pdf as any).lastAutoTable.finalY + 8;
+        }
+
         if (activityRows.length > 0) {
           if (nextY > 250) { pdf.addPage(); nextY = 20; }
           pdf.setFontSize(11);
@@ -349,6 +463,7 @@ export default function PerformancePage() {
           ["SUMMARY"], ...summaryRows, [],
         ];
         if (ledgerRows.length > 0) combined.push(["DAILY ATTENDANCE LEDGER"], EXPORT_HEADERS, ...ledgerRows, []);
+        if (tasksWorkedRows.length > 0) combined.push(["TASKS WORKED"], TASKS_WORKED_HEADERS, ...tasksWorkedRows, []);
         if (activityRows.length > 0) combined.push(["RECENT ACTIVITY"], ACTIVITY_HEADERS, ...activityRows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(combined), "Report");
@@ -363,6 +478,12 @@ export default function PerformancePage() {
           const ledgerSheet = XLSX.utils.aoa_to_sheet([EXPORT_HEADERS, ...ledgerRows]);
           ledgerSheet["!cols"] = EXPORT_HEADERS.map(() => ({ wch: 14 }));
           XLSX.utils.book_append_sheet(wb, ledgerSheet, "Attendance Ledger");
+        }
+
+        if (tasksWorkedRows.length > 0) {
+          const tasksSheet = XLSX.utils.aoa_to_sheet([TASKS_WORKED_HEADERS, ...tasksWorkedRows]);
+          tasksSheet["!cols"] = TASKS_WORKED_HEADERS.map(() => ({ wch: 16 }));
+          XLSX.utils.book_append_sheet(wb, tasksSheet, "Tasks Worked");
         }
 
         if (activityRows.length > 0) {
@@ -452,6 +573,12 @@ export default function PerformancePage() {
             <StatCard label="Days Logged" value={dailyLogs.length} sub="In range" icon={<Calendar className="w-4 h-4" />} />
           </div>
 
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6">
+            <StatCard label="Tasks Resolved" value={taskStatusSummary.total} sub="Done, skipped or cancelled" icon={<ListChecks className="w-4 h-4" />} />
+            <StatCard label="Orders Worked" value={ordersWorkedCount} sub="Distinct orders touched" icon={<Package className="w-4 h-4" />} />
+            <StatCard label="Done Rate" value={`${taskStatusSummary.doneRate}%`} sub={`${taskStatusSummary.done} of ${taskStatusSummary.total} closed clean`} icon={<Target className="w-4 h-4" />} />
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
             <div className="card p-5">
               <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Daily Activity</h3>
@@ -481,6 +608,76 @@ export default function PerformancePage() {
                 </ResponsiveContainer>
               </div>
             </div>
+            <div className="card p-5">
+              <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Revenue Trend</h3>
+              <div className="h-[220px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#eceae4" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} width={40} tickFormatter={v => `₹${v}`} />
+                    <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #eceae4" }} formatter={(v: number) => formatCurrency(v)} />
+                    <Bar dataKey="revenue" fill="#16a34a" radius={[4, 4, 0, 0]} name="Revenue" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div className="card p-5">
+              <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Task Type Distribution</h3>
+              <div className="h-[240px]">
+                {taskTypeChartData.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-xs text-gray-400">No resolved tasks in this range</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={taskTypeChartData} layout="vertical" margin={{ left: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#eceae4" horizontal={false} />
+                      <XAxis type="number" tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                      <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} width={110} />
+                      <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #eceae4" }} />
+                      <Bar dataKey="count" radius={[0, 4, 4, 0]} name="Tasks">
+                        {taskTypeChartData.map(d => <Cell key={d.key} fill={d.fill} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+            <div className="card p-5">
+              <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Order Status Worked</h3>
+              <div className="h-[240px]">
+                {orderStatusChartData.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-xs text-gray-400">No order-linked tasks in this range</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={orderStatusChartData} layout="vertical" margin={{ left: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#eceae4" horizontal={false} />
+                      <XAxis type="number" tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                      <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} width={110} />
+                      <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #eceae4" }} />
+                      <Bar dataKey="count" radius={[0, 4, 4, 0]} name="Orders">
+                        {orderStatusChartData.map(d => <Cell key={d.key} fill={d.fill} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+            {outcomeChartData.length > 0 && (
+              <div className="card p-5 lg:col-span-2">
+                <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Call Outcomes</h3>
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={outcomeChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#eceae4" vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} width={24} allowDecimals={false} />
+                      <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #eceae4" }} />
+                      <Bar dataKey="count" fill="#1c1c1c" radius={[4, 4, 0, 0]} name="Calls" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="card overflow-hidden mb-6">
@@ -580,6 +777,61 @@ export default function PerformancePage() {
             </div>
           </div>
 
+          <div className="card overflow-hidden mb-6">
+            <div className="px-5 py-4 border-b border-[#eceae4] bg-[#fcfbf8] flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">Tasks Worked</h3>
+              <div className="flex flex-wrap items-center gap-2">
+                <select value={taskTypeFilter} onChange={e => setTaskTypeFilter(e.target.value)}
+                  className="text-[10px] font-bold border border-[#eceae4] rounded-lg px-2.5 py-1.5 bg-white">
+                  <option value="">All Task Types</option>
+                  {Object.entries(TASK_TYPE_CONFIG).map(([key, c]) => <option key={key} value={key}>{c.label}</option>)}
+                </select>
+                <select value={orderStatusFilter} onChange={e => setOrderStatusFilter(e.target.value)}
+                  className="text-[10px] font-bold border border-[#eceae4] rounded-lg px-2.5 py-1.5 bg-white">
+                  <option value="">All Order Statuses</option>
+                  {Object.entries(DELIVERY_CONFIG).map(([key, c]) => <option key={key} value={key}>{c.label}</option>)}
+                </select>
+                {(taskTypeFilter || orderStatusFilter) && (
+                  <button onClick={() => { setTaskTypeFilter(""); setOrderStatusFilter(""); }}
+                    className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:underline px-1">
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-[#eceae4] bg-gray-50/50">
+                    {["Completed", "Task Type", "Task Status", "Order #", "Order Status", "Order Value", "Customer"].map(h => (
+                      <th key={h} className="px-4 py-2.5 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {paginatedTasksWorked.length === 0 ? (
+                    <tr><td colSpan={7} className="px-4 py-10 text-center text-xs text-gray-400">No resolved tasks match these filters</td></tr>
+                  ) : paginatedTasksWorked.map(t => (
+                    <tr key={t.id} className="hover:bg-gray-50/50">
+                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap tabular-nums">
+                        {t.completedAt ? new Date(t.completedAt).toLocaleString([], { timeZone: "Asia/Kolkata", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
+                      </td>
+                      <td className="px-4 py-3"><TaskTypeBadge type={t.taskType} /></td>
+                      <td className="px-4 py-3"><TaskStatusBadge status={t.taskStatus} /></td>
+                      <td className="px-4 py-3 text-xs font-bold text-[#1c1c1c] whitespace-nowrap">{t.orderNumber ? `#${t.orderNumber}` : "—"}</td>
+                      <td className="px-4 py-3">{t.orderStatus ? <DeliveryBadge status={t.orderStatus} /> : <span className="text-xs text-gray-300">—</span>}</td>
+                      <td className="px-4 py-3 text-xs text-gray-500 tabular-nums">{t.orderValue ? formatCurrency(t.orderValue) : "—"}</td>
+                      <td className="px-4 py-3 text-xs text-gray-500 truncate max-w-[160px]">{t.customerName}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-5">
+              <Pagination current={tasksPage} total={filteredTasksWorked.length} pageSize={TASKS_PAGE_SIZE} onChange={setTasksPage} />
+            </div>
+          </div>
+
           <div className="card overflow-hidden">
             <div className="px-5 py-4 border-b border-[#eceae4] bg-[#fcfbf8]">
               <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">Recent Activity</h3>
@@ -608,7 +860,8 @@ export default function PerformancePage() {
             <div className="space-y-4">
               <p className="text-xs text-[#5f5f5d]">
                 Exports the full page for {selectedAgentName || "this agent"}: summary stats, the attendance ledger
-                ({filteredLogs.length} row{filteredLogs.length === 1 ? "" : "s"}, respecting any active filters), and
+                ({filteredLogs.length} row{filteredLogs.length === 1 ? "" : "s"}, respecting any active filters),
+                tasks worked ({filteredTasksWorked.length} row{filteredTasksWorked.length === 1 ? "" : "s"}), and
                 recent activity — ready to share with a reporting manager or supervisor.
               </p>
               <div className="grid grid-cols-1 gap-2.5">
