@@ -7,6 +7,7 @@ import { normalizePhone } from "@/lib/phone-utils";
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
 import { requireInternal } from "@/lib/auth-utils";
 import { makeDeadline } from "@/lib/sync-logic";
+import { mapShiprocketStatus } from "@/lib/shiprocket-status";
 
 export const dynamic = "force-dynamic";
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
@@ -17,17 +18,6 @@ export const maxDuration = 60;
 const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-function mapShiprocketStatus(status: string | number) {
-  const s = String(status).toLowerCase();
-  if (s.includes("rto") || s === "9") return "rto";
-  if (s.includes("delivered") || s === "7" || s === "10") return "delivered";
-  if (s.includes("shipped") || s === "6" || s === "12" || s.includes("transit")) return "in_transit";
-  if (s.includes("out for delivery") || s === "13") return "out_for_delivery";
-  if (s.includes("canceled") || s === "8" || s.includes("cancel")) return "failed";
-  if (s.includes("new") || s === "1" || s.includes("pickup") || s === "2" || s === "3" || s === "4" || s === "5") return "pending";
-  return "pending";
-}
 
 function parseShiprocketDate(dateStr: string | null | undefined): string {
   if (!dateStr) return new Date().toISOString();

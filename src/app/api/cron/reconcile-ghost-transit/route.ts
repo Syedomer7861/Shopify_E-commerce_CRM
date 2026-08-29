@@ -3,21 +3,12 @@ import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
 import { requireInternal } from "@/lib/auth-utils";
 import { makeDeadline } from "@/lib/sync-logic";
+import { mapShiprocketStatus } from "@/lib/shiprocket-status";
 
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
 export const maxDuration = 60;
 
 const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
-
-function mapShiprocketStatus(status: string | number) {
-  const s = String(status).toLowerCase();
-  if (s.includes("delivered") || s === "7" || s === "10") return "delivered";
-  if (s.includes("shipped") || s === "6" || s === "12" || s.includes("transit")) return "in_transit";
-  if (s.includes("out for delivery") || s === "13") return "out_for_delivery";
-  if (s.includes("rto") || s === "9") return "rto";
-  if (s.includes("canceled") || s === "8" || s.includes("cancel")) return "failed";
-  return "pending";
-}
 
 // Shopify's own carrier-synced shipment_status, used only as a fallback
 // when an order's tracking_number isn't a Shiprocket AWB (shipped via a

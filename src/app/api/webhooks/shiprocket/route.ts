@@ -19,10 +19,18 @@ function getSupabase() {
 function mapShiprocketStatus(status: string | number): DeliveryStatus {
   const s = String(status).toLowerCase();
   if (s.includes("rto") || s === "9") return "rto";
+  // Checked before "delivered" - "undelivered" contains "delivered" as a
+  // substring, so the plain includes("delivered") check below would
+  // otherwise misread a failed delivery attempt as a successful one.
+  // Confirmed live: a real courier status was exactly "Undelivered-EN-
+  // ROUTE". This webhook treats it as "failed" (an NDR is actionable for
+  // an agent now), unlike the AWB-polling routes (shiprocket-status.ts)
+  // which treat it as "in_transit" since the courier may still retry -
+  // a deliberate difference, not an inconsistency to unify away.
+  if (s.includes("canceled") || s === "8" || s.includes("failed") || s.includes("undelivered") || s.includes("ndr")) return "failed";
   if (s.includes("delivered") || s === "7" || s === "10") return "delivered";
   if (s.includes("shipped") || s === "6" || s === "12" || s.includes("transit")) return "in_transit";
   if (s.includes("out for delivery") || s === "13") return "out_for_delivery";
-  if (s.includes("canceled") || s === "8" || s.includes("failed") || s.includes("undelivered") || s.includes("ndr")) return "failed";
   return "pending";
 }
 
