@@ -101,7 +101,12 @@ export async function GET(req: NextRequest) {
             line_items: lineItems,
             total_price: parseFloat(order.total_price || 0),
             fulfillment_status: order.fulfillment_status || "unfulfilled",
-            delivery_status: order.fulfillment_status === "fulfilled" ? "delivered" : "pending",
+            // Same false-premise bug fixed in sync-logic.ts and webhooks/
+            // shopify - fulfillment_status isn't a real delivery
+            // confirmation. This route isn't currently scheduled (not in
+            // cron.yml or vercel.json) but leaving the same landmine here
+            // would just recreate the bug the moment someone wires it up.
+            delivery_status: "pending",
             ordered_at: order.created_at,
             source: "shopify",
           }, { onConflict: "shopify_order_id" });

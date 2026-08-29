@@ -240,9 +240,22 @@ export async function syncShopifyData(
             .or(`shopify_order_id.eq.${shopifyId},order_number.eq.${orderNumber}`)
             .maybeSingle();
 
-          const currentStatus = order.fulfillment_status === "fulfilled" ? "in_transit" : "pending";
-          const statusToSave = (existingOrder && existingOrder.source === "shiprocket" && existingOrder.delivery_status !== "pending")
-            ? existingOrder.delivery_status 
+          // Shopify's fulfillment_status only means a shipping label was
+          // created in Shopify - it's not a real shipment confirmation, and
+          // this loop runs every 15 minutes (the "frequent" cron tier).
+          // Stamping "in_transit" straight off it here was the live source
+          // of the ghost-in_transit bug (also fixed in webhooks/shopify -
+          // commit 7bc4bff) - confirmed still running: it was silently
+          // re-overwriting orders the AWB-based reconciliation had just
+          // correctly marked delivered, every 15 minutes, while that
+          // reconciliation was in progress. New orders start "pending"
+          // until Shiprocket's own webhook/sync confirms a real shipment.
+          // Any status beyond "pending" is Shiprocket- or
+          // cancellation-confirmed and this loop has no business
+          // overwriting it, regardless of which source first wrote it.
+          const currentStatus = "pending";
+          const statusToSave = (existingOrder && existingOrder.delivery_status && existingOrder.delivery_status !== "pending")
+            ? existingOrder.delivery_status
             : currentStatus;
 
           const upsertData: any = {
