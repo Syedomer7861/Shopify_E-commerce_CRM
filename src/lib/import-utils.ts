@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase";
 import { normalizePhone } from "@/lib/phone-utils";
+import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 
 function cleanNumber(val: any): number {
   if (typeof val === "number") return val;
@@ -176,6 +177,11 @@ export async function processAbandonedImport(rows: AbandonedRow[]) {
       const abandonedAt = new Date(cartData.abandoned_at);
       const dueDate = new Date(abandonedAt.getTime() + 24 * 60 * 60 * 1000); // +1 day
 
+      // This path (CSV bulk import) never called assignTaskOwner, so every
+      // task it created sat with assigned_to null forever - confirmed live,
+      // 1,022 orphaned recovery tasks with no owner. customer.segment is
+      // always "risky" for this import (set above), matching the other
+      // recovery-task creation sites' pattern.
       await supabase
         .from("tasks")
         .upsert({
@@ -183,7 +189,13 @@ export async function processAbandonedImport(rows: AbandonedRow[]) {
           abandoned_cart_id: cartData.id,
           task_type: "recovery",
           due_date: dueDate.toISOString().split("T")[0],
-          status: "pending"
+          status: "pending",
+          assigned_to: await assignTaskOwner(supabase, "recovery", "risky"),
+          priority_score: calculateTaskPriority({
+            taskType: "recovery",
+            totalPrice: totalPrice,
+            customerSegment: "risky",
+          }),
         }, { onConflict: "abandoned_cart_id, task_type" });
 
       // Merge custom meta if needed (already mostly handled by upsert)

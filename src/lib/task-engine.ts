@@ -172,10 +172,16 @@ export async function assignTaskOwner(supabase: any, taskType?: string, customer
   const pool = onlineAgents.length > 0 ? onlineAgents : recentAgents.length > 0 ? recentAgents : activePool;
 
   // 4. Get current active task counts for each agent in the pool
+  // "pending" alone undercounts real workload - a task that misses its due
+  // date flips to "overdue" (see cron/overdue-marker) and is still very
+  // much an open task the agent owns, just no longer visible to this
+  // count. Confirmed live: thousands of real active tasks were sitting in
+  // "overdue" and invisible here, so an agent buried in overdue work still
+  // looked idle to the balancer and kept getting more piled on.
   const { data: workloads, error } = await supabase
     .from("tasks")
     .select("assigned_to")
-    .eq("status", "pending");
+    .in("status", ["pending", "overdue"]);
 
   if (error) return pool[0].id; // Fallback to first agent
 

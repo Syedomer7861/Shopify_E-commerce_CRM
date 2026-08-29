@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { WorkflowEngine } from "@/lib/workflow-engine";
-import { calculateTaskPriority } from "@/lib/task-engine";
+import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { requireInternal } from "@/lib/auth-utils";
 
 export async function POST(req: NextRequest) {
@@ -42,12 +42,15 @@ export async function POST(req: NextRequest) {
 
       if (!existingTask) {
         // 3. Create investigation task
+        // Never called assignTaskOwner - confirmed live, this was a real
+        // source of orphaned transit_update tasks with no owner.
         await supabase.from("tasks").insert({
           order_id: order.id,
           customer_id: order.customer_id,
           task_type: "transit_update",
           due_date: new Date().toISOString().split("T")[0],
           status: "pending",
+          assigned_to: await assignTaskOwner(supabase, "transit_update", order.customer?.segment),
           priority_score: calculateTaskPriority({
             taskType: "transit_update",
             totalPrice: order.total_price || 0,
