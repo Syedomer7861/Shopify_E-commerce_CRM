@@ -12,6 +12,20 @@ const rateLimit = require("express-rate-limit");
 const { z } = require("zod");
 require("dotenv").config();
 
+// Same crash-visibility handlers added to wa_server.js - see that file's
+// comment for the reasoning. Applies here too: this is only "superseded
+// in production" for chat itself (the note above); the local 15-minute
+// sync loop it still runs was a real, separate long-lived process with
+// no framework catching an unhandled error for it either.
+process.on("uncaughtException", (err) => {
+  console.error("[CHAT] FATAL uncaughtException:", err.stack || err.message || err);
+  process.exit(1);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[CHAT] FATAL unhandledRejection:", reason instanceof Error ? (reason.stack || reason.message) : reason);
+  process.exit(1);
+});
+
 const app = express();
 app.use(helmet());
 app.use(cors());

@@ -19,6 +19,26 @@ const { Client, LocalAuth, MessageMedia, Buttons } = require("whatsapp-web.js");
 const qrcode        = require("qrcode-terminal");
 require("dotenv").config({ path: ".env.local" });
 
+// Crash visibility for the one class of failure the WhatsApp client's own
+// "disconnected" handler below doesn't cover: an unhandled error anywhere
+// else in this process (an Express route, a message handler, a bad
+// promise). Without this, that failure mode was a silent, permanent
+// death with nothing in the logs explaining why - this server runs as a
+// separate long-lived process from the main Vercel app, so there's no
+// framework catching it for us. Logs the full error, then exits so
+// whatever runs this (a process manager, a restart script, or a human
+// watching) has both a clear reason and a clean process to restart -
+// continuing after uncaughtException runs in an undefined state per
+// Node's own guidance, which is worse than a visible, restartable stop.
+process.on("uncaughtException", (err) => {
+  console.error("[WA] FATAL uncaughtException:", err.stack || err.message || err);
+  process.exit(1);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[WA] FATAL unhandledRejection:", reason instanceof Error ? (reason.stack || reason.message) : reason);
+  process.exit(1);
+});
+
 const app  = express();
 const PORT = 3001;
 
