@@ -251,22 +251,41 @@ export async function GET(req: NextRequest) {
             // when a task is marked done; TaskCard.tsx logs "task_completion"
             // for the same real event via a different completion UI. Only
             // matching one spelling meant completions from two of the three
-            // real call sites never counted toward taskCount/revenue here.
+            // real call sites never counted toward taskCount here.
             if (["whatsapp", "task_completion", "task_completed"].includes(act.activity_type)) {
                 stats.taskCount++;
                 const logDate = toISTDateKey(act.created_at);
                 const dKey = `${logDate}_${act.agent_id}`;
                 if (dailyStats[dKey]) dailyStats[dKey].taskCount++;
             }
-
-            const rev = Number((act.metadata as any)?.revenue || 0);
-            if (rev > 0) {
-                stats.revenue += rev;
-                const logDate = toISTDateKey(act.created_at);
-                const dKey = `${logDate}_${act.agent_id}`;
-                if (dailyStats[dKey]) dailyStats[dKey].revenue += rev;
-            }
         }
+    });
+
+    // 6a. Revenue - sourced from order_revenue_attribution, NOT from the
+    // old agent_activity_logs.metadata.revenue field (removed - it
+    // credited an order's full value again on every task closed against
+    // it). order_id is that table's primary key, so each order can only
+    // ever appear once here no matter how many agents/tasks touched it.
+    // delivery_status is read live (not baked into the attribution row),
+    // so an order that later RTOs or fails drops out of revenue on its
+    // own the next time this loads - real revenue, not a snapshot frozen
+    // at the moment the task closed.
+    const { data: revenueRows } = await supabase
+        .from("order_revenue_attribution")
+        .select("agent_id, amount, attributed_at, order:orders(delivery_status)")
+        .gte("attributed_at", start)
+        .lte("attributed_at", end);
+
+    (revenueRows || []).forEach((row: any) => {
+        const stats = agentStats[row.agent_id];
+        if (!stats) return;
+        if (["rto", "failed"].includes(row.order?.delivery_status)) return;
+
+        const amount = Number(row.amount || 0);
+        stats.revenue += amount;
+        const logDate = toISTDateKey(row.attributed_at);
+        const dKey = `${logDate}_${row.agent_id}`;
+        if (dailyStats[dKey]) dailyStats[dKey].revenue += amount;
     });
 
     // 6b. Task/Order breakdowns - what KIND of work each agent resolved,

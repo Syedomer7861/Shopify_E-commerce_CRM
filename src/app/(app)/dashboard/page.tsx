@@ -554,11 +554,9 @@ export default function Dashboard() {
           task_id: id,
           task_type: task?.task_type,
           outcome: outcome,
-          // Full linked order value credited on completion - see the same
-          // note in TaskCard.tsx's handleDone for the double-counting
-          // tradeoff (an order with 2+ completed tasks counts its value
-          // once per completion, not split).
-          revenue: task?.order?.total_price || 0
+          // Revenue is no longer logged here - the /api/tasks/[id]/complete
+          // call above now attributes it server-side, exactly once per
+          // order. See src/lib/revenue-attribution.ts.
         }
       });
     }

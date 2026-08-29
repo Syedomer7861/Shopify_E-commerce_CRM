@@ -654,10 +654,9 @@ export default function TasksPage() {
               note: note, // Added note for Task_Resolutions sheet
               order_id: task.order_id,
               cart_id: task.abandoned_cart_id,
-              // Full linked order value credited on completion - see the
-              // same note in TaskCard.tsx's handleDone for the
-              // double-counting tradeoff.
-              revenue: task.order?.total_price || 0
+              // Revenue is no longer logged here - the /api/tasks/[id]/complete
+              // call above now attributes it server-side, exactly once per
+              // order. See src/lib/revenue-attribution.ts.
           }
         });
       }

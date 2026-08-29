@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest,
 
     const { data: task } = await supabase
       .from("tasks")
-      .select("customer_id, order_id, abandoned_cart_id, task_type, priority_score, customers(name)")
+      .select("customer_id, order_id, abandoned_cart_id, task_type, priority_score, assigned_to, customers(name)")
       .eq("id", id)
       .single();
     if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });
@@ -31,11 +31,26 @@ export async function PATCH(req: NextRequest,
     tomorrowDate.setDate(tomorrowDate.getDate() + 1);
     const tomorrow = tomorrowDate.toISOString().split('T')[0];
 
-    const updateData: any = isAutoReschedule 
+    const updateData: any = isAutoReschedule
       ? { status: "rescheduled", due_date: tomorrow, rescheduled_to: tomorrow }
       : { status: "done", completed_at: now };
 
     await supabase.from("tasks").update(updateData).eq("id", id);
+
+    // Real per-order revenue attribution - see src/lib/revenue-attribution.ts.
+    // Only fires on a genuine completion (not an auto-reschedule), and only
+    // for task types that plausibly drove the order; the function itself
+    // guarantees at most one credit per order regardless of how many
+    // tasks get closed against it.
+    if (!isAutoReschedule) {
+      const { attributeOrderRevenue } = await import("@/lib/revenue-attribution");
+      await attributeOrderRevenue(supabase, {
+        orderId: task.order_id,
+        agentId: (task as any).assigned_to,
+        taskId: id,
+        taskType: (task as any).task_type,
+      });
+    }
 
     await supabase.from("call_logs").insert({
       task_id: id,
