@@ -47,14 +47,10 @@ export default function LoginPage() {
     sendAdminNotification(`👤 Agent Log-in: ${email}${profile?.is_demo ? ' (Demo Mode)' : ''}`, "info").catch(console.error);
 
     // Force a clean hard-redirect to guarantee cookies sync with Next.js SSR
-    // middleware. Matches src/app/page.tsx's role routing exactly - this
-    // only checked for "manager" before, so admin/hr landed on /dashboard
-    // here but /my-hub or /hr everywhere else, depending which path sent
-    // them there.
+    // middleware. Matches src/app/page.tsx's role routing exactly.
     const landingPage = profile?.role === "manager" ? "/manager"
-      : profile?.role === "admin" ? "/my-hub"
-        : profile?.role === "hr" ? "/hr"
-          : "/dashboard";
+      : profile?.role === "hr" ? "/hr"
+        : "/dashboard";
     window.location.href = landingPage;
   }
 
