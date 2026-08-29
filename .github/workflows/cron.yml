@@ -60,7 +60,7 @@ jobs:
           # the Shopify half needed a home.
           case "$group" in
             frequent)  paths="/api/cron/workflow-executor /api/sync/shopify /api/cron/campaign-sender" ;;
-            hourly)    paths="/api/cron/unmask-sentinel /api/cron/shiprocket-sync" ;;
+            hourly)    paths="/api/cron/unmask-sentinel /api/cron/shiprocket-sync /api/cron/reconcile-ghost-transit" ;;
             sixhourly) paths="/api/cron/transit-inform /api/cron/transit-escalator" ;;
             # analytics-digest?range=weekly self-gates to Mondays inside the
             # route, so it can ride the same daily trigger without a fifth
