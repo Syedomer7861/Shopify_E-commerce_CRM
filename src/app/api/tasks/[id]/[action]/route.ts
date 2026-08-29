@@ -49,6 +49,8 @@ export async function PATCH(req: NextRequest,
         agentId: (task as any).assigned_to,
         taskId: id,
         taskType: (task as any).task_type,
+        customerId: task.customer_id,
+        abandonedCartId: task.abandoned_cart_id,
       });
     }
 
