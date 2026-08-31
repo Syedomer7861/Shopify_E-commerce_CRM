@@ -124,7 +124,14 @@ export default function PerformancePage() {
   useEffect(() => {
     if (!canBrowseAgents) return;
     const isDemo = document.cookie.includes("crm-demo-mode=true");
-    if (isDemo) return;
+    if (isDemo) {
+      // fetchPerformance already returns mock data; give the picker a roster
+      // so a demo user can actually trigger it.
+      import("@/lib/mockData").then((m) =>
+        setAgents(m.MOCK_TEAM.map((a: any) => ({ id: a.id, name: a.name })))
+      );
+      return;
+    }
     supabase
       .from("profiles")
       .select("id, name")
