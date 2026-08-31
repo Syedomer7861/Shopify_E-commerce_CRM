@@ -5,9 +5,13 @@ import { Suspense } from "react";
 import { PHProvider } from "./providers";
 import PostHogPageView from "./_components/PostHogPageView";
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://cureforever-crm.vercel.app";
+const OG_DESCRIPTION = "Advanced Shopify & Shiprocket CRM for E-commerce";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "CureForever CRM",
-  description: "Advanced Shopify & Shiprocket CRM for E-commerce",
+  description: OG_DESCRIPTION,
   manifest: "/manifest.json",
   icons: {
     icon: "/favicon.webp",
@@ -16,6 +20,22 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "CureForever CRM",
+  },
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    siteName: "CureForever CRM",
+    title: "CureForever CRM",
+    description: OG_DESCRIPTION,
+    images: [
+      { url: "/og-image.png", width: 1200, height: 630, alt: "CureForever CRM dashboard" },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CureForever CRM",
+    description: OG_DESCRIPTION,
+    images: ["/og-image.png"],
   },
 };
 
