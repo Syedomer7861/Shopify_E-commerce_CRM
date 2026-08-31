@@ -18,6 +18,7 @@ import autoTable from 'jspdf-autotable';
 import IndiaSalesMap from "@/components/IndiaSalesMap";
 import { isDemoMode } from "@/lib/demo";
 
+const REVENUE_COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444", "#14b8a6", "#f97316", "#6366f1"];
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "tasks" | "customers" | "rto" | "recovery" | "shipping" | "agents" | "attendance" | "products">("overview");
@@ -1733,33 +1734,60 @@ export default function ReportsPage() {
                </div>
             </div>
             
-            <div className="card p-6 bg-[#eceae4]/10">
+            <div className="card p-6 bg-[#eceae4]/10 flex flex-col">
                <SectionTitle>Revenue Distribution</SectionTitle>
-               <div className="h-[300px] w-full mt-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                     <PieChart>
-                        <Pie
-                           data={stats.topProducts}
-                           dataKey="revenue"
-                           nameKey="name"
-                           cx="50%"
-                           cy="50%"
-                           innerRadius={60}
-                           outerRadius={80}
-                           paddingAngle={2}
-                        >
-                           {stats.topProducts.map((entry: any, index: number) => (
-                              <Cell key={`cell-${index}`} fill={["#1c1c1c", "#5f5f5d", "#eceae4", "#1c1c1c", "#5f5f5d"][index % 5]} />
-                           ))}
-                        </Pie>
-                        <Tooltip 
-                           contentStyle={{ background: '#1c1c1c', border: 'none', borderRadius: '8px', fontSize: '10px' }} 
-                           itemStyle={{ color: '#fcfbf8' }}
-                           labelStyle={{ color: '#fcfbf8' }}
-                        />
-                     </PieChart>
-                  </ResponsiveContainer>
-               </div>
+               {stats.topProducts.length === 0 ? (
+                  <div className="flex-1 flex items-center justify-center text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest py-16">
+                     No product revenue in range
+                  </div>
+               ) : (
+                  <>
+                     <div className="relative h-[220px] w-full mt-4">
+                        <ResponsiveContainer width="100%" height="100%">
+                           <PieChart>
+                              <Pie
+                                 data={stats.topProducts}
+                                 dataKey="revenue"
+                                 nameKey="name"
+                                 cx="50%"
+                                 cy="50%"
+                                 innerRadius={62}
+                                 outerRadius={92}
+                                 paddingAngle={2}
+                                 stroke="none"
+                              >
+                                 {stats.topProducts.map((entry: any, index: number) => (
+                                    <Cell key={`cell-${index}`} fill={REVENUE_COLORS[index % REVENUE_COLORS.length]} />
+                                 ))}
+                              </Pie>
+                              <Tooltip
+                                 formatter={(v: any) => formatCurrency(Number(v))}
+                                 contentStyle={{ background: '#1c1c1c', border: 'none', borderRadius: '8px', fontSize: '10px' }}
+                                 itemStyle={{ color: '#fcfbf8' }}
+                                 labelStyle={{ color: '#fcfbf8' }}
+                              />
+                           </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                           <span className="text-[9px] font-bold text-[#5f5f5d] uppercase tracking-widest">Total</span>
+                           <span className="text-sm font-black text-[#1c1c1c]">{formatCurrency(stats.totalProductRevenue || 0)}</span>
+                        </div>
+                     </div>
+                     <div className="mt-6 space-y-2 flex-1">
+                        {stats.topProducts.map((p: any, index: number) => {
+                           const share = stats.totalProductRevenue > 0 ? (p.revenue / stats.totalProductRevenue) * 100 : 0;
+                           return (
+                              <div key={p.name} className="flex items-center gap-3 text-xs">
+                                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: REVENUE_COLORS[index % REVENUE_COLORS.length] }} />
+                                 <span className="font-bold text-[#1c1c1c] truncate flex-1">{p.name}</span>
+                                 <span className="font-bold text-[#5f5f5d] tabular-nums">{formatCurrency(p.revenue)}</span>
+                                 <span className="text-[10px] font-bold text-[#5f5f5d] bg-[#eceae4]/60 px-2 py-0.5 rounded-full tabular-nums shrink-0 w-12 text-center">{Math.round(share)}%</span>
+                              </div>
+                           );
+                        })}
+                     </div>
+                  </>
+               )}
             </div>
           </div>
         </div>
