@@ -203,18 +203,120 @@ export async function GET() {
     }
   }
 
+  // ── Supabase plan quota (the walls that take the app down) ───────────
+  const MB = 1024 * 1024;
+  const DB_LIMIT = 500 * MB; // Free plan
+  {
+    const { result, error } = await timed(async () => {
+      const { data, error } = await supabase!.rpc("db_size_stats");
+      if (error) throw error;
+      return data as { db_bytes: number; tables: Array<{ name: string; bytes: number }> };
+    });
+    if (error) {
+      checks.push({ key: "quota_db", label: "Database Size", category: "Quota", status: "info", message: "db_size_stats() not available - apply migration 20260831a" });
+    } else {
+      const bytes = Number(result!.db_bytes || 0);
+      const pct = Math.round((bytes / DB_LIMIT) * 100);
+      checks.push({
+        key: "quota_db", label: "Database Size", category: "Quota",
+        status: pct >= 90 ? "error" : pct >= 75 ? "stale" : "ok",
+        message: `${(bytes / MB).toFixed(0)} MB of ${(DB_LIMIT / MB).toFixed(0)} MB (${pct}%)` +
+          (result!.tables?.[0] ? ` · biggest: ${result!.tables[0].name} ${(result!.tables[0].bytes / MB).toFixed(0)} MB` : ""),
+        meta: { pct, bytes, tables: result!.tables?.slice(0, 5) },
+      });
+    }
+  }
+  {
+    const { result, error } = await timed(async () => {
+      const { data, error } = await supabase!.rpc("realtime_status");
+      if (error) throw error;
+      return data as { count: number; tables: string[] };
+    });
+    if (error) {
+      checks.push({ key: "quota_realtime", label: "Realtime Publication", category: "Quota", status: "info", message: "realtime_status() not available - apply migration 20260831g" });
+    } else {
+      checks.push({
+        key: "quota_realtime", label: "Realtime Publication", category: "Quota",
+        status: (result!.count ?? 0) > 6 ? "stale" : "ok",
+        message: `${result!.count} table(s) broadcasting: ${(result!.tables || []).join(", ") || "none"}`,
+        meta: { tables: result!.tables },
+      });
+    }
+  }
+  {
+    const { data: snap } = await supabase!
+      .from("egress_watch")
+      .select("captured_at, db_bytes, note")
+      .order("captured_at", { ascending: false })
+      .limit(1);
+    const row = snap?.[0];
+    if (!row) {
+      checks.push({ key: "quota_egress_watch", label: "Egress Watch Snapshot", category: "Quota", status: "info", message: "No snapshot yet - cron /api/cron/egress-watch has not run" });
+    } else {
+      const ageH = (Date.now() - new Date(row.captured_at).getTime()) / 3_600_000;
+      checks.push({
+        key: "quota_egress_watch", label: "Egress Watch Snapshot", category: "Quota",
+        status: row.note ? "stale" : ageH > 30 ? "stale" : "ok",
+        message: row.note ? String(row.note) : `Last snapshot ${ageH < 1 ? "<1" : Math.round(ageH)}h ago · no alerts`,
+        meta: { capturedAt: row.captured_at },
+      });
+    }
+  }
+
+  // ── Work queue depth ────────────────────────────────────────────────
+  {
+    const today = new Date().toISOString().split("T")[0];
+    const [overdue, pending, failedWh] = await Promise.all([
+      supabase!.from("tasks").select("id", { count: "exact", head: true }).lt("due_date", today).not("status", "in", '("done","cancelled","skipped")'),
+      supabase!.from("tasks").select("id", { count: "exact", head: true }).eq("due_date", today).not("status", "in", '("done","cancelled","skipped")'),
+      supabase!.from("webhook_logs").select("id", { count: "exact", head: true }).eq("status", "failed").gte("created_at", new Date(Date.now() - 86_400_000).toISOString()),
+    ]);
+    const oc = overdue.count ?? 0;
+    checks.push({
+      key: "queue_overdue", label: "Overdue Tasks", category: "Queue",
+      status: oc > 5000 ? "error" : oc > 1000 ? "stale" : "ok",
+      message: `${oc.toLocaleString()} open past due · ${pending.count ?? 0} due today`,
+      meta: { overdue: oc, dueToday: pending.count ?? 0 },
+    });
+    const fc = failedWh.count ?? 0;
+    checks.push({
+      key: "queue_webhooks", label: "Failed Webhooks (24h)", category: "Queue",
+      status: fc > 100 ? "error" : fc > 10 ? "stale" : "ok",
+      message: fc === 0 ? "None in the last 24h" : `${fc} failed webhook(s) in the last 24h`,
+      meta: { failed24h: fc },
+    });
+  }
+
+  // ── Deployment (informational) ──────────────────────────────────────
+  {
+    const sha = process.env.VERCEL_GIT_COMMIT_SHA;
+    checks.push({
+      key: "deploy_build", label: "Deployment", category: "Deployment", status: "info",
+      message: sha
+        ? `${(process.env.VERCEL_ENV || "unknown")} · ${process.env.VERCEL_GIT_COMMIT_REF || "?"} @ ${sha.slice(0, 7)} · ${process.env.VERCEL_REGION || "?"}`
+        : "Not running on Vercel (local or self-hosted)",
+      meta: { sha, ref: process.env.VERCEL_GIT_COMMIT_REF, env: process.env.VERCEL_ENV, region: process.env.VERCEL_REGION },
+    });
+  }
+
   // ── Environment secrets presence (booleans only, never values) ───────
-  const envChecks = [
-    { key: "CRON_SECRET", label: "CRON_SECRET" },
-    { key: "SUPABASE_SERVICE_ROLE_KEY", label: "SUPABASE_SERVICE_ROLE_KEY" },
-    { key: "NEXT_PUBLIC_SUPABASE_URL", label: "NEXT_PUBLIC_SUPABASE_URL" },
-    { key: "NEXT_PUBLIC_SUPABASE_ANON_KEY", label: "NEXT_PUBLIC_SUPABASE_ANON_KEY" },
+  const envChecks: Array<{ key: string; label: string; required?: boolean }> = [
+    { key: "CRON_SECRET", label: "CRON_SECRET", required: true },
+    { key: "SUPABASE_SERVICE_ROLE_KEY", label: "SUPABASE_SERVICE_ROLE_KEY", required: true },
+    { key: "NEXT_PUBLIC_SUPABASE_URL", label: "NEXT_PUBLIC_SUPABASE_URL", required: true },
+    { key: "NEXT_PUBLIC_SUPABASE_ANON_KEY", label: "NEXT_PUBLIC_SUPABASE_ANON_KEY", required: true },
+    { key: "SYNC_SECRET", label: "SYNC_SECRET" },
+    { key: "GOOGLE_CLIENT_ID", label: "GOOGLE_CLIENT_ID" },
+    { key: "GOOGLE_CLIENT_SECRET", label: "GOOGLE_CLIENT_SECRET" },
+    { key: "GOOGLE_DRIVE_FOLDER_ID", label: "GOOGLE_DRIVE_FOLDER_ID" },
+    { key: "WHATSAPP_BRIDGE_URL", label: "WHATSAPP_BRIDGE_URL" },
   ];
   for (const e of envChecks) {
+    const set = !!process.env[e.key];
     checks.push({
       key: `env_${e.key}`, label: e.label, category: "Environment",
-      status: process.env[e.key] ? "ok" : "error",
-      message: process.env[e.key] ? "Set" : "Missing - required for production",
+      status: set ? "ok" : e.required ? "error" : "info",
+      message: set ? "Set" : e.required ? "Missing - required for production" : "Not set (optional)",
     });
   }
 
@@ -223,6 +325,8 @@ export async function GET() {
     error: checks.filter(c => c.status === "error").length,
     stale: checks.filter(c => c.status === "stale").length,
     not_configured: checks.filter(c => c.status === "not_configured").length,
+    info: checks.filter(c => c.status === "info").length,
+    total: checks.length,
   };
 
   return NextResponse.json({ checks, summary, checkedAt: new Date().toISOString() });
