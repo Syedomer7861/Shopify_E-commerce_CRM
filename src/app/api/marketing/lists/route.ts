@@ -10,6 +10,7 @@ const StatusSchema = z.object({
 });
 
 const CreateListSchema = z.object({
+  space_id: z.string().uuid(),
   name: z.string().min(1).max(120),
   color: z.string().max(20).optional(),
   icon: z.string().max(40).optional(),
@@ -17,14 +18,19 @@ const CreateListSchema = z.object({
   wip_limit: z.number().int().positive().nullable().optional(),
 });
 
-// GET /api/marketing/lists — board columns. ?archived=1 to include archived.
+// GET /api/marketing/lists?space_id=&archived=1 — a Space's board lists.
+// RLS already limits rows to Spaces the caller can access.
 export async function GET(req: NextRequest) {
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
-  const includeArchived = new URL(req.url).searchParams.get("archived") === "1";
+  const sp = new URL(req.url).searchParams;
+  const includeArchived = sp.get("archived") === "1";
+  const spaceId = sp.get("space_id");
+
   let query = supabase!.from("mkt_lists").select("*").order("position", { ascending: true });
   if (!includeArchived) query = query.eq("archived", false);
+  if (spaceId) query = query.eq("space_id", spaceId);
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -51,12 +57,14 @@ export async function POST(req: NextRequest) {
   const { data: last } = await supabase!
     .from("mkt_lists")
     .select("position")
+    .eq("space_id", parsed.data.space_id)
     .order("position", { ascending: false })
     .limit(1)
     .maybeSingle();
   const position = (last?.position ?? 0) + 1000;
 
   const insert: Record<string, unknown> = {
+    space_id: parsed.data.space_id,
     name: parsed.data.name,
     color: parsed.data.color ?? null,
     icon: parsed.data.icon ?? null,

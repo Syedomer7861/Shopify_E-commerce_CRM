@@ -5,6 +5,7 @@ import { requireMarketing } from "@/lib/marketing-auth";
 const ApplySchema = z.object({
   template_id: z.string().uuid(),
   list_id: z.string().uuid().optional(), // required for kind='task'
+  space_id: z.string().uuid().optional(), // required for kind='list'
 });
 
 type TplTask = {
@@ -62,17 +63,22 @@ export async function POST(req: NextRequest) {
   };
 
   if (tpl.kind === "list") {
+    if (!parsed.data.space_id) {
+      return NextResponse.json({ error: "space_id is required for a list template" }, { status: 400 });
+    }
     const statuses = Array.isArray(payload.statuses) ? payload.statuses : undefined;
     const statusIds: string[] = statuses ? statuses.map((s: any) => s.id) : ["backlog"];
 
     const { data: lastList } = await supabase!
       .from("mkt_lists")
       .select("position")
+      .eq("space_id", parsed.data.space_id)
       .order("position", { ascending: false })
       .limit(1)
       .maybeSingle();
 
     const listInsert: Record<string, unknown> = {
+      space_id: parsed.data.space_id,
       name: tpl.name,
       color: payload.color ?? null,
       icon: payload.icon ?? null,
