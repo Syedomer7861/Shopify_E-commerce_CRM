@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Send, Paperclip, Smile, Image as ImageIcon, Loader2, X } from 'lucide-react';
 import { useChat } from '@/context/ChatContext';
 import { cn } from '@/lib/utils';
@@ -18,6 +18,33 @@ export function ChatInput() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
+  // Typing indicator: emit `typing:start` ONCE per burst, then a single
+  // `typing:stop` after 4s of no keystrokes. The old code broadcast on every
+  // keystroke — ~1 Realtime message per character, per channel member, which
+  // was a large slice of the Realtime quota.
+  const isTypingRef = useRef(false);
+  const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearTyping = React.useCallback(() => {
+    if (stopTimerRef.current) { clearTimeout(stopTimerRef.current); stopTimerRef.current = null; }
+    if (isTypingRef.current) {
+      isTypingRef.current = false;
+      socket?.emit('typing:stop', { channelId: activeChannel?.id });
+    }
+  }, [socket, activeChannel?.id]);
+
+  const pingTyping = () => {
+    if (!isTypingRef.current) {
+      isTypingRef.current = true;
+      socket?.emit('typing:start', { channelId: activeChannel?.id });
+    }
+    if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
+    stopTimerRef.current = setTimeout(clearTyping, 4000);
+  };
+
+  // Stop signalling typing when the channel changes or the input unmounts.
+  useEffect(() => clearTyping, [activeChannel?.id, clearTyping]);
+
   const handleSend = () => {
     if (!content.trim() || !activeChannel) return;
     const isDemo = isDemoMode();
@@ -30,9 +57,8 @@ export function ChatInput() {
     sendMessage(activeChannel.id, content.trim());
     setContent("");
     setShowEmojis(false);
-    
-    socket?.emit('typing:stop', { channelId: activeChannel.id });
-    
+    clearTyping();
+
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
     }
@@ -51,9 +77,9 @@ export function ChatInput() {
     e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
 
     if (e.target.value.length > 0) {
-      socket?.emit('typing:start', { channelId: activeChannel?.id });
+      pingTyping();
     } else {
-      socket?.emit('typing:stop', { channelId: activeChannel?.id });
+      clearTyping();
     }
   };
 

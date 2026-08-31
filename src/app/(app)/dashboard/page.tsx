@@ -454,20 +454,10 @@ export default function Dashboard() {
     const pollInterval = setInterval(() => debouncedRefresh(), 5 * 60 * 1000);
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
 
-    // REAL-TIME UPDATES: Listen for global sync heartbeat
-    const settingsChannel = supabase
-      .channel('dashboard-sync-heartbeat')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'settings', 
-        filter: `id=eq.00000000-0000-0000-0000-000000000000` 
-      }, (payload) => {
-        console.log("💓 Global Heartbeat Detected: Syncing UI...");
-        fetchDashboardData(true);
-        toast.success("CRM Data Updated", { icon: "🔄", duration: 2000 });
-      })
-      .subscribe();
+    // Dropped the Realtime subscription on the settings heartbeat row (every
+    // dashboard session subscribed, and each fired a full refetch + toast for
+    // every other user's sync). The 5-minute poll above plus the 15-minute
+    // self-sync below keep the dashboard fresh without the Realtime cost.
 
     // 15-MINUTE GLOBAL SYNC HEARTBEAT
     const syncHeartbeat = setInterval(() => {
@@ -484,7 +474,6 @@ export default function Dashboard() {
     }, 1000);
 
     return () => {
-      supabase.removeChannel(settingsChannel);
       clearInterval(pollInterval);
       clearInterval(timer);
       clearInterval(syncHeartbeat);

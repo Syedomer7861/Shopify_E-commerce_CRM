@@ -398,23 +398,13 @@ export default function Sidebar() {
     return () => clearInterval(interval);
   }, [profile?.id, supabase]);
 
+  // The "System Freshness" label just ticks a local clock now. It used to
+  // ride a Realtime subscription on the settings row — every session
+  // subscribed, for a cosmetic timestamp. Not worth any Realtime quota.
   useEffect(() => {
-    const hbChannel = supabase
-      .channel('sidebar-sync-heartbeat')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'settings', 
-        filter: `id=eq.00000000-0000-0000-0000-000000000000` 
-      }, () => {
-        setLastSync(new Date());
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(hbChannel);
-    };
-  }, [supabase]);
+    const interval = setInterval(() => setLastSync(new Date()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!profile?.id) return;

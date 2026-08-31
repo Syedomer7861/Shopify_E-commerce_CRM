@@ -52,19 +52,15 @@ export function CallMonitor() {
 
   useEffect(() => {
     fetchCalls();
-    
-    // Subscribe to real-time changes
-    const channel = supabase
-      .channel('call-monitor-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'raw_call_logs' }, () => {
-        fetchCalls();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabase, fetchCalls]);
+    // Was a Realtime subscription on raw_call_logs (event '*') — a high-churn
+    // table that fanned out to every viewer. A 30s poll (paused while the tab
+    // is hidden) is enough for a monitor view and costs no Realtime quota.
+    const id = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchCalls();
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [fetchCalls]);
 
   const togglePlay = (url: string, id: string) => {
     if (playingId === id) {

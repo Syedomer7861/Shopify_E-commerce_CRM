@@ -1,19 +1,42 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { timeAgo, cn } from "@/lib/utils";
 import { Activity, Zap, ShoppingBag, CheckCircle2, AlertTriangle, User, RefreshCw } from "lucide-react";
 import { isDemoMode } from "@/lib/demo";
 
+const POLL_MS = 60_000;
+
 export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[] }) {
   const [logs, setLogs] = useState<any[]>(initialLogs);
   const supabase = createClient();
 
+  // Was 3 Realtime subscriptions (webhook_logs / agent_activity_logs /
+  // call_logs INSERT) delivering a message to every dashboard viewer on
+  // every write — one of the biggest Realtime-quota costs. A 60s poll of
+  // the same three tables gives the same feed at a tiny fraction of the cost.
+  const poll = useCallback(async () => {
+    if (typeof document !== "undefined" && document.hidden) return;
+    try {
+      const [wh, act, calls] = await Promise.all([
+        supabase.from("webhook_logs").select("*").order("created_at", { ascending: false }).limit(10),
+        supabase.from("agent_activity_logs").select("*").order("created_at", { ascending: false }).limit(10),
+        supabase.from("call_logs").select("*").order("created_at", { ascending: false }).limit(10),
+      ]);
+      const merged = [...(wh.data ?? []), ...(act.data ?? []), ...(calls.data ?? [])]
+        .filter((r) => r?.created_at)
+        .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+        .slice(0, 20);
+      setLogs(merged);
+    } catch (err) {
+      console.error("LivePulseFeed poll failed:", err);
+    }
+  }, [supabase]);
+
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
-    const isDemo = isDemoMode();
-    if (isDemo) {
+    if (isDemoMode()) {
       setLogs([
         { id: 'm1', source: 'shopify', topic: 'order_paid', created_at: new Date(Date.now() - 60000).toISOString(), payload: { data: { customer_name: 'Rahul Kumar', total_price: '₹2,450' } } },
         { id: 'm2', activity_type: 'call_logged', created_at: new Date(Date.now() - 300000).toISOString(), description: 'Rahul called Amit about Order #1234' },
@@ -22,49 +45,10 @@ export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[
       ]);
       return;
     }
-
-    // 1. Subscribe to Webhook Logs (System Pulse)
-    const webhookSub = supabase
-      .channel("live_webhooks")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "webhook_logs" },
-        (payload) => {
-          setLogs((prev) => [payload.new, ...prev].slice(0, 20));
-        }
-      )
-      .subscribe();
-
-    // 2. Subscribe to Agent Activity Logs (Human Pulse)
-    const activitySub = supabase
-      .channel("live_agent_activity")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "agent_activity_logs" },
-        (payload) => {
-          setLogs((prev) => [payload.new, ...prev].slice(0, 20));
-        }
-      )
-      .subscribe();
-
-    // 3. Subscribe to Call Logs (Automation Pulse)
-    const callSub = supabase
-      .channel("live_calls")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "call_logs" },
-        (payload) => {
-          setLogs((prev) => [payload.new, ...prev].slice(0, 20));
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(webhookSub);
-      supabase.removeChannel(activitySub);
-      supabase.removeChannel(callSub);
-    };
-  }, [supabase]);
+    poll();
+    const id = setInterval(poll, POLL_MS);
+    return () => clearInterval(id);
+  }, [poll]);
 
   const getLogDetails = (log: any) => {
     // Webhook Log Structure
