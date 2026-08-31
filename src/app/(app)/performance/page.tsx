@@ -13,6 +13,7 @@ import { PageHeader, StatCard, Modal, Pagination, TaskTypeBadge, DeliveryBadge, 
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import html2canvas from "html2canvas";
 import { createClient } from "@/lib/supabase";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
@@ -153,6 +154,7 @@ export default function PerformancePage() {
   // data. requestSeq guards against that: only the response matching the
   // most recently issued request is allowed to setState.
   const requestSeq = useRef(0);
+  const chartsRef = useRef<HTMLDivElement>(null);
 
   const fetchPerformance = useCallback(async () => {
     const mySeq = ++requestSeq.current;
@@ -428,6 +430,31 @@ export default function PerformancePage() {
 
         let nextY = (pdf as any).lastAutoTable.finalY + 8;
 
+        // Snapshot the on-screen charts as images so the PDF mirrors the page.
+        const chartCards = chartsRef.current
+          ? Array.from(chartsRef.current.querySelectorAll<HTMLElement>(":scope > div"))
+          : [];
+        if (chartCards.length > 0) {
+          if (nextY > 250) { pdf.addPage(); nextY = 20; }
+          pdf.setFontSize(11);
+          pdf.text("Charts", 10, nextY);
+          nextY += 4;
+          const imgW = pageWidth - 20;
+          for (const card of chartCards) {
+            try {
+              const canvas = await html2canvas(card, { scale: 2, backgroundColor: "#ffffff", logging: false, useCORS: true });
+              if (!canvas.width || !canvas.height) continue;
+              const imgH = Math.min(115, (imgW * canvas.height) / canvas.width);
+              if (nextY + imgH > 285) { pdf.addPage(); nextY = 20; }
+              pdf.addImage(canvas.toDataURL("image/png"), "PNG", 10, nextY, imgW, imgH);
+              nextY += imgH + 4;
+            } catch {
+              /* one chart failing to rasterise must not kill the export */
+            }
+          }
+          nextY += 4;
+        }
+
         const pdfSection = (title: string, head: string[], body: (string | number)[][]) => {
           if (body.length === 0) return;
           if (nextY > 250) { pdf.addPage(); nextY = 20; }
@@ -640,7 +667,7 @@ export default function PerformancePage() {
             <StatCard label="Done Rate" value={`${taskStatusSummary.doneRate}%`} sub={`${taskStatusSummary.done} of ${taskStatusSummary.total} closed clean`} icon={<Target className="w-4 h-4" />} />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+          <div ref={chartsRef} className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
             <div className="card p-5">
               <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Daily Activity</h3>
               <div className="h-[220px]">
@@ -916,8 +943,8 @@ export default function PerformancePage() {
           >
             <div className="space-y-4">
               <p className="text-xs text-[#5f5f5d]">
-                Exports the full page for {selectedAgentName || "this agent"}: every summary stat, the three
-                breakdown charts (task type, order status, call outcomes), the attendance ledger
+                Exports the full page for {selectedAgentName || "this agent"}: every summary stat, all charts
+                (PDF captures them as images; CSV/Excel as data), the attendance ledger
                 ({filteredLogs.length} row{filteredLogs.length === 1 ? "" : "s"}, respecting any active filters),
                 tasks worked ({filteredTasksWorked.length} row{filteredTasksWorked.length === 1 ? "" : "s"}), and
                 the full recent-activity feed — ready to share with a reporting manager or supervisor.
