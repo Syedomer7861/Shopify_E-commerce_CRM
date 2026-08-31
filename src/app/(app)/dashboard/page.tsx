@@ -30,7 +30,7 @@ export default function Dashboard() {
   const [webhookLogs, setWebhookLogs] = useState<{ id: string; topic: string; created_at: string; payload: any }[]>([]);
   const [waSettings, setWaSettings] = useState<any>(null);
   const [syncing, setSyncing] = useState(false);
-  const [nextSyncIn, setNextSyncIn] = useState(900); // 15 mins in seconds
+  const [nextSyncIn, setNextSyncIn] = useState(300); // seconds until the next silent background refresh
   const [agentMetrics, setAgentMetrics] = useState<any>(null);
   const [allAgentsMetrics, setAllAgentsMetrics] = useState<any[]>([]);
   const [trendData, setTrendData] = useState<any[]>([]);
@@ -438,48 +438,42 @@ export default function Dashboard() {
     if (typeof document !== 'undefined' && document.hidden) return;
     // Sentinel: Prevent refreshes during active user input or modal open
     const isInteracting = typeof document !== 'undefined' && (
-                         document.activeElement?.tagName === 'INPUT' || 
+                         document.activeElement?.tagName === 'INPUT' ||
                          document.activeElement?.tagName === 'TEXTAREA' ||
+                         document.activeElement?.tagName === 'SELECT' ||
                          document.querySelector('[role="dialog"]'));
     if (isInteracting) return;
 
+    // Silent = no full-page loader, no toast, list keys stay stable so scroll
+    // and expanded rows survive. This is the only recurring auto-refresh.
     fetchDashboardData(true);
+    setNextSyncIn(300);
   }, [fetchDashboardData]);
 
   useEffect(() => {
     fetchDashboardData();
-    // Realtime (settings heartbeat below) drives live updates; this poll is
-    // just a safety net for a missed event, so 5 min is plenty. Was 60s and
-    // duplicated by a second identical 60s timer — both collapsed here.
+    // The ONLY recurring auto-refresh: a silent data refetch every 5 minutes.
+    // It's skipped while the tab is hidden or the user is typing / has a modal
+    // open (see debouncedRefresh), and never shows a loader or toast.
+    //
+    // The old 15-minute client-side "global sync" was removed — it ran a full
+    // /api/sync/all per open tab, flipped the page into a progress-bar state,
+    // and replaced all list data mid-interaction. Shopify/Shiprocket syncing
+    // is handled server-side by the cron jobs; the "Refresh CRM" button covers
+    // on-demand full syncs.
     const pollInterval = setInterval(() => debouncedRefresh(), 5 * 60 * 1000);
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
 
-    // Dropped the Realtime subscription on the settings heartbeat row (every
-    // dashboard session subscribed, and each fired a full refetch + toast for
-    // every other user's sync). The 5-minute poll above plus the 15-minute
-    // self-sync below keep the dashboard fresh without the Realtime cost.
-
-    // 15-MINUTE GLOBAL SYNC HEARTBEAT
-    const syncHeartbeat = setInterval(() => {
-      console.log("[Heartbeat] Triggering 15-minute global sync...");
-      handleGlobalSync(true, false); // Silent, Quick pulse
-    }, 15 * 60 * 1000);
-
-    // 1-SECOND COUNTDOWN TIMER
     const countdownTimer = setInterval(() => {
-      setNextSyncIn(prev => {
-        if (prev <= 1) return 900;
-        return prev - 1;
-      });
+      setNextSyncIn(prev => (prev <= 1 ? 300 : prev - 1));
     }, 1000);
 
     return () => {
       clearInterval(pollInterval);
       clearInterval(timer);
-      clearInterval(syncHeartbeat);
       clearInterval(countdownTimer);
     };
-  }, [supabase, todayPage, overduePage, fetchDashboardData, handleGlobalSync, debouncedRefresh]);
+  }, [supabase, todayPage, overduePage, fetchDashboardData, debouncedRefresh]);
 
   // Helper to apply specialization filters
 
@@ -748,8 +742,8 @@ export default function Dashboard() {
             <button 
               onClick={() => {
                 handleGlobalSync(false, true); // Silent=false, Full=true
-                setNextSyncIn(900); // Reset Pulse timer on manual refresh
-              }} 
+                setNextSyncIn(300); // reset the background-refresh countdown
+              }}
               disabled={syncing}
               className={cn(
                 "btn-secondary flex items-center justify-center gap-1.5 py-1.5 px-4 bg-[#1c1c1c] text-white hover:bg-black transition-all shadow-lg w-full sm:w-auto",
