@@ -7,13 +7,20 @@ const ActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("set_priority"), priority: z.enum(["urgent", "high", "normal", "low"]) }),
   z.object({ type: z.literal("notify"), to: z.string().uuid().optional() }),
   z.object({ type: z.literal("add_subtask"), title: z.string().min(1).max(300) }),
+  z.object({ type: z.literal("move_to_list"), list_id: z.string().uuid() }),
+  z.object({ type: z.literal("set_field"), field: z.string().min(1).max(60), value: z.any() }),
+  z.object({ type: z.literal("set_due_date"), days: z.number().int().min(-365).max(365) }),
+  z.object({ type: z.literal("run_campaign"), segment: z.string().min(1).max(60), name: z.string().max(160).optional() }),
 ]);
 
 const CreateAutomationSchema = z.object({
   name: z.string().min(1).max(160),
   list_id: z.string().uuid().nullable().optional(),
   enabled: z.boolean().optional(),
-  trigger: z.object({ event: z.literal("status_changed"), to: z.string().min(1).max(60).optional() }),
+  trigger: z.object({
+    event: z.enum(["status_changed", "task_created"]),
+    to: z.string().min(1).max(60).optional(),
+  }),
   actions: z.array(ActionSchema).min(1),
 });
 

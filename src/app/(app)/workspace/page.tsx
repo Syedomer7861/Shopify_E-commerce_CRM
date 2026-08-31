@@ -658,7 +658,7 @@ export default function WorkspacePage() {
         </div>
       )}
 
-      <AutomationsModal open={automationsOpen} onClose={() => setAutomationsOpen(false)} list={activeList} members={members} />
+      <AutomationsModal open={automationsOpen} onClose={() => setAutomationsOpen(false)} list={activeList} lists={lists} members={members} />
 
       <ListSettingsModal
         open={listSettingsOpen}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireMarketing } from "@/lib/marketing-auth";
+import { runAutomations } from "@/lib/marketing-automations";
 
 const CreateTaskSchema = z.object({
   list_id: z.string().uuid(),
@@ -126,6 +127,18 @@ export async function POST(req: NextRequest) {
     });
   } catch {
     /* activity log is non-critical */
+  }
+
+  if (!input.parent_task_id) {
+    try {
+      await runAutomations(supabase!, {
+        event: "task_created",
+        task: { id: data.id, list_id: data.list_id, title: data.title, status: data.status, assignees: data.assignees, custom_fields: data.custom_fields },
+        actorId: user!.id,
+      });
+    } catch {
+      /* automations are non-critical */
+    }
   }
 
   return NextResponse.json(data, { status: 201 });

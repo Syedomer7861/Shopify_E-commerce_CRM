@@ -7,13 +7,18 @@ import { cn } from "@/lib/utils";
 import type { MktList, MktAutomation, Profile } from "@/types";
 import { marketingApi } from "@/lib/marketing-client";
 
-type ActionType = "assign" | "set_priority" | "notify" | "add_subtask";
-type DraftAction = { type: ActionType; to?: string; priority?: string; title?: string };
+type ActionType = "assign" | "set_priority" | "notify" | "add_subtask" | "move_to_list" | "set_field" | "set_due_date" | "run_campaign";
+type DraftAction = {
+  type: ActionType;
+  to?: string; priority?: string; title?: string;
+  list_id?: string; field?: string; value?: string; days?: string; segment?: string; name?: string;
+};
 
 type Props = {
   open: boolean;
   onClose: () => void;
   list?: MktList;
+  lists?: MktList[];
   members: Profile[];
 };
 
@@ -22,11 +27,16 @@ const ACTION_LABEL: Record<ActionType, string> = {
   set_priority: "Set priority",
   notify: "Notify",
   add_subtask: "Add subtask",
+  move_to_list: "Move to list",
+  set_field: "Set field",
+  set_due_date: "Set due date",
+  run_campaign: "Create campaign",
 };
 
-export default function AutomationsModal({ open, onClose, list, members }: Props) {
+export default function AutomationsModal({ open, onClose, list, lists = [], members }: Props) {
   const [rules, setRules] = useState<MktAutomation[]>([]);
   const [name, setName] = useState("");
+  const [event, setEvent] = useState<"status_changed" | "task_created">("status_changed");
   const [toStatus, setToStatus] = useState("");
   const [actions, setActions] = useState<DraftAction[]>([{ type: "notify" }]);
   const [saving, setSaving] = useState(false);
@@ -55,12 +65,16 @@ export default function AutomationsModal({ open, onClose, list, members }: Props
     if (a.type === "set_priority") return { type: "set_priority", priority: a.priority ?? "high" };
     if (a.type === "notify") return a.to ? { type: "notify", to: a.to } : { type: "notify" };
     if (a.type === "add_subtask") return a.title?.trim() ? { type: "add_subtask", title: a.title.trim() } : null;
+    if (a.type === "move_to_list") return a.list_id ? { type: "move_to_list", list_id: a.list_id } : null;
+    if (a.type === "set_field") return a.field ? { type: "set_field", field: a.field, value: a.value ?? null } : null;
+    if (a.type === "set_due_date") return { type: "set_due_date", days: Number(a.days ?? 0) };
+    if (a.type === "run_campaign") return a.segment?.trim() ? { type: "run_campaign", segment: a.segment.trim(), name: a.name?.trim() || undefined } : null;
     return null;
   }
 
   async function save() {
     if (!name.trim()) return toast.error("Name the rule");
-    if (!toStatus) return toast.error("Pick a trigger status");
+    if (event === "status_changed" && !toStatus) return toast.error("Pick a trigger status");
     const cleaned = actions.map(cleanAction).filter(Boolean);
     if (cleaned.length === 0) return toast.error("Add at least one complete action");
 
@@ -69,7 +83,7 @@ export default function AutomationsModal({ open, onClose, list, members }: Props
       await marketingApi.createAutomation({
         name: name.trim(),
         list_id: list?.id ?? null,
-        trigger: { event: "status_changed", to: toStatus } as any,
+        trigger: (event === "status_changed" ? { event, to: toStatus } : { event }) as any,
         actions: cleaned as any,
       });
       setName("");
@@ -103,11 +117,16 @@ export default function AutomationsModal({ open, onClose, list, members }: Props
     }
   }
 
+  const listName = (id?: string) => lists.find((l) => l.id === id)?.name ?? "another list";
   const describeAction = (a: any) =>
     a.type === "assign" ? `assign ${nameOf(a.to)}`
     : a.type === "set_priority" ? `priority → ${a.priority}`
     : a.type === "notify" ? `notify ${a.to ? nameOf(a.to) : "assignees"}`
     : a.type === "add_subtask" ? `add subtask "${a.title}"`
+    : a.type === "move_to_list" ? `move to ${listName(a.list_id)}`
+    : a.type === "set_field" ? `set field ${a.field} = ${a.value}`
+    : a.type === "set_due_date" ? `due in ${a.days}d`
+    : a.type === "run_campaign" ? `draft campaign (${a.segment})`
     : a.type;
 
   return (
@@ -123,7 +142,10 @@ export default function AutomationsModal({ open, onClose, list, members }: Props
               <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-bold text-[#1c1c1c]">{r.name}</div>
                 <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d]/60 mt-0.5">
-                  When status → {statusName((r.trigger as any)?.to)} · then {(r.actions as any[]).map(describeAction).join(", ")}
+                  {(r.trigger as any)?.event === "task_created"
+                    ? "When a task is created"
+                    : `When status → ${statusName((r.trigger as any)?.to)}`}{" "}
+                  · then {(r.actions as any[]).map(describeAction).join(", ")}
                 </div>
                 {!r.list_id && <div className="text-[9px] font-bold uppercase tracking-widest text-[#5f5f5d]/40 mt-0.5">All lists</div>}
               </div>
@@ -144,17 +166,27 @@ export default function AutomationsModal({ open, onClose, list, members }: Props
             placeholder="Rule name — e.g. Route to review"
             className="w-full text-xs font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-3 py-2"
           />
-          <div className="flex items-center gap-2 text-[11px] font-bold text-[#5f5f5d]">
-            When status →
+          <div className="flex items-center gap-2 text-[11px] font-bold text-[#5f5f5d] flex-wrap">
+            When
             <select
-              value={toStatus}
-              onChange={(e) => setToStatus(e.target.value)}
+              value={event}
+              onChange={(e) => setEvent(e.target.value as any)}
               className="text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-1.5"
             >
-              {list?.statuses.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
+              <option value="status_changed">status changes to</option>
+              <option value="task_created">a task is created</option>
             </select>
+            {event === "status_changed" && (
+              <select
+                value={toStatus}
+                onChange={(e) => setToStatus(e.target.value)}
+                className="text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-1.5"
+              >
+                {list?.statuses.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           {actions.map((a, i) => (
@@ -198,6 +230,58 @@ export default function AutomationsModal({ open, onClose, list, members }: Props
                   onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))}
                   placeholder="Subtask title"
                   className="flex-1 text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5"
+                />
+              )}
+              {a.type === "move_to_list" && (
+                <select
+                  value={a.list_id ?? ""}
+                  onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { ...x, list_id: e.target.value || undefined } : x)))}
+                  className="flex-1 text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5"
+                >
+                  <option value="">Pick a list…</option>
+                  {lists.filter((l) => l.id !== list?.id).map((l) => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
+                </select>
+              )}
+              {a.type === "set_field" && (
+                <>
+                  <select
+                    value={a.field ?? ""}
+                    onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { ...x, field: e.target.value || undefined } : x)))}
+                    className="text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5"
+                  >
+                    <option value="">Field…</option>
+                    {(list?.custom_fields ?? []).map((f) => (
+                      <option key={f.id} value={f.id}>{f.name}</option>
+                    ))}
+                  </select>
+                  <input
+                    value={a.value ?? ""}
+                    onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))}
+                    placeholder="Value"
+                    className="flex-1 text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5 min-w-0"
+                  />
+                </>
+              )}
+              {a.type === "set_due_date" && (
+                <div className="flex items-center gap-1 flex-1 text-[11px] font-bold text-[#5f5f5d]">
+                  now +
+                  <input
+                    type="number"
+                    value={a.days ?? "0"}
+                    onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { ...x, days: e.target.value } : x)))}
+                    className="w-16 text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5"
+                  />
+                  days
+                </div>
+              )}
+              {a.type === "run_campaign" && (
+                <input
+                  value={a.segment ?? ""}
+                  onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { ...x, segment: e.target.value } : x)))}
+                  placeholder="Target segment (e.g. repeat)"
+                  className="flex-1 text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5 min-w-0"
                 />
               )}
 
