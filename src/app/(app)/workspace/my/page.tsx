@@ -118,10 +118,10 @@ export default function MyWorkPage() {
                       )}
                     />
                     <span className="text-[13px] font-semibold text-[#1c1c1c] flex-1 truncate">{t.title}</span>
-                    <span className="text-[10px] font-bold text-[#5f5f5d]/70 truncate max-w-[120px]">{l?.name ?? "—"}</span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]">{col?.name ?? t.status}</span>
+                    <span className="hidden sm:block text-[10px] font-bold text-[#5f5f5d]/70 truncate max-w-[120px]">{l?.name ?? "—"}</span>
+                    <span className="hidden min-[420px]:block text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]">{col?.name ?? t.status}</span>
                     {t.due_date && (
-                      <span className="text-[10px] font-bold text-[#5f5f5d] w-14 text-right">
+                      <span className="text-[10px] font-bold text-[#5f5f5d] w-14 text-right flex-shrink-0">
                         {new Date(t.due_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                       </span>
                     )}

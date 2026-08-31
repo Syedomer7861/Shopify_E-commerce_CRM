@@ -190,7 +190,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
           </div>
 
           {actions.map((a, i) => (
-            <div key={i} className="flex items-center gap-1.5">
+            <div key={i} className="flex flex-wrap items-center gap-1.5 border border-[#eceae4] rounded-lg p-1.5">
               <select
                 value={a.type}
                 onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { type: e.target.value as ActionType } : x)))}

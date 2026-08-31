@@ -150,7 +150,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
           <div className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest mb-2">Statuses (columns)</div>
           <div className="space-y-1.5">
             {statuses.map((s, i) => (
-              <div key={s.id} className="flex items-center gap-1.5">
+              <div key={s.id} className="flex items-center gap-1">
                 <div className="flex flex-col">
                   <button onClick={() => move(i, -1)} className="text-[#5f5f5d]/50 hover:text-[#1c1c1c] leading-none text-[10px]">▲</button>
                   <button onClick={() => move(i, 1)} className="text-[#5f5f5d]/50 hover:text-[#1c1c1c] leading-none text-[10px]">▼</button>
@@ -197,7 +197,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
           <div className="space-y-1.5">
             {fields.map((f, i) => (
               <div key={f.id} className="space-y-1">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   <input
                     value={f.name}
                     onChange={(e) => setField(i, { name: e.target.value })}

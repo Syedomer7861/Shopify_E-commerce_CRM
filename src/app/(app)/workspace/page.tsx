@@ -416,8 +416,8 @@ export default function WorkspacePage() {
         title={<span className="flex items-center gap-2"><Layers className="w-5 h-5" /> {activeSpace?.name ?? "Workspace"}</span>}
         subtitle="Plan, assign, and move work through a flow."
         actions={
-          <div className="flex items-center gap-2 mr-10 lg:mr-14">
-            <div className="flex bg-[#f2efe8] rounded-lg p-0.5">
+          <div className="flex flex-wrap items-center gap-1.5 lg:mr-14">
+            <div className="flex bg-[#f2efe8] rounded-lg p-0.5 overflow-x-auto max-w-full">
               {(ALL_VIEWS).map((v) => {
                 const Icon = VIEW_ICONS[v];
                 return (
@@ -437,9 +437,10 @@ export default function WorkspacePage() {
             </div>
             <button
               onClick={() => setIntakeOpen(true)}
-              className="relative px-3 py-2 rounded-lg border border-[#eceae4] bg-white text-[#1c1c1c] text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+              title="Creative requests"
+              className="relative px-2.5 py-2 rounded-lg border border-[#eceae4] bg-white text-[#1c1c1c] text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
             >
-              <Inbox className="w-3.5 h-3.5" /> Requests
+              <Inbox className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Requests</span>
               {intake.filter((r) => r.status === "new").length > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center">
                   {intake.filter((r) => r.status === "new").length}
@@ -448,21 +449,24 @@ export default function WorkspacePage() {
             </button>
             <button
               onClick={() => setAutomationsOpen(true)}
-              className="px-3 py-2 rounded-lg border border-[#eceae4] bg-white text-[#1c1c1c] text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+              title="Automations"
+              className="px-2.5 py-2 rounded-lg border border-[#eceae4] bg-white text-[#1c1c1c] text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
             >
-              <Zap className="w-3.5 h-3.5" /> Automations
+              <Zap className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Automations</span>
             </button>
             <button
               onClick={openTemplates}
-              className="px-3 py-2 rounded-lg border border-[#eceae4] bg-white text-[#1c1c1c] text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+              title="Templates"
+              className="px-2.5 py-2 rounded-lg border border-[#eceae4] bg-white text-[#1c1c1c] text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
             >
-              <Sparkles className="w-3.5 h-3.5" /> Templates
+              <Sparkles className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Templates</span>
             </button>
             <button
               onClick={() => setNewListOpen(true)}
-              className="px-3 py-2 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+              title="New list"
+              className="px-2.5 py-2 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
             >
-              <Plus className="w-3.5 h-3.5" /> List
+              <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">List</span>
             </button>
           </div>
         }
@@ -537,7 +541,7 @@ export default function WorkspacePage() {
             value={filters.q}
             onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
             placeholder="Search title…"
-            className="text-xs font-medium bg-white border border-[#eceae4] rounded-lg px-3 py-2 w-48"
+            className="text-xs font-medium bg-white border border-[#eceae4] rounded-lg px-3 py-2 w-full sm:w-48"
           />
           <select
             value={filters.priority}
@@ -571,7 +575,7 @@ export default function WorkspacePage() {
             <select
               value={groupBy}
               onChange={(e) => setGroupBy(e.target.value as any)}
-              className="text-xs font-bold bg-white border border-[#eceae4] rounded-lg px-2 py-2 ml-auto"
+              className="text-xs font-bold bg-white border border-[#eceae4] rounded-lg px-2 py-2 sm:ml-auto"
               title="Group board by"
             >
               <option value="status">Group: Status</option>
