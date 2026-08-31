@@ -17,6 +17,17 @@ export type MktAttachment = {
 
 const ATTACH_BUCKET = "mkt-attachments";
 
+export type MktActivityEntry = {
+  id: string;
+  action: string;
+  summary: string;
+  actor_email: string | null;
+  actor_id?: string | null;
+  actor_name?: string | null;
+  metadata?: Record<string, any> | null;
+  created_at: string;
+};
+
 // Demo / presentation account: no real workspace rows and the API guard
 // would 403 the demo user, so short-circuit every call with mock data and
 // make writes a no-op that keeps the optimistic UI happy.
@@ -190,10 +201,8 @@ export const marketingApi = {
 
   listActivity: (taskId: string) =>
     isDemo()
-      ? P([] as Array<{ id: string; action: string; summary: string; actor_email: string | null; created_at: string }>)
-      : fetch(`/api/marketing/tasks/${taskId}/activity`).then((r) =>
-          j<Array<{ id: string; action: string; summary: string; actor_email: string | null; created_at: string }>>(r)
-        ),
+      ? P([] as MktActivityEntry[])
+      : fetch(`/api/marketing/tasks/${taskId}/activity`).then((r) => j<MktActivityEntry[]>(r)),
 
   listComments: (taskId: string) =>
     isDemo() ? P([] as MktComment[]) : fetch(`/api/marketing/tasks/${taskId}/comments`).then((r) => j<MktComment[]>(r)),

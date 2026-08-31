@@ -93,14 +93,15 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   // Stamp / clear completed_at when the status moves in or out of a
   // 'done'-type column of its (possibly new) list.
   let movedToDone = false;
-  let doneListStatuses: Array<{ id: string; type: string }> = [];
+  let doneListStatuses: Array<{ id: string; name?: string; type: string }> = [];
   if (typeof patch.status === "string" && patch.status !== current.status) {
     const listId = (patch.list_id as string) ?? current.list_id;
     const { data: list } = await supabase!.from("mkt_lists").select("statuses").eq("id", listId).single();
-    doneListStatuses = (list?.statuses as Array<{ id: string; type: string }> | undefined) ?? [];
+    doneListStatuses = (list?.statuses as Array<{ id: string; name?: string; type: string }> | undefined) ?? [];
     movedToDone = doneListStatuses.find((s) => s.id === patch.status)?.type === "done";
     patch.completed_at = movedToDone ? new Date().toISOString() : null;
   }
+  const statusName = (id?: string) => doneListStatuses.find((s) => s.id === id)?.name ?? id ?? "";
 
   const { data, error } = await supabase!
     .from("mkt_tasks")
@@ -168,14 +169,25 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   // Best-effort activity trail — never fail the request on a log write.
   try {
     const changed = Object.keys(parsed.data);
+    const statusMoved = typeof patch.status === "string" && patch.status !== current.status;
+    const fromName = statusName(current.status);
+    const toName = statusName(patch.status as string);
     await supabase!.from("audit_logs").insert({
       actor_id: user!.id,
       actor_email: profile?.email ?? null,
       entity_type: "mkt_task",
       entity_id: params.id,
-      action: patch.status && patch.status !== current.status ? "mkt_task_status_changed" : "mkt_task_updated",
-      summary: `Updated "${current.title}" (${changed.join(", ")})`,
-      metadata: { changed, from_status: current.status, to_status: patch.status ?? current.status },
+      action: statusMoved ? "mkt_task_status_changed" : "mkt_task_updated",
+      summary: statusMoved
+        ? `Moved from "${fromName}" to "${toName}"`
+        : `Updated ${changed.filter((k) => k !== "position").join(", ") || "task"}`,
+      metadata: {
+        changed,
+        from_status: current.status,
+        to_status: patch.status ?? current.status,
+        from_status_name: statusMoved ? fromName : undefined,
+        to_status_name: statusMoved ? toName : undefined,
+      },
     });
   } catch {
     /* activity log is non-critical */

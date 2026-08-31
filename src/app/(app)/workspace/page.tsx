@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { isDemoMode } from "@/lib/demo";
 import {
   LayoutGrid, List as ListIcon, Calendar as CalendarIcon, Table2, BarChart2,
-  Plus, RefreshCw, Layers, Sparkles, Inbox, Zap, Settings2, Target, GanttChartSquare,
+  Plus, RefreshCw, Layers, Sparkles, Inbox, Zap, Settings2, Target, GanttChartSquare, Clock,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { PageHeader, AccessDenied, Modal } from "@/components/ui";
@@ -23,6 +23,7 @@ import SpaceSettingsModal from "@/components/marketing/SpaceSettingsModal";
 import MarketingGantt from "@/components/marketing/MarketingGantt";
 import GoalsModal from "@/components/marketing/GoalsModal";
 import SnippetsManager from "@/components/marketing/SnippetsManager";
+import TaskHistoryModal from "@/components/marketing/TaskHistoryModal";
 import TaskPanel from "@/components/marketing/TaskPanel";
 import type { MktList, MktTask, Profile, MktPriority, MktTemplate, MktIntakeRequest, MktSpace } from "@/types";
 
@@ -62,6 +63,7 @@ export default function WorkspacePage() {
   const [allTasks, setAllTasks] = useState<MktTask[]>([]);
   const [automationsOpen, setAutomationsOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
+  const [historyTaskId, setHistoryTaskId] = useState<string | null>(null);
   const [listSettingsOpen, setListSettingsOpen] = useState(false);
   const [intakeOpen, setIntakeOpen] = useState(false);
   const [intake, setIntake] = useState<MktIntakeRequest[]>([]);
@@ -637,6 +639,7 @@ export default function WorkspacePage() {
           onOpenTask={(id) => setQuery({ task: id })}
           onMove={handleMove}
           onQuickAdd={handleQuickAdd}
+          onHistory={setHistoryTaskId}
         />
       ) : view === "calendar" ? (
         <MarketingCalendar list={activeList} tasks={filtered} members={members} onOpenTask={(id) => setQuery({ task: id })} />
@@ -672,6 +675,13 @@ export default function WorkspacePage() {
                         {new Date(t.due_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                       </span>
                     )}
+                  </button>
+                  <button
+                    onClick={() => setHistoryTaskId(t.id)}
+                    title="History"
+                    className="text-[#5f5f5d]/40 hover:text-[#1c1c1c] flex-shrink-0"
+                  >
+                    <Clock className="w-3.5 h-3.5" />
                   </button>
                 </div>
               );
@@ -863,6 +873,15 @@ export default function WorkspacePage() {
             setQuery({ task: null });
             loadTasks(activeListId);
           }}
+        />
+      )}
+
+      {historyTaskId && (
+        <TaskHistoryModal
+          taskId={historyTaskId}
+          taskTitle={tasks.find((t) => t.id === historyTaskId)?.title}
+          members={members}
+          onClose={() => setHistoryTaskId(null)}
         />
       )}
     </div>

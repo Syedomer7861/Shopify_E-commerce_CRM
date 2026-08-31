@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
-import { Plus } from "lucide-react";
+import { Plus, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MktList, MktTask } from "@/types";
 import { midPosition } from "@/lib/marketing-client";
@@ -24,9 +24,10 @@ type Props = {
   onOpenTask: (id: string) => void;
   onMove: (taskId: string, columnId: string, position: number) => void;
   onQuickAdd: (columnId: string, title: string) => void;
+  onHistory?: (id: string) => void;
 };
 
-export default function MarketingBoard({ list, tasks, columns, groupOf, showWip, onOpenTask, onMove, onQuickAdd }: Props) {
+export default function MarketingBoard({ list, tasks, columns, groupOf, showWip, onOpenTask, onMove, onQuickAdd, onHistory }: Props) {
   const [adding, setAdding] = useState<string | null>(null);
 
   const byColumn = useMemo(() => {
@@ -116,13 +117,22 @@ export default function MarketingBoard({ list, tasks, columns, groupOf, showWip,
                             {...dp.dragHandleProps}
                             onClick={() => onOpenTask(t.id)}
                             className={cn(
-                              "bg-white rounded-xl border border-[#eceae4] p-3 cursor-pointer hover:border-[#1c1c1c]/30 transition-all",
+                              "group/card bg-white rounded-xl border border-[#eceae4] p-3 cursor-pointer hover:border-[#1c1c1c]/30 transition-all",
                               ds.isDragging && "shadow-lg rotate-1"
                             )}
                           >
                             <div className="flex items-start gap-2">
                               <span className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", PRIORITY_DOT[t.priority] ?? PRIORITY_DOT.normal)} />
                               <p className="text-[13px] font-semibold text-[#1c1c1c] leading-snug flex-1">{t.title}</p>
+                              {onHistory && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); onHistory(t.id); }}
+                                  title="History"
+                                  className="opacity-0 group-hover/card:opacity-100 transition-opacity text-[#5f5f5d]/50 hover:text-[#1c1c1c] flex-shrink-0 -mt-0.5"
+                                >
+                                  <Clock className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                             </div>
                             {(t.tags?.length > 0 || t.due_date || t.assignees?.length > 0) && (
                               <div className="flex items-center gap-1.5 mt-2 flex-wrap">

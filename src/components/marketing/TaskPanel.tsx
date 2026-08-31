@@ -737,14 +737,20 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
             {activity.length > 0 && (
               <Field label="Activity">
                 <div className="space-y-1.5">
-                  {activity.map((a) => (
-                    <div key={a.id} className="text-[11px] text-[#5f5f5d] flex gap-2">
-                      <span className="text-[#5f5f5d]/50 whitespace-nowrap">
-                        {new Date(a.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                      <span className="font-medium text-[#1c1c1c]">{a.summary}</span>
-                    </div>
-                  ))}
+                  {activity.map((a) => {
+                    const who = (a as any).actor_name || a.actor_email || "Someone";
+                    return (
+                      <div key={a.id} className="text-[11px] text-[#5f5f5d] flex gap-2">
+                        <span className="text-[#5f5f5d]/50 whitespace-nowrap">
+                          {new Date(a.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="font-bold text-[#1c1c1c]">{who}</span>{" "}
+                          <span className="font-medium">{a.summary}</span>
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </Field>
             )}
