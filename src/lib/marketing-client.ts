@@ -150,6 +150,15 @@ export const marketingApi = {
   deleteTask: (id: string) =>
     isDemo() ? P({ ok: true }) : fetch(`/api/marketing/tasks/${id}`, { method: "DELETE" }).then((r) => j(r)),
 
+  bulk: (ids: string[], action: "update" | "delete", patch?: Record<string, any>) =>
+    isDemo()
+      ? P({ ok: true, updated: ids.length })
+      : fetch("/api/marketing/tasks/bulk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids, action, patch }),
+        }).then((r) => j(r)),
+
   reorder: (items: Array<{ id: string; list_id?: string; status?: string; position: number }>) =>
     isDemo()
       ? P({ ok: true })

@@ -62,6 +62,8 @@ export default function WorkspacePage() {
   const [filters, setFilters] = useState<{ q: string; priority: string; assignee: string }>({
     q: "", priority: "", assignee: "",
   });
+  const [groupBy, setGroupBy] = useState<"status" | "assignee" | "priority">("status");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const wsAdmin = isWorkspaceAdmin(profile);
   const activeSpaceId = sp.get("space") || spaces[0]?.id || "";
@@ -141,6 +143,7 @@ export default function WorkspacePage() {
 
   useEffect(() => {
     loadTasks(activeListId);
+    setSelected(new Set());
   }, [activeListId, loadTasks]);
 
   useEffect(() => {
@@ -160,24 +163,96 @@ export default function WorkspacePage() {
     });
   }, [tasks, filters]);
 
-  async function handleMove(taskId: string, status: string, position: number) {
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status, position } : t)));
+  // Board columns + the per-task group key, driven by groupBy.
+  const PRIORITY_COLS = [
+    { id: "urgent", name: "Urgent", color: "#f43f5e" },
+    { id: "high", name: "High", color: "#f59e0b" },
+    { id: "normal", name: "Normal", color: "#94a3b8" },
+    { id: "low", name: "Low", color: "#cbd5e1" },
+  ];
+  const boardColumns = useMemo(() => {
+    if (groupBy === "priority") return PRIORITY_COLS;
+    if (groupBy === "assignee")
+      return [
+        ...members.map((m) => ({ id: m.id, name: m.name || m.email || "?", color: "#3b82f6" })),
+        { id: "__none", name: "Unassigned", color: "#94a3b8" },
+      ];
+    return (activeList?.statuses ?? []).map((s) => ({ id: s.id, name: s.name, color: s.color }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupBy, members, activeList]);
+  const groupOf = (t: MktTask) =>
+    groupBy === "priority" ? t.priority : groupBy === "assignee" ? (t.assignees?.[0] ?? "__none") : t.status;
+
+  async function handleMove(taskId: string, columnId: string, position: number) {
+    if (groupBy === "status") {
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: columnId, position } : t)));
+      try {
+        await marketingApi.reorder([{ id: taskId, status: columnId, position }]);
+      } catch (e: any) {
+        toast.error(e.message || "Move failed");
+        loadTasks(activeListId);
+      }
+      return;
+    }
+    const patch =
+      groupBy === "priority"
+        ? { priority: columnId as MktPriority }
+        : { assignees: columnId === "__none" ? [] : [columnId] };
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...patch } : t)));
     try {
-      await marketingApi.reorder([{ id: taskId, status, position }]);
+      await marketingApi.updateTask(taskId, patch);
     } catch (e: any) {
       toast.error(e.message || "Move failed");
       loadTasks(activeListId);
     }
   }
 
-  async function handleQuickAdd(status: string, title: string) {
+  async function handleQuickAdd(columnId: string, title: string) {
+    const extra: Partial<MktTask> =
+      groupBy === "priority"
+        ? { priority: columnId as MktPriority }
+        : groupBy === "assignee"
+        ? { assignees: columnId === "__none" ? [] : [columnId] }
+        : { status: columnId };
     try {
-      const created = await marketingApi.createTask({ list_id: activeListId, title, status });
+      const created = await marketingApi.createTask({ list_id: activeListId, title, ...extra });
       setTasks((prev) => [...prev, created]);
     } catch (e: any) {
       toast.error(e.message || "Could not create task");
     }
   }
+
+  async function bulkApply(patch: Record<string, any>) {
+    const ids = [...selected];
+    try {
+      await marketingApi.bulk(ids, "update", patch);
+      setSelected(new Set());
+      loadTasks(activeListId);
+      toast.success(`Updated ${ids.length}`);
+    } catch (e: any) {
+      toast.error(e.message || "Bulk update failed");
+    }
+  }
+  const [confirmBulkDel, setConfirmBulkDel] = useState(false);
+  async function bulkDelete() {
+    if (!confirmBulkDel) { setConfirmBulkDel(true); setTimeout(() => setConfirmBulkDel(false), 3000); return; }
+    const ids = [...selected];
+    setConfirmBulkDel(false);
+    try {
+      await marketingApi.bulk(ids, "delete");
+      setSelected(new Set());
+      loadTasks(activeListId);
+      toast.success(`Deleted ${ids.length}`);
+    } catch (e: any) {
+      toast.error(e.message || "Bulk delete failed");
+    }
+  }
+  const toggleSel = (id: string) =>
+    setSelected((prev) => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
 
   const loadIntake = useCallback(async () => {
     try {
@@ -472,6 +547,38 @@ export default function WorkspacePage() {
               Clear
             </button>
           )}
+          {view === "board" && (
+            <select
+              value={groupBy}
+              onChange={(e) => setGroupBy(e.target.value as any)}
+              className="text-xs font-bold bg-white border border-[#eceae4] rounded-lg px-2 py-2 ml-auto"
+              title="Group board by"
+            >
+              <option value="status">Group: Status</option>
+              <option value="assignee">Group: Assignee</option>
+              <option value="priority">Group: Priority</option>
+            </select>
+          )}
+        </div>
+      )}
+
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 bg-[#1c1c1c] text-white rounded-xl px-3 py-2 text-[11px] font-bold">
+          <span className="uppercase tracking-widest text-[10px]">{selected.size} selected</span>
+          <select onChange={(e) => e.target.value && bulkApply({ assignees: [e.target.value] })} defaultValue="" className="bg-[#2a2a2a] rounded px-2 py-1 text-white">
+            <option value="">Assign…</option>
+            {members.map((m) => <option key={m.id} value={m.id}>{m.name || m.email}</option>)}
+          </select>
+          <select onChange={(e) => e.target.value && bulkApply({ status: e.target.value })} defaultValue="" className="bg-[#2a2a2a] rounded px-2 py-1 text-white">
+            <option value="">Status…</option>
+            {(activeList?.statuses ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+          <select onChange={(e) => e.target.value && bulkApply({ priority: e.target.value })} defaultValue="" className="bg-[#2a2a2a] rounded px-2 py-1 text-white capitalize">
+            <option value="">Priority…</option>
+            {["urgent", "high", "normal", "low"].map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <button onClick={bulkDelete} className="bg-rose-500 rounded px-2 py-1 uppercase tracking-widest text-[10px]">{confirmBulkDel ? "Sure?" : "Delete"}</button>
+          <button onClick={() => setSelected(new Set())} className="text-white/60 uppercase tracking-widest text-[10px]">Clear</button>
         </div>
       )}
 
@@ -485,6 +592,9 @@ export default function WorkspacePage() {
         <MarketingBoard
           list={activeList}
           tasks={filtered}
+          columns={boardColumns}
+          groupOf={groupOf}
+          showWip={groupBy === "status"}
           onOpenTask={(id) => setQuery({ task: id })}
           onMove={handleMove}
           onQuickAdd={handleQuickAdd}
@@ -504,20 +614,25 @@ export default function WorkspacePage() {
             .map((t) => {
               const col = activeList.statuses.find((s) => s.id === t.status);
               return (
-                <button
-                  key={t.id}
-                  onClick={() => setQuery({ task: t.id })}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f7f4ed] text-left"
-                >
-                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: col?.color ?? "#ccc" }} />
-                  <span className="text-[13px] font-semibold text-[#1c1c1c] flex-1">{t.title}</span>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]">{col?.name ?? t.status}</span>
-                  {t.due_date && (
-                    <span className="text-[10px] font-bold text-[#5f5f5d]">
-                      {new Date(t.due_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                    </span>
-                  )}
-                </button>
+                <div key={t.id} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f7f4ed]">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(t.id)}
+                    onChange={() => toggleSel(t.id)}
+                    className="flex-shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <button onClick={() => setQuery({ task: t.id })} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: col?.color ?? "#ccc" }} />
+                    <span className="text-[13px] font-semibold text-[#1c1c1c] flex-1 truncate">{t.title}</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]">{col?.name ?? t.status}</span>
+                    {t.due_date && (
+                      <span className="text-[10px] font-bold text-[#5f5f5d]">
+                        {new Date(t.due_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                      </span>
+                    )}
+                  </button>
+                </div>
               );
             })}
         </div>

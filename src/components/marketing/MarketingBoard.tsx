@@ -13,50 +13,53 @@ const PRIORITY_DOT: Record<string, string> = {
   low: "bg-slate-200",
 };
 
+export type BoardColumn = { id: string; name: string; color: string };
+
 type Props = {
   list: MktList;
   tasks: MktTask[];
+  columns: BoardColumn[];
+  groupOf: (t: MktTask) => string;
+  showWip?: boolean; // only meaningful when grouping by status
   onOpenTask: (id: string) => void;
-  onMove: (taskId: string, status: string, position: number) => void;
-  onQuickAdd: (status: string, title: string) => void;
+  onMove: (taskId: string, columnId: string, position: number) => void;
+  onQuickAdd: (columnId: string, title: string) => void;
 };
 
-export default function MarketingBoard({ list, tasks, onOpenTask, onMove, onQuickAdd }: Props) {
+export default function MarketingBoard({ list, tasks, columns, groupOf, showWip, onOpenTask, onMove, onQuickAdd }: Props) {
   const [adding, setAdding] = useState<string | null>(null);
 
-  const byStatus = useMemo(() => {
+  const byColumn = useMemo(() => {
     const map: Record<string, MktTask[]> = {};
-    for (const s of list.statuses) map[s.id] = [];
-    for (const t of tasks) (map[t.status] ??= []).push(t);
+    for (const c of columns) map[c.id] = [];
+    for (const t of tasks) (map[groupOf(t)] ??= []).push(t);
     for (const k of Object.keys(map)) map[k].sort((a, b) => a.position - b.position);
     return map;
-  }, [list.statuses, tasks]);
+  }, [columns, tasks, groupOf]);
 
   function handleDragEnd(result: DropResult) {
     const { destination, draggableId, source } = result;
     if (!destination) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
-    const targetCol = (byStatus[destination.droppableId] ?? []).filter((t) => t.id !== draggableId);
+    const targetCol = (byColumn[destination.droppableId] ?? []).filter((t) => t.id !== draggableId);
     const before = targetCol[destination.index - 1]?.position;
     const after = targetCol[destination.index]?.position;
     onMove(draggableId, destination.droppableId, midPosition(before, after));
   }
 
-  // Single commit path: Enter/Escape just blur the field, blur does the work.
-  // Avoids the state/blur race that silently dropped the first submit.
-  function commitAdd(statusId: string, value: string) {
+  function commitAdd(columnId: string, value: string) {
     setAdding(null);
     const title = value.trim();
-    if (title) onQuickAdd(statusId, title);
+    if (title) onQuickAdd(columnId, title);
   }
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="flex gap-4 overflow-x-auto pb-4 items-start">
-        {list.statuses.map((col) => {
-          const items = byStatus[col.id] ?? [];
-          const overLimit = list.wip_limit != null && items.length > list.wip_limit;
+        {columns.map((col) => {
+          const items = byColumn[col.id] ?? [];
+          const overLimit = showWip && list.wip_limit != null && items.length > list.wip_limit;
           return (
             <div key={col.id} className="w-72 flex-shrink-0 bg-[#f2efe8] rounded-2xl border border-[#eceae4] flex flex-col">
               <div className="flex items-center justify-between px-3 py-2.5">
@@ -65,7 +68,7 @@ export default function MarketingBoard({ list, tasks, onOpenTask, onMove, onQuic
                   <span className="text-[11px] font-black uppercase tracking-widest text-[#1c1c1c]">{col.name}</span>
                   <span className={cn("text-[10px] font-bold px-1.5 rounded-full", overLimit ? "bg-rose-100 text-rose-600" : "bg-[#eceae4] text-[#5f5f5d]")}>
                     {items.length}
-                    {list.wip_limit != null ? `/${list.wip_limit}` : ""}
+                    {showWip && list.wip_limit != null ? `/${list.wip_limit}` : ""}
                   </span>
                 </div>
                 <button
