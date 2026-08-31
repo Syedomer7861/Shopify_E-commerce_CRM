@@ -271,13 +271,15 @@ export interface UserPermissions {
   send_whatsapp: boolean;
   audit_tasks: boolean;
   manage_automations: boolean;
+  // Optional so existing permission literals keep type-checking. Absent = false.
+  manage_marketing?: boolean;
 }
 
 export interface Profile {
   id: string;
   email: string;
   name?: string;
-  role: "admin" | "agent" | "hr" | "manager";
+  role: "admin" | "agent" | "hr" | "manager" | "marketing";
   permissions: UserPermissions;
   is_active: boolean;
   status?: "online" | "break" | "meeting" | "lunch" | "away" | "offline";
@@ -306,4 +308,116 @@ export interface DashboardData {
     doneThisWeek: number;
   };
   profile?: Profile;
+}
+
+/* ── Marketing workspace (ClickUp-style department module) ──────────
+ * Self-contained: its own mkt_* tables, no coupling to the customer-callback
+ * `tasks` engine above. See supabase/migrations/20260829c_marketing_workspace.sql
+ */
+
+export type MktPriority = "urgent" | "high" | "normal" | "low";
+export type MktStatusType = "not_started" | "active" | "done";
+export type MktLinkKind = "blocks" | "blocked_by" | "relates_to";
+export type MktIntakeStatus = "new" | "accepted" | "rejected";
+
+export interface MktStatus {
+  id: string;
+  name: string;
+  color: string;
+  type: MktStatusType;
+}
+
+export interface MktList {
+  id: string;
+  name: string;
+  color?: string | null;
+  icon?: string | null;
+  position: number;
+  archived: boolean;
+  statuses: MktStatus[];
+  wip_limit?: number | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MktTask {
+  id: string;
+  list_id: string;
+  parent_task_id?: string | null;
+  title: string;
+  description?: string | null;
+  status: string; // one of the parent list's MktStatus ids
+  priority: MktPriority;
+  start_date?: string | null;
+  due_date?: string | null;
+  assignees: string[];
+  watchers: string[];
+  tags: string[];
+  custom_fields: Record<string, any>;
+  position: number;
+  source_ref?: Record<string, any> | null; // { customer_id?, order_id?, campaign_id?, product_id? }
+  recurrence?: Record<string, any> | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at?: string | null;
+  // hydrated relations
+  subtasks?: MktTask[];
+  comments?: MktComment[];
+  links?: MktTaskLink[];
+  list?: MktList;
+}
+
+export interface MktComment {
+  id: string;
+  task_id: string;
+  author_id: string;
+  body: string;
+  mentions: string[];
+  created_at: string;
+  edited_at?: string | null;
+  author?: Profile;
+}
+
+export interface MktTaskLink {
+  id: string;
+  task_id: string;
+  target_task_id: string;
+  kind: MktLinkKind;
+  created_at: string;
+  target?: Pick<MktTask, "id" | "title" | "status" | "list_id">;
+}
+
+export interface MktTemplate {
+  id: string;
+  name: string;
+  kind: "task" | "list";
+  payload: Record<string, any>;
+  created_by?: string | null;
+  created_at: string;
+}
+
+export interface MktAutomation {
+  id: string;
+  list_id?: string | null;
+  name: string;
+  enabled: boolean;
+  trigger: Record<string, any>; // { event: 'status_changed', to: '<statusId>' }
+  actions: Record<string, any>[]; // [{ type: 'assign', to }, { type: 'notify' }, ...]
+  created_by?: string | null;
+  created_at: string;
+}
+
+export interface MktIntakeRequest {
+  id: string;
+  requester_id: string;
+  title: string;
+  details?: string | null;
+  desired_date?: string | null;
+  ref?: Record<string, any> | null;
+  status: MktIntakeStatus;
+  created_task_id?: string | null;
+  created_at: string;
+  requester?: Profile;
 }

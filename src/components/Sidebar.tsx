@@ -27,6 +27,7 @@ const nav = [
   { label: "Orders",      href: "/orders",      icon: ShoppingBag },
   { label: "Calendar",    href: "/calendar",    icon: Calendar },
   { label: "Performance", href: "/performance",  icon: TrendingUp },
+  { label: "Request Creative", href: "/marketing/request", icon: Megaphone },
 ];
 
 const adminNav = [
@@ -58,6 +59,13 @@ const hrNav = [
 
 const managerNav = [
   { label: "Manager Hub", href: "/manager", icon: ShieldCheck },
+];
+
+const marketingNav = [
+  { label: "Board",     href: "/marketing",                icon: LayoutDashboard },
+  { label: "Calendar",  href: "/marketing?view=calendar",  icon: Calendar },
+  { label: "Table",     href: "/marketing?view=table",     icon: FileText },
+  { label: "Insights",  href: "/marketing?view=dashboard", icon: BarChart2 },
 ];
 
 import type { Profile } from "@/types";
@@ -582,7 +590,7 @@ export default function Sidebar() {
         </button>
 
         {/* Desktop-only Secondary Menus (Hidden on mobile nav, moved to More menu) */}
-        {(adminUser || profile?.role === "hr" || profile?.role === "manager" || (profile?.permissions && Object.values(profile.permissions).some(v => v))) && (
+        {(adminUser || profile?.role === "hr" || profile?.role === "manager" || profile?.role === "marketing" || (profile?.permissions && Object.values(profile.permissions).some(v => v))) && (
           <div className="hidden lg:flex flex-col border-t lg:mt-4 border-[#eceae4]">
             {(adminUser || profile?.role === "manager" || profile?.permissions?.audit_tasks) && (
               <>
@@ -609,6 +617,26 @@ export default function Sidebar() {
                   const itemTab = item.href.includes("?") ? new URLSearchParams(item.href.split("?")[1]).get("tab") : null;
                   const currentTab = searchParams.get("tab");
                   const active = itemTab ? (path === "/hr" && currentTab === itemTab) : (path === "/hr" && !currentTab);
+                  return (
+                    <Link key={item.href} href={item.href} className={cn(
+                      "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
+                      active ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
+                    )}>
+                      <item.icon className={cn("w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-105", active ? "text-[#fcfbf8]" : "text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]")} />
+                      <span className="flex-1">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </>
+            )}
+
+            {(adminUser || profile?.role === "marketing" || hasPermission(profile, "manage_marketing" as any)) && (
+              <>
+                <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Marketing</div>
+                {marketingNav.map((item) => {
+                  const itemView = item.href.includes("?") ? new URLSearchParams(item.href.split("?")[1]).get("view") : null;
+                  const currentView = searchParams.get("view");
+                  const active = itemView ? (path === "/marketing" && currentView === itemView) : (path === "/marketing" && !currentView);
                   return (
                     <Link key={item.href} href={item.href} className={cn(
                       "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
@@ -700,6 +728,19 @@ export default function Sidebar() {
                   <div className="grid grid-cols-1 gap-1">
                     {hrNav.map(item => (
                       <Link key={item.label} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                        <item.icon className="w-4 h-4 text-[#5f5f5d]" /> {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(adminUser || profile?.role === "marketing" || hasPermission(profile, "manage_marketing" as any)) && (
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Marketing</h4>
+                  <div className="grid grid-cols-1 gap-1">
+                    {marketingNav.map(item => (
+                      <Link key={item.href} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
                         <item.icon className="w-4 h-4 text-[#5f5f5d]" /> {item.label}
                       </Link>
                     ))}

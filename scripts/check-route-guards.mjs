@@ -25,6 +25,7 @@ const GUARDS = [
   "requireInternal",
   "hasInternalSecret",
   "getAuthenticatedSession",
+  "requireMarketing",
   "ensureAdmin",
   "SHOPIFY_WEBHOOK_SECRET",   // webhook: HMAC verified instead of a session
   "SHIPROCKET_WEBHOOK_TOKEN",
