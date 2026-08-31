@@ -7,12 +7,17 @@ import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import type { Profile, UserPermissions } from "@/types";
 import { AccessDenied } from "@/components/ui";
-import { DEFAULT_PERMISSIONS, DEFAULT_HR_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS, DEFAULT_MARKETING_PERMISSIONS, ALL_NAV_MODULES, allowedNavModules, normalizePermissions, hasPermission } from "@/lib/permissions";
+import { DEFAULT_PERMISSIONS, DEFAULT_HR_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS, DEFAULT_MARKETING_PERMISSIONS, NAV_MODULE_GROUPS, ALL_NAV_MODULES, allowedNavModules, normalizePermissions, hasPermission } from "@/lib/permissions";
 
 const NAV_MODULE_LABELS: Record<string, string> = {
   dashboard: "Dashboard", tasks: "Tasks", chat: "Chat", "my-hub": "My Hub",
   customers: "Customers", orders: "Orders", calendar: "Calendar",
   performance: "Performance", "request-creative": "Request Creative",
+  floor: "Live Floor", reports: "Analytics", "abandoned-carts": "Abandoned Carts",
+  "admin-logs": "Alert Logs", recordings: "Recordings", import: "Import",
+  campaigns: "Campaigns", templates: "Templates", workflows: "Workflows",
+  "system-health": "System Health", settings: "Settings",
+  team: "Team", hr: "HR", manager: "Manager Hub",
 };
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { logAuditEvent } from "@/lib/audit";
@@ -612,41 +617,46 @@ export default function TeamPage() {
               </div>
               <p className="text-[9px] text-gray-400 leading-tight">
                 {Array.isArray(selectedProfile?.permissions?.nav_modules)
-                  ? "Only the checked modules show in this user's sidebar; other pages redirect away."
+                  ? "Only the checked pages show in this user's sidebar; typing a URL for the rest redirects away. Pages still enforce their own permission checks on top."
                   : allowedNavModules(selectedProfile)
-                    ? "Workspace role: locked to the checked modules by default. Check more to widen this user's access."
-                    : "All modules visible (default). Uncheck any to restrict this user to a subset."}
+                    ? "Workspace role: locked to the checked pages by default. Check more to widen this user's access."
+                    : "All pages visible (default). Uncheck any to restrict this user to a subset."}
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                {ALL_NAV_MODULES.map((key) => {
-                  const list = selectedProfile?.permissions?.nav_modules;
-                  const effective = allowedNavModules(selectedProfile);
-                  const has = Array.isArray(list)
-                    ? list.includes(key)
-                    : effective ? effective.includes(key) : true;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => toggleModule(key)}
-                      disabled={isUpdating}
-                      className={cn(
-                        "flex items-center justify-between p-2.5 rounded-lg border transition-all text-left",
-                        has ? "border-[#1c1c1c]/20 bg-[#1c1c1c]/5" : "border-gray-100 hover:border-gray-200"
-                      )}
-                    >
-                      <span className={cn("text-[11px] font-medium", has ? "text-[#1c1c1c]" : "text-gray-400")}>
-                        {NAV_MODULE_LABELS[key] || key}
-                      </span>
-                      <div className={cn(
-                        "w-4 h-4 rounded flex items-center justify-center transition-all flex-shrink-0",
-                        has ? "bg-[#1c1c1c] text-white" : "border-2 border-gray-100"
-                      )}>
-                        {has && <CheckCircle2 className="w-2.5 h-2.5" />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+              {Object.entries(NAV_MODULE_GROUPS).map(([group, keys]) => (
+                <div key={group} className="space-y-1.5">
+                  <div className="text-[9px] font-black text-gray-300 uppercase tracking-widest">{group}</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {keys.map((key) => {
+                      const list = selectedProfile?.permissions?.nav_modules;
+                      const effective = allowedNavModules(selectedProfile);
+                      const has = Array.isArray(list)
+                        ? list.includes(key)
+                        : effective ? effective.includes(key) : true;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => toggleModule(key)}
+                          disabled={isUpdating}
+                          className={cn(
+                            "flex items-center justify-between p-2.5 rounded-lg border transition-all text-left",
+                            has ? "border-[#1c1c1c]/20 bg-[#1c1c1c]/5" : "border-gray-100 hover:border-gray-200"
+                          )}
+                        >
+                          <span className={cn("text-[11px] font-medium", has ? "text-[#1c1c1c]" : "text-gray-400")}>
+                            {NAV_MODULE_LABELS[key] || key}
+                          </span>
+                          <div className={cn(
+                            "w-4 h-4 rounded flex items-center justify-center transition-all flex-shrink-0",
+                            has ? "bg-[#1c1c1c] text-white" : "border-2 border-gray-100"
+                          )}>
+                            {has && <CheckCircle2 className="w-2.5 h-2.5" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 

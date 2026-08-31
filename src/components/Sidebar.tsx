@@ -539,6 +539,10 @@ export default function Sidebar() {
   const adminUser = isAdmin(profile);
   const allowedModules = allowedNavModules(profile);
   const visibleNav = allowedModules ? nav.filter(n => allowedModules.includes(n.key)) : nav;
+  // For a user with an explicit module allowlist, also hide the Operations /
+  // Management / Human Capital links they aren't allowed. null allowlist
+  // (every normal user) -> never blocks anything.
+  const modBlocked = (key: string) => !!allowedModules && !allowedModules.includes(key);
 
   return (
     <aside className="w-full lg:w-64 lg:min-w-[256px] h-16 lg:h-screen bg-[#f7f4ed] flex flex-row lg:flex-col border-t lg:border-r border-[#eceae4] fixed bottom-0 lg:relative z-50 transition-all duration-300">
@@ -600,7 +604,7 @@ export default function Sidebar() {
         {/* Desktop-only Secondary Menus (Hidden on mobile nav, moved to More menu) */}
         {(adminUser || profile?.role === "hr" || profile?.role === "manager" || profile?.role === "marketing" || (profile?.permissions && Object.values(profile.permissions).some(v => v))) && (
           <div className="hidden lg:flex flex-col border-t lg:mt-4 border-[#eceae4]">
-            {(adminUser || profile?.role === "manager" || profile?.permissions?.audit_tasks) && (
+            {(adminUser || profile?.role === "manager" || profile?.permissions?.audit_tasks) && !modBlocked("manager") && (
               <>
                 <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Management</div>
                 {managerNav.map((item) => {
@@ -618,7 +622,7 @@ export default function Sidebar() {
               </>
             )}
 
-            {(adminUser || profile?.role === "hr") && (
+            {(adminUser || profile?.role === "hr") && !modBlocked("hr") && (
               <>
                 <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Human Capital</div>
                 {hrNav.map((item) => {
@@ -675,6 +679,7 @@ export default function Sidebar() {
               const { label, href, icon: Icon, permission } = item;
               if (label === "Alert Logs" && !adminUser) return null;
               if (permission && !hasPermission(profile, permission as any)) return null;
+              if (modBlocked(href.slice(1))) return null;
               const active = path === href || (href !== "/" && path.startsWith(href));
               return (
                 <Link key={href} href={href} className={cn(
@@ -729,7 +734,7 @@ export default function Sidebar() {
 
            {/* Mobile Management/Admin Sections */}
            <div className="space-y-4 pt-4 border-t border-[#eceae4]">
-              {(adminUser || profile?.role === "manager" || profile?.permissions?.audit_tasks) && (
+              {(adminUser || profile?.role === "manager" || profile?.permissions?.audit_tasks) && !modBlocked("manager") && (
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Management</h4>
                   <div className="grid grid-cols-1 gap-1">
@@ -742,7 +747,7 @@ export default function Sidebar() {
                 </div>
               )}
 
-              {(adminUser || profile?.role === "hr") && (
+              {(adminUser || profile?.role === "hr") && !modBlocked("hr") && (
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Human Capital</h4>
                   <div className="grid grid-cols-1 gap-1">
@@ -780,6 +785,7 @@ export default function Sidebar() {
                   {adminNav.map(item => {
                     if (item.label === "Alert Logs" && !adminUser) return null;
                     if (item.permission && !hasPermission(profile, item.permission as any)) return null;
+                    if (modBlocked(item.href.slice(1))) return null;
                     return (
                       <Link key={item.label} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
                         <item.icon className="w-4 h-4 text-[#5f5f5d]" /> {item.label}

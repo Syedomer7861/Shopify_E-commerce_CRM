@@ -2,39 +2,22 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
-import { allowedNavModules } from "@/lib/permissions";
+import { allowedNavModules, ALL_NAV_MODULES } from "@/lib/permissions";
 
-// First path segment -> module key, for the Main-Menu pages a locked-down
-// Workspace user can be redirected away from. Pages not listed here
-// (workspace, team, hr, manager, reports, settings, ...) are governed by
-// their own permission checks and are intentionally NOT gated here.
-const SEGMENT_MODULE: Record<string, string> = {
-  dashboard: "dashboard",
-  tasks: "tasks",
-  chat: "chat",
-  "my-hub": "my-hub",
-  customers: "customers",
-  orders: "orders",
-  calendar: "calendar",
-  performance: "performance",
-};
+// Pages that are never gated here regardless of the allowlist: /workspace is
+// governed by per-Space membership server-side, and the app's own routes for
+// auth/onboarding must always resolve.
+const NEVER_GATED = new Set(["", "workspace"]);
 
-const MODULE_PATH: Record<string, string> = {
-  dashboard: "/dashboard",
-  tasks: "/tasks",
-  chat: "/chat",
-  "my-hub": "/my-hub",
-  customers: "/customers",
-  orders: "/orders",
-  calendar: "/calendar",
-  performance: "/performance",
-  "request-creative": "/workspace/request",
-};
+// Redirect destination for an allowlist entry. Every key is its own first URL
+// segment except request-creative, which has no page of its own.
+const modulePath = (key: string) =>
+  key === "request-creative" ? "/workspace/request" : `/${key}`;
 
 /**
  * Hiding a nav link isn't access control — this redirects a user who types a
  * URL for a module they aren't allowed to see. Fail-open: no profile yet, an
- * unknown page, or no allowlist -> do nothing.
+ * un-gated page, or no allowlist -> do nothing.
  */
 export function ModuleGuard() {
   const { profile, loading } = useCurrentProfile();
@@ -47,10 +30,11 @@ export function ModuleGuard() {
     if (!allowed) return;
 
     const seg = pathname.split("/")[1] || "";
-    const mod = SEGMENT_MODULE[seg];
-    if (!mod || allowed.includes(mod)) return;
+    if (NEVER_GATED.has(seg)) return;
+    if (!ALL_NAV_MODULES.includes(seg)) return; // not a page this feature governs
+    if (allowed.includes(seg)) return;          // permitted
 
-    router.replace(MODULE_PATH[allowed[0]] || "/workspace");
+    router.replace(modulePath(allowed[0]) || "/workspace");
   }, [profile, loading, pathname, router]);
 
   return null;

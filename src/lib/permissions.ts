@@ -62,11 +62,23 @@ export const DEFAULT_MARKETING_PERMISSIONS: UserPermissions = {
   nav_modules: ["my-hub", "chat", "request-creative"],
 };
 
-// Every module key the Main Menu can show. Order matches Sidebar's `nav`.
-export const ALL_NAV_MODULES = [
-  "dashboard", "tasks", "chat", "my-hub",
-  "customers", "orders", "calendar", "performance", "request-creative",
-] as const;
+// Every gate-able page, grouped for the admin UI. Keys are the first URL
+// segment (so ModuleGuard can match without a lookup table); "request-creative"
+// is the one exception — it lives under /workspace/request and is never
+// redirected, it only appears here as an allowlist entry.
+export const NAV_MODULE_GROUPS: Record<string, readonly string[]> = {
+  "Main Menu": [
+    "dashboard", "tasks", "chat", "my-hub",
+    "customers", "orders", "calendar", "performance", "request-creative",
+  ],
+  "Operations": [
+    "floor", "reports", "abandoned-carts", "admin-logs", "recordings",
+    "import", "campaigns", "templates", "workflows", "system-health", "settings",
+  ],
+  "Management": ["team", "hr", "manager"],
+};
+
+export const ALL_NAV_MODULES = Object.values(NAV_MODULE_GROUPS).flat();
 
 /**
  * The Main-Menu allowlist for a profile, or null when every module is visible.
