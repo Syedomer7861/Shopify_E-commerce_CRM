@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthenticatedSession } from "@/lib/auth-utils";
-import { requireMarketing } from "@/lib/marketing-auth";
+import { isWorkspaceAdmin } from "@/lib/permissions";
 import { notifyUser } from "@/lib/notifications-server";
 
 const CreateIntakeSchema = z.object({
@@ -11,15 +11,29 @@ const CreateIntakeSchema = z.object({
   ref: z.record(z.string(), z.any()).nullable().optional(),
 });
 
-// GET /api/marketing/intake — the marketing team's request queue
+// GET /api/marketing/intake — workspace staff see the whole queue; everyone
+// else sees only the requests they filed (so they can follow up). RLS on
+// mkt_intake_requests enforces the same split.
 export async function GET() {
-  const { errorResponse, supabase } = await requireMarketing();
+  const { errorResponse, user, profile, supabase } = await getAuthenticatedSession();
   if (errorResponse) return errorResponse;
 
-  const { data, error } = await supabase!
+  let staff = isWorkspaceAdmin(profile);
+  if (!staff) {
+    const { count } = await supabase!
+      .from("mkt_space_members")
+      .select("space_id", { count: "exact", head: true })
+      .eq("user_id", user!.id);
+    staff = !!count;
+  }
+
+  let query = supabase!
     .from("mkt_intake_requests")
     .select("*, requester:profiles(id, name, email, role)")
     .order("created_at", { ascending: false });
+  if (!staff) query = query.eq("requester_id", user!.id);
+
+  const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data ?? []);
 }
