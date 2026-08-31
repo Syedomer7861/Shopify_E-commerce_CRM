@@ -38,8 +38,9 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
-  const { data: task, error } = await supabase!.from("mkt_tasks").select("*").eq("id", params.id).single();
-  if (error) return NextResponse.json({ error: error.message }, { status: error.code === "PGRST116" ? 404 : 500 });
+  const { data: task, error } = await supabase!.from("mkt_tasks").select("*").eq("id", params.id).maybeSingle();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
   const [subs, comments, links] = await Promise.all([
     supabase!.from("mkt_tasks").select("*").eq("parent_task_id", params.id).order("position", { ascending: true }),

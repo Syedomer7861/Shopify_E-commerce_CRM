@@ -48,8 +48,12 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
   const [linkTarget, setLinkTarget] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
+  // Set once the task is deleted from this panel, so a racing reload of the
+  // now-gone id doesn't fire a scary "not found" toast.
+  const goneRef = useRef(false);
 
   const load = useCallback(async () => {
+    if (goneRef.current) return;
     setLoading(true);
     try {
       const [t, lk, att, act, te] = await Promise.all([
@@ -66,7 +70,11 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
       setActivity(act as any);
       setTimeEntries(te as MktTimeEntry[]);
     } catch (e: any) {
-      toast.error(e.message || "Could not load task");
+      if (!goneRef.current) {
+        const msg = e?.message || "";
+        // A 404 just means the task is gone (deleted elsewhere) — close quietly.
+        if (!/not found|\(404\)/i.test(msg)) toast.error(msg || "Could not load task");
+      }
       onClose();
     } finally {
       setLoading(false);
@@ -231,6 +239,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
     if (!task) return;
     try {
       await marketingApi.deleteTask(task.id);
+      goneRef.current = true;
       toast.success("Task deleted");
       onDeleted();
     } catch (e: any) {
