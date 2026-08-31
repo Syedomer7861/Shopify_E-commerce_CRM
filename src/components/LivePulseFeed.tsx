@@ -21,9 +21,14 @@ export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[
       const [wh, act, calls] = await Promise.all([
         supabase.from("webhook_logs").select("*").order("created_at", { ascending: false }).limit(10),
         supabase.from("agent_activity_logs").select("*").order("created_at", { ascending: false }).limit(10),
-        supabase.from("call_logs").select("*").order("created_at", { ascending: false }).limit(10),
+        // call_logs' timestamp column is `called_at`, not `created_at`.
+        supabase.from("call_logs").select("*").order("called_at", { ascending: false }).limit(10),
       ]);
-      const merged = [...(wh.data ?? []), ...(act.data ?? []), ...(calls.data ?? [])]
+      const merged = [
+        ...(wh.data ?? []),
+        ...(act.data ?? []),
+        ...(calls.data ?? []).map((r: any) => ({ ...r, created_at: r.created_at ?? r.called_at })),
+      ]
         .filter((r) => r?.created_at)
         .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
         .slice(0, 20);
