@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import { isDemoMode } from "@/lib/demo";
 import {
   Users, Search, Clock,
   RefreshCcw, AlertCircle,
@@ -38,7 +39,7 @@ export default function FloorViewPage() {
 
 
   const fetchFloorData = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setAgents([
         { id: '1', name: 'Agent Rahul', email: 'rahul@cureforever.com', status: 'online', last_seen_at: new Date().toISOString(), onlineHours: '06:45', breakHours: '00:45', taskCount: 42, revenue: 85000 },

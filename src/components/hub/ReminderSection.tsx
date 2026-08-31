@@ -4,6 +4,7 @@ import { Bell, Plus, Trash2, Loader2, Clock, Calendar, AlertCircle } from "lucid
 import { createClient } from "@/lib/supabase";
 import { cn, timeAgo } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { isDemoMode } from "@/lib/demo";
 
 export function ReminderSection() {
   const [mounted, setMounted] = useState(false);
@@ -18,7 +19,7 @@ export function ReminderSection() {
   }, []);
   const supabase = useMemo(() => createClient(), []);
   const fetchReminders = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setReminders([
         { id: '1', title: 'Daily Team Standup', remind_at: new Date(Date.now() + 3600000).toISOString() },
@@ -59,7 +60,7 @@ export function ReminderSection() {
     e.preventDefault();
     if (!newReminder.title || !newReminder.date || !newReminder.time) return;
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       const remindAt = new Date(`${newReminder.date}T${newReminder.time}`);
       const mockReminder = {
@@ -101,7 +102,7 @@ export function ReminderSection() {
   }
 
   async function deleteReminder(id: string) {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setReminders(reminders.filter(r => r.id !== id));
       toast.success("Reminder cancelled (Demo)");

@@ -9,6 +9,7 @@ import { processImport, processAbandonedImport, ImportRow } from "@/lib/import-u
 import { AccessDenied } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
+import { isDemoMode } from "@/lib/demo";
 
 const MAX_ROWS = 5000;
 
@@ -166,7 +167,7 @@ export default function ImportPage() {
   }
 
   async function confirmImport() {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setImporting(true);
       setTimeout(() => {
@@ -246,7 +247,7 @@ export default function ImportPage() {
         }
       />
 
-      {document.cookie.includes("crm-demo-mode=true") && (
+      {isDemoMode() && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 animate-pulse">
           <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
             <AlertCircle className="w-5 h-5 text-amber-700" />

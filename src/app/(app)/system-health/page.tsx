@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { isDemoMode as checkDemoMode } from "@/lib/demo";
 import {
   Activity, CheckCircle2, XCircle, AlertTriangle, HelpCircle,
   RefreshCw, Database, Zap, Server, Clock
@@ -38,7 +39,7 @@ export default function SystemHealthPage() {
   const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
-    setIsDemoMode(document.cookie.includes("crm-demo-mode=true"));
+    setIsDemoMode(checkDemoMode());
   }, []);
 
   const runCheck = useCallback(async (silent = false) => {
@@ -50,7 +51,7 @@ export default function SystemHealthPage() {
     // outright: same reasoning Settings already uses for credential
     // exposure, and repeated live third-party calls from a demo walkthrough
     // risk real rate-limiting on production integrations.
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (checkDemoMode()) {
       setLoading(false);
       return;
     }

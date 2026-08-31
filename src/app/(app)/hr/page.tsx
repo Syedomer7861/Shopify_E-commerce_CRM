@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import { isDemoMode } from "@/lib/demo";
 import { 
   Users, 
   UserCheck, 
@@ -165,7 +166,7 @@ function HRDashboardContent() {
   }, []);
 
   const fetchData = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLoading(true);
       setTimeout(() => {

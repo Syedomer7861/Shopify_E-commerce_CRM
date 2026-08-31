@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { isDemoMode } from "@/lib/demo";
 import {
   LayoutGrid, List as ListIcon, Calendar as CalendarIcon, Table2, BarChart2,
   Plus, RefreshCw, Layers, Sparkles, Inbox, Zap, Settings2,
@@ -126,7 +127,7 @@ export default function WorkspacePage() {
   useEffect(() => {
     if (profileLoading || !profile) return;
     loadSpaces();
-    if (typeof document !== "undefined" && document.cookie.includes("crm-demo-mode=true")) {
+    if (typeof document !== "undefined" && isDemoMode()) {
       import("@/lib/mockData").then((m) => setMembers(m.MOCK_TEAM as unknown as Profile[]));
       return;
     }
@@ -150,7 +151,7 @@ export default function WorkspacePage() {
   // filter keeps the subscription cheap. Skipped in demo (no real table).
   useEffect(() => {
     if (!activeListId) return;
-    if (typeof document !== "undefined" && document.cookie.includes("crm-demo-mode=true")) return;
+    if (typeof document !== "undefined" && isDemoMode()) return;
     let t: any;
     const bump = () => {
       clearTimeout(t);

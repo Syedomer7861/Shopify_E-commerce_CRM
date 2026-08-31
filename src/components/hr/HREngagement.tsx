@@ -4,6 +4,7 @@ import { Star, BookOpen, AlertCircle, Plus, CheckCircle, Clock, X, TrendingUp } 
 import { cn } from "@/lib/utils";
 import { Pagination } from "@/components/ui";
 import toast from "react-hot-toast";
+import { isDemoMode } from "@/lib/demo";
 
 type ReviewStatus = "Pending" | "Completed" | "Scheduled";
 interface Review { id: string; agent: string; period: string; rating: number; feedback: string; status: ReviewStatus; date: string; }
@@ -77,7 +78,7 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
     // this one had no isDemo check at all, so Reviews/Training/Grievances
     // create/update/delete would all hit the real database from a demo
     // session.
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success(`Demo: ${type} ${action === "delete" ? "deleted" : action === "update" ? "updated" : "saved"} (local only)`);
       return;
     }

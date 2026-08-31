@@ -2,6 +2,7 @@
 import { createClient } from "@/lib/supabase";
 import { MOCK_WORKSPACE, MOCK_TEAM } from "@/lib/mockData";
 import type { MktList, MktTask, MktComment, MktTemplate, MktIntakeRequest, MktAutomation, MktSpace, MktSpaceMember } from "@/types";
+import { isDemoMode } from "@/lib/demo";
 
 export type MktAttachment = {
   id: string;
@@ -19,7 +20,7 @@ const ATTACH_BUCKET = "mkt-attachments";
 // Demo / presentation account: no real workspace rows and the API guard
 // would 403 the demo user, so short-circuit every call with mock data and
 // make writes a no-op that keeps the optimistic UI happy.
-const isDemo = () => typeof document !== "undefined" && document.cookie.includes("crm-demo-mode=true");
+const isDemo = () => typeof document !== "undefined" && isDemoMode();
 const P = <T>(v: T): Promise<T> => Promise.resolve(v);
 const demoTask = (t: any): MktTask => ({ subtasks: [], comments: [], links: [], ...t });
 

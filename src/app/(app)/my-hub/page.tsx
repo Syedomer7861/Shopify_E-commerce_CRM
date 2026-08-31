@@ -10,6 +10,7 @@ import { TodoSection } from "@/components/hub/TodoSection";
 import { NoteSection } from "@/components/hub/NoteSection";
 import { ReminderSection } from "@/components/hub/ReminderSection";
 import LivePulseFeed from "@/components/LivePulseFeed";
+import { isDemoMode as checkDemoMode } from "@/lib/demo";
 
 export default function MyHubPage() {
   const [activeTab, setActiveTab] = useState<'todos' | 'notes' | 'reminders'>('todos');
@@ -17,7 +18,7 @@ export default function MyHubPage() {
   const { profile } = useCurrentProfile();
 
   useEffect(() => {
-    setIsDemoMode(document.cookie.includes("crm-demo-mode=true"));
+    setIsDemoMode(checkDemoMode());
   }, []);
 
   return (

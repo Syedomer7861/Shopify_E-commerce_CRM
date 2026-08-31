@@ -16,6 +16,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import autoTable from 'jspdf-autotable';
 import IndiaSalesMap from "@/components/IndiaSalesMap";
+import { isDemoMode } from "@/lib/demo";
 
 
 export default function ReportsPage() {
@@ -134,7 +135,7 @@ export default function ReportsPage() {
   };
 
   const fetchAnalytics = useCallback(async (silent = false) => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       if (!silent) setLoading(true);
       const { MOCK_ANALYTICS } = await import("@/lib/mockData");

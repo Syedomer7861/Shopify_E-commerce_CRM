@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase";
 import type { Profile } from "@/types";
 import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
+import { isDemoMode } from "@/lib/demo";
 
 export function useCurrentProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -31,7 +32,7 @@ export function useCurrentProfile() {
       setLoading(true);
 
       // Check for Demo Mode first
-      const isDemo = document.cookie.includes("crm-demo-mode=true");
+      const isDemo = isDemoMode();
       if (isDemo) {
         publishProfile({
           id: "demo-presenter-id",

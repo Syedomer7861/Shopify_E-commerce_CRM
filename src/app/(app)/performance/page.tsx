@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { isDemoMode } from "@/lib/demo";
 import {
   TrendingUp, Phone, MessageSquare, CheckCircle2, Clock, Coffee,
   Zap, Calendar, User, Loader2, ChevronDown, Download, FileSpreadsheet,
@@ -123,7 +124,7 @@ export default function PerformancePage() {
   // Agent-picker roster for admin/manager/hr - agents just see themselves.
   useEffect(() => {
     if (!canBrowseAgents) return;
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       // fetchPerformance already returns mock data; give the picker a roster
       // so a demo user can actually trigger it.
@@ -155,7 +156,7 @@ export default function PerformancePage() {
 
   const fetchPerformance = useCallback(async () => {
     const mySeq = ++requestSeq.current;
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLoading(true);
       const days = 14;

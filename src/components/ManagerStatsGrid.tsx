@@ -3,13 +3,14 @@ import { useEffect, useState, useCallback } from "react";
 import { CheckSquare, Users, TrendingUp, Shield } from "lucide-react";
 import { StatCard } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
+import { isDemoMode } from "@/lib/demo";
 
 export default function ManagerStatsGrid() {
   const [stats, setStats] = useState<any>(null);
   const supabase = createClient();
 
   const fetchStats = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setStats({
         auditQueue: 12,

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
+import { isDemoMode } from "@/lib/demo";
 import { 
   Package, 
   Truck, 
@@ -48,7 +49,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
 
   const fetchData = useCallback(async (silent = false) => {
     // Check for Demo Mode
-    const isDemo = typeof document !== 'undefined' && document.cookie.includes("crm-demo-mode=true");
+    const isDemo = typeof document !== 'undefined' && isDemoMode();
     if (isDemo) {
       if (!silent) setLoading(true);
       // Simulate API delay

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { FileText, Shield, BookOpen, Download, Search, Plus, ChevronRight, Upload, Printer, Book, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { isDemoMode } from "@/lib/demo";
 
 type DocType = "Offer Letter" | "Appointment Letter" | "Relieving Letter" | "Experience Letter" | "Warning Letter" | "Salary Certificate";
 interface PolicyDoc { id: string; name: string; category: string; uploadedOn: string; size: string; fileUrl: string | null; }
@@ -75,7 +76,7 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
 
   const handleAddPolicy = async () => {
     if (!newPolicy.name) return;
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success(uploadFile ? "Demo: file uploaded (local only)" : "Demo: policy added (local only)");
       setPolicies(pl => [{ id: `demo-${Date.now()}`, name: newPolicy.name, category: newPolicy.category, uploadedOn: new Date().toISOString().split("T")[0], size: uploadFile ? `${Math.round(uploadFile.size / 1024)} KB` : "—", fileUrl: null }, ...pl]);
       setNewPolicy({ name: "", category: "General" });
@@ -116,7 +117,7 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
   };
 
   const handleDeletePolicy = async (id: string) => {
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success("Demo: policy removed (local only)");
       setPolicies(pl => pl.filter(x => x.id !== id));
       return;

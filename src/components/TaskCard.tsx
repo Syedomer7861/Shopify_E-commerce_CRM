@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
+import { isDemoMode } from "@/lib/demo";
 import { 
   Search, 
   RefreshCw, 
@@ -183,7 +184,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   const handleManagerAction = async (e: React.MouseEvent, action: 'approved' | 'rejected') => {
     e.stopPropagation();
     if (processingManager) return;
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success(action === 'approved' ? "Demo: Task Approved (local only)" : "Demo: Task Flagged for Revision (local only)");
       return;
@@ -491,7 +492,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   }
 
   async function handleDone() {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Task outcome logged (local only)");
       onComplete?.(task.id, outcome, note, disposition, followUpAction);
@@ -611,7 +612,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
   function handleReschedule() {
     if (!newDate) return toast.error("Please pick a date");
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success(`Demo: Task rescheduled to ${newDate} (local only)`);
       onReschedule?.(task.id, newDate, reason);
@@ -634,7 +635,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   }
 
   async function handleSendWa() {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setSendingWa(true);
       setTimeout(() => {
@@ -736,7 +737,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
   async function handleSendEmail() {
     if (!task.customer.email) return toast.error("Customer has no email address");
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setSendingEmail(true);
       setTimeout(() => {

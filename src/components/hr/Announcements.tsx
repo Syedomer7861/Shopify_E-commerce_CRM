@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Megaphone, Pin, Plus, Trash2, AlertTriangle, Info, Star, Bell, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { isDemoMode } from "@/lib/demo";
 
 type AnnouncementType = "Info" | "Important" | "Celebration" | "Alert";
 interface Announcement { id: string; title: string; body: string; type: AnnouncementType; pinned: boolean; date: string; author: string; }
@@ -40,7 +41,7 @@ export default function Announcements({ announcements: dbAnnouncements, onRefres
     // pinning one would broadcast to the entire actual staff, not just
     // corrupt an internal record. This component had no isDemo check at
     // all.
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success(`Demo: announcement ${action === "delete" ? "deleted" : action === "update" ? "updated" : "posted"} (local only)`);
       if (action === "insert" || action === "update") {
         setShowForm(false);

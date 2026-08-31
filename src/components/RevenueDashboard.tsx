@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { TrendingUp, DollarSign, Target, Users, ArrowUpRight, BarChart3, PieChart } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Pie, PieChart as RePieChart } from "recharts";
+import { isDemoMode } from "@/lib/demo";
 
 export default function RevenueDashboard() {
   const [data, setData] = useState<any>(null);
@@ -13,7 +14,7 @@ export default function RevenueDashboard() {
     // has always had that role, so this has been reachable from a demo
     // login from the start - just fetching live financial data with no
     // guard. Fake numbers for a demo session instead of real revenue.
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setData({
         summary: { totalRecovered: 284500, totalPotential: 612000, recoveryRate: 46.5, ndrRate: 38.2 },

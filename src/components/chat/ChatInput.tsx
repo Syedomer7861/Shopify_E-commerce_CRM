@@ -5,6 +5,7 @@ import { useChat } from '@/context/ChatContext';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase';
 import toast from 'react-hot-toast';
+import { isDemoMode } from "@/lib/demo";
 
 const POPULAR_EMOJIS = ['👍', '❤️', '🔥', '😂', '😮', '🎉', '✅', '🙏', '💯', '🚀', '⭐', '👀', '🤝', '💡', '✨'];
 
@@ -19,7 +20,7 @@ export function ChatInput() {
 
   const handleSend = () => {
     if (!content.trim() || !activeChannel) return;
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Message sent (local simulation)");
       setContent("");
@@ -60,7 +61,7 @@ export function ChatInput() {
     const file = e.target.files?.[0];
     if (!file || !activeChannel) return;
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setUploading(true);
       setTimeout(() => {

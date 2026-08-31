@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { AccessDenied } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { isAdmin } from "@/lib/permissions";
+import { isDemoMode } from "@/lib/demo";
 
 const SEGMENTS = ["repeat", "one_time", "inactive", "risky", "all"];
 
@@ -37,7 +38,7 @@ export default function CampaignManager() {
   const openLogs = async (campaignId: string) => {
     setSelectedCampaignId(campaignId);
     setLogSearchQuery("");
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLogRecipients(campaigns.find(c => c.id === campaignId)?.recipients || []);
       return;
@@ -73,7 +74,7 @@ export default function CampaignManager() {
   const ITEMS_PER_PAGE = 10;
 
   const fetchData = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLoading(true);
       const { MOCK_CAMPAIGNS, MOCK_TEMPLATES } = await import("@/lib/mockData");
@@ -184,7 +185,7 @@ export default function CampaignManager() {
   const handleConfirmDelete = async () => {
     if (!deleteCampaignId) return;
     const id = deleteCampaignId;
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     
     setDeleteCampaignId(null);
     
@@ -208,7 +209,7 @@ export default function CampaignManager() {
 
   const handleCreate = async () => {
     if (!formData.name || !formData.template_id) return toast.error("Name and Template are required");
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     // datetime-local has no timezone suffix so JS parses it as local time -
     // toISOString() converts it to the correct UTC instant for storage.
     const scheduledIso = formData.is_scheduled && formData.scheduled_start ? new Date(formData.scheduled_start).toISOString() : "";
@@ -290,7 +291,7 @@ export default function CampaignManager() {
   };
 
   const handleRun = async (id: string) => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Campaign started (simulation)");
       setCampaigns(prev => prev.map(c => c.id === id ? { ...c, status: "running" } : c));
@@ -308,7 +309,7 @@ export default function CampaignManager() {
   };
 
   const handlePause = async (id: string) => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Campaign paused");
       setCampaigns(prev => prev.map(c => c.id === id ? { ...c, status: "paused" } : c));

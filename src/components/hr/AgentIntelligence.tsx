@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { isDemoMode } from "@/lib/demo";
 import { 
   Users, UserCheck, Clock, TrendingUp, History, 
   Search, Calendar, Filter, Eye, Phone, CheckCircle, 
@@ -46,7 +47,7 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
   const { profile: currentProfile } = useCurrentProfile();
 
   const fetchData = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLoading(true);
       setTimeout(() => {

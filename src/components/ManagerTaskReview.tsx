@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { isDemoMode } from "@/lib/demo";
 import { 
   CheckCircle, XCircle, Search, Filter, Clock, 
   MessageSquare, User, Phone, Zap, ArrowRight,
@@ -53,7 +54,7 @@ export default function ManagerTaskReview() {
   }, []);
 
   const fetchTasks = useCallback(async (silent = false) => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       if (!silent && !tasks.length) setLoading(true);
       setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
@@ -153,7 +154,7 @@ export default function ManagerTaskReview() {
   }, [currentPage, agentFilter, typeFilter, outcomeFilter, uzmaOnly, searchTerm, segmentFilter, minPriority, dateFrom, dateTo, supabase, tasks.length]);
 
   const fetchNdrOrders = useCallback(async (silent = false) => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       if (!silent && !ndrOrders.length) setLoading(true);
       setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
@@ -252,7 +253,7 @@ export default function ManagerTaskReview() {
 
   const handleProcess = async (taskId: string, action: 'approved' | 'rejected' | 'shiprocket_updated') => {
     setProcessing(taskId);
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setTimeout(() => {
         toast.success(action === 'approved' ? "Demo: Task Approved" : action === 'shiprocket_updated' ? "Demo: NDR Action Logged" : "Demo: Task Flagged for Revision");

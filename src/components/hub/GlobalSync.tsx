@@ -4,6 +4,7 @@ import { History, RefreshCw, X } from "lucide-react";
 import { SyncProgressBar } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { isDemoMode } from "@/lib/demo";
 
 export default function GlobalSync() {
   const [syncing, setSyncing] = useState(false);
@@ -24,7 +25,7 @@ export default function GlobalSync() {
     // with no guard at all - clicking it during a live demo would kick off
     // a real Shopify/Shiprocket sync against production. Fake the progress
     // bar instead.
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       const steps = [
         [20, "Connecting to Shopify..."],

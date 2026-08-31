@@ -14,6 +14,7 @@ import { sendAdminNotification } from "@/lib/notifications";
 import AnnouncementFeed from "@/components/AnnouncementFeed";
 
 import { CallMonitor } from "@/components/CallMonitor";
+import { isDemoMode } from "@/lib/demo";
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -88,7 +89,7 @@ export default function Dashboard() {
 
   const fetchDashboardData = useCallback(async (silent = false) => {
     // Check for Demo Mode
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       if (!silent) setLoading(true);
       const { MOCK_TASKS, MOCK_CUSTOMERS } = await import("@/lib/mockData");
@@ -359,7 +360,7 @@ export default function Dashboard() {
     if (syncing) return;
 
     // BLOCK DEMO USERS
-    const isDemo = typeof document !== 'undefined' && document.cookie.includes("crm-demo-mode=true");
+    const isDemo = typeof document !== 'undefined' && isDemoMode();
     if (isDemo) {
       if (!silent) toast.error("Refresh disabled in Demo Mode");
       return;

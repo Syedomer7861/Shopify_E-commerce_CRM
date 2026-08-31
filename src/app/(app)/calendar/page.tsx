@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { isDemoMode } from "@/lib/demo";
 import {
   ChevronLeft, ChevronRight, CalendarDays, LayoutGrid,
   CheckCircle2, Clock, AlertTriangle, RefreshCw, X,
@@ -89,7 +90,7 @@ export default function CalendarPage() {
   }, [currentDate, view]);
 
   const fetchTasks = useCallback(async (silent = false) => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       if (!silent) setLoading(true);
       const { MOCK_TASKS } = await import("@/lib/mockData");

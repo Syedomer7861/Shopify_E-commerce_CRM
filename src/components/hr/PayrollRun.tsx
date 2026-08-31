@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { DollarSign, CheckCircle, Clock, TrendingUp, Plus, FileText, History, X, RotateCcw, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { isDemoMode } from "@/lib/demo";
 
 
 interface PayslipRow { id: string; name: string; basic: number; hra: number; special: number; pf: number; pt: number; tds: number; net: number; status: "Paid" | "Pending" }
@@ -84,7 +85,7 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
     // Demo mode is a real Supabase login - without this, Add Salary
     // Revision / Approve or Reject Expense / Add Expense all wrote to the
     // real database. This component had no isDemo check anywhere.
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success("Demo: saved (local only)");
       return;
     }
@@ -102,7 +103,7 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
   };
 
   const runAll = async () => {
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success("Demo: all payslips marked paid (local only)");
       return;
     }
@@ -125,7 +126,7 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
   };
 
   const toggleSlip = async (id: string, currentStatus: "Paid" | "Pending") => {
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success("Demo: payslip status toggled (local only)");
       return;
     }

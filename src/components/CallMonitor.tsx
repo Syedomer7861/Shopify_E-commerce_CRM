@@ -3,6 +3,7 @@ import { Phone, PhoneOff, Play, Pause, Clock, User, CheckCircle2, ShieldAlert } 
 import { createClient } from '@/lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { isDemoMode } from "@/lib/demo";
 
 export function CallMonitor() {
   const [activeCalls, setActiveCalls] = useState<any[]>([]);
@@ -14,7 +15,7 @@ export function CallMonitor() {
   const supabase = useMemo(() => createClient(), []);
 
   const fetchCalls = useCallback(async () => {
-    const isDemo = typeof document !== 'undefined' && document.cookie.includes("crm-demo-mode=true");
+    const isDemo = typeof document !== 'undefined' && isDemoMode();
     
     if (isDemo) {
       const { MOCK_RAW_CALLS } = require('@/lib/mock-data');

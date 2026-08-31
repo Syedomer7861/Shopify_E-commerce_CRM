@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { isDemoMode } from "@/lib/demo";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, Cell, PieChart, Pie, Legend 
@@ -25,7 +26,7 @@ export default function LogisticsPulse() {
   const autoSyncStarted = useRef(false);
 
   const fetchData = useCallback(async (silent = false) => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       if (!silent && !data) setLoading(true);
       setTimeout(() => {
@@ -81,7 +82,7 @@ export default function LogisticsPulse() {
   const lastRefreshProgress = useRef(0);
   
   const handleSync = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setSyncing(true);
       setSyncMessage("Demo: Connecting to Shiprocket...");

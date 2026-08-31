@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { isDemoMode } from "@/lib/demo";
 import { 
   Trophy, TrendingUp, Users, Wifi, WifiOff, 
   MessageCircle, Target, Phone, Eye, Smartphone, History
@@ -51,7 +52,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ agents: initialAgents 
   const supabase = useMemo(() => createClient(), []);
 
   const fetchMetrics = useCallback(async (range: string) => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setIsLoading(true);
       setTimeout(() => {

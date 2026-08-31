@@ -8,6 +8,7 @@ import { timeAgo, cn } from "@/lib/utils";
 import { isAdmin } from "@/lib/permissions";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import toast from "react-hot-toast";
+import { isDemoMode } from "@/lib/demo";
 
 const ITEMS_PER_PAGE = 25;
 
@@ -33,7 +34,7 @@ export default function AdminLogs() {
   const router = useRouter();
 
   const fetchLogs = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLoading(true);
       const mockLogs = [

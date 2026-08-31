@@ -9,6 +9,7 @@ import type { RawCallLog } from "@/types";
 import toast from "react-hot-toast";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
+import { isDemoMode } from "@/lib/demo";
 
 export default function CallRecordingsPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -20,7 +21,7 @@ export default function CallRecordingsPage() {
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
-      const isDemo = typeof document !== 'undefined' && document.cookie.includes("crm-demo-mode=true");
+      const isDemo = typeof document !== 'undefined' && isDemoMode();
       if (isDemo) {
         const { MOCK_RAW_CALLS } = await import('@/lib/mock-data');
         setLogs(MOCK_RAW_CALLS.filter((c: any) => c.recording_url) as any);

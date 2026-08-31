@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import type { Profile, UserPermissions } from "@/types";
 import { AccessDenied } from "@/components/ui";
 import { DEFAULT_PERMISSIONS, DEFAULT_HR_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS, DEFAULT_MARKETING_PERMISSIONS, NAV_MODULE_GROUPS, ALL_NAV_MODULES, allowedNavModules, normalizePermissions, hasPermission } from "@/lib/permissions";
+import { isDemoMode } from "@/lib/demo";
 
 const NAV_MODULE_LABELS: Record<string, string> = {
   dashboard: "Dashboard", tasks: "Tasks", chat: "Chat", "my-hub": "My Hub",
@@ -45,7 +46,7 @@ export default function TeamPage() {
   const supabase = createClient();
 
   const fetchProfiles = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLoading(true);
       const { MOCK_TEAM } = await import("@/lib/mockData");
@@ -87,7 +88,7 @@ export default function TeamPage() {
     if (!newUser.email || !newUser.password) return toast.error("Email and Password are required");
     if (newUser.password.length < 6) return toast.error("Password must be at least 6 characters");
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Team member created (local only)");
       setAddModal(false);
@@ -146,7 +147,7 @@ export default function TeamPage() {
   async function handleRemoveMember(id: string) {
     if (!confirm("Are you sure you want to remove this team member? This action will permanently delete their account and access. This cannot be undone.")) return;
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Team member removed (local only)");
       setProfiles(prev => prev.filter(p => p.id !== id));
@@ -185,7 +186,7 @@ export default function TeamPage() {
     const ids = [...selectedIds];
     if (ids.length === 0) return;
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setProfiles(prev => prev.map(p => ids.includes(p.id) ? { ...p, is_active: active } : p));
       setSelectedIds(new Set());
@@ -214,7 +215,7 @@ export default function TeamPage() {
   async function updateProfile(updates: Partial<Profile>) {
     if (!selectedProfile) return;
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Settings updated (local only)");
       setProfiles(prev => prev.map(p => p.id === selectedProfile.id ? { ...p, ...updates } : p));
@@ -292,7 +293,7 @@ export default function TeamPage() {
     if (!selectedProfile) return;
     if (newUpdatePassword.length < 6) return toast.error("Password must be at least 6 characters");
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Password reset simulated (local only)");
       setNewUpdatePassword("");

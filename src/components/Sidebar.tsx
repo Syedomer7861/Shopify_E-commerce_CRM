@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { isDemoMode } from "@/lib/demo";
 import { 
   LayoutDashboard, Users, ShoppingBag,
   Megaphone, Shield, Settings, Sparkles,
@@ -187,7 +188,7 @@ export default function Sidebar() {
 
       // Demo presenter view. Requires a real demo login - the cookie alone is
       // not enough, or anyone could hand themselves a manager-role profile.
-      const isDemo = document.cookie.includes("crm-demo-mode=true");
+      const isDemo = isDemoMode();
       if (isDemo) {
         const demoProfile: Profile = {
           id: "demo-presenter-id",
@@ -355,7 +356,7 @@ export default function Sidebar() {
       // for every session, firing a real query against personal_reminders
       // (a UUID column) that Postgres correctly rejected every time in
       // demo mode. Harmless (silently swallowed below) but noisy.
-      if (document.cookie.includes("crm-demo-mode=true")) return;
+      if (isDemoMode()) return;
       const now = new Date().toISOString();
       const { data } = await supabase
         .from('personal_reminders')

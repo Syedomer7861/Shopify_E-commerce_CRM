@@ -4,6 +4,7 @@ import { ChatBus } from '@/lib/chat-bus';
 import { useCurrentProfile } from '@/hooks/useCurrentProfile';
 import { createClient } from '@/lib/supabase';
 import toast from 'react-hot-toast';
+import { isDemoMode } from "@/lib/demo";
 
 interface ChatContextType {
   // Supabase Realtime behind a socket.io-shaped facade, so chat runs on
@@ -39,7 +40,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // ── Unread count ─────────────────────────────────────────────────────────────
   const updateUnreadCount = useCallback(async () => {
     if (!profile?.id) return;
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setUnreadCount(3);
       return;
@@ -88,7 +89,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveChannelState(updatedChannel);
     activeChannelRef.current = updatedChannel;
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (!isDemo && socket?.connected) {
       socket.emit('channel:join', { channelId: channel.id });
       socket.emit('message:seen', { channelId: channel.id });
@@ -215,7 +216,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fileUrl?: string,
     taskId?: string
   ) => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success('Demo: Message sent locally');
       // Dispatch a custom event that MessageList can listen to

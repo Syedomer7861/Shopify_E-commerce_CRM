@@ -8,6 +8,7 @@ import { AccessDenied } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { isAdmin } from "@/lib/permissions";
 import { RefreshCw } from "lucide-react";
+import { isDemoMode } from "@/lib/demo";
 
 const VARIABLES = [
   { key: "{{name}}", label: "Customer Name" },
@@ -40,7 +41,7 @@ export default function TemplateManager() {
   });
 
   const fetchTemplates = async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLoading(true);
       const { MOCK_TEMPLATES } = await import("@/lib/mockData");
@@ -90,7 +91,7 @@ export default function TemplateManager() {
     const extractedVars = formData.body.match(/\{\{([^}]+)\}\}/g)?.map(v => v.replace(/[{}]/g, '')) || [];
     const finalData = { ...formData, variables: Array.from(new Set(extractedVars)) };
     
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success(editingTemplate ? "Demo: Template Updated" : "Demo: Template Created");
       setShowModal(false);
@@ -119,7 +120,7 @@ export default function TemplateManager() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this template?")) return;
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Template Deleted");
       setTemplates(prev => prev.filter(t => t.id !== id));
