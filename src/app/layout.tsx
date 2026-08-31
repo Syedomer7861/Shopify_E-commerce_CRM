@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     title: "CureForever CRM",
     description: OG_DESCRIPTION,
     images: [
-      { url: "/og-image.png", width: 1200, height: 630, alt: "CureForever CRM dashboard" },
+      { url: "/og-image.png", width: 1200, height: 665, alt: "CureForever CRM dashboard" },
     ],
   },
   twitter: {
