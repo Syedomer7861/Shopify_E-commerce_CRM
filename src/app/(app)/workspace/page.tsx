@@ -90,7 +90,11 @@ export default function WorkspacePage() {
     try {
       setSpaces(await marketingApi.listSpaces());
     } catch (e: any) {
-      toast.error(e.message || "Could not load spaces");
+      // A non-member legitimately has no Spaces — fall through to the empty
+      // state instead of a scary "Forbidden" toast. Only surface real errors.
+      const msg = String(e?.message || "");
+      if (!/forbidden|not a member|403/i.test(msg)) toast.error(msg || "Could not load spaces");
+      setSpaces([]);
     } finally {
       setSpacesLoaded(true);
     }
