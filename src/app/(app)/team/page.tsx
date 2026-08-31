@@ -7,7 +7,13 @@ import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import type { Profile, UserPermissions } from "@/types";
 import { AccessDenied } from "@/components/ui";
-import { DEFAULT_PERMISSIONS, DEFAULT_HR_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS, DEFAULT_MARKETING_PERMISSIONS, hasPermission } from "@/lib/permissions";
+import { DEFAULT_PERMISSIONS, DEFAULT_HR_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS, DEFAULT_MARKETING_PERMISSIONS, ALL_NAV_MODULES, allowedNavModules, hasPermission } from "@/lib/permissions";
+
+const NAV_MODULE_LABELS: Record<string, string> = {
+  dashboard: "Dashboard", tasks: "Tasks", chat: "Chat", "my-hub": "My Hub",
+  customers: "Customers", orders: "Orders", calendar: "Calendar",
+  performance: "Performance", "request-creative": "Request Creative",
+};
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { logAuditEvent } from "@/lib/audit";
 
@@ -199,6 +205,24 @@ export default function TeamPage() {
     const current = selectedProfile.permissions || DEFAULT_PERMISSIONS;
     const updated = { ...current, [key]: !current[key] };
     updateProfile({ permissions: updated });
+  };
+
+  // Main-menu visibility. Absent nav_modules = every module (the default);
+  // touching a checkbox materialises the implicit "all" then edits it.
+  const toggleModule = (key: string) => {
+    if (!selectedProfile) return;
+    const perms = selectedProfile.permissions || DEFAULT_PERMISSIONS;
+    const cur: string[] = Array.isArray(perms.nav_modules)
+      ? perms.nav_modules
+      : (allowedNavModules(selectedProfile) ?? [...ALL_NAV_MODULES]);
+    const next = cur.includes(key) ? cur.filter(k => k !== key) : [...cur, key];
+    updateProfile({ permissions: { ...perms, nav_modules: next } });
+  };
+  const resetModules = () => {
+    if (!selectedProfile) return;
+    const perms = { ...(selectedProfile.permissions || DEFAULT_PERMISSIONS) };
+    delete (perms as any).nav_modules;
+    updateProfile({ permissions: perms });
   };
 
   const toggleSpecialization = (type: 'segments' | 'tasks', value: string) => {
@@ -567,6 +591,60 @@ export default function TeamPage() {
                <p className="text-[9px] text-gray-400 italic text-center">Administrators have all permissions by default.</p>
              )}
           </div>
+
+          {/* Module Access — which Main-Menu items appear in this user's
+              sidebar. Unset = all visible. A Workspace-role user defaults to
+              a locked-down subset; widen it here per user. */}
+          {selectedProfile?.role !== "admin" && (
+            <div className="space-y-3 pt-4 border-t border-gray-100">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Module Access</label>
+                {Array.isArray(selectedProfile?.permissions?.nav_modules) && (
+                  <button onClick={resetModules} disabled={isUpdating}
+                    className="text-[9px] font-black text-rose-500 uppercase tracking-widest hover:underline">
+                    Reset to all
+                  </button>
+                )}
+              </div>
+              <p className="text-[9px] text-gray-400 leading-tight">
+                {Array.isArray(selectedProfile?.permissions?.nav_modules)
+                  ? "Only the checked modules show in this user's sidebar; other pages redirect away."
+                  : allowedNavModules(selectedProfile)
+                    ? "Workspace role: locked to the checked modules by default. Check more to widen this user's access."
+                    : "All modules visible (default). Uncheck any to restrict this user to a subset."}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {ALL_NAV_MODULES.map((key) => {
+                  const list = selectedProfile?.permissions?.nav_modules;
+                  const effective = allowedNavModules(selectedProfile);
+                  const has = Array.isArray(list)
+                    ? list.includes(key)
+                    : effective ? effective.includes(key) : true;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => toggleModule(key)}
+                      disabled={isUpdating}
+                      className={cn(
+                        "flex items-center justify-between p-2.5 rounded-lg border transition-all text-left",
+                        has ? "border-[#1c1c1c]/20 bg-[#1c1c1c]/5" : "border-gray-100 hover:border-gray-200"
+                      )}
+                    >
+                      <span className={cn("text-[11px] font-medium", has ? "text-[#1c1c1c]" : "text-gray-400")}>
+                        {NAV_MODULE_LABELS[key] || key}
+                      </span>
+                      <div className={cn(
+                        "w-4 h-4 rounded flex items-center justify-center transition-all flex-shrink-0",
+                        has ? "bg-[#1c1c1c] text-white" : "border-2 border-gray-100"
+                      )}>
+                        {has && <CheckCircle2 className="w-2.5 h-2.5" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Weekly Revenue Target - drives the "Recovered Revenue" progress
               bar on the agent's own dashboard (AgentStats.tsx). Defaults to

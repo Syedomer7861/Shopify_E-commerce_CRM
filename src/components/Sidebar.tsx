@@ -13,21 +13,21 @@ import { cn, toDbDateString } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
 
-import { DEFAULT_PERMISSIONS, hasPermission, isAdmin, isWorkspaceAdmin } from "@/lib/permissions";
+import { DEFAULT_PERMISSIONS, hasPermission, isAdmin, isWorkspaceAdmin, allowedNavModules } from "@/lib/permissions";
 import { sendAdminNotification } from "@/lib/notifications";
 import { Modal } from "./ui";
 import { useChat } from "@/context/ChatContext";
 
 const nav = [
-  { label: "Dashboard",   href: "/dashboard",  icon: LayoutDashboard },
-  { label: "Tasks",       href: "/tasks",       icon: CheckSquare,   badge: "taskCount" },
-  { label: "Chat",        href: "/chat",        icon: MessageSquare, badge: "chatUnread" },
-  { label: "My Hub",       href: "/my-hub",      icon: Sparkles },
-  { label: "Customers",   href: "/customers",   icon: Users },
-  { label: "Orders",      href: "/orders",      icon: ShoppingBag },
-  { label: "Calendar",    href: "/calendar",    icon: Calendar },
-  { label: "Performance", href: "/performance",  icon: TrendingUp },
-  { label: "Request Creative", href: "/workspace/request", icon: Megaphone },
+  { key: "dashboard",   label: "Dashboard",   href: "/dashboard",  icon: LayoutDashboard },
+  { key: "tasks",       label: "Tasks",       href: "/tasks",       icon: CheckSquare,   badge: "taskCount" },
+  { key: "chat",        label: "Chat",        href: "/chat",        icon: MessageSquare, badge: "chatUnread" },
+  { key: "my-hub",      label: "My Hub",      href: "/my-hub",      icon: Sparkles },
+  { key: "customers",   label: "Customers",   href: "/customers",   icon: Users },
+  { key: "orders",      label: "Orders",      href: "/orders",      icon: ShoppingBag },
+  { key: "calendar",    label: "Calendar",    href: "/calendar",    icon: Calendar },
+  { key: "performance", label: "Performance", href: "/performance",  icon: TrendingUp },
+  { key: "request-creative", label: "Request Creative", href: "/workspace/request", icon: Megaphone },
 ];
 
 const adminNav = [
@@ -537,6 +537,8 @@ export default function Sidebar() {
 
   const totalTasks = counts.due + counts.overdue;
   const adminUser = isAdmin(profile);
+  const allowedModules = allowedNavModules(profile);
+  const visibleNav = allowedModules ? nav.filter(n => allowedModules.includes(n.key)) : nav;
 
   return (
     <aside className="w-full lg:w-64 lg:min-w-[256px] h-16 lg:h-screen bg-[#f7f4ed] flex flex-row lg:flex-col border-t lg:border-r border-[#eceae4] fixed bottom-0 lg:relative z-50 transition-all duration-300">
@@ -559,7 +561,7 @@ export default function Sidebar() {
         <div className="hidden lg:block text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3">Main Menu</div>
         
         {/* Core Mobile Navigation - Primary Items */}
-        {nav.map(({ label, href, icon: Icon, badge }) => {
+        {visibleNav.map(({ label, href, icon: Icon, badge }) => {
           const active = path === href || (href !== "/" && path.startsWith(href));
           const badgeValue = badge === "taskCount" ? totalTasks : (badge === "chatUnread" ? unreadCount : 0);
 

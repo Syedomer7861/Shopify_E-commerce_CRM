@@ -340,9 +340,18 @@ export default function PerformancePage() {
       ["Break Hours", summary?.breakHours?.slice(0, 5) || "00:00"],
       ["Productivity", `${summary?.productivity || 0} tasks/hr`],
       ["Days Logged", String(dailyLogs.length)],
+      ["Tasks Resolved", String(taskStatusSummary.total)],
+      ["Orders Worked", String(ordersWorkedCount)],
+      ["Done Rate", `${taskStatusSummary.doneRate}% (${taskStatusSummary.done} of ${taskStatusSummary.total})`],
     ];
   };
-  const buildActivityRows = () => recentActivity.slice(0, 30).map((a: any) => [
+  // The breakdown bar charts as plain data, so the export carries every
+  // number shown on the page, not just the tables.
+  const BREAKDOWN_HEADERS = ["Category", "Count"];
+  const buildTaskTypeRows = () => taskTypeChartData.map(d => [d.name, d.count]);
+  const buildOrderStatusRows = () => orderStatusChartData.map(d => [d.name, d.count]);
+  const buildOutcomeRows = () => outcomeChartData.map(d => [d.name, d.count]);
+  const buildActivityRows = () => recentActivity.map((a: any) => [
     new Date(a.created_at).toLocaleString([], { timeZone: "Asia/Kolkata", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }),
     (a.activity_type || "").replace(/_/g, " "),
     a.description || a.metadata?.customer_name || "",
@@ -378,6 +387,9 @@ export default function PerformancePage() {
       const ledgerRows = buildExportRows();
       const activityRows = buildActivityRows();
       const tasksWorkedRows = buildTasksWorkedRows();
+      const taskTypeRows = buildTaskTypeRows();
+      const orderStatusRows = buildOrderStatusRows();
+      const outcomeRows = buildOutcomeRows();
 
       if (exportFormat === "pdf") {
         const pdf = new jsPDF("p", "mm", "a4");
@@ -414,6 +426,28 @@ export default function PerformancePage() {
         });
 
         let nextY = (pdf as any).lastAutoTable.finalY + 8;
+
+        const pdfSection = (title: string, head: string[], body: (string | number)[][]) => {
+          if (body.length === 0) return;
+          if (nextY > 250) { pdf.addPage(); nextY = 20; }
+          pdf.setFontSize(11);
+          pdf.text(title, 10, nextY);
+          autoTable(pdf, {
+            startY: nextY + 4,
+            head: [head],
+            body,
+            theme: "grid",
+            headStyles: { fillColor: [28, 28, 28] },
+            styles: { fontSize: 8, cellPadding: 3 },
+            margin: { left: 10, right: 10 },
+          });
+          nextY = (pdf as any).lastAutoTable.finalY + 8;
+        };
+
+        pdfSection("Task Type Distribution", BREAKDOWN_HEADERS, taskTypeRows);
+        pdfSection("Order Status Worked", BREAKDOWN_HEADERS, orderStatusRows);
+        pdfSection("Call Outcomes", BREAKDOWN_HEADERS, outcomeRows);
+
         if (ledgerRows.length > 0) {
           pdf.setFontSize(11);
           pdf.text("Daily Attendance Ledger", 10, nextY);
@@ -469,6 +503,9 @@ export default function PerformancePage() {
           ["CUREFOREVER — PERFORMANCE REPORT"], [],
           ["SUMMARY"], ...summaryRows, [],
         ];
+        if (taskTypeRows.length > 0) combined.push(["TASK TYPE DISTRIBUTION"], BREAKDOWN_HEADERS, ...taskTypeRows, []);
+        if (orderStatusRows.length > 0) combined.push(["ORDER STATUS WORKED"], BREAKDOWN_HEADERS, ...orderStatusRows, []);
+        if (outcomeRows.length > 0) combined.push(["CALL OUTCOMES"], BREAKDOWN_HEADERS, ...outcomeRows, []);
         if (ledgerRows.length > 0) combined.push(["DAILY ATTENDANCE LEDGER"], EXPORT_HEADERS, ...ledgerRows, []);
         if (tasksWorkedRows.length > 0) combined.push(["TASKS WORKED"], TASKS_WORKED_HEADERS, ...tasksWorkedRows, []);
         if (activityRows.length > 0) combined.push(["RECENT ACTIVITY"], ACTIVITY_HEADERS, ...activityRows);
@@ -480,6 +517,16 @@ export default function PerformancePage() {
         const summarySheet = XLSX.utils.aoa_to_sheet([["Metric", "Value"], ...summaryRows]);
         summarySheet["!cols"] = [{ wch: 20 }, { wch: 30 }];
         XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
+
+        const breakdownSheet = (rows: (string | number)[][], name: string) => {
+          if (rows.length === 0) return;
+          const sheet = XLSX.utils.aoa_to_sheet([BREAKDOWN_HEADERS, ...rows]);
+          sheet["!cols"] = [{ wch: 24 }, { wch: 10 }];
+          XLSX.utils.book_append_sheet(wb, sheet, name);
+        };
+        breakdownSheet(taskTypeRows, "Task Types");
+        breakdownSheet(orderStatusRows, "Order Status");
+        breakdownSheet(outcomeRows, "Call Outcomes");
 
         if (ledgerRows.length > 0) {
           const ledgerSheet = XLSX.utils.aoa_to_sheet([EXPORT_HEADERS, ...ledgerRows]);
@@ -558,6 +605,12 @@ export default function PerformancePage() {
               <input type="date" className="input text-xs h-9 w-[130px]" value={customEnd}
                 onChange={e => { setCustomEnd(e.target.value); setPreset("custom"); }} />
             </div>
+            {(!canBrowseAgents || selectedAgentId) && (
+              <button onClick={() => setShowExport(true)}
+                className="h-9 px-3 rounded-lg text-[10px] font-black uppercase tracking-widest bg-[#1c1c1c] text-white flex items-center gap-1.5 hover:opacity-90 transition-all">
+                <Download className="w-3.5 h-3.5" /> Export
+              </button>
+            )}
           </div>
         }
       />
@@ -706,10 +759,6 @@ export default function PerformancePage() {
                       ? "bg-[#1c1c1c] text-white border-[#1c1c1c]"
                       : "bg-white text-[#5f5f5d] border-[#eceae4] hover:border-[#1c1c1c]/40")}>
                   <Sliders className="w-3 h-3" /> Filters
-                </button>
-                <button onClick={() => setShowExport(true)}
-                  className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-[#1c1c1c] text-white flex items-center gap-1.5 hover:opacity-90 transition-all">
-                  <Download className="w-3 h-3" /> Export
                 </button>
               </div>
             </div>
@@ -866,10 +915,11 @@ export default function PerformancePage() {
           >
             <div className="space-y-4">
               <p className="text-xs text-[#5f5f5d]">
-                Exports the full page for {selectedAgentName || "this agent"}: summary stats, the attendance ledger
+                Exports the full page for {selectedAgentName || "this agent"}: every summary stat, the three
+                breakdown charts (task type, order status, call outcomes), the attendance ledger
                 ({filteredLogs.length} row{filteredLogs.length === 1 ? "" : "s"}, respecting any active filters),
                 tasks worked ({filteredTasksWorked.length} row{filteredTasksWorked.length === 1 ? "" : "s"}), and
-                recent activity — ready to share with a reporting manager or supervisor.
+                the full recent-activity feed — ready to share with a reporting manager or supervisor.
               </p>
               <div className="grid grid-cols-1 gap-2.5">
                 <button onClick={() => handleExport("csv")} disabled={exporting}

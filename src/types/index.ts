@@ -274,6 +274,11 @@ export interface UserPermissions {
   // Optional so existing permission literals keep type-checking. Absent = false.
   manage_marketing?: boolean;
   manage_workspaces?: boolean;
+  // Main-menu allowlist. Absent/null = every module visible (the default for
+  // every role except a locked-down Workspace user). An array = show ONLY
+  // these module keys in the sidebar's Main Menu, and redirect away from the
+  // rest. Keys match the `nav` entries in Sidebar.tsx.
+  nav_modules?: string[] | null;
 }
 
 export interface Profile {

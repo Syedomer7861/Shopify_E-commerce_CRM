@@ -57,7 +57,30 @@ export const DEFAULT_MARKETING_PERMISSIONS: UserPermissions = {
   manage_automations: false,
   manage_marketing: true,
   manage_workspaces: false,
+  // A Workspace user is scoped to the workspace by default: no CRM main-menu
+  // modules. An admin can widen this per user in Team → Edit → Module Access.
+  nav_modules: ["my-hub", "chat", "request-creative"],
 };
+
+// Every module key the Main Menu can show. Order matches Sidebar's `nav`.
+export const ALL_NAV_MODULES = [
+  "dashboard", "tasks", "chat", "my-hub",
+  "customers", "orders", "calendar", "performance", "request-creative",
+] as const;
+
+/**
+ * The Main-Menu allowlist for a profile, or null when every module is visible.
+ * A per-user `permissions.nav_modules` array always wins; otherwise a
+ * Workspace-role user falls back to the locked-down default above; every other
+ * role (and admins) is unrestricted.
+ */
+export function allowedNavModules(profile: Partial<Profile> | null | undefined): string[] | null {
+  if (isAdmin(profile)) return null;
+  const override = profile?.permissions?.nav_modules;
+  if (Array.isArray(override)) return override;
+  if (profile?.role === "marketing") return DEFAULT_MARKETING_PERMISSIONS.nav_modules ?? null;
+  return null;
+}
 
 export function normalizePermissions(profile: Partial<Profile> | null | undefined): UserPermissions {
   if (profile?.role === "hr") return DEFAULT_HR_PERMISSIONS;
