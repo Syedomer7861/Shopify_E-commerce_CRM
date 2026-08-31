@@ -639,6 +639,13 @@ export default function Sidebar() {
             {(isWorkspaceAdmin(profile) || spaces.length > 0) && (
               <>
                 <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Workspace</div>
+                <Link href="/workspace/my" className={cn(
+                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
+                  path === "/workspace/my" ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
+                )}>
+                  <Sparkles className="w-4 h-4 flex-shrink-0 text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]" />
+                  <span className="flex-1">My Work</span>
+                </Link>
                 {spaces.map((s) => {
                   const active = path === "/workspace" && searchParams.get("space") === s.id;
                   return (
@@ -750,6 +757,9 @@ export default function Sidebar() {
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Workspace</h4>
                   <div className="grid grid-cols-1 gap-1">
+                    <Link href="/workspace/my" onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                      <Sparkles className="w-4 h-4 text-[#5f5f5d]" /> My Work
+                    </Link>
                     {spaces.map(s => (
                       <Link key={s.id} href={`/workspace?space=${s.id}`} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color ?? "#8b8b8b" }} /> {s.name}
