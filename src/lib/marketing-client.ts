@@ -187,6 +187,13 @@ export const marketingApi = {
   removeLink: (taskId: string, linkId: string) =>
     isDemo() ? P({ ok: true }) : fetch(`/api/marketing/tasks/${taskId}/links?link_id=${linkId}`, { method: "DELETE" }).then((r) => j(r)),
 
+  listActivity: (taskId: string) =>
+    isDemo()
+      ? P([] as Array<{ id: string; action: string; summary: string; actor_email: string | null; created_at: string }>)
+      : fetch(`/api/marketing/tasks/${taskId}/activity`).then((r) =>
+          j<Array<{ id: string; action: string; summary: string; actor_email: string | null; created_at: string }>>(r)
+        ),
+
   listComments: (taskId: string) =>
     isDemo() ? P([] as MktComment[]) : fetch(`/api/marketing/tasks/${taskId}/comments`).then((r) => j<MktComment[]>(r)),
 

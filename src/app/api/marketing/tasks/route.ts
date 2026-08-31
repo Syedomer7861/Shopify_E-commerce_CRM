@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/marketing/tasks — create task or subtask
 export async function POST(req: NextRequest) {
-  const { errorResponse, supabase, user } = await requireMarketing();
+  const { errorResponse, supabase, user, profile } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
   let body: unknown;
@@ -114,5 +114,19 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase!.from("mkt_tasks").insert(insert).select("*").single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  try {
+    await supabase!.from("audit_logs").insert({
+      actor_id: user!.id,
+      actor_email: profile?.email ?? null,
+      entity_type: "mkt_task",
+      entity_id: data.id,
+      action: input.parent_task_id ? "mkt_subtask_created" : "mkt_task_created",
+      summary: `Created "${input.title}"`,
+    });
+  } catch {
+    /* activity log is non-critical */
+  }
+
   return NextResponse.json(data, { status: 201 });
 }

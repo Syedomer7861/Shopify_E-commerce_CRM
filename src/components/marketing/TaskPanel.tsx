@@ -28,6 +28,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
   const [comments, setComments] = useState<MktComment[]>([]);
   const [links, setLinks] = useState<LinkRow[]>([]);
   const [attachments, setAttachments] = useState<MktAttachment[]>([]);
+  const [activity, setActivity] = useState<Array<{ id: string; action: string; summary: string; actor_email: string | null; created_at: string }>>([]);
   const [uploading, setUploading] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [newSub, setNewSub] = useState("");
@@ -39,15 +40,17 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [t, lk, att] = await Promise.all([
+      const [t, lk, att, act] = await Promise.all([
         marketingApi.getTask(taskId),
         marketingApi.listLinks(taskId).catch(() => []),
         marketingApi.listAttachments(taskId).catch(() => []),
+        marketingApi.listActivity(taskId).catch(() => []),
       ]);
       setTask(t);
       setComments(t.comments ?? []);
       setLinks(lk as LinkRow[]);
       setAttachments(att as MktAttachment[]);
+      setActivity(act as any);
     } catch (e: any) {
       toast.error(e.message || "Could not load task");
       onClose();
@@ -474,6 +477,21 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                 </div>
               </div>
             </Field>
+
+            {activity.length > 0 && (
+              <Field label="Activity">
+                <div className="space-y-1.5">
+                  {activity.map((a) => (
+                    <div key={a.id} className="text-[11px] text-[#5f5f5d] flex gap-2">
+                      <span className="text-[#5f5f5d]/50 whitespace-nowrap">
+                        {new Date(a.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                      <span className="font-medium text-[#1c1c1c]">{a.summary}</span>
+                    </div>
+                  ))}
+                </div>
+              </Field>
+            )}
           </div>
         )}
       </div>

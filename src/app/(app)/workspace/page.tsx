@@ -146,6 +146,26 @@ export default function WorkspacePage() {
     setSelected(new Set());
   }, [activeListId, loadTasks]);
 
+  // Live board: refetch when a teammate changes a task in this list. Scoped
+  // filter keeps the subscription cheap. Skipped in demo (no real table).
+  useEffect(() => {
+    if (!activeListId) return;
+    if (typeof document !== "undefined" && document.cookie.includes("crm-demo-mode=true")) return;
+    let t: any;
+    const bump = () => {
+      clearTimeout(t);
+      t = setTimeout(() => loadTasks(activeListId), 400);
+    };
+    const ch = createClient()
+      .channel(`wsp-tasks-${activeListId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "mkt_tasks", filter: `list_id=eq.${activeListId}` }, bump)
+      .subscribe();
+    return () => {
+      clearTimeout(t);
+      createClient().removeChannel(ch);
+    };
+  }, [activeListId, loadTasks]);
+
   useEffect(() => {
     if (view !== "dashboard" || !profile) return;
     marketingApi
