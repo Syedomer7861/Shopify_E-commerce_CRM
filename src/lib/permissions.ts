@@ -11,6 +11,7 @@ export const DEFAULT_PERMISSIONS: UserPermissions = {
   audit_tasks: false,
   manage_automations: false,
   manage_marketing: false,
+  manage_workspaces: false,
 };
 
 export const DEFAULT_HR_PERMISSIONS: UserPermissions = {
@@ -24,6 +25,7 @@ export const DEFAULT_HR_PERMISSIONS: UserPermissions = {
   audit_tasks: false,
   manage_automations: false,
   manage_marketing: false,
+  manage_workspaces: false,
 };
 
 export const DEFAULT_MANAGER_PERMISSIONS: UserPermissions = {
@@ -37,6 +39,7 @@ export const DEFAULT_MANAGER_PERMISSIONS: UserPermissions = {
   audit_tasks: true,
   manage_automations: true,
   manage_marketing: true,
+  manage_workspaces: true,
 };
 
 // Marketing department: full access to the marketing workspace, plus the
@@ -53,6 +56,7 @@ export const DEFAULT_MARKETING_PERMISSIONS: UserPermissions = {
   audit_tasks: false,
   manage_automations: false,
   manage_marketing: true,
+  manage_workspaces: false,
 };
 
 export function normalizePermissions(profile: Partial<Profile> | null | undefined): UserPermissions {
@@ -74,9 +78,14 @@ export function hasPermission(profile: Partial<Profile> | null | undefined, perm
 }
 
 /**
- * Marketing workspace gate. True for admins, the marketing role, managers,
- * or anyone explicitly granted the manage_marketing permission flag.
+ * Blanket workspace privilege — can create/administer Spaces regardless of
+ * membership. True for admins, managers, and the manage_workspaces (or legacy
+ * manage_marketing) flag. Per-Space visibility for everyone else is enforced
+ * by membership, server-side (see can_access_space() in the DB).
  */
-export function canAccessMarketing(profile: Partial<Profile> | null | undefined) {
-  return hasPermission(profile, "manage_marketing");
+export function isWorkspaceAdmin(profile: Partial<Profile> | null | undefined) {
+  return hasPermission(profile, "manage_workspaces") || hasPermission(profile, "manage_marketing");
 }
+
+/** @deprecated use isWorkspaceAdmin — kept so existing imports don't break. */
+export const canAccessMarketing = isWorkspaceAdmin;

@@ -273,6 +273,7 @@ export interface UserPermissions {
   manage_automations: boolean;
   // Optional so existing permission literals keep type-checking. Absent = false.
   manage_marketing?: boolean;
+  manage_workspaces?: boolean;
 }
 
 export interface Profile {
@@ -319,6 +320,31 @@ export type MktPriority = "urgent" | "high" | "normal" | "low";
 export type MktStatusType = "not_started" | "active" | "done";
 export type MktLinkKind = "blocks" | "blocked_by" | "relates_to";
 export type MktIntakeStatus = "new" | "accepted" | "rejected";
+export type MktSpaceRole = "owner" | "member";
+
+export interface MktSpace {
+  id: string;
+  name: string;
+  color?: string | null;
+  icon?: string | null;
+  position: number;
+  archived: boolean;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+  // hydrated
+  my_role?: MktSpaceRole;
+  member_count?: number;
+}
+
+export interface MktSpaceMember {
+  space_id: string;
+  user_id: string;
+  role: MktSpaceRole;
+  added_by?: string | null;
+  created_at: string;
+  user?: Profile;
+}
 
 export interface MktStatus {
   id: string;
@@ -329,6 +355,7 @@ export interface MktStatus {
 
 export interface MktList {
   id: string;
+  space_id?: string | null;
   name: string;
   color?: string | null;
   icon?: string | null;
