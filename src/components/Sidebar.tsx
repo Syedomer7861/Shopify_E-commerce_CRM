@@ -8,7 +8,7 @@ import {
   Megaphone, Shield, Settings, Sparkles,
   LogOut, Zap, Calendar, BarChart2, Upload, CheckSquare, Plus, Loader2,
   UserCheck, Clock, FileText, ShieldCheck, Calculator, BellRing,
-  Activity, ShoppingCart, MessageSquare, Headphones, TrendingUp
+  Activity, ShoppingCart, MessageSquare, Headphones, TrendingUp, Gauge
 } from "lucide-react";
 import { cn, toDbDateString } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
@@ -653,6 +653,13 @@ export default function Sidebar() {
                   <Sparkles className="w-4 h-4 flex-shrink-0 text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]" />
                   <span className="flex-1">My Work</span>
                 </Link>
+                <Link href="/workspace/workload" className={cn(
+                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
+                  path === "/workspace/workload" ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
+                )}>
+                  <Gauge className="w-4 h-4 flex-shrink-0 text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]" />
+                  <span className="flex-1">Workload</span>
+                </Link>
                 {spaces.map((s) => {
                   const active = path === "/workspace" && searchParams.get("space") === s.id;
                   return (
@@ -767,6 +774,9 @@ export default function Sidebar() {
                   <div className="grid grid-cols-1 gap-1">
                     <Link href="/workspace/my" onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
                       <Sparkles className="w-4 h-4 text-[#5f5f5d]" /> My Work
+                    </Link>
+                    <Link href="/workspace/workload" onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                      <Gauge className="w-4 h-4 text-[#5f5f5d]" /> Workload
                     </Link>
                     {spaces.map(s => (
                       <Link key={s.id} href={`/workspace?space=${s.id}`} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
