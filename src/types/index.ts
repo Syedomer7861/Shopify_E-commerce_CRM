@@ -353,6 +353,15 @@ export interface MktStatus {
   type: MktStatusType;
 }
 
+export type MktFieldType = "text" | "number" | "money" | "select" | "date" | "checkbox" | "url" | "user";
+
+export interface MktCustomField {
+  id: string;
+  name: string;
+  type: MktFieldType;
+  options?: string[]; // for type "select"
+}
+
 export interface MktList {
   id: string;
   space_id?: string | null;
@@ -362,6 +371,7 @@ export interface MktList {
   position: number;
   archived: boolean;
   statuses: MktStatus[];
+  custom_fields?: MktCustomField[];
   wip_limit?: number | null;
   created_by?: string | null;
   created_at: string;

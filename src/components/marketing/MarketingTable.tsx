@@ -20,6 +20,15 @@ export default function MarketingTable({ list, tasks, members, onOpenTask }: Pro
 
   const nameOf = (id?: string) => members.find((m) => m.id === id)?.name || members.find((m) => m.id === id)?.email || "—";
   const colOf = (id: string) => list.statuses.find((s) => s.id === id);
+  const fields = list.custom_fields ?? [];
+  const fmtField = (f: (typeof fields)[number], v: any) => {
+    if (v == null || v === "") return "—";
+    if (f.type === "checkbox") return v ? "✓" : "—";
+    if (f.type === "user") return nameOf(v);
+    if (f.type === "money") return `₹${Number(v).toLocaleString("en-IN")}`;
+    if (f.type === "date") return new Date(v).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+    return String(v);
+  };
 
   const rows = useMemo(() => {
     const val = (t: MktTask): string | number => {
@@ -65,12 +74,15 @@ export default function MarketingTable({ list, tasks, members, onOpenTask }: Pro
             <Th k="priority" label="Priority" />
             <Th k="assignee" label="Assignee" />
             <Th k="due_date" label="Due" right />
+            {fields.map((f) => (
+              <th key={f.id} className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d] whitespace-nowrap">{f.name}</th>
+            ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-[#eceae4]">
           {rows.length === 0 && (
             <tr>
-              <td colSpan={5} className="px-4 py-8 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
+              <td colSpan={5 + fields.length} className="px-4 py-8 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
                 No tasks
               </td>
             </tr>
@@ -91,6 +103,11 @@ export default function MarketingTable({ list, tasks, members, onOpenTask }: Pro
                 <td className="px-4 py-3 text-right text-[11px] font-bold text-[#5f5f5d]">
                   {t.due_date ? new Date(t.due_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "—"}
                 </td>
+                {fields.map((f) => (
+                  <td key={f.id} className="px-4 py-3 text-[11px] font-medium text-[#5f5f5d] whitespace-nowrap">
+                    {fmtField(f, (t.custom_fields ?? {})[f.id])}
+                  </td>
+                ))}
               </tr>
             );
           })}

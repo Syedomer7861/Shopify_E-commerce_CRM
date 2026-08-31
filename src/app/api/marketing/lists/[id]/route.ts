@@ -9,6 +9,13 @@ const StatusSchema = z.object({
   type: z.enum(["not_started", "active", "done"]),
 });
 
+const FieldSchema = z.object({
+  id: z.string().min(1).max(60),
+  name: z.string().min(1).max(80),
+  type: z.enum(["text", "number", "money", "select", "date", "checkbox", "url", "user"]),
+  options: z.array(z.string().max(80)).optional(),
+});
+
 const PatchListSchema = z
   .object({
     name: z.string().min(1).max(120),
@@ -17,6 +24,7 @@ const PatchListSchema = z
     position: z.number(),
     archived: z.boolean(),
     statuses: z.array(StatusSchema).min(1),
+    custom_fields: z.array(FieldSchema).max(30),
     wip_limit: z.number().int().positive().nullable(),
   })
   .partial();

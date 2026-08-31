@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { X, Trash2, Loader2, Plus, Send, Link2, Paperclip, Download } from "lucide-react";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
-import type { MktList, MktTask, MktComment, Profile, MktPriority } from "@/types";
+import type { MktList, MktTask, MktComment, Profile, MktPriority, MktCustomField } from "@/types";
 import { marketingApi, type MktAttachment } from "@/lib/marketing-client";
 
 const PRIORITIES: MktPriority[] = ["urgent", "high", "normal", "low"];
@@ -304,6 +304,38 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                 className="w-full text-xs font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
               />
             </Field>
+
+            {(list?.custom_fields ?? []).map((f: MktCustomField) => {
+              const val = (task.custom_fields ?? {})[f.id];
+              const setVal = (v: any) => patch({ custom_fields: { ...(task.custom_fields ?? {}), [f.id]: v } });
+              const cls = "w-full text-xs font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2";
+              return (
+                <Field key={f.id} label={f.name}>
+                  {f.type === "checkbox" ? (
+                    <input type="checkbox" checked={!!val} onChange={(e) => setVal(e.target.checked)} />
+                  ) : f.type === "select" ? (
+                    <select value={val ?? ""} onChange={(e) => setVal(e.target.value || null)} className={cls}>
+                      <option value="">—</option>
+                      {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ) : f.type === "user" ? (
+                    <select value={val ?? ""} onChange={(e) => setVal(e.target.value || null)} className={cls}>
+                      <option value="">—</option>
+                      {members.map((m) => <option key={m.id} value={m.id}>{m.name || m.email}</option>)}
+                    </select>
+                  ) : f.type === "date" ? (
+                    <input type="date" value={val ?? ""} onChange={(e) => setVal(e.target.value || null)} className={cls} />
+                  ) : (
+                    <input
+                      type={f.type === "number" || f.type === "money" ? "number" : f.type === "url" ? "url" : "text"}
+                      defaultValue={val ?? ""}
+                      onBlur={(e) => setVal(e.target.value === "" ? null : f.type === "number" || f.type === "money" ? Number(e.target.value) : e.target.value)}
+                      className={cls}
+                    />
+                  )}
+                </Field>
+              );
+            })}
 
             <Field label="Description">
               <textarea
