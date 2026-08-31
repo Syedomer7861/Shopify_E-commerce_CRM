@@ -412,6 +412,21 @@ export interface MktTask {
   list?: MktList;
 }
 
+export interface MktGoal {
+  id: string;
+  space_id: string;
+  title: string;
+  metric: "tasks_done";
+  target: number;
+  period_start: string; // YYYY-MM-DD
+  period_end: string;
+  owner_id?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  // computed at read time
+  progress?: number;
+}
+
 export interface MktTimeEntry {
   id: string;
   task_id: string;

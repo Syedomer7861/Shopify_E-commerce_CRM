@@ -1,7 +1,7 @@
 "use client";
 import { createClient } from "@/lib/supabase";
 import { MOCK_WORKSPACE, MOCK_TEAM } from "@/lib/mockData";
-import type { MktList, MktTask, MktComment, MktTemplate, MktIntakeRequest, MktAutomation, MktSpace, MktSpaceMember, MktTimeEntry } from "@/types";
+import type { MktList, MktTask, MktComment, MktTemplate, MktIntakeRequest, MktAutomation, MktSpace, MktSpaceMember, MktTimeEntry, MktGoal } from "@/types";
 import { isDemoMode } from "@/lib/demo";
 
 export type MktAttachment = {
@@ -206,6 +206,33 @@ export const marketingApi = {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ body, mentions }),
         }).then((r) => j<MktComment>(r)),
+
+  // ── Goals ───────────────────────────────────────────────
+  listGoals: (spaceId: string) =>
+    isDemo()
+      ? P([] as MktGoal[])
+      : fetch(`/api/marketing/goals?space_id=${spaceId}`).then((r) => j<MktGoal[]>(r)),
+
+  createGoal: (payload: { space_id: string; title: string; target: number; period_start: string; period_end: string; owner_id?: string | null }) =>
+    isDemo()
+      ? P({ id: `demo-goal-${Date.now()}`, progress: 0, metric: "tasks_done", created_at: new Date().toISOString(), ...payload } as MktGoal)
+      : fetch("/api/marketing/goals", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).then((r) => j<MktGoal>(r)),
+
+  updateGoal: (id: string, patch: Partial<Pick<MktGoal, "title" | "target" | "period_start" | "period_end" | "owner_id">>) =>
+    isDemo()
+      ? P({ id, ...patch } as MktGoal)
+      : fetch(`/api/marketing/goals/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patch),
+        }).then((r) => j<MktGoal>(r)),
+
+  deleteGoal: (id: string) =>
+    isDemo() ? P({ ok: true }) : fetch(`/api/marketing/goals/${id}`, { method: "DELETE" }).then((r) => j(r)),
 
   // ── Time tracking ───────────────────────────────────────
   listTimeEntries: (taskId: string) =>

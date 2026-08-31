@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { isDemoMode } from "@/lib/demo";
 import {
   LayoutGrid, List as ListIcon, Calendar as CalendarIcon, Table2, BarChart2,
-  Plus, RefreshCw, Layers, Sparkles, Inbox, Zap, Settings2,
+  Plus, RefreshCw, Layers, Sparkles, Inbox, Zap, Settings2, Target,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { PageHeader, AccessDenied, Modal } from "@/components/ui";
@@ -20,6 +20,7 @@ import MarketingDashboard from "@/components/marketing/MarketingDashboard";
 import AutomationsModal from "@/components/marketing/AutomationsModal";
 import ListSettingsModal from "@/components/marketing/ListSettingsModal";
 import SpaceSettingsModal from "@/components/marketing/SpaceSettingsModal";
+import GoalsModal from "@/components/marketing/GoalsModal";
 import TaskPanel from "@/components/marketing/TaskPanel";
 import type { MktList, MktTask, Profile, MktPriority, MktTemplate, MktIntakeRequest, MktSpace } from "@/types";
 
@@ -56,6 +57,7 @@ export default function WorkspacePage() {
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [allTasks, setAllTasks] = useState<MktTask[]>([]);
   const [automationsOpen, setAutomationsOpen] = useState(false);
+  const [goalsOpen, setGoalsOpen] = useState(false);
   const [listSettingsOpen, setListSettingsOpen] = useState(false);
   const [intakeOpen, setIntakeOpen] = useState(false);
   const [intake, setIntake] = useState<MktIntakeRequest[]>([]);
@@ -456,6 +458,14 @@ export default function WorkspacePage() {
               <Zap className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Automations</span>
             </button>
             <button
+              onClick={() => setGoalsOpen(true)}
+              title="Goals"
+              disabled={!activeSpaceId}
+              className="px-2.5 py-2 rounded-lg border border-[#eceae4] bg-white text-[#1c1c1c] text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-40"
+            >
+              <Target className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Goals</span>
+            </button>
+            <button
               onClick={openTemplates}
               title="Templates"
               className="px-2.5 py-2 rounded-lg border border-[#eceae4] bg-white text-[#1c1c1c] text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
@@ -664,6 +674,14 @@ export default function WorkspacePage() {
       )}
 
       <AutomationsModal open={automationsOpen} onClose={() => setAutomationsOpen(false)} list={activeList} lists={lists} members={members} />
+
+      <GoalsModal
+        open={goalsOpen}
+        spaceId={activeSpaceId}
+        canManage={canManageSpace}
+        members={members}
+        onClose={() => setGoalsOpen(false)}
+      />
 
       <ListSettingsModal
         open={listSettingsOpen}
