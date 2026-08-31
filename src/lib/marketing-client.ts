@@ -270,8 +270,12 @@ export const marketingApi = {
           body: JSON.stringify({ template_id: templateId, list_id: opts.listId, space_id: opts.spaceId }),
         }).then((r) => j<{ list?: MktList; list_id?: string; taskCount: number }>(r)),
 
-  listIntake: () =>
-    isDemo() ? P([] as MktIntakeRequest[]) : fetch("/api/marketing/intake").then((r) => j<MktIntakeRequest[]>(r)),
+  // opts.mine forces the caller's own requests only (the personal follow-up
+  // page); omitted, workspace staff get the whole intake queue.
+  listIntake: (opts?: { mine?: boolean }) =>
+    isDemo()
+      ? P([] as MktIntakeRequest[])
+      : fetch(`/api/marketing/intake${opts?.mine ? "?scope=mine" : ""}`).then((r) => j<MktIntakeRequest[]>(r)),
 
   submitIntake: (payload: { title: string; details?: string; desired_date?: string | null; ref?: Record<string, any> }) =>
     isDemo()

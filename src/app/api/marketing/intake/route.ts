@@ -11,15 +11,18 @@ const CreateIntakeSchema = z.object({
   ref: z.record(z.string(), z.any()).nullable().optional(),
 });
 
-// GET /api/marketing/intake — workspace staff see the whole queue; everyone
-// else sees only the requests they filed (so they can follow up). RLS on
-// mkt_intake_requests enforces the same split.
-export async function GET() {
+// GET /api/marketing/intake — by default workspace staff see the whole queue
+// and everyone else sees only what they filed. `?scope=mine` forces the
+// caller's own requests regardless of role — used by the personal
+// "Request Creative" follow-up page, where staff still only want their own.
+export async function GET(req: NextRequest) {
   const { errorResponse, user, profile, supabase } = await getAuthenticatedSession();
   if (errorResponse) return errorResponse;
 
-  let staff = isWorkspaceAdmin(profile);
-  if (!staff) {
+  const mineOnly = req.nextUrl.searchParams.get("scope") === "mine";
+
+  let staff = !mineOnly && isWorkspaceAdmin(profile);
+  if (!mineOnly && !staff) {
     const { count } = await supabase!
       .from("mkt_space_members")
       .select("space_id", { count: "exact", head: true })

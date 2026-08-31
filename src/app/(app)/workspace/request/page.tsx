@@ -23,7 +23,7 @@ export default function CreativeRequestPage() {
 
   const load = useCallback(async () => {
     try {
-      setMine(await marketingApi.listIntake());
+      setMine(await marketingApi.listIntake({ mine: true }));
     } catch {
       /* non-blocking */
     } finally {
