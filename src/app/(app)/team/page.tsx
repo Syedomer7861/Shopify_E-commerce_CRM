@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import type { Profile, UserPermissions } from "@/types";
 import { AccessDenied } from "@/components/ui";
-import { DEFAULT_PERMISSIONS, DEFAULT_HR_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS, hasPermission } from "@/lib/permissions";
+import { DEFAULT_PERMISSIONS, DEFAULT_HR_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS, DEFAULT_MARKETING_PERMISSIONS, hasPermission } from "@/lib/permissions";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { logAuditEvent } from "@/lib/audit";
 
@@ -26,7 +26,7 @@ export default function TeamPage() {
   const [roleFilter, setRoleFilter] = useState("all");
 
   // New user state
-  const [newUser, setNewUser] = useState({ email: "", password: "", name: "", role: "agent" as "agent" | "admin" | "hr" | "manager" });
+  const [newUser, setNewUser] = useState({ email: "", password: "", name: "", role: "agent" as "agent" | "admin" | "hr" | "manager" | "marketing" });
   const { profile: currentProfile, loading: profileLoading } = useCurrentProfile();
 
   const supabase = createClient();
@@ -109,7 +109,8 @@ export default function TeamPage() {
         send_whatsapp: true,
         audit_tasks: true,
         manage_automations: false,
-      } : DEFAULT_PERMISSIONS,
+      } : newUser.role === "marketing" ? DEFAULT_MARKETING_PERMISSIONS
+        : DEFAULT_PERMISSIONS,
     });
 
     if (!res.success) {
@@ -282,7 +283,7 @@ export default function TeamPage() {
           />
         </div>
         <div className="flex p-1 bg-gray-100 rounded-xl w-fit">
-          {["all", "admin", "manager", "hr", "agent", "demo"].map(role => (
+          {["all", "admin", "manager", "marketing", "hr", "agent", "demo"].map(role => (
             <button
               key={role}
               onClick={() => setRoleFilter(role)}
@@ -364,10 +365,11 @@ export default function TeamPage() {
                     "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border",
                     p.role === 'admin' && "bg-zinc-900 text-white border-zinc-900",
                     p.role === 'manager' && "bg-violet-50 text-violet-700 border-violet-100",
+                    p.role === 'marketing' && "bg-blue-50 text-blue-700 border-blue-100",
                     p.role === 'hr' && "bg-rose-50 text-rose-700 border-rose-100",
                     p.role === 'agent' && "bg-emerald-50 text-emerald-700 border-emerald-100"
                   )}>
-                    {p.role === 'hr' ? 'HR' : p.role}
+                    {p.role === 'hr' ? 'HR' : p.role === 'marketing' ? 'Workspace' : p.role}
                   </div>
                   <button onClick={() => handleRemoveMember(p.id)} className="p-1.5 text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
                     <Trash2 className="w-3.5 h-3.5" />
@@ -430,6 +432,7 @@ export default function TeamPage() {
               <option value="agent">Sales Agent</option>
               <option value="hr">HR (Staffing)</option>
               <option value="manager">Manager (Operations)</option>
+              <option value="marketing">Workspace (Boards &amp; Campaigns)</option>
               <option value="admin">Administrator</option>
             </select>
           </div>
@@ -481,8 +484,8 @@ export default function TeamPage() {
 
           <div className="space-y-3">
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Security Role</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-               <button 
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+               <button
                  onClick={() => updateProfile({ role: "agent", permissions: DEFAULT_PERMISSIONS })}
                  className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'agent' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
                >
@@ -496,14 +499,21 @@ export default function TeamPage() {
                  <div className={`text-xs font-bold ${selectedProfile?.role === 'hr' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>HR</div>
                  <div className="text-[9px] text-gray-400 mt-0.5">Staffing</div>
                </button>
-               <button 
+               <button
                  onClick={() => updateProfile({ role: "manager", permissions: DEFAULT_MANAGER_PERMISSIONS })}
                  className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'manager' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
                >
                  <div className={`text-xs font-bold ${selectedProfile?.role === 'manager' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>Manager</div>
                  <div className="text-[9px] text-gray-400 mt-0.5">Operations</div>
                </button>
-               <button 
+               <button
+                 onClick={() => updateProfile({ role: "marketing", permissions: DEFAULT_MARKETING_PERMISSIONS })}
+                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'marketing' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
+               >
+                 <div className={`text-xs font-bold ${selectedProfile?.role === 'marketing' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>Workspace</div>
+                 <div className="text-[9px] text-gray-400 mt-0.5">Boards & Campaigns</div>
+               </button>
+               <button
                  onClick={() => updateProfile({ role: "admin" })}
                  className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'admin' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
                >
@@ -525,6 +535,8 @@ export default function TeamPage() {
                   { key: "manage_customers", label: "Manage Customers & Segments", icon: Users },
                   { key: "send_whatsapp", label: "Send WhatsApp Messages", icon: MessageSquare },
                   { key: "audit_tasks", label: "Manager Oversight (Audit Tasks)", icon: Shield },
+                  { key: "manage_automations", label: "Manage Automations & Workflows", icon: Shield },
+                  { key: "manage_workspaces", label: "Workspace Admin (create/manage Spaces)", icon: Users },
                 ].map((perm) => {
                   const isAdmin = selectedProfile?.role === "admin";
                   const has = isAdmin || (selectedProfile?.permissions as any)?.[perm.key];
