@@ -637,7 +637,7 @@ export default function WorkspacePage() {
           onQuickAdd={handleQuickAdd}
         />
       ) : view === "calendar" ? (
-        <MarketingCalendar list={activeList} tasks={filtered} onOpenTask={(id) => setQuery({ task: id })} />
+        <MarketingCalendar list={activeList} tasks={filtered} members={members} onOpenTask={(id) => setQuery({ task: id })} />
       ) : view === "table" ? (
         <MarketingTable list={activeList} tasks={filtered} members={members} onOpenTask={(id) => setQuery({ task: id })} />
       ) : view === "gantt" ? (
