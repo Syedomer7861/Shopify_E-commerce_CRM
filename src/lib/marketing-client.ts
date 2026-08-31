@@ -1,7 +1,7 @@
 "use client";
 import { createClient } from "@/lib/supabase";
 import { MOCK_WORKSPACE, MOCK_TEAM } from "@/lib/mockData";
-import type { MktList, MktTask, MktComment, MktTemplate, MktIntakeRequest, MktAutomation, MktSpace, MktSpaceMember, MktTimeEntry, MktGoal } from "@/types";
+import type { MktList, MktTask, MktComment, MktTemplate, MktIntakeRequest, MktAutomation, MktSpace, MktSpaceMember, MktTimeEntry, MktGoal, MktCommentSnippet } from "@/types";
 import { isDemoMode } from "@/lib/demo";
 
 export type MktAttachment = {
@@ -233,6 +233,36 @@ export const marketingApi = {
 
   deleteGoal: (id: string) =>
     isDemo() ? P({ ok: true }) : fetch(`/api/marketing/goals/${id}`, { method: "DELETE" }).then((r) => j(r)),
+
+  // ── Comment snippets ("/" canned messages) ──────────────
+  listSnippets: () =>
+    isDemo()
+      ? P([
+          { id: "demo-sn-1", title: "Approved", body: "Approved — good to proceed. ✅", created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+          { id: "demo-sn-2", title: "Needs changes", body: "Needs a few changes before this can move forward:\n- ", created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+        ] as MktCommentSnippet[])
+      : fetch("/api/marketing/snippets").then((r) => j<MktCommentSnippet[]>(r)),
+
+  createSnippet: (payload: { title: string; body: string }) =>
+    isDemo()
+      ? P({ id: `demo-sn-${Date.now()}`, ...payload, created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as MktCommentSnippet)
+      : fetch("/api/marketing/snippets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).then((r) => j<MktCommentSnippet>(r)),
+
+  updateSnippet: (id: string, patch: { title?: string; body?: string }) =>
+    isDemo()
+      ? P({ id, ...patch } as MktCommentSnippet)
+      : fetch(`/api/marketing/snippets/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patch),
+        }).then((r) => j<MktCommentSnippet>(r)),
+
+  deleteSnippet: (id: string) =>
+    isDemo() ? P({ ok: true }) : fetch(`/api/marketing/snippets/${id}`, { method: "DELETE" }).then((r) => j(r)),
 
   // ── Time tracking ───────────────────────────────────────
   listTimeEntries: (taskId: string) =>

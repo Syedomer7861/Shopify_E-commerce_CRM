@@ -22,6 +22,7 @@ import ListSettingsModal from "@/components/marketing/ListSettingsModal";
 import SpaceSettingsModal from "@/components/marketing/SpaceSettingsModal";
 import MarketingGantt from "@/components/marketing/MarketingGantt";
 import GoalsModal from "@/components/marketing/GoalsModal";
+import SnippetsManager from "@/components/marketing/SnippetsManager";
 import TaskPanel from "@/components/marketing/TaskPanel";
 import type { MktList, MktTask, Profile, MktPriority, MktTemplate, MktIntakeRequest, MktSpace } from "@/types";
 
@@ -55,6 +56,7 @@ export default function WorkspacePage() {
   const [creatingSpace, setCreatingSpace] = useState(false);
   const [spaceSettingsOpen, setSpaceSettingsOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [tplTab, setTplTab] = useState<"templates" | "snippets">("templates");
   const [templates, setTemplates] = useState<MktTemplate[]>([]);
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [allTasks, setAllTasks] = useState<MktTask[]>([]);
@@ -782,7 +784,25 @@ export default function WorkspacePage() {
         </div>
       </Modal>
 
-      <Modal open={templatesOpen} onClose={() => setTemplatesOpen(false)} title="Templates" maxWidth="max-w-md">
+      <Modal open={templatesOpen} onClose={() => setTemplatesOpen(false)} title="Templates &amp; Saved Messages" maxWidth="max-w-md">
+        <div className="flex bg-[#f2efe8] rounded-lg p-0.5 mb-3">
+          {(["templates", "snippets"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTplTab(t)}
+              className={cn(
+                "flex-1 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest",
+                tplTab === t ? "bg-white text-[#1c1c1c] shadow-sm" : "text-[#5f5f5d]"
+              )}
+            >
+              {t === "templates" ? "Templates" : "Saved messages"}
+            </button>
+          ))}
+        </div>
+
+        {tplTab === "snippets" ? (
+          <SnippetsManager canManage={wsAdmin || activeSpace?.my_role === "owner"} />
+        ) : (
         <div className="space-y-2">
           {templates.length === 0 && (
             <p className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50 py-4 text-center">No templates</p>
@@ -808,6 +828,7 @@ export default function WorkspacePage() {
             );
           })}
         </div>
+        )}
       </Modal>
 
       <Modal open={newListOpen} onClose={() => setNewListOpen(false)} title="New list" maxWidth="max-w-sm">

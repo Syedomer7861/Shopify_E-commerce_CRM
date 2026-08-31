@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { X, Trash2, Loader2, Plus, Send, Link2, Paperclip, Download, Play, Square, Clock } from "lucide-react";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
-import type { MktList, MktTask, MktComment, Profile, MktPriority, MktCustomField, MktTimeEntry } from "@/types";
+import type { MktList, MktTask, MktComment, Profile, MktPriority, MktCustomField, MktTimeEntry, MktCommentSnippet } from "@/types";
 import { marketingApi, type MktAttachment } from "@/lib/marketing-client";
 
 const fmtMins = (m: number) => {
@@ -43,6 +43,10 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
   const [now, setNow] = useState(Date.now());
   const [uploading, setUploading] = useState(false);
   const [newComment, setNewComment] = useState("");
+  const [snippets, setSnippets] = useState<MktCommentSnippet[]>([]);
+  const commentRef = useRef<HTMLTextAreaElement>(null);
+  // Autocomplete state for the comment box: "@" -> members, "/" -> snippets.
+  const [ac, setAc] = useState<{ kind: "@" | "/"; from: number; query: string; index: number } | null>(null);
   const [newSub, setNewSub] = useState("");
   const [linkKind, setLinkKind] = useState<"blocks" | "blocked_by" | "relates_to">("blocked_by");
   const [linkTarget, setLinkTarget] = useState("");
@@ -56,12 +60,13 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
     if (goneRef.current) return;
     setLoading(true);
     try {
-      const [t, lk, att, act, te] = await Promise.all([
+      const [t, lk, att, act, te, sn] = await Promise.all([
         marketingApi.getTask(taskId),
         marketingApi.listLinks(taskId).catch(() => []),
         marketingApi.listAttachments(taskId).catch(() => []),
         marketingApi.listActivity(taskId).catch(() => []),
         marketingApi.listTimeEntries(taskId).catch(() => []),
+        marketingApi.listSnippets().catch(() => []),
       ]);
       setTask(t);
       setComments(t.comments ?? []);
@@ -69,6 +74,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
       setAttachments(att as MktAttachment[]);
       setActivity(act as any);
       setTimeEntries(te as MktTimeEntry[]);
+      setSnippets(sn as MktCommentSnippet[]);
     } catch (e: any) {
       if (!goneRef.current) {
         const msg = e?.message || "";
@@ -227,12 +233,78 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
     if (!body || !task) return;
     const mentions = members.filter((m) => m.name && body.includes(`@${m.name}`)).map((m) => m.id);
     setNewComment("");
+    setAc(null);
     try {
       const c = await marketingApi.addComment(task.id, body, mentions);
       setComments((prev) => [...prev, c]);
     } catch (e: any) {
       toast.error(e.message);
     }
+  }
+
+  // ── comment autocomplete (@ mentions / "/" snippets) ──────────────────
+  const acItems = (() => {
+    if (!ac) return [];
+    const q = ac.query.toLowerCase();
+    if (ac.kind === "@") {
+      return members
+        .filter((m) => (m.name || m.email || "").toLowerCase().includes(q))
+        .slice(0, 6)
+        .map((m) => ({ id: m.id, label: m.name || m.email || "?", sub: m.name ? m.email : undefined }));
+    }
+    return snippets
+      .filter((s) => s.title.toLowerCase().includes(q) || s.body.toLowerCase().includes(q))
+      .slice(0, 6)
+      .map((s) => ({ id: s.id, label: s.title, sub: s.body.replace(/\n/g, " ").slice(0, 60) }));
+  })();
+
+  function onCommentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const value = e.target.value;
+    setNewComment(value);
+    const caret = e.target.selectionStart ?? value.length;
+    // Walk back from the caret to the nearest "@" or "/" with no whitespace between.
+    let i = caret - 1;
+    while (i >= 0 && !/\s/.test(value[i]) && value[i] !== "@" && value[i] !== "/") i--;
+    const ch = value[i];
+    if ((ch === "@" || ch === "/") && (i === 0 || /\s/.test(value[i - 1]))) {
+      setAc({ kind: ch, from: i, query: value.slice(i + 1, caret), index: 0 });
+    } else {
+      setAc(null);
+    }
+  }
+
+  function pickAc(idx = ac?.index ?? 0) {
+    if (!ac || !acItems[idx]) return;
+    const item = acItems[idx];
+    const caret = commentRef.current?.selectionStart ?? newComment.length;
+    const before = newComment.slice(0, ac.from);
+    const after = newComment.slice(caret);
+    let insert: string;
+    if (ac.kind === "@") {
+      insert = `@${item.label} `;
+    } else {
+      const snip = snippets.find((s) => s.id === item.id);
+      insert = (snip?.body ?? "") + " ";
+    }
+    const next = before + insert + after;
+    setNewComment(next);
+    setAc(null);
+    // Restore focus + caret after the inserted text.
+    requestAnimationFrame(() => {
+      const pos = (before + insert).length;
+      commentRef.current?.focus();
+      commentRef.current?.setSelectionRange(pos, pos);
+    });
+  }
+
+  function onCommentKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (ac && acItems.length) {
+      if (e.key === "ArrowDown") { e.preventDefault(); setAc({ ...ac, index: (ac.index + 1) % acItems.length }); return; }
+      if (e.key === "ArrowUp") { e.preventDefault(); setAc({ ...ac, index: (ac.index - 1 + acItems.length) % acItems.length }); return; }
+      if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); pickAc(); return; }
+      if (e.key === "Escape") { e.preventDefault(); setAc(null); return; }
+    }
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) postComment();
   }
 
   async function remove() {
@@ -623,16 +695,38 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                   </div>
                 ))}
                 <div className="flex items-end gap-2">
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) postComment();
-                    }}
-                    rows={2}
-                    placeholder="Comment… @name to mention, ⌘/Ctrl+Enter to send"
-                    className="flex-1 text-[13px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-xl px-3 py-2 resize-none"
-                  />
+                  <div className="relative flex-1">
+                    <textarea
+                      ref={commentRef}
+                      value={newComment}
+                      onChange={onCommentChange}
+                      onKeyDown={onCommentKeyDown}
+                      onBlur={() => setTimeout(() => setAc(null), 120)}
+                      rows={2}
+                      placeholder="Comment… @ to mention, / for a saved message, ⌘/Ctrl+Enter to send"
+                      className="w-full text-[13px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-xl px-3 py-2 resize-none"
+                    />
+                    {ac && acItems.length > 0 && (
+                      <div className="absolute left-0 bottom-full mb-1 w-full max-w-xs bg-white border border-[#eceae4] rounded-xl shadow-lg z-30 overflow-hidden">
+                        <div className="px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50 border-b border-[#eceae4]">
+                          {ac.kind === "@" ? "Mention" : "Saved message"}
+                        </div>
+                        {acItems.map((it, i) => (
+                          <button
+                            key={it.id}
+                            onMouseDown={(e) => { e.preventDefault(); pickAc(i); }}
+                            className={cn(
+                              "w-full text-left px-2.5 py-1.5 flex flex-col",
+                              i === ac.index ? "bg-[#1c1c1c] text-white" : "hover:bg-[#f7f4ed]"
+                            )}
+                          >
+                            <span className="text-[12px] font-bold truncate">{it.label}</span>
+                            {it.sub && <span className={cn("text-[10px] truncate", i === ac.index ? "text-white/60" : "text-[#5f5f5d]/60")}>{it.sub}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <button onClick={postComment} className="w-9 h-9 rounded-lg bg-[#1c1c1c] text-white flex items-center justify-center flex-shrink-0">
                     <Send className="w-4 h-4" />
                   </button>
