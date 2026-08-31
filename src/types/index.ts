@@ -393,6 +393,7 @@ export interface MktTask {
   priority: MktPriority;
   start_date?: string | null;
   due_date?: string | null;
+  estimate_minutes?: number | null;
   assignees: string[];
   watchers: string[];
   tags: string[];
@@ -409,6 +410,17 @@ export interface MktTask {
   comments?: MktComment[];
   links?: MktTaskLink[];
   list?: MktList;
+}
+
+export interface MktTimeEntry {
+  id: string;
+  task_id: string;
+  user_id: string;
+  minutes: number;
+  note?: string | null;
+  spent_on: string; // YYYY-MM-DD
+  created_at: string;
+  user?: Pick<Profile, "id" | "name" | "email">;
 }
 
 export interface MktComment {

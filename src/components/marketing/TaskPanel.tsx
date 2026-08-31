@@ -1,10 +1,17 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { X, Trash2, Loader2, Plus, Send, Link2, Paperclip, Download } from "lucide-react";
+import { X, Trash2, Loader2, Plus, Send, Link2, Paperclip, Download, Play, Square, Clock } from "lucide-react";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
-import type { MktList, MktTask, MktComment, Profile, MktPriority, MktCustomField } from "@/types";
+import type { MktList, MktTask, MktComment, Profile, MktPriority, MktCustomField, MktTimeEntry } from "@/types";
 import { marketingApi, type MktAttachment } from "@/lib/marketing-client";
+
+const fmtMins = (m: number) => {
+  if (!m) return "0m";
+  const h = Math.floor(m / 60);
+  const min = Math.round(m % 60);
+  return h ? `${h}h${min ? ` ${min}m` : ""}` : `${min}m`;
+};
 
 const PRIORITIES: MktPriority[] = ["urgent", "high", "normal", "low"];
 const LINK_LABEL: Record<string, string> = { blocks: "Blocks", blocked_by: "Blocked by", relates_to: "Related to" };
@@ -29,6 +36,11 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
   const [links, setLinks] = useState<LinkRow[]>([]);
   const [attachments, setAttachments] = useState<MktAttachment[]>([]);
   const [activity, setActivity] = useState<Array<{ id: string; action: string; summary: string; actor_email: string | null; created_at: string }>>([]);
+  const [timeEntries, setTimeEntries] = useState<MktTimeEntry[]>([]);
+  const [logMins, setLogMins] = useState("");
+  const [logNote, setLogNote] = useState("");
+  const [timerStart, setTimerStart] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
   const [uploading, setUploading] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [newSub, setNewSub] = useState("");
@@ -40,17 +52,19 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [t, lk, att, act] = await Promise.all([
+      const [t, lk, att, act, te] = await Promise.all([
         marketingApi.getTask(taskId),
         marketingApi.listLinks(taskId).catch(() => []),
         marketingApi.listAttachments(taskId).catch(() => []),
         marketingApi.listActivity(taskId).catch(() => []),
+        marketingApi.listTimeEntries(taskId).catch(() => []),
       ]);
       setTask(t);
       setComments(t.comments ?? []);
       setLinks(lk as LinkRow[]);
       setAttachments(att as MktAttachment[]);
       setActivity(act as any);
+      setTimeEntries(te as MktTimeEntry[]);
     } catch (e: any) {
       toast.error(e.message || "Could not load task");
       onClose();
@@ -58,6 +72,60 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
       setLoading(false);
     }
   }, [taskId, onClose]);
+
+  // Running timer — start time lives in localStorage so it survives a
+  // refresh / navigating away. Stopping it opens the log form pre-filled.
+  const timerKey = `mkt-timer-${taskId}`;
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(timerKey);
+      setTimerStart(raw ? Number(raw) : null);
+    } catch { /* private mode */ }
+  }, [timerKey]);
+  useEffect(() => {
+    if (timerStart == null) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [timerStart]);
+
+  function startTimer() {
+    const t = Date.now();
+    try { localStorage.setItem(timerKey, String(t)); } catch { /* ignore */ }
+    setTimerStart(t);
+    setNow(t);
+  }
+  function stopTimer() {
+    if (timerStart == null) return;
+    const mins = Math.max(1, Math.round((Date.now() - timerStart) / 60000));
+    try { localStorage.removeItem(timerKey); } catch { /* ignore */ }
+    setTimerStart(null);
+    setLogMins(String(mins));
+  }
+
+  const loggedTotal = timeEntries.reduce((s, e) => s + e.minutes, 0);
+
+  async function submitLog() {
+    const mins = Math.round(Number(logMins));
+    if (!mins || mins <= 0) return toast.error("Enter minutes");
+    try {
+      const entry = await marketingApi.logTime(taskId, { minutes: mins, note: logNote.trim() || undefined });
+      setTimeEntries((prev) => [entry, ...prev]);
+      setLogMins("");
+      setLogNote("");
+    } catch (e: any) {
+      toast.error(e.message || "Could not log time");
+    }
+  }
+  async function removeTimeEntry(id: string) {
+    const prev = timeEntries;
+    setTimeEntries((p) => p.filter((e) => e.id !== id));
+    try {
+      await marketingApi.deleteTimeEntry(id);
+    } catch (e: any) {
+      toast.error(e.message || "Could not delete");
+      setTimeEntries(prev);
+    }
+  }
 
   async function addLink() {
     if (!linkTarget) return;
@@ -255,6 +323,91 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                 />
               </Field>
             </div>
+
+            <Field label="Time">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="Estimate (min)"
+                    defaultValue={task.estimate_minutes ?? ""}
+                    onBlur={(e) => {
+                      const v = e.target.value === "" ? null : Math.max(0, Math.round(Number(e.target.value)));
+                      if (v !== (task.estimate_minutes ?? null)) patch({ estimate_minutes: v });
+                    }}
+                    className="w-32 text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                  />
+                  <span className="text-[11px] font-bold text-[#5f5f5d]">
+                    {fmtMins(loggedTotal)} logged
+                    {task.estimate_minutes ? ` / ${fmtMins(task.estimate_minutes)}` : ""}
+                  </span>
+                </div>
+                {task.estimate_minutes ? (
+                  <div className="h-1.5 rounded-full bg-[#eceae4] overflow-hidden">
+                    <div
+                      className={cn("h-full rounded-full", loggedTotal > task.estimate_minutes ? "bg-rose-500" : "bg-emerald-500")}
+                      style={{ width: `${Math.min(100, (loggedTotal / task.estimate_minutes) * 100)}%` }}
+                    />
+                  </div>
+                ) : null}
+
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {timerStart == null ? (
+                    <button onClick={startTimer}
+                      className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-lg bg-[#1c1c1c] text-white">
+                      <Play className="w-3 h-3" /> Start timer
+                    </button>
+                  ) : (
+                    <button onClick={stopTimer}
+                      className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-lg bg-rose-500 text-white">
+                      <Square className="w-3 h-3" /> Stop · {fmtMins(Math.max(0, (now - timerStart) / 60000))}
+                    </button>
+                  )}
+                  {[15, 30, 60].map((m) => (
+                    <button key={m} onClick={() => setLogMins(String(m))}
+                      className="text-[10px] font-bold px-2 py-1.5 rounded-lg bg-white border border-[#eceae4] text-[#5f5f5d]">
+                      +{m}m
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number" min={1} placeholder="min" value={logMins}
+                    onChange={(e) => setLogMins(e.target.value)}
+                    className="w-16 text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                  />
+                  <input
+                    placeholder="Note (optional)" value={logNote}
+                    onChange={(e) => setLogNote(e.target.value)}
+                    className="flex-1 min-w-0 text-xs font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                  />
+                  <button onClick={submitLog}
+                    className="text-[10px] font-black uppercase tracking-widest px-2.5 py-2 rounded-lg bg-[#1c1c1c] text-white flex-shrink-0">
+                    Log
+                  </button>
+                </div>
+
+                {timeEntries.length > 0 && (
+                  <div className="space-y-1 pt-1">
+                    {timeEntries.map((e) => (
+                      <div key={e.id} className="flex items-center gap-2 text-[11px]">
+                        <Clock className="w-3 h-3 text-[#5f5f5d]/50 flex-shrink-0" />
+                        <span className="font-bold text-[#1c1c1c] w-14 flex-shrink-0">{fmtMins(e.minutes)}</span>
+                        <span className="text-[#5f5f5d]/70 flex-shrink-0">{e.spent_on.slice(5)}</span>
+                        <span className="text-[#5f5f5d] truncate flex-1">
+                          {e.user?.name || e.user?.email || ""}{e.note ? ` — ${e.note}` : ""}
+                        </span>
+                        <button onClick={() => removeTimeEntry(e.id)} className="text-[#5f5f5d]/40 hover:text-rose-500 flex-shrink-0">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Field>
 
             <Field label="Assignees">
               <div className="flex flex-wrap gap-1.5">

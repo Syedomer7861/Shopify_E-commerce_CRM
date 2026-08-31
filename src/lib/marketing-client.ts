@@ -1,7 +1,7 @@
 "use client";
 import { createClient } from "@/lib/supabase";
 import { MOCK_WORKSPACE, MOCK_TEAM } from "@/lib/mockData";
-import type { MktList, MktTask, MktComment, MktTemplate, MktIntakeRequest, MktAutomation, MktSpace, MktSpaceMember } from "@/types";
+import type { MktList, MktTask, MktComment, MktTemplate, MktIntakeRequest, MktAutomation, MktSpace, MktSpaceMember, MktTimeEntry } from "@/types";
 import { isDemoMode } from "@/lib/demo";
 
 export type MktAttachment = {
@@ -206,6 +206,24 @@ export const marketingApi = {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ body, mentions }),
         }).then((r) => j<MktComment>(r)),
+
+  // ── Time tracking ───────────────────────────────────────
+  listTimeEntries: (taskId: string) =>
+    isDemo()
+      ? P([] as MktTimeEntry[])
+      : fetch(`/api/marketing/tasks/${taskId}/time`).then((r) => j<MktTimeEntry[]>(r)),
+
+  logTime: (taskId: string, payload: { minutes: number; note?: string; spent_on?: string }) =>
+    isDemo()
+      ? P({ id: `demo-te-${Date.now()}`, task_id: taskId, user_id: MOCK_TEAM[0].id, minutes: payload.minutes, note: payload.note ?? null, spent_on: new Date().toISOString().slice(0, 10), created_at: new Date().toISOString(), user: { id: MOCK_TEAM[0].id, name: MOCK_TEAM[0].name, email: MOCK_TEAM[0].email } } as MktTimeEntry)
+      : fetch(`/api/marketing/tasks/${taskId}/time`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).then((r) => j<MktTimeEntry>(r)),
+
+  deleteTimeEntry: (id: string) =>
+    isDemo() ? P({ ok: true }) : fetch(`/api/marketing/time/${id}`, { method: "DELETE" }).then((r) => j(r)),
 
   listTemplates: (kind?: "task" | "list") =>
     isDemo()
