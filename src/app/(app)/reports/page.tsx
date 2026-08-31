@@ -16,6 +16,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import autoTable from 'jspdf-autotable';
 import IndiaSalesMap from "@/components/IndiaSalesMap";
+import { isDemoMode } from "@/lib/demo";
 
 
 export default function ReportsPage() {
@@ -134,7 +135,7 @@ export default function ReportsPage() {
   };
 
   const fetchAnalytics = useCallback(async (silent = false) => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       if (!silent) setLoading(true);
       const { MOCK_ANALYTICS } = await import("@/lib/mockData");
@@ -630,14 +631,15 @@ export default function ReportsPage() {
   useEffect(() => {
     if (activeTab !== "agents" && activeTab !== "attendance" && activeTab !== "overview") return;
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       // Interaction Sentinel
-      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+      const isInteracting = document.activeElement?.tagName === 'INPUT' ||
                            document.activeElement?.tagName === 'TEXTAREA' ||
                            document.querySelector('[role="dialog"]');
       if (isInteracting) return;
-      
+
       fetchAnalytics(true);
-    }, 60000); // Throttled to 60s for reports
+    }, 3 * 60000); // safety-net refresh; realtime + manual reload cover the rest
     return () => clearInterval(interval);
   }, [activeTab, fetchAnalytics]);
 

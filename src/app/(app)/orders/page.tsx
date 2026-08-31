@@ -4,6 +4,7 @@ import { Search, Package, RefreshCw, Trash2, Download, MessageSquare, ExternalLi
 import Link from "next/link";
 import { PageHeader, DeliveryBadge, RiskBadge, Avatar, EmptyState, Modal, Pagination } from "@/components/ui";
 import dynamic from 'next/dynamic';
+import { isDemoMode } from "@/lib/demo";
 const ShiprocketOrderView = dynamic(() => import("@/components/ShiprocketOrderView"), { 
   loading: () => <div className="p-8 text-center"><RefreshCw className="w-6 h-6 animate-spin mx-auto text-gray-300" /></div>
 });
@@ -56,7 +57,7 @@ export default function OrdersPage() {
   const supabase = useMemo(() => createClient(), []);
 
   const fetchOrders = useCallback(async (isSilent = false) => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       if (!isSilent) setLoading(true);
       const { MOCK_ORDERS } = await import("@/lib/mockData");
@@ -162,13 +163,17 @@ export default function OrdersPage() {
   }, [status, search, startDate, endDate, minAmount, maxAmount]);
 
   useEffect(() => {
+    // Realtime below drives live updates; this is only a missed-event
+    // safety net, so 5 min (and skip if the tab is hidden).
     const pollInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       fetchOrders(true);
-    }, 60000); // 60s background fallback
+    }, 5 * 60 * 1000);
 
     let refreshTimeout: NodeJS.Timeout;
     const debouncedRefresh = () => {
-      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+      if (typeof document !== 'undefined' && document.hidden) return;
+      const isInteracting = document.activeElement?.tagName === 'INPUT' ||
                            document.activeElement?.tagName === 'TEXTAREA' ||
                            document.querySelector('[role="dialog"]');
       if (isInteracting) return;
@@ -191,7 +196,7 @@ export default function OrdersPage() {
   }, [page, status, search, startDate, endDate, minAmount, maxAmount, fetchOrders, supabase]);
 
   async function handleShiprocketSync() {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Shiprocket sync simulated!");
       return;
@@ -221,7 +226,7 @@ export default function OrdersPage() {
 
 
   async function handleGlobalSync() {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Internal system sync simulated!");
       return;
@@ -247,7 +252,7 @@ export default function OrdersPage() {
     // This had zero demo-mode check and queries real orders/customers
     // directly - a demo session (a real Supabase login) could download up
     // to 5,000 real customer names/phones/orders as a CSV.
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.error("Export disabled in Demo Mode to protect real customer data");
       return;
     }
@@ -376,7 +381,7 @@ export default function OrdersPage() {
   }
 
   async function handleBulkDelete() {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success(`Demo: Deleted ${selectedIds.length} orders (local only)`);
       setOrders(prev => prev.filter(o => !selectedIds.includes(o.id)));

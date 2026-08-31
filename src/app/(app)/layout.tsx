@@ -8,6 +8,7 @@ import { AgentHeartbeat } from "@/components/AgentHeartbeat";
 import { AdminNotifier } from "@/components/AdminNotifier";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ModuleGuard } from "@/components/ModuleGuard";
 import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
@@ -22,6 +23,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <ChatProvider>
       <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-[#f8f7f4]">
         <AgentHeartbeat />
+        <ModuleGuard />
         <AdminNotifier />
         <CommandPalette />
         <NotificationBell />

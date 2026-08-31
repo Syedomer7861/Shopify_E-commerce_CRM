@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { isDemoMode } from "@/lib/demo";
 import { 
   Search, 
   RefreshCw, 
@@ -169,7 +170,7 @@ export default function TasksPage() {
     if (!profile) return; // Security boundary: must have a profile
     
     // Check for Demo Mode
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       if (!silent) setLoading(true);
       const { MOCK_TASKS } = await import("@/lib/mockData");
@@ -442,11 +443,14 @@ export default function TasksPage() {
 
     let refreshTimeout: NodeJS.Timeout;
     const debouncedRefresh = () => {
+      // Skip a backgrounded tab (refetches on focus) — cuts egress for
+      // users holding several CRM tabs open.
+      if (typeof document !== 'undefined' && document.hidden) return;
       // Sentinel: Prevent jarring refreshes if agent is currently typing or has a modal open
-      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+      const isInteracting = document.activeElement?.tagName === 'INPUT' ||
                            document.activeElement?.tagName === 'TEXTAREA' ||
                            document.querySelector('[role="dialog"]'); // Modal check
-      
+
       if (isInteracting) return;
 
       clearTimeout(refreshTimeout);
@@ -454,7 +458,8 @@ export default function TasksPage() {
     };
 
     fetchTasks();
-    const pollInterval = setInterval(() => debouncedRefresh(), 60000);
+    // Realtime below drives live updates; this is only a missed-event safety net.
+    const pollInterval = setInterval(() => debouncedRefresh(), 5 * 60 * 1000);
 
     // ── Supabase real-time: refresh on any task mutation ──
     const channel = supabase
@@ -490,6 +495,7 @@ export default function TasksPage() {
     if (profileLoading) return;
     let active = true;
     async function fetchOnCall() {
+      if (typeof document !== 'undefined' && document.hidden) return;
       const { data } = await supabase.from("profiles").select("id, name, live_state").not("live_state", "is", null);
       if (!active) return;
       const map: Record<string, string> = {};
@@ -502,7 +508,7 @@ export default function TasksPage() {
       setOnCallByTaskId(map);
     }
     fetchOnCall();
-    const interval = setInterval(fetchOnCall, 20000);
+    const interval = setInterval(fetchOnCall, 45000);
     return () => { active = false; clearInterval(interval); };
   }, [profileLoading, profile?.id, supabase]);
 
@@ -518,7 +524,7 @@ export default function TasksPage() {
 
   async function handleBulkCancel() {
     if (selectedIds.length === 0 || !canBulkManage) return;
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success(`Demo: Cancelled ${selectedIds.length} tasks (local only)`);
       setTasks(prev => prev.filter(t => !selectedIds.includes(t.id)));
@@ -537,7 +543,7 @@ export default function TasksPage() {
 
   async function handleBulkReassign() {
     if (selectedIds.length === 0 || !bulkReassignTo || !canBulkManage) return;
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success(`Demo: Reassigned ${selectedIds.length} tasks (local only)`);
       setTasks(prev => prev.map(t => selectedIds.includes(t.id) ? { ...t, assigned_to: bulkReassignTo } : t));
@@ -558,7 +564,7 @@ export default function TasksPage() {
 
   async function handleReassign(id: string, newOwnerId: string) {
     if (!newOwnerId) return;
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Task reassigned (local only)");
       setTasks(prev => prev.map(t => t.id === id ? { ...t, assigned_to: newOwnerId } : t));
@@ -590,7 +596,7 @@ export default function TasksPage() {
   }
 
   async function handleComplete(id: string, outcome: string, note: string, disposition?: string, followUpAction?: string) {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Task marked as completed (local only)");
       setTasks(prev => prev.filter(t => t.id !== id));
@@ -684,7 +690,7 @@ export default function TasksPage() {
   }
 
   async function handleReschedule(id: string, date: string, reason: string) {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success(`Demo: Task rescheduled to ${date} (local only)`);
       setTasks(prev => prev.map(t => t.id === id ? { ...t, due_date: date } : t));
@@ -746,7 +752,7 @@ export default function TasksPage() {
   }
 
   async function handleSkip(id: string) {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Task skipped (local only)");
       setTasks(prev => prev.filter(t => t.id !== id));
@@ -805,7 +811,7 @@ export default function TasksPage() {
   }
 
   async function handleGlobalSync() {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Global system sync simulated!");
       return;

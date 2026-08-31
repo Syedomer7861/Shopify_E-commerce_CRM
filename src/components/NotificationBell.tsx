@@ -7,6 +7,7 @@ import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { cn, isTypingInField } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import toast from "react-hot-toast";
+import { isDemoMode } from "@/lib/demo";
 
 // Per-user in-app notifications (see notifications table,
 // migrations/20260827_notifications_table.sql). Previously the only
@@ -53,7 +54,7 @@ export function NotificationBell() {
   // Demo profile.id ("demo-presenter-id") isn't a real uuid - querying a
   // uuid column with it 400s. Same guard every other real-data component
   // in this app uses for demo mode.
-  const isDemo = typeof document !== "undefined" && document.cookie.includes("crm-demo-mode=true");
+  const isDemo = typeof document !== "undefined" && isDemoMode();
   const userId = !isDemo ? profile?.id : null;
 
   const fetchNotifications = useCallback(async () => {

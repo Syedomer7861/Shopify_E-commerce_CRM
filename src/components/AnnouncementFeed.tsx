@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase";
 import { Megaphone, Pin, Star, Info, Bell, AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Modal } from "./ui";
+import { isDemoMode } from "@/lib/demo";
 
 type AnnouncementType = "Info" | "Important" | "Celebration" | "Alert";
 
@@ -66,7 +67,7 @@ export default function AnnouncementFeed() {
     // of TYPE_STYLES' keys (Info/Important/Celebration/Alert); real rows
     // satisfy the DB CHECK constraint, but skip the fetch entirely rather
     // than showing real internal announcements to a demo audience.
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setAnnouncements([
         {

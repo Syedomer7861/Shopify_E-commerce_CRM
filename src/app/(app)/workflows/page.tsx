@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { AccessDenied } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
+import { isDemoMode } from "@/lib/demo";
 
 const TRIGGERS = [
   { id: "order_placed", label: "Order Placed", desc: "When a new order is received from Shopify" },
@@ -30,7 +31,7 @@ export default function WorkflowManager() {
   });
 
   const fetchWorkflows = async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLoading(true);
       const { MOCK_WORKFLOWS } = await import("@/lib/mockData");
@@ -87,7 +88,7 @@ export default function WorkflowManager() {
 
   const handleSave = async () => {
     if (!formData.name) return toast.error("Name is required");
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Workflow Saved");
       setShowModal(false);
@@ -120,7 +121,7 @@ export default function WorkflowManager() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this workflow?")) return;
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Workflow deleted");
       setWorkflows(prev => prev.filter(wf => wf.id !== id));
@@ -136,7 +137,7 @@ export default function WorkflowManager() {
   };
 
   const handleToggleStatus = async (wf: any) => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success(`Demo: Workflow ${!wf.is_active ? 'Activated' : 'Paused'}`);
       setWorkflows(prev => prev.map(w => w.id === wf.id ? { ...w, is_active: !w.is_active } : w));

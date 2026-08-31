@@ -3,13 +3,14 @@ import { useEffect, useState, useCallback } from "react";
 import { CheckSquare, Users, TrendingUp, Shield } from "lucide-react";
 import { StatCard } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
+import { isDemoMode } from "@/lib/demo";
 
 export default function ManagerStatsGrid() {
   const [stats, setStats] = useState<any>(null);
   const supabase = createClient();
 
   const fetchStats = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setStats({
         auditQueue: 12,
@@ -28,8 +29,11 @@ export default function ManagerStatsGrid() {
   useEffect(() => {
     fetchStats();
 
-    // ── 60-second polling fallback ────────────────────────────
-    const poll = setInterval(fetchStats, 60_000);
+    // Realtime below drives updates; poll is only a missed-event safety net.
+    const poll = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchStats();
+    }, 3 * 60_000);
 
     // ── Supabase real-time: re-fetch when tasks or orders change
     const channel = supabase

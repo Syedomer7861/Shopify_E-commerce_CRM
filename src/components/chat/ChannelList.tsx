@@ -8,6 +8,7 @@ import { useCurrentProfile } from '@/hooks/useCurrentProfile';
 import { createClient } from '@/lib/supabase';
 import { NewChatModal } from './NewChatModal';
 import toast from 'react-hot-toast';
+import { isDemoMode } from "@/lib/demo";
 
 export function ChannelList() {
   const { activeChannel, setActiveChannel, socket, onlineUsers } = useChat();
@@ -29,7 +30,7 @@ export function ChannelList() {
     const userId = session?.user?.id;
     if (!userId) return;
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setChannels([
         { id: 'demo-channel-1', name: 'General', type: 'group', last_message_at: new Date().toISOString(), last_message_content: 'Sarah: Hey team, how is the NDR clearance going?' },
@@ -84,7 +85,12 @@ export function ChannelList() {
 
   useEffect(() => {
     fetchChannels();
-    const pollInterval = setInterval(fetchChannels, 60_000);
+    // Realtime below refreshes the list on new messages; poll is only a
+    // missed-event safety net.
+    const pollInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchChannels();
+    }, 3 * 60_000);
 
     // ── Supabase real-time: channel list refreshes on new messages ──
     let refreshTimeout: NodeJS.Timeout;

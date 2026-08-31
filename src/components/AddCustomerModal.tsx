@@ -7,6 +7,7 @@ import { logAuditEvent } from "@/lib/audit";
 import { normalizePhone } from "@/lib/phone-utils";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
+import { isDemoMode } from "@/lib/demo";
 
 interface AddCustomerModalProps {
   open: boolean;
@@ -37,7 +38,7 @@ export function AddCustomerModal({ open, onClose, onSuccess }: AddCustomerModalP
       return;
     }
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLoading(true);
       setTimeout(() => {

@@ -10,6 +10,7 @@ import { cn, formatDate, formatDateTime, timeAgo, formatCurrency } from "@/lib/u
 import toast from "react-hot-toast";
 import type { Customer, Order, Task, CallLog, AuditLog, RawCallLog } from "@/types";
 import { logAuditEvent } from "@/lib/audit";
+import { isDemoMode } from "@/lib/demo";
 
 export default function CustomerProfile({ params }: { params: { id: string } }) {
   const id = params.id;
@@ -78,7 +79,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
       .order("created_at", { ascending: false })
       .limit(200);
 
-    const isDemo = typeof document !== 'undefined' && document.cookie.includes("crm-demo-mode=true");
+    const isDemo = typeof document !== 'undefined' && isDemoMode();
     
     let recordingsData: any[] = [];
     if (isDemo) {
@@ -123,7 +124,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
   }, [fetchCustomerData]);
 
   async function handleSaveNote() {
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success("Demo: Note saved (local only)");
       return;
     }
@@ -151,7 +152,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
   }
 
   async function handleClearRTO() {
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success("Demo: RTO flag cleared (local only)");
       setCustomer(prev => prev ? { ...prev, rto_flag: false, rto_count: 0 } as any : null);
       setClearRtoModal(false);
@@ -343,7 +344,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                 <button 
                   onClick={async () => {
                     const newValue = !(customer as any).whatsapp_reminders_enabled;
-                    if (document.cookie.includes("crm-demo-mode=true")) {
+                    if (isDemoMode()) {
                       setCustomer(prev => prev ? { ...prev, whatsapp_reminders_enabled: newValue } as any : null);
                       toast.success(`Demo: WhatsApp reminders ${newValue ? "enabled" : "disabled"} (local only)`);
                       return;

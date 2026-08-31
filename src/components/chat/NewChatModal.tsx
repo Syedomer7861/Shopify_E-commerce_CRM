@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase';
 import { useChat } from '@/context/ChatContext';
 import { useCurrentProfile } from '@/hooks/useCurrentProfile';
 import toast from 'react-hot-toast';
+import { isDemoMode } from "@/lib/demo";
 
 export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [users, setUsers] = useState<any[]>([]);
@@ -50,7 +51,7 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
     // Demo mode is a real Supabase login, so without this guard clicking a
     // teammate here would create a real row in channels/channel_members -
     // this modal had no isDemo check at all before.
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       setActiveChannel({
         id: `demo-dm-${targetUser.id}`,
         name: targetUser.name,
@@ -134,7 +135,7 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
     // profile and adds all of them to the new channel. No guard at all
     // before - a demo session could have created a live broadcast group
     // visible to the whole real team.
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       setActiveChannel({
         id: `demo-group-${Date.now()}`,
         name: groupName.trim(),

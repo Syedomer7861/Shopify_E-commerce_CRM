@@ -190,6 +190,37 @@ export const MOCK_WORKFLOWS = [
   { id: "mock-wf-2", name: "Abandoned Recovery", trigger_event: "cart_abandoned", is_active: true, actions: [{ type: "create_task" }] },
 ];
 
+// ── Workspace (Spaces → Lists → Tasks) demo data ──────────────
+const _wsStatuses = [
+  { id: "backlog", name: "Backlog", color: "#8b8b8b", type: "not_started" },
+  { id: "in_progress", name: "In Progress", color: "#3b82f6", type: "active" },
+  { id: "review", name: "Review", color: "#f59e0b", type: "active" },
+  { id: "done", name: "Done", color: "#10b981", type: "done" },
+];
+const _iso = (d = 0) => new Date(Date.now() + d).toISOString();
+const _date = (days = 0) => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+
+export const MOCK_WORKSPACE = {
+  spaces: [
+    { id: "mock-space-mkt", name: "Marketing", color: "#3b82f6", icon: "megaphone", position: 1000, archived: false, my_role: "owner", member_count: 4, created_at: _iso(-9e8), updated_at: _iso() },
+    { id: "mock-space-ops", name: "Amazon Ops", color: "#f59e0b", icon: "shopping-cart", position: 2000, archived: false, my_role: "member", member_count: 3, created_at: _iso(-8e8), updated_at: _iso() },
+  ] as any[],
+  lists: [
+    { id: "mock-list-content", space_id: "mock-space-mkt", name: "Content Calendar", color: "#3b82f6", icon: null, position: 1000, archived: false, statuses: _wsStatuses, wip_limit: null, created_at: _iso(), updated_at: _iso() },
+    { id: "mock-list-ads", space_id: "mock-space-mkt", name: "Paid Ads", color: "#f43f5e", icon: null, position: 2000, archived: false, statuses: _wsStatuses, wip_limit: null, created_at: _iso(), updated_at: _iso() },
+    { id: "mock-list-listings", space_id: "mock-space-ops", name: "Listings", color: "#f59e0b", icon: null, position: 1000, archived: false, statuses: _wsStatuses, wip_limit: null, created_at: _iso(), updated_at: _iso() },
+  ] as any[],
+  tasks: [
+    { id: "mock-wt-1", list_id: "mock-list-content", parent_task_id: null, title: "Diwali offer — Instagram carousel", description: "Audience: repeat buyers. 5 slides.", status: "in_progress", priority: "high", start_date: null, due_date: _date(2), assignees: ["demo-agent-2"], watchers: [], tags: ["social", "festival"], custom_fields: {}, position: 1000, source_ref: null, recurrence: null, created_by: "demo-agent-1", created_at: _iso(), updated_at: _iso(), completed_at: null },
+    { id: "mock-wt-2", list_id: "mock-list-content", parent_task_id: null, title: "November newsletter draft", description: "", status: "backlog", priority: "normal", start_date: null, due_date: _date(5), assignees: [], watchers: [], tags: ["email"], custom_fields: {}, position: 2000, source_ref: null, recurrence: { freq: "monthly" }, created_by: "demo-agent-1", created_at: _iso(), updated_at: _iso(), completed_at: null },
+    { id: "mock-wt-3", list_id: "mock-list-content", parent_task_id: null, title: "Blog: 'How to store supplements'", description: "", status: "review", priority: "normal", start_date: null, due_date: _date(-1), assignees: ["demo-agent-1"], watchers: [], tags: ["seo", "blog"], custom_fields: {}, position: 3000, source_ref: null, recurrence: null, created_by: "demo-agent-1", created_at: _iso(), updated_at: _iso(), completed_at: null },
+    { id: "mock-wt-4", list_id: "mock-list-ads", parent_task_id: null, title: "Q4 Meta campaign — creatives", status: "in_progress", description: "", priority: "urgent", start_date: null, due_date: _date(1), assignees: ["demo-agent-1", "demo-agent-2"], watchers: [], tags: ["ads"], custom_fields: {}, position: 1000, source_ref: null, recurrence: null, created_by: "demo-agent-1", created_at: _iso(), updated_at: _iso(), completed_at: null },
+    { id: "mock-wt-5", list_id: "mock-list-ads", parent_task_id: null, title: "Google Shopping feed audit", status: "done", description: "", priority: "normal", start_date: null, due_date: _date(-3), assignees: ["demo-agent-2"], watchers: [], tags: ["ads"], custom_fields: {}, position: 2000, source_ref: null, recurrence: null, created_by: "demo-agent-1", created_at: _iso(), updated_at: _iso(), completed_at: _iso(-2e8) },
+    { id: "mock-wt-6", list_id: "mock-list-listings", parent_task_id: null, title: "New SKU: Omega-3 2000mg — listing", status: "backlog", description: "", priority: "high", start_date: null, due_date: _date(4), assignees: [], watchers: [], tags: ["amazon"], custom_fields: {}, position: 1000, source_ref: null, recurrence: null, created_by: "demo-agent-1", created_at: _iso(), updated_at: _iso(), completed_at: null },
+    { id: "mock-wt-7", list_id: "mock-list-listings", parent_task_id: null, title: "Fix suppressed listing — Vitamin D3", status: "in_progress", description: "", priority: "urgent", start_date: null, due_date: _date(0), assignees: ["demo-agent-1"], watchers: [], tags: ["amazon", "urgent"], custom_fields: {}, position: 2000, source_ref: null, recurrence: null, created_by: "demo-agent-1", created_at: _iso(), updated_at: _iso(), completed_at: null },
+  ] as any[],
+};
+
 export const MOCK_ANALYTICS = {
   sales: [
     { date: "2024-05-10", amount: 12000 },

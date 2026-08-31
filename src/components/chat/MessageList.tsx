@@ -9,6 +9,7 @@ import { useChat } from '@/context/ChatContext';
 import { createClient } from '@/lib/supabase';
 import { useCurrentProfile } from '@/hooks/useCurrentProfile';
 import toast from 'react-hot-toast';
+import { isDemoMode } from "@/lib/demo";
 
 export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
   const { activeChannel, socket, connected } = useChat();
@@ -27,7 +28,7 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
   const fetchMessages = useCallback(async () => {
     if (!activeChannel?.id) return;
     const channelId = activeChannel.id;
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     
     if (isDemo) {
       setLoading(true);
@@ -96,7 +97,7 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
   // ── Socket event listeners ────────────────────────────────────────────────────
   useEffect(() => {
     if (!socket) return;
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) return; // Ignore live socket events in demo mode
 
     const handleNewMessage = (message: any) => {

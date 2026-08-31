@@ -31,6 +31,17 @@ async function handleBackup(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // A full SELECT * of every table, uploaded off-site, was running daily and
+  // was the single largest source of Supabase egress (~3 GB/mo on a 0.14 GB
+  // DB). Supabase already takes its own automatic daily backups; this Drive
+  // copy only needs to be the off-platform safety net, so it now self-gates
+  // to Mondays (UTC) — same pattern as analytics-digest?range=weekly. The
+  // daily cron trigger stays as-is; six days out of seven this is a no-op.
+  const force = req.nextUrl.searchParams.get("force") === "true";
+  if (new Date().getUTCDay() !== 1 && !force) {
+    return NextResponse.json({ skipped: true, reason: "weekly backup runs Mondays (UTC); pass ?force=true to override" });
+  }
+
   // Service-role client, not the cookie-scoped one: this route has no
   // session to inherit (cron calls it directly), and the anon key gets
   // silently RLS-blocked on most tables - confirmed live, every table but
@@ -52,10 +63,8 @@ async function handleBackup(req: NextRequest) {
     "campaigns",
     "campaign_templates",
     "audit_logs",
-    "agent_activity_logs",
     "agent_attendance",
     "leaves",
-    "webhook_logs",
     "workflows",
     "workflow_instances",
     "workflow_logs",

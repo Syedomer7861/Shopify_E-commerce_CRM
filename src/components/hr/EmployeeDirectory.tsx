@@ -4,6 +4,7 @@ import { Users, Phone, Mail, MapPin, Briefcase, Calendar, CheckCircle, Clock, Pl
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui";
 import toast from "react-hot-toast";
+import { isDemoMode } from "@/lib/demo";
 
 type EmpStatus = "Active" | "Notice Period" | "Offboarded";
 interface Employee {
@@ -135,7 +136,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
     // routes through here - onboarding/offboarding checklist toggles,
     // Start Notice Period, and the profile edit form - would write to a
     // real employee's profile. This component had no isDemo check at all.
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success("Demo: employee updated (local only)");
       return;
     }
@@ -161,7 +162,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
   };
 
   const handleDelete = async (id: string) => {
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success("Demo: employee deleted (local only)");
       setEmployees(prev => prev.filter(e => e.id !== id));
       setSelected(null);
@@ -210,7 +211,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
       return;
     }
 
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       const optimisticEmployee: Employee = {
         id: `demo-${Date.now()}`,
         name: newEmp.name,

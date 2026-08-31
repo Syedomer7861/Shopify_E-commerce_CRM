@@ -5,6 +5,7 @@ import indiaMap from "@svg-maps/india";
 import { ChevronDown, HelpCircle, RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { formatDistanceToNow } from "date-fns";
+import { isDemoMode } from "@/lib/demo";
 
 // ---------------------------------------------------------------------------
 // Pull real SVG paths + viewBox from the npm package (no network call)
@@ -90,7 +91,7 @@ export default function IndiaSalesMap() {
 
   // ── Fetch from API ────────────────────────────────────────────────────────
   const fetchData = useCallback(async (silent = false) => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       if (!silent) setLoading(true);
       else setRefreshing(true);

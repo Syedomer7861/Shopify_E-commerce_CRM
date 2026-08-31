@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { isDemoMode } from "@/lib/demo";
 import { 
   Users, UserCheck, Clock, TrendingUp, History, 
   Search, Calendar, Filter, Eye, Phone, CheckCircle, 
@@ -46,7 +47,7 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
   const { profile: currentProfile } = useCurrentProfile();
 
   const fetchData = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLoading(true);
       setTimeout(() => {
@@ -106,7 +107,10 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
 
   useEffect(() => {
     fetchData();
-    const pollInterval = setInterval(() => fetchData(), 60000);
+    const pollInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchData();
+    }, 3 * 60000);
     
     return () => {
       if (typeof pollInterval !== "undefined") clearInterval(pollInterval);

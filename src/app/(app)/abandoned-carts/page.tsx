@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { PageHeader, Pagination } from "@/components/ui";
+import { isDemoMode } from "@/lib/demo";
 import { 
   ShoppingBag, 
   MessageCircle, 
@@ -42,7 +43,7 @@ export default function AbandonedCartsPage() {
   // caps a single select at 1000, and "Pending Recovery: 1000" was that
   // cap, not the real count.
   const fetchGlobalStats = useCallback(async () => {
-    if (document.cookie.includes("crm-demo-mode=true")) return;
+    if (isDemoMode()) return;
     try {
       const sumByStatus = async (status: string) => {
         const PAGE = 1000;
@@ -73,7 +74,7 @@ export default function AbandonedCartsPage() {
   }, [supabase]);
 
   const fetchCarts = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLoading(true);
       const { MOCK_ABANDONED_CARTS } = await import("@/lib/mockData");
@@ -132,8 +133,13 @@ export default function AbandonedCartsPage() {
     fetchCarts();
     fetchGlobalStats();
 
-    // ── 60s polling fallback ──
-    const poll = setInterval(() => { fetchCarts(); fetchGlobalStats(); }, 60_000);
+    // Realtime below drives live updates; poll is only a missed-event safety
+    // net, so 5 min and skip while the tab is backgrounded.
+    const poll = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchCarts();
+      fetchGlobalStats();
+    }, 5 * 60 * 1000);
 
     // ── Supabase real-time: new abandoned carts appear instantly ──
     const channel = supabase
@@ -151,7 +157,7 @@ export default function AbandonedCartsPage() {
   }, [fetchCarts, fetchGlobalStats, supabase]);
 
   async function deleteCart(id: string) {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Record deleted (local only)");
       setCarts(prev => prev.filter(c => c.id !== id));

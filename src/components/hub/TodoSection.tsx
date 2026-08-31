@@ -4,6 +4,7 @@ import { CheckCircle2, Circle, Plus, Trash2, Loader2, ListTodo, Star } from "luc
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { isDemoMode } from "@/lib/demo";
 
 export function TodoSection() {
   const [todos, setTodos] = useState<any[]>([]);
@@ -13,7 +14,7 @@ export function TodoSection() {
   const [tableError, setTableError] = useState(false);
   const supabase = useMemo(() => createClient(), []);
   const fetchTodos = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setTodos([
         { id: '1', text: 'Finish monthly sales report', priority: 'high', is_completed: false, created_at: new Date().toISOString() },
@@ -54,7 +55,7 @@ export function TodoSection() {
     e.preventDefault();
     if (!newTodo.trim()) return;
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       const mockTodo = {
         id: Math.random().toString(36).substr(2, 9),
@@ -96,7 +97,7 @@ export function TodoSection() {
   }
 
   async function toggleTodo(id: string, is_completed: boolean) {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setTodos(todos.map(t => t.id === id ? { ...t, is_completed: !is_completed } : t));
       toast.success("Status updated (Demo)");
@@ -117,7 +118,7 @@ export function TodoSection() {
   }
 
   async function deleteTodo(id: string) {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setTodos(todos.filter(t => t.id !== id));
       toast.success("Task removed (Demo)");

@@ -7,7 +7,19 @@ import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import type { Profile, UserPermissions } from "@/types";
 import { AccessDenied } from "@/components/ui";
-import { DEFAULT_PERMISSIONS, DEFAULT_HR_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS, hasPermission } from "@/lib/permissions";
+import { DEFAULT_PERMISSIONS, DEFAULT_HR_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS, DEFAULT_MARKETING_PERMISSIONS, NAV_MODULE_GROUPS, ALL_NAV_MODULES, allowedNavModules, normalizePermissions, hasPermission } from "@/lib/permissions";
+import { isDemoMode } from "@/lib/demo";
+
+const NAV_MODULE_LABELS: Record<string, string> = {
+  dashboard: "Dashboard", tasks: "Tasks", chat: "Chat", "my-hub": "My Hub",
+  customers: "Customers", orders: "Orders", calendar: "Calendar",
+  performance: "Performance", "request-creative": "Request Creative",
+  floor: "Live Floor", reports: "Analytics", "abandoned-carts": "Abandoned Carts",
+  "admin-logs": "Alert Logs", recordings: "Recordings", import: "Import",
+  campaigns: "Campaigns", templates: "Templates", workflows: "Workflows",
+  "system-health": "System Health", settings: "Settings",
+  team: "Team", hr: "HR", manager: "Manager Hub",
+};
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { logAuditEvent } from "@/lib/audit";
 
@@ -20,19 +32,21 @@ export default function TeamPage() {
   const [addModal, setAddModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   // New user state
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
 
   // New user state
-  const [newUser, setNewUser] = useState({ email: "", password: "", name: "", role: "agent" as "agent" | "admin" | "hr" | "manager" });
+  const [newUser, setNewUser] = useState({ email: "", password: "", name: "", role: "agent" as "agent" | "admin" | "hr" | "manager" | "marketing" });
   const { profile: currentProfile, loading: profileLoading } = useCurrentProfile();
 
   const supabase = createClient();
 
   const fetchProfiles = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLoading(true);
       const { MOCK_TEAM } = await import("@/lib/mockData");
@@ -74,7 +88,7 @@ export default function TeamPage() {
     if (!newUser.email || !newUser.password) return toast.error("Email and Password are required");
     if (newUser.password.length < 6) return toast.error("Password must be at least 6 characters");
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Team member created (local only)");
       setAddModal(false);
@@ -109,7 +123,8 @@ export default function TeamPage() {
         send_whatsapp: true,
         audit_tasks: true,
         manage_automations: false,
-      } : DEFAULT_PERMISSIONS,
+      } : newUser.role === "marketing" ? DEFAULT_MARKETING_PERMISSIONS
+        : DEFAULT_PERMISSIONS,
     });
 
     if (!res.success) {
@@ -132,7 +147,7 @@ export default function TeamPage() {
   async function handleRemoveMember(id: string) {
     if (!confirm("Are you sure you want to remove this team member? This action will permanently delete their account and access. This cannot be undone.")) return;
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Team member removed (local only)");
       setProfiles(prev => prev.filter(p => p.id !== id));
@@ -157,10 +172,50 @@ export default function TeamPage() {
     setIsUpdating(false);
   }
 
+  const toggleSelected = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  // Bulk activate / deactivate. Kept to the safe, fully-reversible ops —
+  // bulk delete stays one-at-a-time on purpose.
+  async function bulkSetActive(active: boolean) {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+
+    const isDemo = isDemoMode();
+    if (isDemo) {
+      setProfiles(prev => prev.map(p => ids.includes(p.id) ? { ...p, is_active: active } : p));
+      setSelectedIds(new Set());
+      toast.success(`Demo: ${ids.length} member(s) ${active ? "activated" : "deactivated"}`);
+      return;
+    }
+
+    setBulkBusy(true);
+    const { error } = await supabase.from("profiles").update({ is_active: active }).in("id", ids);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      await logAuditEvent({
+        entityType: "profile",
+        entityId: ids.join(","),
+        action: "update",
+        summary: `Bulk ${active ? "activated" : "deactivated"} ${ids.length} team member(s)`,
+      });
+      toast.success(`${ids.length} member(s) ${active ? "activated" : "deactivated"}`);
+      setSelectedIds(new Set());
+      fetchProfiles();
+    }
+    setBulkBusy(false);
+  }
+
   async function updateProfile(updates: Partial<Profile>) {
     if (!selectedProfile) return;
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Settings updated (local only)");
       setProfiles(prev => prev.map(p => p.id === selectedProfile.id ? { ...p, ...updates } : p));
@@ -195,9 +250,29 @@ export default function TeamPage() {
 
   const togglePermission = (key: keyof UserPermissions) => {
     if (!selectedProfile) return;
-    const current = selectedProfile.permissions || DEFAULT_PERMISSIONS;
+    // Seed from the role-aware effective set so a manager/hr/marketing user
+    // whose row is thin doesn't get reset to the agent default on first toggle.
+    const current = { ...normalizePermissions(selectedProfile), ...(selectedProfile.permissions || {}) };
     const updated = { ...current, [key]: !current[key] };
     updateProfile({ permissions: updated });
+  };
+
+  // Main-menu visibility. Absent nav_modules = every module (the default);
+  // touching a checkbox materialises the implicit "all" then edits it.
+  const toggleModule = (key: string) => {
+    if (!selectedProfile) return;
+    const perms = selectedProfile.permissions || DEFAULT_PERMISSIONS;
+    const cur: string[] = Array.isArray(perms.nav_modules)
+      ? perms.nav_modules
+      : (allowedNavModules(selectedProfile) ?? [...ALL_NAV_MODULES]);
+    const next = cur.includes(key) ? cur.filter(k => k !== key) : [...cur, key];
+    updateProfile({ permissions: { ...perms, nav_modules: next } });
+  };
+  const resetModules = () => {
+    if (!selectedProfile) return;
+    const perms = { ...(selectedProfile.permissions || DEFAULT_PERMISSIONS) };
+    delete (perms as any).nav_modules;
+    updateProfile({ permissions: perms });
   };
 
   const toggleSpecialization = (type: 'segments' | 'tasks', value: string) => {
@@ -218,7 +293,7 @@ export default function TeamPage() {
     if (!selectedProfile) return;
     if (newUpdatePassword.length < 6) return toast.error("Password must be at least 6 characters");
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Password reset simulated (local only)");
       setNewUpdatePassword("");
@@ -282,7 +357,7 @@ export default function TeamPage() {
           />
         </div>
         <div className="flex p-1 bg-gray-100 rounded-xl w-fit">
-          {["all", "admin", "manager", "hr", "agent", "demo"].map(role => (
+          {["all", "admin", "manager", "marketing", "hr", "agent", "demo"].map(role => (
             <button
               key={role}
               onClick={() => setRoleFilter(role)}
@@ -298,6 +373,24 @@ export default function TeamPage() {
           ))}
         </div>
       </div>
+
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 mb-4 p-3 rounded-xl bg-[#1c1c1c] text-white">
+          <span className="text-xs font-bold">{selectedIds.size} selected</span>
+          <button onClick={() => bulkSetActive(true)} disabled={bulkBusy}
+            className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-40">
+            {bulkBusy ? "…" : "Activate"}
+          </button>
+          <button onClick={() => bulkSetActive(false)} disabled={bulkBusy}
+            className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-40">
+            {bulkBusy ? "…" : "Deactivate"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())}
+            className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg hover:bg-white/10 ml-auto">
+            Clear
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
@@ -350,9 +443,21 @@ export default function TeamPage() {
               }}
             >
                <div className="flex items-center justify-between mb-3">
-                <div className="relative">
-                  <Avatar name={p.name || p.email} size="md" />
-                  <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white", dotColor, isOnline && "animate-pulse")} />
+                <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={() => toggleSelected(p.id)}
+                    aria-label={selectedIds.has(p.id) ? "Deselect" : "Select"}
+                    className={cn(
+                      "w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all",
+                      selectedIds.has(p.id) ? "bg-[#1c1c1c] border-[#1c1c1c] text-white" : "border-gray-200 hover:border-gray-400"
+                    )}
+                  >
+                    {selectedIds.has(p.id) && <CheckCircle2 className="w-2.5 h-2.5" />}
+                  </button>
+                  <div className="relative">
+                    <Avatar name={p.name || p.email} size="md" />
+                    <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white", dotColor, isOnline && "animate-pulse")} />
+                  </div>
                 </div>
                 <div className="flex items-center gap-1.5">
                   {p.is_demo && (
@@ -364,10 +469,11 @@ export default function TeamPage() {
                     "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border",
                     p.role === 'admin' && "bg-zinc-900 text-white border-zinc-900",
                     p.role === 'manager' && "bg-violet-50 text-violet-700 border-violet-100",
+                    p.role === 'marketing' && "bg-blue-50 text-blue-700 border-blue-100",
                     p.role === 'hr' && "bg-rose-50 text-rose-700 border-rose-100",
                     p.role === 'agent' && "bg-emerald-50 text-emerald-700 border-emerald-100"
                   )}>
-                    {p.role === 'hr' ? 'HR' : p.role}
+                    {p.role === 'hr' ? 'HR' : p.role === 'marketing' ? 'Workspace' : p.role}
                   </div>
                   <button onClick={() => handleRemoveMember(p.id)} className="p-1.5 text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
                     <Trash2 className="w-3.5 h-3.5" />
@@ -430,6 +536,7 @@ export default function TeamPage() {
               <option value="agent">Sales Agent</option>
               <option value="hr">HR (Staffing)</option>
               <option value="manager">Manager (Operations)</option>
+              <option value="marketing">Workspace (Boards &amp; Campaigns)</option>
               <option value="admin">Administrator</option>
             </select>
           </div>
@@ -481,8 +588,8 @@ export default function TeamPage() {
 
           <div className="space-y-3">
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Security Role</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-               <button 
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+               <button
                  onClick={() => updateProfile({ role: "agent", permissions: DEFAULT_PERMISSIONS })}
                  className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'agent' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
                >
@@ -496,14 +603,21 @@ export default function TeamPage() {
                  <div className={`text-xs font-bold ${selectedProfile?.role === 'hr' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>HR</div>
                  <div className="text-[9px] text-gray-400 mt-0.5">Staffing</div>
                </button>
-               <button 
+               <button
                  onClick={() => updateProfile({ role: "manager", permissions: DEFAULT_MANAGER_PERMISSIONS })}
                  className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'manager' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
                >
                  <div className={`text-xs font-bold ${selectedProfile?.role === 'manager' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>Manager</div>
                  <div className="text-[9px] text-gray-400 mt-0.5">Operations</div>
                </button>
-               <button 
+               <button
+                 onClick={() => updateProfile({ role: "marketing", permissions: DEFAULT_MARKETING_PERMISSIONS })}
+                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'marketing' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
+               >
+                 <div className={`text-xs font-bold ${selectedProfile?.role === 'marketing' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>Workspace</div>
+                 <div className="text-[9px] text-gray-400 mt-0.5">Boards & Campaigns</div>
+               </button>
+               <button
                  onClick={() => updateProfile({ role: "admin" })}
                  className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'admin' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
                >
@@ -525,9 +639,13 @@ export default function TeamPage() {
                   { key: "manage_customers", label: "Manage Customers & Segments", icon: Users },
                   { key: "send_whatsapp", label: "Send WhatsApp Messages", icon: MessageSquare },
                   { key: "audit_tasks", label: "Manager Oversight (Audit Tasks)", icon: Shield },
+                  { key: "manage_automations", label: "Manage Automations & Workflows", icon: Shield },
+                  { key: "manage_workspaces", label: "Workspace Admin (create/manage Spaces)", icon: Users },
                 ].map((perm) => {
                   const isAdmin = selectedProfile?.role === "admin";
-                  const has = isAdmin || (selectedProfile?.permissions as any)?.[perm.key];
+                  // Show the EFFECTIVE state (role default merged with any
+                  // per-user override), matching what the app actually enforces.
+                  const has = isAdmin || (normalizePermissions(selectedProfile) as any)?.[perm.key];
                   return (
                     <button 
                       key={perm.key} 
@@ -555,6 +673,65 @@ export default function TeamPage() {
                <p className="text-[9px] text-gray-400 italic text-center">Administrators have all permissions by default.</p>
              )}
           </div>
+
+          {/* Module Access — which Main-Menu items appear in this user's
+              sidebar. Unset = all visible. A Workspace-role user defaults to
+              a locked-down subset; widen it here per user. */}
+          {selectedProfile?.role !== "admin" && (
+            <div className="space-y-3 pt-4 border-t border-gray-100">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Module Access</label>
+                {Array.isArray(selectedProfile?.permissions?.nav_modules) && (
+                  <button onClick={resetModules} disabled={isUpdating}
+                    className="text-[9px] font-black text-rose-500 uppercase tracking-widest hover:underline">
+                    Reset to all
+                  </button>
+                )}
+              </div>
+              <p className="text-[9px] text-gray-400 leading-tight">
+                {Array.isArray(selectedProfile?.permissions?.nav_modules)
+                  ? "Only the checked pages show in this user's sidebar; typing a URL for the rest redirects away. Pages still enforce their own permission checks on top."
+                  : allowedNavModules(selectedProfile)
+                    ? "Workspace role: locked to the checked pages by default. Check more to widen this user's access."
+                    : "All pages visible (default). Uncheck any to restrict this user to a subset."}
+              </p>
+              {Object.entries(NAV_MODULE_GROUPS).map(([group, keys]) => (
+                <div key={group} className="space-y-1.5">
+                  <div className="text-[9px] font-black text-gray-300 uppercase tracking-widest">{group}</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {keys.map((key) => {
+                      const list = selectedProfile?.permissions?.nav_modules;
+                      const effective = allowedNavModules(selectedProfile);
+                      const has = Array.isArray(list)
+                        ? list.includes(key)
+                        : effective ? effective.includes(key) : true;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => toggleModule(key)}
+                          disabled={isUpdating}
+                          className={cn(
+                            "flex items-center justify-between p-2.5 rounded-lg border transition-all text-left",
+                            has ? "border-[#1c1c1c]/20 bg-[#1c1c1c]/5" : "border-gray-100 hover:border-gray-200"
+                          )}
+                        >
+                          <span className={cn("text-[11px] font-medium", has ? "text-[#1c1c1c]" : "text-gray-400")}>
+                            {NAV_MODULE_LABELS[key] || key}
+                          </span>
+                          <div className={cn(
+                            "w-4 h-4 rounded flex items-center justify-center transition-all flex-shrink-0",
+                            has ? "bg-[#1c1c1c] text-white" : "border-2 border-gray-100"
+                          )}>
+                            {has && <CheckCircle2 className="w-2.5 h-2.5" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Weekly Revenue Target - drives the "Recovered Revenue" progress
               bar on the agent's own dashboard (AgentStats.tsx). Defaults to

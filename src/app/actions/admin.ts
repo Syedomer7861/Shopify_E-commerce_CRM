@@ -32,7 +32,7 @@ export async function createTeamMemberServer({
   email: string;
   password: string;
   name: string;
-  role: "admin" | "agent" | "hr" | "manager";
+  role: "admin" | "agent" | "hr" | "manager" | "marketing";
   permissions: UserPermissions;
 }) {
   if (!(await requireAdminCaller())) return { success: false, error: "Unauthorized" };

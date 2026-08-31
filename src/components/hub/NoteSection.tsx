@@ -4,6 +4,7 @@ import { StickyNote, Plus, Trash2, Loader2, Save, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { isDemoMode } from "@/lib/demo";
 
 export function NoteSection() {
   const [mounted, setMounted] = useState(false);
@@ -21,7 +22,7 @@ export function NoteSection() {
 
 
   const fetchNotes = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setNotes([
         { id: '1', title: 'Product Launch Ideas', content: 'Consider bundling Krill Oil with the new Wellness Kit for a 15% discount.', created_at: new Date().toISOString() },
@@ -60,7 +61,7 @@ export function NoteSection() {
   async function addNote() {
     if (!newNote.content.trim()) return;
 
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       const mockNote = {
         id: Math.random().toString(36).substr(2, 9),
@@ -100,7 +101,7 @@ export function NoteSection() {
   }
 
   async function deleteNote(id: string) {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setNotes(notes.filter(n => n.id !== id));
       toast.success("Note deleted (Demo)");

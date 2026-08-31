@@ -17,9 +17,11 @@ export async function POST(req: NextRequest) {
 
     const { data: staleOrders, error: stError } = await supabase
       .from("orders")
-      .select("*, customer:customers(*)")
+      .select("id, customer_id, total_price, order_number, customer:customers(segment, total_orders, rto_flag)")
       .eq("delivery_status", "in_transit")
-      .lt("updated_at", staleThreshold.toISOString());
+      .lt("updated_at", staleThreshold.toISOString())
+      .order("updated_at", { ascending: true })
+      .limit(200); // work an oversized backlog down across runs, not in one fat read
 
     if (stError) throw stError;
     if (!staleOrders || staleOrders.length === 0) {
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     let escalatedCount = 0;
 
-    for (const order of staleOrders) {
+    for (const order of staleOrders as any[]) {
       // 2. Check if a transit_update task already exists for this order
       const { data: existingTask } = await supabase
         .from("tasks")

@@ -2,31 +2,33 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { isDemoMode } from "@/lib/demo";
 import { 
   LayoutDashboard, Users, ShoppingBag,
   Megaphone, Shield, Settings, Sparkles,
   LogOut, Zap, Calendar, BarChart2, Upload, CheckSquare, Plus, Loader2,
   UserCheck, Clock, FileText, ShieldCheck, Calculator, BellRing,
-  Activity, ShoppingCart, MessageSquare, Headphones, TrendingUp
+  Activity, ShoppingCart, MessageSquare, Headphones, TrendingUp, Gauge
 } from "lucide-react";
 import { cn, toDbDateString } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
 
-import { DEFAULT_PERMISSIONS, hasPermission, isAdmin } from "@/lib/permissions";
+import { DEFAULT_PERMISSIONS, hasPermission, isAdmin, isWorkspaceAdmin, allowedNavModules } from "@/lib/permissions";
 import { sendAdminNotification } from "@/lib/notifications";
 import { Modal } from "./ui";
 import { useChat } from "@/context/ChatContext";
 
 const nav = [
-  { label: "Dashboard",   href: "/dashboard",  icon: LayoutDashboard },
-  { label: "Tasks",       href: "/tasks",       icon: CheckSquare,   badge: "taskCount" },
-  { label: "Chat",        href: "/chat",        icon: MessageSquare, badge: "chatUnread" },
-  { label: "My Hub",       href: "/my-hub",      icon: Sparkles },
-  { label: "Customers",   href: "/customers",   icon: Users },
-  { label: "Orders",      href: "/orders",      icon: ShoppingBag },
-  { label: "Calendar",    href: "/calendar",    icon: Calendar },
-  { label: "Performance", href: "/performance",  icon: TrendingUp },
+  { key: "dashboard",   label: "Dashboard",   href: "/dashboard",  icon: LayoutDashboard },
+  { key: "tasks",       label: "Tasks",       href: "/tasks",       icon: CheckSquare,   badge: "taskCount" },
+  { key: "chat",        label: "Chat",        href: "/chat",        icon: MessageSquare, badge: "chatUnread" },
+  { key: "my-hub",      label: "My Hub",      href: "/my-hub",      icon: Sparkles },
+  { key: "customers",   label: "Customers",   href: "/customers",   icon: Users },
+  { key: "orders",      label: "Orders",      href: "/orders",      icon: ShoppingBag },
+  { key: "calendar",    label: "Calendar",    href: "/calendar",    icon: Calendar },
+  { key: "performance", label: "Performance", href: "/performance",  icon: TrendingUp },
+  { key: "request-creative", label: "Request Creative", href: "/workspace/request", icon: Megaphone },
 ];
 
 const adminNav = [
@@ -60,6 +62,7 @@ const managerNav = [
   { label: "Manager Hub", href: "/manager", icon: ShieldCheck },
 ];
 
+
 import type { Profile } from "@/types";
 
 export default function Sidebar() {
@@ -69,6 +72,7 @@ export default function Sidebar() {
   const supabase = useMemo(() => createClient(), []);
   const { unreadCount } = useChat();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [spaces, setSpaces] = useState<{ id: string; name: string; color: string | null }[]>([]);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [mounted, setMounted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -184,7 +188,7 @@ export default function Sidebar() {
 
       // Demo presenter view. Requires a real demo login - the cookie alone is
       // not enough, or anyone could hand themselves a manager-role profile.
-      const isDemo = document.cookie.includes("crm-demo-mode=true");
+      const isDemo = isDemoMode();
       if (isDemo) {
         const demoProfile: Profile = {
           id: "demo-presenter-id",
@@ -196,6 +200,9 @@ export default function Sidebar() {
           created_at: new Date().toISOString()
         } as any;
         setProfile(demoProfile);
+        import("@/lib/mockData").then((m) =>
+          setSpaces(m.MOCK_WORKSPACE.spaces.map((s: any) => ({ id: s.id, name: s.name, color: s.color })))
+        );
         return;
       }
       
@@ -218,6 +225,14 @@ export default function Sidebar() {
       setProfile(profile);
       fetchTaskCounts(user.id, profile.role, profile);
       fetchTodayAttendance(user.id);
+
+      // Workspace Spaces the user can see (RLS returns only accessible rows).
+      supabase
+        .from("mkt_spaces")
+        .select("id, name, color")
+        .eq("archived", false)
+        .order("position", { ascending: true })
+        .then(({ data }) => setSpaces((data as any[]) ?? []));
     } catch (err) {
       console.error("fetchProfile error:", err);
     }
@@ -341,7 +356,7 @@ export default function Sidebar() {
       // for every session, firing a real query against personal_reminders
       // (a UUID column) that Postgres correctly rejected every time in
       // demo mode. Harmless (silently swallowed below) but noisy.
-      if (document.cookie.includes("crm-demo-mode=true")) return;
+      if (isDemoMode()) return;
       const now = new Date().toISOString();
       const { data } = await supabase
         .from('personal_reminders')
@@ -523,6 +538,12 @@ export default function Sidebar() {
 
   const totalTasks = counts.due + counts.overdue;
   const adminUser = isAdmin(profile);
+  const allowedModules = allowedNavModules(profile);
+  const visibleNav = allowedModules ? nav.filter(n => allowedModules.includes(n.key)) : nav;
+  // For a user with an explicit module allowlist, also hide the Operations /
+  // Management / Human Capital links they aren't allowed. null allowlist
+  // (every normal user) -> never blocks anything.
+  const modBlocked = (key: string) => !!allowedModules && !allowedModules.includes(key);
 
   return (
     <aside className="w-full lg:w-64 lg:min-w-[256px] h-16 lg:h-screen bg-[#f7f4ed] flex flex-row lg:flex-col border-t lg:border-r border-[#eceae4] fixed bottom-0 lg:relative z-50 transition-all duration-300">
@@ -545,7 +566,7 @@ export default function Sidebar() {
         <div className="hidden lg:block text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3">Main Menu</div>
         
         {/* Core Mobile Navigation - Primary Items */}
-        {nav.map(({ label, href, icon: Icon, badge }) => {
+        {visibleNav.map(({ label, href, icon: Icon, badge }) => {
           const active = path === href || (href !== "/" && path.startsWith(href));
           const badgeValue = badge === "taskCount" ? totalTasks : (badge === "chatUnread" ? unreadCount : 0);
 
@@ -582,9 +603,9 @@ export default function Sidebar() {
         </button>
 
         {/* Desktop-only Secondary Menus (Hidden on mobile nav, moved to More menu) */}
-        {(adminUser || profile?.role === "hr" || profile?.role === "manager" || (profile?.permissions && Object.values(profile.permissions).some(v => v))) && (
+        {(adminUser || profile?.role === "hr" || profile?.role === "manager" || profile?.role === "marketing" || (profile?.permissions && Object.values(profile.permissions).some(v => v))) && (
           <div className="hidden lg:flex flex-col border-t lg:mt-4 border-[#eceae4]">
-            {(adminUser || profile?.role === "manager" || profile?.permissions?.audit_tasks) && (
+            {(adminUser || profile?.role === "manager" || profile?.permissions?.audit_tasks) && !modBlocked("manager") && (
               <>
                 <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Management</div>
                 {managerNav.map((item) => {
@@ -602,7 +623,7 @@ export default function Sidebar() {
               </>
             )}
 
-            {(adminUser || profile?.role === "hr") && (
+            {(adminUser || profile?.role === "hr") && !modBlocked("hr") && (
               <>
                 <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Human Capital</div>
                 {hrNav.map((item) => {
@@ -622,11 +643,51 @@ export default function Sidebar() {
               </>
             )}
 
+            {(isWorkspaceAdmin(profile) || spaces.length > 0) && (
+              <>
+                <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Workspace</div>
+                <Link href="/workspace/my" className={cn(
+                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
+                  path === "/workspace/my" ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
+                )}>
+                  <Sparkles className="w-4 h-4 flex-shrink-0 text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]" />
+                  <span className="flex-1">My Work</span>
+                </Link>
+                <Link href="/workspace/workload" className={cn(
+                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
+                  path === "/workspace/workload" ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
+                )}>
+                  <Gauge className="w-4 h-4 flex-shrink-0 text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]" />
+                  <span className="flex-1">Workload</span>
+                </Link>
+                {spaces.map((s) => {
+                  const active = path === "/workspace" && searchParams.get("space") === s.id;
+                  return (
+                    <Link key={s.id} href={`/workspace?space=${s.id}`} className={cn(
+                      "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
+                      active ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
+                    )}>
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: s.color ?? "#8b8b8b" }} />
+                      <span className="flex-1">{s.name}</span>
+                    </Link>
+                  );
+                })}
+                <Link href="/workspace" className={cn(
+                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
+                  path === "/workspace" && !searchParams.get("space") ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
+                )}>
+                  <LayoutDashboard className="w-4 h-4 flex-shrink-0 text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]" />
+                  <span className="flex-1">All Spaces</span>
+                </Link>
+              </>
+            )}
+
             <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Operations</div>
             {adminNav.map((item) => {
               const { label, href, icon: Icon, permission } = item;
               if (label === "Alert Logs" && !adminUser) return null;
               if (permission && !hasPermission(profile, permission as any)) return null;
+              if (modBlocked(href.slice(1))) return null;
               const active = path === href || (href !== "/" && path.startsWith(href));
               return (
                 <Link key={href} href={href} className={cn(
@@ -681,7 +742,7 @@ export default function Sidebar() {
 
            {/* Mobile Management/Admin Sections */}
            <div className="space-y-4 pt-4 border-t border-[#eceae4]">
-              {(adminUser || profile?.role === "manager" || profile?.permissions?.audit_tasks) && (
+              {(adminUser || profile?.role === "manager" || profile?.permissions?.audit_tasks) && !modBlocked("manager") && (
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Management</h4>
                   <div className="grid grid-cols-1 gap-1">
@@ -694,7 +755,7 @@ export default function Sidebar() {
                 </div>
               )}
 
-              {(adminUser || profile?.role === "hr") && (
+              {(adminUser || profile?.role === "hr") && !modBlocked("hr") && (
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Human Capital</h4>
                   <div className="grid grid-cols-1 gap-1">
@@ -707,12 +768,35 @@ export default function Sidebar() {
                 </div>
               )}
 
+              {(isWorkspaceAdmin(profile) || spaces.length > 0) && (
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Workspace</h4>
+                  <div className="grid grid-cols-1 gap-1">
+                    <Link href="/workspace/my" onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                      <Sparkles className="w-4 h-4 text-[#5f5f5d]" /> My Work
+                    </Link>
+                    <Link href="/workspace/workload" onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                      <Gauge className="w-4 h-4 text-[#5f5f5d]" /> Workload
+                    </Link>
+                    {spaces.map(s => (
+                      <Link key={s.id} href={`/workspace?space=${s.id}`} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color ?? "#8b8b8b" }} /> {s.name}
+                      </Link>
+                    ))}
+                    <Link href="/workspace" onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                      <LayoutDashboard className="w-4 h-4 text-[#5f5f5d]" /> All Spaces
+                    </Link>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Operations</h4>
                 <div className="grid grid-cols-1 gap-1 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                   {adminNav.map(item => {
                     if (item.label === "Alert Logs" && !adminUser) return null;
                     if (item.permission && !hasPermission(profile, item.permission as any)) return null;
+                    if (modBlocked(item.href.slice(1))) return null;
                     return (
                       <Link key={item.label} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
                         <item.icon className="w-4 h-4 text-[#5f5f5d]" /> {item.label}

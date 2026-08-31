@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import { isDemoMode } from "@/lib/demo";
 import { 
   Users, 
   UserCheck, 
@@ -165,7 +166,7 @@ function HRDashboardContent() {
   }, []);
 
   const fetchData = useCallback(async () => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLoading(true);
       setTimeout(() => {
@@ -310,8 +311,13 @@ function HRDashboardContent() {
   useEffect(() => {
     if (!profileLoading && (currentProfile?.role === 'admin' || currentProfile?.role === 'hr')) {
       fetchData();
-      refreshInterval.current = setInterval(fetchData, 60_000);
-      
+      // Realtime below drives live updates; poll is only a missed-event
+      // safety net (fetchData hits /api/hr/data, which is expensive).
+      refreshInterval.current = setInterval(() => {
+        if (typeof document !== 'undefined' && document.hidden) return;
+        fetchData();
+      }, 3 * 60_000);
+
       const supabase = createClient();
       const channel = supabase
         .channel("hr-live")

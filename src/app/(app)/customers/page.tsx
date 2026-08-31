@@ -6,6 +6,7 @@ import { Search, UserPlus, Phone, AlertTriangle, RefreshCw, Trash2, CheckCircle,
 import Link from "next/link";
 import { PageHeader, SegmentBadge, Avatar, EmptyState, Modal, Pagination } from "@/components/ui";
 import dynamic from 'next/dynamic';
+import { isDemoMode } from "@/lib/demo";
 const AddCustomerModal = dynamic(() => import("@/components/AddCustomerModal").then(mod => mod.AddCustomerModal), { 
   loading: () => <div className="p-8 text-center"><RefreshCw className="w-6 h-6 animate-spin mx-auto text-gray-300" /></div>
 });
@@ -49,7 +50,7 @@ export default function CustomersPage() {
   const supabase = createClient();
 
   const fetchCustomers = useCallback(async (silent = false) => {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       if (!silent) setLoading(true);
       const { MOCK_CUSTOMERS } = await import("@/lib/mockData");
@@ -127,13 +128,15 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
+    // Realtime below drives live updates; poll is only a missed-event safety net.
     const pollInterval = setInterval(() => {
       debouncedRefresh();
-    }, 60000);
+    }, 5 * 60 * 1000);
 
     let refreshTimeout: NodeJS.Timeout;
     const debouncedRefresh = () => {
-      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+      if (typeof document !== 'undefined' && document.hidden) return;
+      const isInteracting = document.activeElement?.tagName === 'INPUT' ||
                            document.activeElement?.tagName === 'TEXTAREA' ||
                            document.querySelector('[role="dialog"]');
       if (isInteracting) return;
@@ -156,7 +159,7 @@ export default function CustomersPage() {
   }, [fetchCustomers, supabase]);
 
   async function handleGlobalSync() {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Customer data sync simulated!");
       return;
@@ -193,7 +196,7 @@ export default function CustomersPage() {
   }
 
   async function handleBulkDelete() {
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success(`Demo: Deleted ${selectedIds.length} customers (local only)`);
       setCustomers(prev => prev.filter(c => !selectedIds.includes(c.id)));

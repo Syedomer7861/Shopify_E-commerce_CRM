@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
 import { timeAgo, cn } from "@/lib/utils";
 import { Activity, Zap, ShoppingBag, CheckCircle2, AlertTriangle, User, RefreshCw } from "lucide-react";
+import { isDemoMode } from "@/lib/demo";
 
 export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[] }) {
   const [logs, setLogs] = useState<any[]>(initialLogs);
@@ -11,7 +12,7 @@ export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       setLogs([
         { id: 'm1', source: 'shopify', topic: 'order_paid', created_at: new Date(Date.now() - 60000).toISOString(), payload: { data: { customer_name: 'Rahul Kumar', total_price: '₹2,450' } } },

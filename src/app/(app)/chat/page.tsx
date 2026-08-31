@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import { useCurrentProfile } from '@/hooks/useCurrentProfile';
+import { isDemoMode } from "@/lib/demo";
 
 export default function ChatPage() {
   const { activeChannel, connected } = useChat();
@@ -60,7 +61,7 @@ export default function ChatPage() {
   const handleClearHistory = async () => {
     if (!activeChannel) return;
     if (!canClearHistory) return toast.error("Only admins and managers can clear conversation history");
-    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: History cleared (local only)");
       return;

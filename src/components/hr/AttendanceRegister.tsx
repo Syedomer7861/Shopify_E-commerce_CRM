@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Calendar, Clock, Plus, Sun, Moon, Sunset, CheckCircle, X, ChevronLeft, ChevronRight, Zap, BarChart3, Timer, Coffee, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "react-hot-toast";
+import { isDemoMode } from "@/lib/demo";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, Legend,
@@ -107,7 +108,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
 
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success(`Demo: ${agentName} marked ${status} on ${dateStr} (local only)`);
       return;
     }
@@ -137,7 +138,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
   };
 
   const setShift = async (agentId: string, agentName: string, shift: ShiftType) => {
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success(`Demo: ${agentName} moved to ${shift} shift (local only)`);
       return;
     }
@@ -164,7 +165,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
   const addHoliday = async () => {
     if (!newHoliday.date || !newHoliday.name) return;
 
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success("Demo: holiday added (local only)");
       setNewHoliday({ date: "", name: "", type: "National" });
       return;
@@ -196,7 +197,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
   const deleteHoliday = async (id: string | undefined) => {
     if (!id) return;
 
-    if (document.cookie.includes("crm-demo-mode=true")) {
+    if (isDemoMode()) {
       toast.success("Demo: holiday removed (local only)");
       return;
     }

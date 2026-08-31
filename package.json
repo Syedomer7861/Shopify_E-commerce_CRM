@@ -12,6 +12,7 @@
     "verify": "node scripts/check-route-guards.mjs && node scripts/check-chat-bus.mjs && node scripts/check-rate-limit.mjs && node scripts/check-attendance-engine.mjs && node scripts/check-phone-utils.mjs && node scripts/check-order-dedup.mjs && node scripts/check-hr-benchmark.mjs && node scripts/check-revenue-attribution.mjs && node scripts/check-unmask-safety.mjs && node scripts/check-shiprocket-status-mapping.mjs"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^17.0.0",
     "@supabase/ssr": "^0.4.0",
     "@supabase/supabase-js": "^2.104.1",
     "@svg-maps/india": "^2.0.0",
