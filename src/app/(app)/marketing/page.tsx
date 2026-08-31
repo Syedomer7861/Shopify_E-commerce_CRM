@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LayoutGrid, List as ListIcon, Calendar as CalendarIcon, Table2, BarChart2, Plus, RefreshCw, Megaphone, Sparkles, Inbox, Zap } from "lucide-react";
+import { LayoutGrid, List as ListIcon, Calendar as CalendarIcon, Table2, BarChart2, Plus, RefreshCw, Megaphone, Sparkles, Inbox, Zap, Settings2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { PageHeader, AccessDenied, Modal } from "@/components/ui";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ import MarketingCalendar from "@/components/marketing/MarketingCalendar";
 import MarketingTable from "@/components/marketing/MarketingTable";
 import MarketingDashboard from "@/components/marketing/MarketingDashboard";
 import AutomationsModal from "@/components/marketing/AutomationsModal";
+import ListSettingsModal from "@/components/marketing/ListSettingsModal";
 import TaskPanel from "@/components/marketing/TaskPanel";
 import type { MktList, MktTask, Profile, MktPriority, MktTemplate, MktIntakeRequest } from "@/types";
 
@@ -44,6 +45,7 @@ export default function MarketingWorkspace() {
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [allTasks, setAllTasks] = useState<MktTask[]>([]);
   const [automationsOpen, setAutomationsOpen] = useState(false);
+  const [listSettingsOpen, setListSettingsOpen] = useState(false);
   const [intakeOpen, setIntakeOpen] = useState(false);
   const [intake, setIntake] = useState<MktIntakeRequest[]>([]);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
@@ -299,18 +301,28 @@ export default function MarketingWorkspace() {
       {/* List tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {lists.map((l) => (
-          <button
+          <div
             key={l.id}
-            onClick={() => setQuery({ list: l.id })}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap border transition-all",
+              "flex items-center rounded-lg text-[11px] font-bold whitespace-nowrap border transition-all",
               l.id === activeListId
                 ? "bg-[#1c1c1c] text-white border-[#1c1c1c]"
                 : "bg-white text-[#5f5f5d] border-[#eceae4] hover:border-[#1c1c1c]/30"
             )}
           >
-            {l.name}
-          </button>
+            <button onClick={() => setQuery({ list: l.id })} className="px-3 py-1.5">
+              {l.name}
+            </button>
+            {l.id === activeListId && (
+              <button
+                onClick={() => setListSettingsOpen(true)}
+                aria-label="List settings"
+                className="pr-2.5 pl-0.5 py-1.5 text-white/60 hover:text-white"
+              >
+                <Settings2 className="w-3 h-3" />
+              </button>
+            )}
+          </div>
         ))}
         {lists.length === 0 && (
           <span className="text-[11px] text-[#5f5f5d] font-medium">No lists yet — create one to start.</span>
@@ -408,6 +420,18 @@ export default function MarketingWorkspace() {
       )}
 
       <AutomationsModal open={automationsOpen} onClose={() => setAutomationsOpen(false)} list={activeList} members={members} />
+
+      <ListSettingsModal
+        open={listSettingsOpen}
+        list={activeList}
+        tasks={tasks}
+        onClose={() => setListSettingsOpen(false)}
+        onSaved={loadLists}
+        onArchived={async () => {
+          await loadLists();
+          setQuery({ list: null });
+        }}
+      />
 
       <Modal open={intakeOpen} onClose={() => setIntakeOpen(false)} title="Creative requests" maxWidth="max-w-lg">
         <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
