@@ -1,6 +1,6 @@
 "use client";
 import { createClient } from "@/lib/supabase";
-import type { MktList, MktTask, MktComment, MktTemplate, MktIntakeRequest, MktAutomation } from "@/types";
+import type { MktList, MktTask, MktComment, MktTemplate, MktIntakeRequest, MktAutomation, MktSpace, MktSpaceMember } from "@/types";
 
 export type MktAttachment = {
   id: string;
@@ -24,10 +24,47 @@ async function j<T>(res: Response): Promise<T> {
 }
 
 export const marketingApi = {
-  listLists: (includeArchived = false) =>
-    fetch(`/api/marketing/lists${includeArchived ? "?archived=1" : ""}`).then((r) => j<MktList[]>(r)),
+  // ── Spaces ──────────────────────────────────────────────
+  listSpaces: () => fetch("/api/marketing/spaces").then((r) => j<MktSpace[]>(r)),
 
-  createList: (payload: Partial<MktList>) =>
+  createSpace: (payload: { name: string; color?: string; icon?: string }) =>
+    fetch("/api/marketing/spaces", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then((r) => j<MktSpace>(r)),
+
+  updateSpace: (id: string, patch: Partial<MktSpace>) =>
+    fetch(`/api/marketing/spaces/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    }).then((r) => j<MktSpace>(r)),
+
+  deleteSpace: (id: string) => fetch(`/api/marketing/spaces/${id}`, { method: "DELETE" }).then((r) => j(r)),
+
+  listSpaceMembers: (spaceId: string) =>
+    fetch(`/api/marketing/spaces/${spaceId}/members`).then((r) => j<MktSpaceMember[]>(r)),
+
+  addSpaceMember: (spaceId: string, userId: string, role: "owner" | "member" = "member") =>
+    fetch(`/api/marketing/spaces/${spaceId}/members`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId, role }),
+    }).then((r) => j<MktSpaceMember>(r)),
+
+  removeSpaceMember: (spaceId: string, userId: string) =>
+    fetch(`/api/marketing/spaces/${spaceId}/members?user_id=${userId}`, { method: "DELETE" }).then((r) => j(r)),
+
+  // ── Lists ───────────────────────────────────────────────
+  listLists: (spaceId?: string, includeArchived = false) => {
+    const qs = new URLSearchParams();
+    if (spaceId) qs.set("space_id", spaceId);
+    if (includeArchived) qs.set("archived", "1");
+    return fetch(`/api/marketing/lists?${qs.toString()}`).then((r) => j<MktList[]>(r));
+  },
+
+  createList: (payload: Partial<MktList> & { space_id: string }) =>
     fetch("/api/marketing/lists", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -102,11 +139,11 @@ export const marketingApi = {
   listTemplates: (kind?: "task" | "list") =>
     fetch(`/api/marketing/templates${kind ? `?kind=${kind}` : ""}`).then((r) => j<MktTemplate[]>(r)),
 
-  applyTemplate: (templateId: string, listId?: string) =>
+  applyTemplate: (templateId: string, opts: { listId?: string; spaceId?: string }) =>
     fetch("/api/marketing/templates/apply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ template_id: templateId, list_id: listId }),
+      body: JSON.stringify({ template_id: templateId, list_id: opts.listId, space_id: opts.spaceId }),
     }).then((r) => j<{ list?: MktList; list_id?: string; taskCount: number }>(r)),
 
   listIntake: () => fetch("/api/marketing/intake").then((r) => j<MktIntakeRequest[]>(r)),

@@ -13,7 +13,7 @@ import { cn, toDbDateString } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
 
-import { DEFAULT_PERMISSIONS, hasPermission, isAdmin } from "@/lib/permissions";
+import { DEFAULT_PERMISSIONS, hasPermission, isAdmin, isWorkspaceAdmin } from "@/lib/permissions";
 import { sendAdminNotification } from "@/lib/notifications";
 import { Modal } from "./ui";
 import { useChat } from "@/context/ChatContext";
@@ -27,7 +27,7 @@ const nav = [
   { label: "Orders",      href: "/orders",      icon: ShoppingBag },
   { label: "Calendar",    href: "/calendar",    icon: Calendar },
   { label: "Performance", href: "/performance",  icon: TrendingUp },
-  { label: "Request Creative", href: "/marketing/request", icon: Megaphone },
+  { label: "Request Creative", href: "/workspace/request", icon: Megaphone },
 ];
 
 const adminNav = [
@@ -61,12 +61,6 @@ const managerNav = [
   { label: "Manager Hub", href: "/manager", icon: ShieldCheck },
 ];
 
-const marketingNav = [
-  { label: "Board",     href: "/marketing",                icon: LayoutDashboard },
-  { label: "Calendar",  href: "/marketing?view=calendar",  icon: Calendar },
-  { label: "Table",     href: "/marketing?view=table",     icon: FileText },
-  { label: "Insights",  href: "/marketing?view=dashboard", icon: BarChart2 },
-];
 
 import type { Profile } from "@/types";
 
@@ -77,6 +71,7 @@ export default function Sidebar() {
   const supabase = useMemo(() => createClient(), []);
   const { unreadCount } = useChat();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [spaces, setSpaces] = useState<{ id: string; name: string; color: string | null }[]>([]);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [mounted, setMounted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -226,6 +221,14 @@ export default function Sidebar() {
       setProfile(profile);
       fetchTaskCounts(user.id, profile.role, profile);
       fetchTodayAttendance(user.id);
+
+      // Workspace Spaces the user can see (RLS returns only accessible rows).
+      supabase
+        .from("mkt_spaces")
+        .select("id, name, color")
+        .eq("archived", false)
+        .order("position", { ascending: true })
+        .then(({ data }) => setSpaces((data as any[]) ?? []));
     } catch (err) {
       console.error("fetchProfile error:", err);
     }
@@ -630,23 +633,28 @@ export default function Sidebar() {
               </>
             )}
 
-            {(adminUser || profile?.role === "marketing" || hasPermission(profile, "manage_marketing" as any)) && (
+            {(isWorkspaceAdmin(profile) || spaces.length > 0) && (
               <>
-                <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Marketing</div>
-                {marketingNav.map((item) => {
-                  const itemView = item.href.includes("?") ? new URLSearchParams(item.href.split("?")[1]).get("view") : null;
-                  const currentView = searchParams.get("view");
-                  const active = itemView ? (path === "/marketing" && currentView === itemView) : (path === "/marketing" && !currentView);
+                <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Workspace</div>
+                {spaces.map((s) => {
+                  const active = path === "/workspace" && searchParams.get("space") === s.id;
                   return (
-                    <Link key={item.href} href={item.href} className={cn(
+                    <Link key={s.id} href={`/workspace?space=${s.id}`} className={cn(
                       "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
                       active ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
                     )}>
-                      <item.icon className={cn("w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-105", active ? "text-[#fcfbf8]" : "text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]")} />
-                      <span className="flex-1">{item.label}</span>
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: s.color ?? "#8b8b8b" }} />
+                      <span className="flex-1">{s.name}</span>
                     </Link>
                   );
                 })}
+                <Link href="/workspace" className={cn(
+                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
+                  path === "/workspace" && !searchParams.get("space") ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
+                )}>
+                  <LayoutDashboard className="w-4 h-4 flex-shrink-0 text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]" />
+                  <span className="flex-1">All Spaces</span>
+                </Link>
               </>
             )}
 
@@ -735,15 +743,18 @@ export default function Sidebar() {
                 </div>
               )}
 
-              {(adminUser || profile?.role === "marketing" || hasPermission(profile, "manage_marketing" as any)) && (
+              {(isWorkspaceAdmin(profile) || spaces.length > 0) && (
                 <div className="space-y-2">
-                  <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Marketing</h4>
+                  <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Workspace</h4>
                   <div className="grid grid-cols-1 gap-1">
-                    {marketingNav.map(item => (
-                      <Link key={item.href} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
-                        <item.icon className="w-4 h-4 text-[#5f5f5d]" /> {item.label}
+                    {spaces.map(s => (
+                      <Link key={s.id} href={`/workspace?space=${s.id}`} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color ?? "#8b8b8b" }} /> {s.name}
                       </Link>
                     ))}
+                    <Link href="/workspace" onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                      <LayoutDashboard className="w-4 h-4 text-[#5f5f5d]" /> All Spaces
+                    </Link>
                   </div>
                 </div>
               )}
