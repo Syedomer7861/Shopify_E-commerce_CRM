@@ -199,6 +199,9 @@ export default function Sidebar() {
           created_at: new Date().toISOString()
         } as any;
         setProfile(demoProfile);
+        import("@/lib/mockData").then((m) =>
+          setSpaces(m.MOCK_WORKSPACE.spaces.map((s: any) => ({ id: s.id, name: s.name, color: s.color })))
+        );
         return;
       }
       

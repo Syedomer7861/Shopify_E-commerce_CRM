@@ -120,6 +120,10 @@ export default function WorkspacePage() {
   useEffect(() => {
     if (profileLoading || !profile) return;
     loadSpaces();
+    if (typeof document !== "undefined" && document.cookie.includes("crm-demo-mode=true")) {
+      import("@/lib/mockData").then((m) => setMembers(m.MOCK_TEAM as unknown as Profile[]));
+      return;
+    }
     createClient()
       .from("profiles")
       .select("id, name, email, role")
