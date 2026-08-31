@@ -8,6 +8,42 @@ export const revalidate = 0;
 // 1000-row pages is usually a couple seconds, but not guaranteed under 10.
 export const maxDuration = 60;
 
+// Shiprocket stores one courier_name per service tier ("Delhivery Surface",
+// "Delhivery Air 500gm", "Xpressbees B2C 1 K.G"...). Grouping by the raw string
+// produced 40+ near-duplicate bars. Collapse to the parent brand.
+const COURIER_ALIASES: [RegExp, string][] = [
+  [/delhivery/i, "Delhivery"],
+  [/blue\s*dart|bluedart/i, "BlueDart"],
+  [/xpress\s*bees|xpressbees/i, "XpressBees"],
+  [/ecom\s*express|ecomexpress/i, "Ecom Express"],
+  [/\bdtdc\b/i, "DTDC"],
+  [/shadowfax/i, "Shadowfax"],
+  [/ekart/i, "Ekart"],
+  [/amazon/i, "Amazon Shipping"],
+  [/india\s*post|speed\s*post|postal/i, "India Post"],
+  [/fedex/i, "FedEx"],
+  [/professional/i, "Professional Couriers"],
+  [/trackon/i, "Trackon"],
+  [/\bgati\b/i, "Gati"],
+  [/wow\s*express/i, "WOW Express"],
+  [/smartr/i, "SMARTR"],
+];
+
+function normalizeCourier(raw: unknown): string | null {
+  const s = String(raw ?? "").trim();
+  if (!s) return null;
+  for (const [re, label] of COURIER_ALIASES) if (re.test(s)) return label;
+  const c = s
+    .replace(/\d+(\.\d+)?\s*(k\.?\s?g|kgs?|gms?|grams?)\b/gi, " ")
+    .replace(/\b(surface|air|express|prepaid|cod|category|priority|standard|lite|heavy|domestic|b2c|b2b|reverse|forward)\b/gi, " ")
+    .replace(/[^\w\s&-]/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  if (!c || c.length < 3 || /^\d+$/.test(c)) return null;
+  if (/^(typo|incident|test|na|null|undefined|shiprocket|manual|self)$/i.test(c)) return null;
+  return c.replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
 export async function GET(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
@@ -58,8 +94,8 @@ export async function GET(req: NextRequest) {
       if (status === "in-transit" || status === "shipped") inTransitCount++;
 
       // Per Courier Stats
-      if (order.courier_name) {
-        const courier = order.courier_name;
+      const courier = normalizeCourier(order.courier_name);
+      if (courier) {
         if (!courierStats[courier]) {
           courierStats[courier] = { delivered: 0, rto: 0, total: 0 };
         }
@@ -69,14 +105,20 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    const courierResult = Object.entries(courierStats).map(([name, s]) => ({
-      name,
-      delivered: s.delivered,
-      rto: s.rto,
-      successRate: s.total > 0 ? (s.delivered / s.total) * 100 : 0,
-      rtoRate: s.total > 0 ? (s.rto / s.total) * 100 : 0,
-      total: s.total
-    })).sort((a, b) => b.successRate - a.successRate);
+    // Rank by shipment volume (what a manager actually compares), drop
+    // negligible tails, and cap the chart so it can't grow unbounded.
+    const courierResult = Object.entries(courierStats)
+      .map(([name, s]) => ({
+        name,
+        delivered: s.delivered,
+        rto: s.rto,
+        successRate: s.total > 0 ? (s.delivered / s.total) * 100 : 0,
+        rtoRate: s.total > 0 ? (s.rto / s.total) * 100 : 0,
+        total: s.total,
+      }))
+      .filter((c) => c.total >= 3)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 12);
 
     // Map status stats to chart format
     const statusResult = Object.entries(statusStats).map(([name, value]) => ({

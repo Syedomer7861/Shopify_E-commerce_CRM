@@ -353,16 +353,16 @@ export default function LogisticsPulse() {
             </div>
           </div>
 
-          <div className="w-full" style={{ height: `${Math.max(350, couriers.length * 50)}px` }}>
+          <div className="w-full" style={{ height: `${Math.min(560, Math.max(300, couriers.length * 44))}px` }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={couriers} layout="vertical" margin={{ left: 20, right: 40, top: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#eceae4" />
                 <XAxis type="number" hide />
-                <YAxis 
-                  dataKey="name" 
-                  type="category" 
+                <YAxis
+                  dataKey="name"
+                  type="category"
                   tick={{ fontSize: 10, fontWeight: 900, fill: '#1c1c1c', letterSpacing: '0.05em' }}
-                  width={160}
+                  width={130}
                   interval={0}
                   axisLine={false}
                   tickLine={false}

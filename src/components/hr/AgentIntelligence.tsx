@@ -46,10 +46,10 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
 
   const { profile: currentProfile } = useCurrentProfile();
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (silent = false) => {
     const isDemo = isDemoMode();
     if (isDemo) {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setTimeout(() => {
         setData({
           agents: [
@@ -73,7 +73,7 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
       return;
     }
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const start = startOfDay(new Date(dateRange.start)).toISOString();
       const end = endOfDay(new Date(dateRange.end)).toISOString();
@@ -99,7 +99,7 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
       }
     } catch (err) {
       console.error("Failed to fetch agent intelligence:", err);
-      toast.error("Failed to sync agent data");
+      if (!silent) toast.error("Failed to sync agent data");
     } finally {
       setLoading(false);
     }
@@ -107,9 +107,11 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
 
   useEffect(() => {
     fetchData();
+    // Background refresh: silent = no skeleton flash, no error toast while the
+    // manager is reading the panel. Also pauses when the tab is hidden.
     const pollInterval = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
-      fetchData();
+      fetchData(true);
     }, 3 * 60000);
     
     return () => {
@@ -175,8 +177,8 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
               onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
             />
           </div>
-          <button 
-            onClick={fetchData}
+          <button
+            onClick={() => fetchData()}
             disabled={loading}
             className="btn-primary py-3 px-6 text-[10px] font-black uppercase tracking-widest gap-2"
           >
