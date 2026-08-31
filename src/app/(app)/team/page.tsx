@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import type { Profile, UserPermissions } from "@/types";
 import { AccessDenied } from "@/components/ui";
-import { DEFAULT_PERMISSIONS, DEFAULT_HR_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS, DEFAULT_MARKETING_PERMISSIONS, ALL_NAV_MODULES, allowedNavModules, hasPermission } from "@/lib/permissions";
+import { DEFAULT_PERMISSIONS, DEFAULT_HR_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS, DEFAULT_MARKETING_PERMISSIONS, ALL_NAV_MODULES, allowedNavModules, normalizePermissions, hasPermission } from "@/lib/permissions";
 
 const NAV_MODULE_LABELS: Record<string, string> = {
   dashboard: "Dashboard", tasks: "Tasks", chat: "Chat", "my-hub": "My Hub",
@@ -202,7 +202,9 @@ export default function TeamPage() {
 
   const togglePermission = (key: keyof UserPermissions) => {
     if (!selectedProfile) return;
-    const current = selectedProfile.permissions || DEFAULT_PERMISSIONS;
+    // Seed from the role-aware effective set so a manager/hr/marketing user
+    // whose row is thin doesn't get reset to the agent default on first toggle.
+    const current = { ...normalizePermissions(selectedProfile), ...(selectedProfile.permissions || {}) };
     const updated = { ...current, [key]: !current[key] };
     updateProfile({ permissions: updated });
   };
@@ -563,7 +565,9 @@ export default function TeamPage() {
                   { key: "manage_workspaces", label: "Workspace Admin (create/manage Spaces)", icon: Users },
                 ].map((perm) => {
                   const isAdmin = selectedProfile?.role === "admin";
-                  const has = isAdmin || (selectedProfile?.permissions as any)?.[perm.key];
+                  // Show the EFFECTIVE state (role default merged with any
+                  // per-user override), matching what the app actually enforces.
+                  const has = isAdmin || (normalizePermissions(selectedProfile) as any)?.[perm.key];
                   return (
                     <button 
                       key={perm.key} 

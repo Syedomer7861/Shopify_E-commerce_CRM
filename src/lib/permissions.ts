@@ -82,12 +82,18 @@ export function allowedNavModules(profile: Partial<Profile> | null | undefined):
   return null;
 }
 
+// Role default is the FLOOR, not the final word: a per-user `permissions`
+// object saved on the profile is merged on top, so an admin's checkbox in
+// Team → Edit actually sticks for hr/manager/marketing users too (it used
+// to be silently ignored — the role default was returned verbatim).
 export function normalizePermissions(profile: Partial<Profile> | null | undefined): UserPermissions {
-  if (profile?.role === "hr") return DEFAULT_HR_PERMISSIONS;
-  if (profile?.role === "manager") return DEFAULT_MANAGER_PERMISSIONS;
-  if (profile?.role === "marketing") return DEFAULT_MARKETING_PERMISSIONS;
+  const base =
+    profile?.role === "hr" ? DEFAULT_HR_PERMISSIONS :
+    profile?.role === "manager" ? DEFAULT_MANAGER_PERMISSIONS :
+    profile?.role === "marketing" ? DEFAULT_MARKETING_PERMISSIONS :
+    DEFAULT_PERMISSIONS;
   return {
-    ...DEFAULT_PERMISSIONS,
+    ...base,
     ...(profile?.permissions || {}),
   };
 }
