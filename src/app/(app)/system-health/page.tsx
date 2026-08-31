@@ -74,7 +74,10 @@ export default function SystemHealthPage() {
     if (profileLoading) return;
     if (!isAdmin(profile)) { setLoading(false); return; }
     runCheck();
-    const interval = setInterval(() => runCheck(true), 60000);
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      runCheck(true);
+    }, 60000);
     return () => clearInterval(interval);
   }, [profileLoading, profile, runCheck]);
 

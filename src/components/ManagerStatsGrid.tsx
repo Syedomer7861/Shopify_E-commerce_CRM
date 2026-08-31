@@ -28,8 +28,11 @@ export default function ManagerStatsGrid() {
   useEffect(() => {
     fetchStats();
 
-    // ── 60-second polling fallback ────────────────────────────
-    const poll = setInterval(fetchStats, 60_000);
+    // Realtime below drives updates; poll is only a missed-event safety net.
+    const poll = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchStats();
+    }, 3 * 60_000);
 
     // ── Supabase real-time: re-fetch when tasks or orders change
     const channel = supabase

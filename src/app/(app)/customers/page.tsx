@@ -127,13 +127,15 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
+    // Realtime below drives live updates; poll is only a missed-event safety net.
     const pollInterval = setInterval(() => {
       debouncedRefresh();
-    }, 60000);
+    }, 5 * 60 * 1000);
 
     let refreshTimeout: NodeJS.Timeout;
     const debouncedRefresh = () => {
-      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+      if (typeof document !== 'undefined' && document.hidden) return;
+      const isInteracting = document.activeElement?.tagName === 'INPUT' ||
                            document.activeElement?.tagName === 'TEXTAREA' ||
                            document.querySelector('[role="dialog"]');
       if (isInteracting) return;

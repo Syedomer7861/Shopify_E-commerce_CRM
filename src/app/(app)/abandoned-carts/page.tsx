@@ -132,8 +132,13 @@ export default function AbandonedCartsPage() {
     fetchCarts();
     fetchGlobalStats();
 
-    // ── 60s polling fallback ──
-    const poll = setInterval(() => { fetchCarts(); fetchGlobalStats(); }, 60_000);
+    // Realtime below drives live updates; poll is only a missed-event safety
+    // net, so 5 min and skip while the tab is backgrounded.
+    const poll = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchCarts();
+      fetchGlobalStats();
+    }, 5 * 60 * 1000);
 
     // ── Supabase real-time: new abandoned carts appear instantly ──
     const channel = supabase

@@ -84,7 +84,12 @@ export function ChannelList() {
 
   useEffect(() => {
     fetchChannels();
-    const pollInterval = setInterval(fetchChannels, 60_000);
+    // Realtime below refreshes the list on new messages; poll is only a
+    // missed-event safety net.
+    const pollInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchChannels();
+    }, 3 * 60_000);
 
     // ── Supabase real-time: channel list refreshes on new messages ──
     let refreshTimeout: NodeJS.Timeout;

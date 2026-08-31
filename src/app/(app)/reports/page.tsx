@@ -630,14 +630,15 @@ export default function ReportsPage() {
   useEffect(() => {
     if (activeTab !== "agents" && activeTab !== "attendance" && activeTab !== "overview") return;
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       // Interaction Sentinel
-      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+      const isInteracting = document.activeElement?.tagName === 'INPUT' ||
                            document.activeElement?.tagName === 'TEXTAREA' ||
                            document.querySelector('[role="dialog"]');
       if (isInteracting) return;
-      
+
       fetchAnalytics(true);
-    }, 60000); // Throttled to 60s for reports
+    }, 3 * 60000); // safety-net refresh; realtime + manual reload cover the rest
     return () => clearInterval(interval);
   }, [activeTab, fetchAnalytics]);
 

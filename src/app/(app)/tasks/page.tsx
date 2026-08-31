@@ -442,11 +442,14 @@ export default function TasksPage() {
 
     let refreshTimeout: NodeJS.Timeout;
     const debouncedRefresh = () => {
+      // Skip a backgrounded tab (refetches on focus) — cuts egress for
+      // users holding several CRM tabs open.
+      if (typeof document !== 'undefined' && document.hidden) return;
       // Sentinel: Prevent jarring refreshes if agent is currently typing or has a modal open
-      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+      const isInteracting = document.activeElement?.tagName === 'INPUT' ||
                            document.activeElement?.tagName === 'TEXTAREA' ||
                            document.querySelector('[role="dialog"]'); // Modal check
-      
+
       if (isInteracting) return;
 
       clearTimeout(refreshTimeout);
@@ -454,7 +457,8 @@ export default function TasksPage() {
     };
 
     fetchTasks();
-    const pollInterval = setInterval(() => debouncedRefresh(), 60000);
+    // Realtime below drives live updates; this is only a missed-event safety net.
+    const pollInterval = setInterval(() => debouncedRefresh(), 5 * 60 * 1000);
 
     // ── Supabase real-time: refresh on any task mutation ──
     const channel = supabase
@@ -490,6 +494,7 @@ export default function TasksPage() {
     if (profileLoading) return;
     let active = true;
     async function fetchOnCall() {
+      if (typeof document !== 'undefined' && document.hidden) return;
       const { data } = await supabase.from("profiles").select("id, name, live_state").not("live_state", "is", null);
       if (!active) return;
       const map: Record<string, string> = {};
@@ -502,7 +507,7 @@ export default function TasksPage() {
       setOnCallByTaskId(map);
     }
     fetchOnCall();
-    const interval = setInterval(fetchOnCall, 20000);
+    const interval = setInterval(fetchOnCall, 45000);
     return () => { active = false; clearInterval(interval); };
   }, [profileLoading, profile?.id, supabase]);
 

@@ -15,10 +15,12 @@ export async function POST(req: NextRequest) {
 
     const { data: staleTasks, error: stError } = await supabase
       .from("tasks")
-      .select("*, customer:customers(*)")
+      .select("id, created_at, order_id, customer:customers(last_wa_inbound_at)")
       .eq("task_type", "final_followup")
       .eq("status", "pending")
-      .lt("created_at", staleThreshold.toISOString());
+      .lt("created_at", staleThreshold.toISOString())
+      .order("created_at", { ascending: true })
+      .limit(200); // cap the per-run read; the rest resume next run
 
     if (stError) throw stError;
     if (!staleTasks || staleTasks.length === 0) {
@@ -29,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     let closedCount = 0;
 
-    for (const task of staleTasks) {
+    for (const task of staleTasks as any[]) {
       // 2. Check for inbound activity since task creation
       const lastInbound = task.customer?.last_wa_inbound_at;
       const taskCreated = new Date(task.created_at);

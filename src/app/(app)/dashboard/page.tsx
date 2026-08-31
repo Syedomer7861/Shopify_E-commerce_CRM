@@ -432,6 +432,9 @@ export default function Dashboard() {
   }, [syncing, fetchDashboardData]);
 
   const debouncedRefresh = useCallback(() => {
+    // Don't poll a backgrounded tab — it refetches on focus anyway. Cuts
+    // egress for users who keep several CRM tabs open.
+    if (typeof document !== 'undefined' && document.hidden) return;
     // Sentinel: Prevent refreshes during active user input or modal open
     const isInteracting = typeof document !== 'undefined' && (
                          document.activeElement?.tagName === 'INPUT' || 
@@ -444,13 +447,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-    const pollInterval = setInterval(() => debouncedRefresh(), 60000);
+    // Realtime (settings heartbeat below) drives live updates; this poll is
+    // just a safety net for a missed event, so 5 min is plenty. Was 60s and
+    // duplicated by a second identical 60s timer — both collapsed here.
+    const pollInterval = setInterval(() => debouncedRefresh(), 5 * 60 * 1000);
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    
-    // HYBRID POLLING: Fallback poll every 60 seconds to ensure feed stays fresh
-    const pollTimer = setInterval(() => {
-      fetchDashboardData(true); // silent fetch
-    }, 60000);
 
     // REAL-TIME UPDATES: Listen for global sync heartbeat
     const settingsChannel = supabase
@@ -485,7 +486,6 @@ export default function Dashboard() {
       supabase.removeChannel(settingsChannel);
       clearInterval(pollInterval);
       clearInterval(timer);
-      clearInterval(pollTimer);
       clearInterval(syncHeartbeat);
       clearInterval(countdownTimer);
     };

@@ -79,7 +79,10 @@ export default function FloorViewPage() {
     // Sync Floor click, so agent status/tasks/revenue silently went stale
     // the moment someone stopped clicking. 60s polling, matching the
     // fallback interval every other live-data page in this app already uses.
-    const poll = setInterval(fetchFloorData, 60_000);
+    const poll = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchFloorData();
+    }, 60_000);
     return () => clearInterval(poll);
   }, [fetchFloorData]);
 

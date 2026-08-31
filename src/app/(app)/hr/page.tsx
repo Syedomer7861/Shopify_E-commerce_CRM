@@ -310,8 +310,13 @@ function HRDashboardContent() {
   useEffect(() => {
     if (!profileLoading && (currentProfile?.role === 'admin' || currentProfile?.role === 'hr')) {
       fetchData();
-      refreshInterval.current = setInterval(fetchData, 60_000);
-      
+      // Realtime below drives live updates; poll is only a missed-event
+      // safety net (fetchData hits /api/hr/data, which is expensive).
+      refreshInterval.current = setInterval(() => {
+        if (typeof document !== 'undefined' && document.hidden) return;
+        fetchData();
+      }, 3 * 60_000);
+
       const supabase = createClient();
       const channel = supabase
         .channel("hr-live")

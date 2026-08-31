@@ -110,6 +110,7 @@ export default function CampaignManager() {
     const activeCampaignsExist = campaigns.some(c => c.status === "running");
     if (activeCampaignsExist || selectedCampaignId) {
       const timer = setInterval(() => {
+        if (typeof document !== 'undefined' && document.hidden) return;
         fetchData();
         if (selectedCampaignId) openLogs(selectedCampaignId);
       }, 3000); // Poll every 3 seconds for smooth real-time updates!

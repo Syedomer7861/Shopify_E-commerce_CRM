@@ -106,7 +106,10 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
 
   useEffect(() => {
     fetchData();
-    const pollInterval = setInterval(() => fetchData(), 60000);
+    const pollInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchData();
+    }, 3 * 60000);
     
     return () => {
       if (typeof pollInterval !== "undefined") clearInterval(pollInterval);

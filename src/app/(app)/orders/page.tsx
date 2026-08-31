@@ -162,13 +162,17 @@ export default function OrdersPage() {
   }, [status, search, startDate, endDate, minAmount, maxAmount]);
 
   useEffect(() => {
+    // Realtime below drives live updates; this is only a missed-event
+    // safety net, so 5 min (and skip if the tab is hidden).
     const pollInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       fetchOrders(true);
-    }, 60000); // 60s background fallback
+    }, 5 * 60 * 1000);
 
     let refreshTimeout: NodeJS.Timeout;
     const debouncedRefresh = () => {
-      const isInteracting = document.activeElement?.tagName === 'INPUT' || 
+      if (typeof document !== 'undefined' && document.hidden) return;
+      const isInteracting = document.activeElement?.tagName === 'INPUT' ||
                            document.activeElement?.tagName === 'TEXTAREA' ||
                            document.querySelector('[role="dialog"]');
       if (isInteracting) return;

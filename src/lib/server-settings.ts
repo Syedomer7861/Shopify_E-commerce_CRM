@@ -3,12 +3,38 @@ const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 export { SETTINGS_ID };
 
 /**
- * Reads system settings from the DB.
+ * The settings row is ~100 columns (every secret + every WhatsApp/email
+ * template) and was re-read from the DB on every cron tick, webhook, and
+ * many API routes — several times per invocation once token helpers are
+ * counted. It changes rarely, so a short in-process memo cuts most of that
+ * egress. Per serverless instance; a config change reaches background jobs
+ * within TTL_MS (or immediately via clearSettingsCache() on write).
+ */
+const SETTINGS_TTL_MS = 60_000;
+let _settingsCache: { at: number; data: any } | null = null;
+
+/** Drop the memo so the next read hits the DB. Call after any settings write. */
+export function clearSettingsCache() {
+  _settingsCache = null;
+}
+
+/**
+ * Reads system settings from the DB (memoized for SETTINGS_TTL_MS).
  * Tries the provided client first (supports RLS-aware authenticated routes).
  * If no settings row is found (e.g. RLS blocks anon access), automatically retries
  * with the service-role admin client so webhooks, crons, and public routes always work.
  */
 export async function getSystemSettings(supabase: any) {
+  if (_settingsCache && Date.now() - _settingsCache.at < SETTINGS_TTL_MS) {
+    // Shallow copy so a caller that mutates the result can't poison the cache.
+    return _settingsCache.data ? { ..._settingsCache.data } : _settingsCache.data;
+  }
+  const fresh = await fetchSystemSettings(supabase);
+  _settingsCache = { at: Date.now(), data: fresh };
+  return fresh ? { ...fresh } : fresh;
+}
+
+async function fetchSystemSettings(supabase: any) {
   // Helper to get admin client lazily (avoid importing at top-level to prevent circular deps)
   const getAdminClient = () => {
     const { createClient } = require("@supabase/supabase-js");
@@ -101,6 +127,7 @@ export async function getShiprocketToken(supabase: any) {
     shiprocket_token: token,
     shiprocket_token_expires_at: expiresAt.toISOString()
   }).eq("id", settings.id);
+  clearSettingsCache(); // the memo would otherwise serve the pre-refresh token
 
   return token;
 }
@@ -183,6 +210,7 @@ export async function getShopifyAccessToken(supabase: any) {
   }
 
   await supabase.from("settings").update(updateData).eq("id", settings.id);
+  clearSettingsCache(); // the memo would otherwise serve the pre-refresh token
 
   return refreshedToken;
 }

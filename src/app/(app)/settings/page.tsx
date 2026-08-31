@@ -563,9 +563,13 @@ export default function SettingsPage() {
     fetchSettings();
     fetchAvailableProducts();
     
-    // WhatsApp status polling
+    // WhatsApp status polling — 15s is fresh enough for a connection light,
+    // and skip while the tab is backgrounded.
     fetchStatus();
-    const interval = setInterval(fetchStatus, 5000);
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchStatus();
+    }, 15000);
 
     return () => {
       clearInterval(interval);
