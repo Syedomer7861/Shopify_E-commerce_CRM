@@ -31,6 +31,8 @@ export default function TeamPage() {
   const [addModal, setAddModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   // New user state
   const [searchTerm, setSearchTerm] = useState("");
@@ -167,6 +169,46 @@ export default function TeamPage() {
       fetchProfiles();
     }
     setIsUpdating(false);
+  }
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  // Bulk activate / deactivate. Kept to the safe, fully-reversible ops —
+  // bulk delete stays one-at-a-time on purpose.
+  async function bulkSetActive(active: boolean) {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+
+    const isDemo = document.cookie.includes("crm-demo-mode=true");
+    if (isDemo) {
+      setProfiles(prev => prev.map(p => ids.includes(p.id) ? { ...p, is_active: active } : p));
+      setSelectedIds(new Set());
+      toast.success(`Demo: ${ids.length} member(s) ${active ? "activated" : "deactivated"}`);
+      return;
+    }
+
+    setBulkBusy(true);
+    const { error } = await supabase.from("profiles").update({ is_active: active }).in("id", ids);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      await logAuditEvent({
+        entityType: "profile",
+        entityId: ids.join(","),
+        action: "update",
+        summary: `Bulk ${active ? "activated" : "deactivated"} ${ids.length} team member(s)`,
+      });
+      toast.success(`${ids.length} member(s) ${active ? "activated" : "deactivated"}`);
+      setSelectedIds(new Set());
+      fetchProfiles();
+    }
+    setBulkBusy(false);
   }
 
   async function updateProfile(updates: Partial<Profile>) {
@@ -331,6 +373,24 @@ export default function TeamPage() {
         </div>
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 mb-4 p-3 rounded-xl bg-[#1c1c1c] text-white">
+          <span className="text-xs font-bold">{selectedIds.size} selected</span>
+          <button onClick={() => bulkSetActive(true)} disabled={bulkBusy}
+            className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-40">
+            {bulkBusy ? "…" : "Activate"}
+          </button>
+          <button onClick={() => bulkSetActive(false)} disabled={bulkBusy}
+            className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-40">
+            {bulkBusy ? "…" : "Deactivate"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())}
+            className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg hover:bg-white/10 ml-auto">
+            Clear
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
           <div className="col-span-full py-12 text-center text-gray-400">
@@ -382,9 +442,21 @@ export default function TeamPage() {
               }}
             >
                <div className="flex items-center justify-between mb-3">
-                <div className="relative">
-                  <Avatar name={p.name || p.email} size="md" />
-                  <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white", dotColor, isOnline && "animate-pulse")} />
+                <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={() => toggleSelected(p.id)}
+                    aria-label={selectedIds.has(p.id) ? "Deselect" : "Select"}
+                    className={cn(
+                      "w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all",
+                      selectedIds.has(p.id) ? "bg-[#1c1c1c] border-[#1c1c1c] text-white" : "border-gray-200 hover:border-gray-400"
+                    )}
+                  >
+                    {selectedIds.has(p.id) && <CheckCircle2 className="w-2.5 h-2.5" />}
+                  </button>
+                  <div className="relative">
+                    <Avatar name={p.name || p.email} size="md" />
+                    <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white", dotColor, isOnline && "animate-pulse")} />
+                  </div>
                 </div>
                 <div className="flex items-center gap-1.5">
                   {p.is_demo && (
