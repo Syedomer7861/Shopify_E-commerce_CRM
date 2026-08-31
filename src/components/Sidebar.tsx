@@ -468,32 +468,37 @@ export default function Sidebar() {
 
   async function handleLogout() {
     document.cookie = "crm-demo-mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    
-    if (profile && profile.id !== "demo-presenter-id") {
-      try {
-        await supabase.from("profiles").update({ 
-          status: "offline", 
-          last_seen_at: new Date().toISOString(),
-          live_state: null
-        }).eq("id", profile.id);
-        
-        await supabase.from("agent_attendance").insert({
-          agent_id: profile.id,
-          status: "offline",
-          reason: "Manual Logout"
-        });
-      } catch (err) {
-        console.warn("Logout attendance logging failed:", err);
-      }
 
-      await sendAdminNotification(`🚪 Agent Log-out: *${profile.name || profile.email}* has signed off.`, "info");
+    // Best-effort bookkeeping — detached so a slow/hung /api/admin/notify
+    // (or Supabase write) can never block the actual sign-out + redirect.
+    if (profile && profile.id !== "demo-presenter-id") {
+      const p = profile;
+      void (async () => {
+        try {
+          await supabase.from("profiles").update({
+            status: "offline",
+            last_seen_at: new Date().toISOString(),
+            live_state: null,
+          }).eq("id", p.id);
+          await supabase.from("agent_attendance").insert({
+            agent_id: p.id,
+            status: "offline",
+            reason: "Manual Logout",
+          });
+        } catch (err) {
+          console.warn("Logout attendance logging failed:", err);
+        }
+        sendAdminNotification(`🚪 Agent Log-out: *${p.name || p.email}* has signed off.`, "info");
+      })();
     }
-    const { error } = await supabase.auth.signOut();
-    if (error) toast.error(error.message);
-    else {
-      toast.success("Signed out successfully");
-      router.push("/login");
+
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn("signOut error (redirecting anyway):", err);
     }
+    // Hard nav: clears any cached authed state and can't be wedged by a stuck router.
+    window.location.replace("/login");
   }
 
   async function handleRequestLeave() {
