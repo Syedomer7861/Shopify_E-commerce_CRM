@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { isDemoMode } from "@/lib/demo";
 import {
   LayoutGrid, List as ListIcon, Calendar as CalendarIcon, Table2, BarChart2,
-  Plus, RefreshCw, Layers, Sparkles, Inbox, Zap, Settings2, Target,
+  Plus, RefreshCw, Layers, Sparkles, Inbox, Zap, Settings2, Target, GanttChartSquare,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { PageHeader, AccessDenied, Modal } from "@/components/ui";
@@ -20,17 +20,19 @@ import MarketingDashboard from "@/components/marketing/MarketingDashboard";
 import AutomationsModal from "@/components/marketing/AutomationsModal";
 import ListSettingsModal from "@/components/marketing/ListSettingsModal";
 import SpaceSettingsModal from "@/components/marketing/SpaceSettingsModal";
+import MarketingGantt from "@/components/marketing/MarketingGantt";
 import GoalsModal from "@/components/marketing/GoalsModal";
 import TaskPanel from "@/components/marketing/TaskPanel";
 import type { MktList, MktTask, Profile, MktPriority, MktTemplate, MktIntakeRequest, MktSpace } from "@/types";
 
-type View = "board" | "list" | "calendar" | "table" | "dashboard";
+type View = "board" | "list" | "calendar" | "table" | "gantt" | "dashboard";
 
 const VIEW_ICONS: Record<View, typeof LayoutGrid> = {
   board: LayoutGrid,
   list: ListIcon,
   calendar: CalendarIcon,
   table: Table2,
+  gantt: GanttChartSquare,
   dashboard: BarChart2,
 };
 
@@ -86,7 +88,7 @@ export default function WorkspacePage() {
     [router, sp]
   );
 
-  const ALL_VIEWS: View[] = ["board", "list", "calendar", "table", "dashboard"];
+  const ALL_VIEWS: View[] = ["board", "list", "calendar", "table", "gantt", "dashboard"];
   const rawView = sp.get("view");
   const view: View = (ALL_VIEWS as string[]).includes(rawView ?? "") ? (rawView as View) : "board";
   const setView = (v: View) => setQuery({ view: v === "board" ? null : v });
@@ -638,6 +640,8 @@ export default function WorkspacePage() {
         <MarketingCalendar list={activeList} tasks={filtered} onOpenTask={(id) => setQuery({ task: id })} />
       ) : view === "table" ? (
         <MarketingTable list={activeList} tasks={filtered} members={members} onOpenTask={(id) => setQuery({ task: id })} />
+      ) : view === "gantt" ? (
+        <MarketingGantt list={activeList} tasks={filtered} onOpenTask={(id) => setQuery({ task: id })} />
       ) : (
         <div className="bg-white border border-[#eceae4] rounded-2xl divide-y divide-[#eceae4]">
           {filtered.length === 0 && (
