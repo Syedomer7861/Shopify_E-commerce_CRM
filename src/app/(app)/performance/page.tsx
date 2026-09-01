@@ -17,6 +17,7 @@ import html2canvas from "html2canvas";
 import { createClient } from "@/lib/supabase";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
+import WorkspacePerformance from "@/components/performance/WorkspacePerformance";
 import { cn, formatCurrency, toDbDateString, TASK_TYPE_CONFIG, DELIVERY_CONFIG, TASK_STATUS_CONFIG } from "@/lib/utils";
 import type { TaskType, DeliveryStatus, TaskStatus } from "@/types";
 import toast from "react-hot-toast";
@@ -103,7 +104,7 @@ export default function PerformancePage() {
   const [preset, setPreset] = useState<RangePreset>("30d");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
-  const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
+  const [agents, setAgents] = useState<{ id: string; name: string; role?: string }[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<any>(null);
@@ -130,7 +131,7 @@ export default function PerformancePage() {
       // fetchPerformance already returns mock data; give the picker a roster
       // so a demo user can actually trigger it.
       import("@/lib/mockData").then((m) =>
-        setAgents(m.MOCK_TEAM.map((a: any) => ({ id: a.id, name: a.name })))
+        setAgents(m.MOCK_TEAM.map((a: any) => ({ id: a.id, name: a.name, role: a.role })))
       );
       return;
     }
@@ -138,7 +139,7 @@ export default function PerformancePage() {
     // managers, HR, and Workspace-department staff have performance history too.
     supabase
       .from("profiles")
-      .select("id, name")
+      .select("id, name, role")
       .eq("is_active", true)
       .not("email", "ilike", "%demo%")
       .not("name", "ilike", "%demo%")
@@ -188,6 +189,13 @@ export default function PerformancePage() {
     const targetAgentId = canBrowseAgents ? selectedAgentId : profile?.id;
     if (!targetAgentId) { setLoading(false); return; }
 
+    // Marketing/Workspace users render <WorkspacePerformance>, which fetches
+    // its own data - skip the call-centre analytics call for them.
+    if (agents.find(a => a.id === targetAgentId)?.role === "marketing") {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     const { start, end } = getRange(preset, customStart, customEnd);
     try {
@@ -205,7 +213,7 @@ export default function PerformancePage() {
     } finally {
       if (mySeq === requestSeq.current) setLoading(false);
     }
-  }, [preset, customStart, customEnd, selectedAgentId, canBrowseAgents, profile?.id]);
+  }, [preset, customStart, customEnd, selectedAgentId, canBrowseAgents, profile?.id, agents]);
 
   useEffect(() => {
     if (profileLoading) return;
@@ -316,6 +324,11 @@ export default function PerformancePage() {
   const selectedAgentName = canBrowseAgents
     ? agents.find(a => a.id === selectedAgentId)?.name || ""
     : profile?.name || "Me";
+
+  // Workspace/marketing staff do task-board work, not calls - swap to the
+  // task-throughput view instead of showing them empty call/revenue cards.
+  const isWorkspaceUser =
+    canBrowseAgents && agents.find(a => a.id === selectedAgentId)?.role === "marketing";
 
   const EXPORT_HEADERS = ["Date", "Clock In", "Clock Out", "Work Hours", "Break Hours", "Net Hours", "Tasks", "Revenue"];
   const ACTIVITY_HEADERS = ["Time", "Type", "Description"];
@@ -634,7 +647,7 @@ export default function PerformancePage() {
               <input type="date" className="input text-xs h-9 w-[130px]" value={customEnd}
                 onChange={e => { setCustomEnd(e.target.value); setPreset("custom"); }} />
             </div>
-            {(!canBrowseAgents || selectedAgentId) && (
+            {(!canBrowseAgents || selectedAgentId) && !isWorkspaceUser && (
               <button onClick={() => setShowExport(true)}
                 className="h-9 px-3 rounded-lg text-[10px] font-black uppercase tracking-widest bg-[#1c1c1c] text-white flex items-center gap-1.5 hover:opacity-90 transition-all">
                 <Download className="w-3.5 h-3.5" /> Export
@@ -649,6 +662,12 @@ export default function PerformancePage() {
           <User className="w-10 h-10 text-gray-200 mx-auto mb-4" />
           <p className="text-sm font-bold text-gray-400">Select an agent to view their performance</p>
         </div>
+      ) : isWorkspaceUser ? (
+        <WorkspacePerformance
+          userId={selectedAgentId}
+          name={selectedAgentName}
+          range={getRange(preset, customStart, customEnd)}
+        />
       ) : loading ? (
         <div className="p-12 text-center text-gray-400 text-sm">Loading performance data...</div>
       ) : (
