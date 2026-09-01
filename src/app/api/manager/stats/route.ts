@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireInternal, hasInternalSecret, getAuthenticatedSession } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const maxDuration = 30;
+
 export async function GET(req: NextRequest) {
   const unauthorized = await requireInternal(req);
   if (unauthorized) return unauthorized;
@@ -20,45 +24,35 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = createServerClient();
+  const today = new Date().toISOString().split("T")[0];
 
   try {
-    // 1. Audit Queue (Tasks with status 'done' but not yet verified).
-    // Was missing is_processed_by_manager=false - counted every task ever
-    // completed, all-time, instead of the real actionable queue (the same
-    // filter ManagerTaskReview.tsx itself uses below this card). Grew
-    // forever and never reflected what a manager actually had left to do.
-    const { count: auditCount } = await supabase
-      .from("tasks")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "done")
-      .eq("is_processed_by_manager", false);
-
-    // 2. Active Agents (Profiles with status 'online'). Same demo exclusion
-    // used elsewhere - otherwise a demo login inflates this live KPI.
-    const { count: activeAgents } = await supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "online")
-      .not("email", "ilike", "%demo%")
-      .not("name", "ilike", "%demo%")
-      .or('is_demo.is.null,is_demo.eq.false');
-
-    // 3. NDR Resolved (Tasks with type 'ndr' and status 'done' today)
-    const today = new Date().toISOString().split("T")[0];
-    const { count: ndrResolved } = await supabase
-      .from("tasks")
-      .select("*", { count: "exact", head: true })
-      .eq("task_type", "ndr")
-      .eq("status", "done")
-      .gte("completed_at", `${today}T00:00:00Z`);
+    // All three counts run concurrently - three sequential round trips was
+    // enough to blow the function timeout while the Supabase project is
+    // throttled (over-quota), leaving the Manager Hub KPI cards on "...".
+    const [audit, agents, ndr] = await Promise.all([
+      // Audit Queue: tasks done but not yet manager-verified (same filter
+      // ManagerTaskReview uses).
+      supabase.from("tasks").select("*", { count: "exact", head: true })
+        .eq("status", "done").eq("is_processed_by_manager", false),
+      // Active Agents: online profiles, demo logins excluded.
+      supabase.from("profiles").select("*", { count: "exact", head: true })
+        .eq("status", "online")
+        .not("email", "ilike", "%demo%").not("name", "ilike", "%demo%")
+        .or("is_demo.is.null,is_demo.eq.false"),
+      // NDR Resolved today.
+      supabase.from("tasks").select("*", { count: "exact", head: true })
+        .eq("task_type", "ndr").eq("status", "done")
+        .gte("completed_at", `${today}T00:00:00Z`),
+    ]);
 
     return NextResponse.json({
-      auditQueue: auditCount || 0,
-      activeAgents: activeAgents || 0,
-      ndrResolved: ndrResolved || 0,
-      security: "Active"
+      auditQueue: audit.count || 0,
+      activeAgents: agents.count || 0,
+      ndrResolved: ndr.count || 0,
+      security: "Active",
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: e?.message || "stats query failed" }, { status: 500 });
   }
 }

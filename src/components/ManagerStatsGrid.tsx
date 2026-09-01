@@ -2,70 +2,77 @@
 import { useEffect, useState, useCallback } from "react";
 import { CheckSquare, Users, TrendingUp, Shield } from "lucide-react";
 import { StatCard } from "@/components/ui";
-import { createClient } from "@/lib/supabase";
 import { isDemoMode } from "@/lib/demo";
 
 export default function ManagerStatsGrid() {
   const [stats, setStats] = useState<any>(null);
-  const supabase = createClient();
+  const [failed, setFailed] = useState(false);
 
   const fetchStats = useCallback(async () => {
-    const isDemo = isDemoMode();
-    if (isDemo) {
-      setStats({
-        auditQueue: 12,
-        activeAgents: 5,
-        ndrResolved: 154,
-        security: "Secured"
-      });
-      return;
+    if (isDemoMode()) {
+      setStats({ auditQueue: 12, activeAgents: 5, ndrResolved: 154, security: "Secured" });
+      return true;
     }
+    // Bound the request - a throttled Supabase project can otherwise leave
+    // this hanging forever, and every poll stacks another dead fetch.
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 12_000);
     try {
-      const res = await fetch("/api/manager/stats");
-      if (res.ok) setStats(await res.json());
-    } catch { /* silent */ }
+      const res = await fetch("/api/manager/stats", { signal: ctrl.signal, cache: "no-store" });
+      if (res.ok) {
+        setStats(await res.json());
+        setFailed(false);
+        return true;
+      }
+    } catch { /* aborted or network error */ }
+    finally { clearTimeout(t); }
+    setFailed(true);
+    return false;
   }, []);
 
   useEffect(() => {
-    fetchStats();
+    let cancelled = false;
 
-    // Realtime below drives updates; poll is only a missed-event safety net.
+    // First paint: try now, and if it fails retry a few times quickly so the
+    // cards don't sit on the placeholder until the 3-minute poll comes round.
+    (async () => {
+      for (let i = 0; i < 4; i++) {
+        if (cancelled) return;
+        if (await fetchStats()) return;
+        await new Promise((r) => setTimeout(r, 4000));
+      }
+    })();
+
     const poll = setInterval(() => {
-      if (typeof document !== 'undefined' && document.hidden) return;
+      if (typeof document !== "undefined" && document.hidden) return;
       fetchStats();
     }, 3 * 60_000);
 
-    // ── Supabase real-time: re-fetch when tasks or orders change
-    const channel = supabase
-      .channel("manager-stats-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "tasks" },   fetchStats)
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" },  fetchStats)
-      .subscribe();
-
     return () => {
+      cancelled = true;
       clearInterval(poll);
-      supabase.removeChannel(channel);
     };
-  }, [fetchStats, supabase]);
+  }, [fetchStats]);
 
+  const ph = failed ? "—" : "…";
   const config = [
     {
       label: "Audit Queue",
-      value: stats?.auditQueue ?? "…",
+      value: stats?.auditQueue ?? ph,
       icon: <CheckSquare className="w-4 h-4" />,
       accent: "text-[#1c1c1c]",
       variant: "glass" as const,
     },
     {
       label: "Active Agents",
-      value: stats?.activeAgents ?? "…",
+      value: stats?.activeAgents ?? ph,
       icon: <Users className="w-4 h-4" />,
       accent: "text-emerald-600",
       variant: "glass" as const,
     },
     {
       label: "NDR Resolved",
-      value: stats?.ndrResolved ?? "…",
+      value: stats?.ndrResolved ?? ph,
       icon: <TrendingUp className="w-4 h-4" />,
       accent: "text-blue-600",
       variant: "glass" as const,
