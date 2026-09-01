@@ -37,6 +37,9 @@ interface WsData {
     loggedMinOnDone: number;
     openEstimateMin: number;
   };
+  reworkCount: number;
+  activityByType: Record<string, number>;
+  teamMedian: { tasksDone: number; hoursLogged: number } | null;
   bySpace: { space: string; done: number; open: number }[];
   daily: { date: string; minutes: number; tasksDone: number }[];
   recentActivity: { id: string; action: string; summary: string | null; created_at: string }[];
@@ -91,6 +94,9 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
         deltas: { tasksDone: 29, hoursLogged: 47, activityCount: 110, onTimeRate: 79 },
         priorityMix: { urgent: 6, high: 14, normal: 13, low: 4 },
         delivery: { cycleTimeDays: 2.6, estimatedMin: 2400, loggedMinOnDone: 2760, openEstimateMin: 1800 },
+        reworkCount: 3,
+        activityByType: { mkt_task_status_changed: 54, mkt_task_updated: 61, mkt_task_created: 13 },
+        teamMedian: { tasksDone: 24, hoursLogged: 41 },
         goals: [
           { id: "g1", title: "Ship 30 creatives", target: 30, progress: 22, period_start: "2026-08-01", period_end: "2026-08-31" },
           { id: "g2", title: "Campaign assets", target: 12, progress: 12, period_start: "2026-08-01", period_end: "2026-08-31" },
@@ -159,6 +165,12 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
   const openH = h1(dl.openEstimateMin);
   const capPct = weeklyCap > 0 ? Math.round((openH / weeklyCap) * 100) : 0;
   const estRatio = estH > 0 ? Math.round((logH / estH) * 100) : null;
+  const tm = data.teamMedian;
+  const vsMed = (cur: number, med?: number) =>
+    med == null ? undefined : `you ${cur} · team median ${med}`;
+  const prettyAction = (k: string) =>
+    k.replace(/^mkt_task_/, "").replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+  const actEntries = Object.entries(data.activityByType).sort((a, b) => b[1] - a[1]);
 
   function exportCsv() {
     if (!data) return;
@@ -177,6 +189,9 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
       ["Estimated Hours (done)", estH],
       ["Logged Hours (done)", logH],
       ["Open Estimate Hours", openH],
+      ["Rework (moved back from done)", data.reworkCount],
+      ["Team Median Tasks Done", tm?.tasksDone ?? "-"],
+      ["Team Median Hours Logged", tm?.hoursLogged ?? "-"],
       [],
       ["Space", "Done", "Open"],
       ...data.bySpace.map((r) => [r.space, r.done, r.open]),
@@ -202,11 +217,11 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-        <StatCard label="Tasks Done" value={s.tasksDone} sub={d ? "vs prev period" : name} icon={<CheckCircle className="w-4 h-4" />} {...trendProps(s.tasksDone, d?.tasksDone)} />
+        <StatCard label="Tasks Done" value={s.tasksDone} sub={vsMed(s.tasksDone, tm?.tasksDone) ?? (d ? "vs prev period" : name)} icon={<CheckCircle className="w-4 h-4" />} {...trendProps(s.tasksDone, d?.tasksDone)} />
         <StatCard label="Open Tasks" value={s.tasksOpen} sub="Currently assigned" icon={<ListTodo className="w-4 h-4" />} />
         <StatCard label="Overdue" value={s.overdueNow} sub="Open, past due date" accent={s.overdueNow > 0 ? "text-rose-600" : undefined} icon={<AlertTriangle className="w-4 h-4" />} />
         <StatCard label="On-Time" value={s.onTimeRate == null ? "—" : `${s.onTimeRate}%`} sub="Of tasks with a due date" icon={<Target className="w-4 h-4" />} {...(s.onTimeRate != null ? trendProps(s.onTimeRate, d?.onTimeRate ?? null) : {})} />
-        <StatCard label="Hours Logged" value={`${s.hoursLogged}h`} sub="Time entries in range" icon={<Clock className="w-4 h-4" />} {...trendProps(s.hoursLogged, d?.hoursLogged)} />
+        <StatCard label="Hours Logged" value={`${s.hoursLogged}h`} sub={vsMed(s.hoursLogged, tm?.hoursLogged) ?? "Time entries in range"} icon={<Clock className="w-4 h-4" />} {...trendProps(s.hoursLogged, d?.hoursLogged)} />
         <StatCard label="Activity" value={s.activityCount} sub="Task events in range" icon={<Activity className="w-4 h-4" />} {...trendProps(s.activityCount, d?.activityCount)} />
       </div>
 
@@ -259,7 +274,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
         <div className="card p-5">
           <div className="text-[10px] font-black text-[#5f5f5d]/50 uppercase tracking-widest mb-2 flex items-center gap-2">
             <Timer className="w-3.5 h-3.5" /> Avg Cycle Time
@@ -295,6 +310,14 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
           <div className="h-2 rounded-full bg-[#eceae4] overflow-hidden mt-2">
             <div className={cn("h-full rounded-full", capPct > 100 ? "bg-rose-500" : capPct > 80 ? "bg-amber-500" : "bg-emerald-500")} style={{ width: `${Math.min(100, capPct)}%` }} />
           </div>
+        </div>
+
+        <div className="card p-5">
+          <div className="text-[10px] font-black text-[#5f5f5d]/50 uppercase tracking-widest mb-2 flex items-center gap-2">
+            <AlertTriangle className="w-3.5 h-3.5" /> Rework
+          </div>
+          <div className={cn("text-2xl font-black tabular-nums", data.reworkCount > 0 ? "text-amber-600" : "text-[#1c1c1c]")}>{data.reworkCount}</div>
+          <div className="text-[10px] text-gray-400 font-bold mt-1">Moved back out of a done column</div>
         </div>
       </div>
 
@@ -370,6 +393,15 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
 
         <div className="card p-5">
           <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Recent Activity</h3>
+          {actEntries.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {actEntries.map(([k, v]) => (
+                <span key={k} className="text-[10px] font-bold text-[#5f5f5d] bg-[#eceae4]/60 px-2.5 py-1 rounded-full">
+                  {prettyAction(k)} <span className="text-[#1c1c1c] tabular-nums">{v}</span>
+                </span>
+              ))}
+            </div>
+          )}
           {data.recentActivity.length === 0 ? (
             <div className="text-[11px] text-gray-400 font-bold uppercase tracking-widest py-8 text-center">No recent activity</div>
           ) : (

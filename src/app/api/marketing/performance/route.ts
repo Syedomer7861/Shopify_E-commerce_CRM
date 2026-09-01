@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
 
     const listIds = [...new Set((tasks ?? []).map((t) => t.list_id).filter(Boolean))];
     const { data: lists } = listIds.length
-      ? await supabase.from("mkt_lists").select("id, name, space_id").in("id", listIds)
+      ? await supabase.from("mkt_lists").select("id, name, space_id, statuses").in("id", listIds)
       : { data: [] as any[] };
     const spaceIds = [...new Set((lists ?? []).map((l: any) => l.space_id).filter(Boolean))];
     const { data: spaces } = spaceIds.length
@@ -194,6 +194,77 @@ export async function GET(req: NextRequest) {
 
     const hoursLogged = Math.round((minutesLogged / 60) * 10) / 10;
 
+    // ── Tier 3: rework, activity-by-type, team median ─────────────────────
+    const median = (xs: number[]) => {
+      if (!xs.length) return 0;
+      const a = [...xs].sort((x, y) => x - y);
+      const m = a.length >> 1;
+      return a.length % 2 ? a[m] : Math.round(((a[m - 1] + a[m]) / 2) * 10) / 10;
+    };
+
+    const doneStatusIds = new Set<string>();
+    for (const l of lists ?? []) {
+      for (const st of (l as any).statuses ?? []) {
+        if (st?.type === "done" && st?.id) doneStatusIds.add(st.id);
+      }
+    }
+
+    const myTaskIds = (tasks ?? []).map((t) => t.id);
+    const [
+      { data: statusMoves },
+      { data: actionRows },
+      { data: mktProfiles },
+    ] = await Promise.all([
+      myTaskIds.length
+        ? supabase.from("audit_logs").select("metadata")
+            .eq("entity_type", "mkt_task").eq("action", "mkt_task_status_changed")
+            .in("entity_id", myTaskIds).gte("created_at", start).lte("created_at", end)
+        : Promise.resolve({ data: [] as any[] }),
+      supabase.from("audit_logs").select("action")
+        .eq("entity_type", "mkt_task").eq("actor_id", userId)
+        .gte("created_at", start).lte("created_at", end),
+      supabase.from("profiles").select("id")
+        .eq("role", "marketing").eq("is_active", true)
+        .not("email", "ilike", "%demo%").not("name", "ilike", "%demo%"),
+    ]);
+
+    let reworkCount = 0;
+    for (const r of statusMoves ?? []) {
+      const m = (r as any).metadata || {};
+      if (doneStatusIds.has(m.from_status) && !doneStatusIds.has(m.to_status)) reworkCount++;
+    }
+
+    const activityByType: Record<string, number> = {};
+    for (const r of actionRows ?? []) {
+      const k = (r as any).action || "other";
+      activityByType[k] = (activityByType[k] || 0) + 1;
+    }
+
+    const mktIds = new Set((mktProfiles ?? []).map((p: any) => p.id));
+    let teamMedian: { tasksDone: number; hoursLogged: number } | null = null;
+    if (mktIds.size > 1) {
+      const [{ data: teamDone }, { data: teamTime }] = await Promise.all([
+        supabase.from("mkt_tasks").select("assignees, completed_at")
+          .not("completed_at", "is", null).gte("completed_at", start).lte("completed_at", end),
+        supabase.from("mkt_time_entries").select("user_id, minutes")
+          .gte("spent_on", startDate).lte("spent_on", endDate),
+      ]);
+      const donePer: Record<string, number> = {};
+      for (const id of mktIds) donePer[id] = 0;
+      for (const row of teamDone ?? []) {
+        for (const a of (row as any).assignees ?? []) if (mktIds.has(a)) donePer[a]++;
+      }
+      const minPer: Record<string, number> = {};
+      for (const id of mktIds) minPer[id] = 0;
+      for (const row of teamTime ?? []) {
+        if (mktIds.has((row as any).user_id)) minPer[(row as any).user_id] += (row as any).minutes || 0;
+      }
+      teamMedian = {
+        tasksDone: median(Object.values(donePer)),
+        hoursLogged: median(Object.values(minPer).map((mn) => mn / 60)),
+      };
+    }
+
     return NextResponse.json({
       success: true,
       kind: "workspace",
@@ -221,6 +292,9 @@ export async function GET(req: NextRequest) {
         loggedMinOnDone,
         openEstimateMin,
       },
+      reworkCount,
+      activityByType,
+      teamMedian,
       bySpace: Object.values(bySpace).sort((a, b) => b.done - a.done || b.open - a.open),
       daily,
       recentActivity: acts ?? [],
