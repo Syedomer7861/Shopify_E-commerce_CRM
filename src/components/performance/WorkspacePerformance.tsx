@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
-import { CheckCircle, ListTodo, Target, Clock, Activity, AlertTriangle, Flag } from "lucide-react";
+import { CheckCircle, ListTodo, Target, Clock, Activity, AlertTriangle, Flag, Timer, Gauge, Download } from "lucide-react";
 import { StatCard } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { isDemoMode } from "@/lib/demo";
@@ -31,6 +31,12 @@ interface WsData {
   } | null;
   priorityMix: { urgent: number; high: number; normal: number; low: number };
   goals: { id: string; title: string; target: number; progress: number; period_start: string; period_end: string }[];
+  delivery: {
+    cycleTimeDays: number | null;
+    estimatedMin: number;
+    loggedMinOnDone: number;
+    openEstimateMin: number;
+  };
   bySpace: { space: string; done: number; open: number }[];
   daily: { date: string; minutes: number; tasksDone: number }[];
   recentActivity: { id: string; action: string; summary: string | null; created_at: string }[];
@@ -55,6 +61,21 @@ const PRIORITY_STYLE: Record<string, string> = {
 // hours "HH:MM:SS" -> "HH:MM"
 const hm = (s?: string) => (s || "00:00:00").slice(0, 5);
 
+const CAP_KEY = "mkt-workload-weekly-hours";
+const h1 = (min: number) => Math.round((min / 60) * 10) / 10;
+
+function downloadCsv(name: string, rows: (string | number)[][]) {
+  const csv = rows
+    .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export default function WorkspacePerformance({ userId, name, range }: Props) {
   const [data, setData] = useState<WsData | null>(null);
   const [attendance, setAttendance] = useState<any[]>([]);
@@ -69,6 +90,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
         summary: { tasksDone: 37, tasksOpen: 9, overdueNow: 2, onTimeRate: 84, hoursLogged: 52.5, activityCount: 128 },
         deltas: { tasksDone: 29, hoursLogged: 47, activityCount: 110, onTimeRate: 79 },
         priorityMix: { urgent: 6, high: 14, normal: 13, low: 4 },
+        delivery: { cycleTimeDays: 2.6, estimatedMin: 2400, loggedMinOnDone: 2760, openEstimateMin: 1800 },
         goals: [
           { id: "g1", title: "Ship 30 creatives", target: 30, progress: 22, period_start: "2026-08-01", period_end: "2026-08-31" },
           { id: "g2", title: "Campaign assets", target: 12, progress: 12, period_start: "2026-08-01", period_end: "2026-08-31" },
@@ -124,9 +146,61 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
   const d = data.deltas;
   const pm = data.priorityMix;
   const pmTotal = pm.urgent + pm.high + pm.normal + pm.low;
+  const dl = data.delivery;
+
+  let weeklyCap = 40;
+  try {
+    const r = typeof localStorage !== "undefined" && localStorage.getItem(CAP_KEY);
+    if (r) weeklyCap = Math.max(1, Number(r)) || 40;
+  } catch { /* ignore */ }
+
+  const estH = h1(dl.estimatedMin);
+  const logH = h1(dl.loggedMinOnDone);
+  const openH = h1(dl.openEstimateMin);
+  const capPct = weeklyCap > 0 ? Math.round((openH / weeklyCap) * 100) : 0;
+  const estRatio = estH > 0 ? Math.round((logH / estH) * 100) : null;
+
+  function exportCsv() {
+    if (!data) return;
+    downloadCsv(`workspace-performance-${name.replace(/[^a-z0-9]+/gi, "_")}.csv`, [
+      ["Workspace Performance", name],
+      ["Range", `${range.start.slice(0, 10)} to ${range.end.slice(0, 10)}`],
+      [],
+      ["Metric", "Value"],
+      ["Tasks Done", s.tasksDone],
+      ["Open Tasks", s.tasksOpen],
+      ["Overdue Now", s.overdueNow],
+      ["On-Time %", s.onTimeRate ?? "-"],
+      ["Hours Logged", s.hoursLogged],
+      ["Activity Events", s.activityCount],
+      ["Avg Cycle Time (days)", dl.cycleTimeDays ?? "-"],
+      ["Estimated Hours (done)", estH],
+      ["Logged Hours (done)", logH],
+      ["Open Estimate Hours", openH],
+      [],
+      ["Space", "Done", "Open"],
+      ...data.bySpace.map((r) => [r.space, r.done, r.open]),
+      [],
+      ["Goal", "Progress", "Target"],
+      ...data.goals.map((g) => [g.title, g.progress, g.target]),
+      [],
+      ["Date", "Hours", "Tasks Done"],
+      ...data.daily.map((x) => [x.date, h1(x.minutes), x.tasksDone]),
+      [],
+      ["Attendance Date", "In", "Out", "Net"],
+      ...attendance.map((a: any) => [a.date, a.clockIn || "", a.clockOut || "", hm(a.netHours)]),
+    ]);
+  }
 
   return (
     <div className="animate-fade-in space-y-6">
+      <div className="flex justify-end">
+        <button onClick={exportCsv}
+          className="h-8 px-3 rounded-lg text-[10px] font-black uppercase tracking-widest bg-[#1c1c1c] text-white flex items-center gap-1.5 hover:opacity-90 transition-all">
+          <Download className="w-3 h-3" /> Export CSV
+        </button>
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
         <StatCard label="Tasks Done" value={s.tasksDone} sub={d ? "vs prev period" : name} icon={<CheckCircle className="w-4 h-4" />} {...trendProps(s.tasksDone, d?.tasksDone)} />
         <StatCard label="Open Tasks" value={s.tasksOpen} sub="Currently assigned" icon={<ListTodo className="w-4 h-4" />} />
@@ -184,6 +258,45 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
           </div>
         </div>
       )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="card p-5">
+          <div className="text-[10px] font-black text-[#5f5f5d]/50 uppercase tracking-widest mb-2 flex items-center gap-2">
+            <Timer className="w-3.5 h-3.5" /> Avg Cycle Time
+          </div>
+          <div className="text-2xl font-black text-[#1c1c1c] tabular-nums">{dl.cycleTimeDays == null ? "—" : `${dl.cycleTimeDays}d`}</div>
+          <div className="text-[10px] text-gray-400 font-bold mt-1">Created → done, tasks in range</div>
+        </div>
+
+        <div className="card p-5">
+          <div className="text-[10px] font-black text-[#5f5f5d]/50 uppercase tracking-widest mb-2">Estimate Accuracy</div>
+          {estH === 0 ? (
+            <div className="text-[11px] text-gray-400 font-bold py-3">No estimates on completed tasks</div>
+          ) : (
+            <>
+              <div className="text-2xl font-black text-[#1c1c1c] tabular-nums">
+                {estRatio}%
+                <span className={cn("ml-2 text-[10px] font-black uppercase", estRatio != null && estRatio > 115 ? "text-rose-600" : estRatio != null && estRatio < 85 ? "text-amber-600" : "text-emerald-600")}>
+                  {estRatio != null && estRatio > 115 ? "over" : estRatio != null && estRatio < 85 ? "under" : "on target"}
+                </span>
+              </div>
+              <div className="text-[10px] text-gray-400 font-bold mt-1 tabular-nums">est {estH}h · logged {logH}h</div>
+            </>
+          )}
+        </div>
+
+        <div className="card p-5">
+          <div className="text-[10px] font-black text-[#5f5f5d]/50 uppercase tracking-widest mb-2 flex items-center gap-2">
+            <Gauge className="w-3.5 h-3.5" /> Open Capacity
+          </div>
+          <div className="text-2xl font-black text-[#1c1c1c] tabular-nums">
+            {openH}h <span className="text-[10px] text-gray-400 font-bold">/ {weeklyCap}h wk</span>
+          </div>
+          <div className="h-2 rounded-full bg-[#eceae4] overflow-hidden mt-2">
+            <div className={cn("h-full rounded-full", capPct > 100 ? "bg-rose-500" : capPct > 80 ? "bg-amber-500" : "bg-emerald-500")} style={{ width: `${Math.min(100, capPct)}%` }} />
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="card p-5">

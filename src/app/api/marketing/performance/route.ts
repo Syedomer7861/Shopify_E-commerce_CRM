@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
     const prevStartDate = prevStart.slice(0, 10);
     const prevEndDate = prevEnd.slice(0, 10);
     const [{ data: entries }, { data: prevEntries }] = await Promise.all([
-      supabase.from("mkt_time_entries").select("minutes, spent_on")
+      supabase.from("mkt_time_entries").select("minutes, spent_on, task_id")
         .eq("user_id", userId).gte("spent_on", startDate).lte("spent_on", endDate),
       prevOk
         ? supabase.from("mkt_time_entries").select("minutes")
@@ -164,6 +164,26 @@ export async function GET(req: NextRequest) {
       return { id: g.id, title: g.title, target: g.target, progress, period_start: g.period_start, period_end: g.period_end };
     });
 
+    // ── Cycle time, estimate accuracy, open capacity ─────────────────────
+    const doneTasks = (tasks ?? []).filter((t) => inWindow(t.completed_at));
+    const doneIds = new Set(doneTasks.map((t) => t.id));
+    let cycleSum = 0;
+    let cycleN = 0;
+    let estimatedMin = 0;
+    for (const t of doneTasks) {
+      if (t.created_at && t.completed_at) {
+        const ms = Date.parse(t.completed_at) - Date.parse(t.created_at);
+        if (Number.isFinite(ms) && ms >= 0) { cycleSum += ms; cycleN++; }
+      }
+      if (t.estimate_minutes) estimatedMin += t.estimate_minutes;
+    }
+    const loggedMinOnDone = (entries ?? [])
+      .filter((e: any) => e.task_id && doneIds.has(e.task_id))
+      .reduce((a: number, e: any) => a + (e.minutes || 0), 0);
+    const openEstimateMin = (tasks ?? [])
+      .filter((t) => !t.completed_at && t.estimate_minutes)
+      .reduce((a, t) => a + (t.estimate_minutes || 0), 0);
+
     // ── Daily series (hours + tasks done) ─────────────────────────────────
     const days = [...new Set([...Object.keys(minutesDaily), ...Object.keys(doneDaily)])].sort();
     const daily = days.map((d) => ({
@@ -195,6 +215,12 @@ export async function GET(req: NextRequest) {
         : null,
       priorityMix,
       goals,
+      delivery: {
+        cycleTimeDays: cycleN ? Math.round((cycleSum / cycleN / 86_400_000) * 10) / 10 : null,
+        estimatedMin,
+        loggedMinOnDone,
+        openEstimateMin,
+      },
       bySpace: Object.values(bySpace).sort((a, b) => b.done - a.done || b.open - a.open),
       daily,
       recentActivity: acts ?? [],
