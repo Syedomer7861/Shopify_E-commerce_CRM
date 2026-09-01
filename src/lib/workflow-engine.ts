@@ -130,8 +130,10 @@ export class WorkflowEngine {
         status: "active"
       });
 
-      // Refresh health scores periodically
-      await supabase.rpc('refresh_customer_health_scores');
+      // Refresh health scores periodically. Optional - skip quietly if the
+      // function isn't present (phase-5 migration not applied).
+      const { error: hsErr } = await supabase.rpc('refresh_customer_health_scores');
+      if (hsErr) console.warn('health-score refresh skipped:', hsErr.message);
 
       console.log(`✅ Started Workflow '${workflow.name}' for customer ${customerId}. Next step: ${firstStep.type} at ${nextRunAt.toISOString()}`);
     }
@@ -152,7 +154,7 @@ export class WorkflowEngine {
       .single();
 
     if (!step) {
-      await this.completeInstance(instance, "error: step_not_found");
+      await this.completeInstance(instance, "step_not_found");
       return;
     }
 
@@ -483,7 +485,9 @@ export class WorkflowEngine {
 
   private static async completeInstance(instance: any, status: string) {
     await supabase.from("workflow_instances").update({
-      status: status,
+      // workflow_instances.status is varchar(20) - clamp so a long status
+      // string can never 22001 and wedge the executor on this instance.
+      status: (status || "completed").slice(0, 20),
       next_run_at: new Date(Date.now() + 1000 * 3600 * 24 * 365 * 10).toISOString() // Far future
     }).eq("id", instance.id);
   }

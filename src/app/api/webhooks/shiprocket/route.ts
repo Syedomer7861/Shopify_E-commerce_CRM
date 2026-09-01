@@ -478,8 +478,10 @@ export async function POST(req: NextRequest) {
                 await notifyAdmin(`🚀 HIGH-VALUE ORDER! Customer ${fullName} just placed order #${orderId} for ${orderTotal} INR.`, "alert");
             }
 
-            // A5. Refresh Health Score (Feature 17)
-            await supabase.rpc('refresh_customer_health_scores');
+            // A5. Refresh Health Score (Feature 17) - optional, skip quietly
+            // if the function is absent (phase-5 migration not applied).
+            const { error: hsErr } = await supabase.rpc('refresh_customer_health_scores');
+            if (hsErr) console.warn('health-score refresh skipped:', hsErr.message);
         }
 
         // 4. Trigger Workflow (NEW)

@@ -274,14 +274,22 @@ export async function GET(req: NextRequest) {
     // at the moment the task closed.
     const { data: revenueRows } = await supabase
         .from("order_revenue_attribution")
-        .select("agent_id, amount, attributed_at, order:orders(delivery_status)")
+        .select("order_id, agent_id, amount, attributed_at")
         .gte("attributed_at", start)
         .lte("attributed_at", end);
+
+    // order_revenue_attribution has no FK to orders, so the PostgREST embed
+    // `order:orders(...)` 400s. Resolve delivery_status in a second query.
+    const revOrderIds = [...new Set((revenueRows || []).map((r: any) => r.order_id).filter(Boolean))];
+    const { data: revOrders } = revOrderIds.length
+        ? await supabase.from("orders").select("id, delivery_status").in("id", revOrderIds)
+        : { data: [] as any[] };
+    const revStatusById = new Map((revOrders || []).map((o: any) => [o.id, o.delivery_status]));
 
     (revenueRows || []).forEach((row: any) => {
         const stats = agentStats[row.agent_id];
         if (!stats) return;
-        if (["rto", "failed"].includes(row.order?.delivery_status)) return;
+        if (["rto", "failed"].includes(revStatusById.get(row.order_id))) return;
 
         const amount = Number(row.amount || 0);
         stats.revenue += amount;
