@@ -72,7 +72,7 @@ jobs:
             # itself stays on Vercel's native cron (vercel.json, both of its
             # 2 Hobby-plan slots already taken), but these two new phases
             # need a home and ride the daily GitHub Actions trigger instead.
-            daily)     paths="/api/cron/unresponsive-handler /api/cron/segment-updater /api/cron/recovery-reminder /api/cron/reorder-reminder /api/cron/review-reminder /api/cron/daily-digest /api/cron/analytics-digest?range=daily /api/cron/analytics-digest?range=weekly /api/cron/refresh-product-catalog /api/cron/sla-escalator /api/cron/issue-task-generator /api/cron/winback-generator /api/backup /api/cron/prune-webhook-logs /api/cron/egress-watch /api/cron/marketing-overdue" ;;
+            daily)     paths="/api/cron/unresponsive-handler /api/cron/segment-updater /api/cron/recovery-reminder /api/cron/reorder-reminder /api/cron/review-reminder /api/cron/daily-digest /api/cron/analytics-digest?range=daily /api/cron/analytics-digest?range=weekly /api/cron/refresh-product-catalog /api/cron/sla-escalator /api/cron/issue-task-generator /api/cron/winback-generator /api/backup /api/cron/prune-webhook-logs /api/cron/egress-watch /api/cron/marketing-overdue /api/cron/rollups" ;;
           esac
 
           echo "group=$group" >> "$GITHUB_OUTPUT"
