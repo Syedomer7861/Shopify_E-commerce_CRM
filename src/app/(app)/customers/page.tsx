@@ -62,7 +62,9 @@ export default function CustomersPage() {
     }
 
     if (!silent) setLoading(true);
-    let query = supabase.from("customers").select("*", { count: "exact" });
+    // estimated: planner-stat count for large sets, exact for small - the
+    // list header total doesn't need a full scan on every load.
+    let query = supabase.from("customers").select("*", { count: "estimated" });
 
     if (seg !== "all") {
       if (seg === "rto") {

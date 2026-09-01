@@ -246,7 +246,7 @@ export default function TasksPage() {
     // Core Tasks Query
     let query = supabase
       .from("tasks")
-      .select("*, customer:customers!inner(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email,live_state)", { count: "exact" });
+      .select("*, customer:customers!inner(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email,live_state)", { count: "estimated" });
 
     if (debouncedSearch) {
       const cleanSearch = debouncedSearch.trim().replace(/^#/, "");

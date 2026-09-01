@@ -15,76 +15,61 @@ export async function GET(req: NextRequest) {
   const days = parseInt(searchParams.get("days") || "30");
 
   try {
-    // 1. Fetch orders with customer state data
     const dateThreshold = new Date();
     dateThreshold.setDate(dateThreshold.getDate() - days);
+    const thresholdDay = dateThreshold.toISOString().slice(0, 10);
 
-    // PostgREST caps a single select at 1000 rows - a 30+ day order window
-    // easily exceeds that given real volume (one day alone has shown 290+
-    // tasks), which would silently under-represent whichever states'
-    // orders happened to sort last. Page through with .range().
-    const PAGE = 1000;
-    let allOrders: any[] = [];
-    for (let from = 0; ; from += PAGE) {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          id,
-          total_price,
-          delivery_status,
-          ordered_at,
-          customer:customers (
-            state
-          )
-        `)
-        .gte("ordered_at", dateThreshold.toISOString())
-        .range(from, from + PAGE - 1);
-      if (error) throw error;
-      if (!data || data.length === 0) break;
-      allOrders = allOrders.concat(data);
-      if (data.length < PAGE) break;
-    }
-
-    const stateStats: Record<string, { 
-      orders: number, 
-      revenue: number, 
-      rto: number,
-      customers: Set<string> 
-    }> = {};
-
+    const stateStats: Record<string, { orders: number; revenue: number; rto: number }> = {};
     let totalOrders = 0;
     let totalRevenue = 0;
     let totalRto = 0;
 
-    allOrders?.forEach((order: any) => {
-      const state = order.customer?.state?.trim();
+    const add = (rawState: string, orders: number, revenue: number, rto: number) => {
+      const state = (rawState || "").trim();
       if (!state) return;
+      const key = state.toLowerCase().split(" ")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+      const s = (stateStats[key] ||= { orders: 0, revenue: 0, rto: 0 });
+      s.orders += orders;
+      s.revenue += revenue;
+      s.rto += rto;
+      totalOrders += orders;
+      totalRevenue += revenue;
+      totalRto += rto;
+    };
 
-      // Normalize state name for mapping (Title Case)
-      const normalizedState = state.toLowerCase().split(' ').map((word: string) => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join(' ');
+    // Fast path: per-state daily rollup (a few hundred rows) instead of
+    // paging thousands of joined order+customer rows.
+    const { data: roll, error: rollErr } = await supabase
+      .from("rollup_daily_state_orders")
+      .select("state, orders, revenue, rto")
+      .gte("day", thresholdDay);
 
-      if (!stateStats[normalizedState]) {
-        stateStats[normalizedState] = { 
-          orders: 0, 
-          revenue: 0, 
-          rto: 0,
-          customers: new Set()
-        };
+    if (!rollErr && roll && roll.length > 0) {
+      for (const r of roll) add(r.state, r.orders || 0, Number(r.revenue) || 0, r.rto || 0);
+    } else {
+      // Fallback: live pagination (pre-rollup behaviour). Kept so the map
+      // still works before the migration / first cron run.
+      const PAGE = 1000;
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("total_price, delivery_status, customer:customers(state)")
+          .gte("ordered_at", dateThreshold.toISOString())
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        for (const o of data as any[]) {
+          add(
+            o.customer?.state || "",
+            1,
+            parseFloat(o.total_price || 0),
+            o.delivery_status?.toLowerCase() === "rto" ? 1 : 0,
+          );
+        }
+        if (data.length < PAGE) break;
       }
-
-      const orderRevenue = parseFloat(order.total_price || 0);
-      const isRto = order.delivery_status?.toLowerCase() === "rto";
-
-      stateStats[normalizedState].orders++;
-      stateStats[normalizedState].revenue += orderRevenue;
-      if (isRto) stateStats[normalizedState].rto++;
-      
-      totalOrders++;
-      totalRevenue += orderRevenue;
-      if (isRto) totalRto++;
-    });
+    }
 
     const results = Object.entries(stateStats).map(([name, s]) => ({
       name,

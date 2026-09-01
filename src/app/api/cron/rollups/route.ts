@@ -17,18 +17,19 @@ export async function POST(req: NextRequest) {
   const days = Math.min(60, Math.max(1, Number(req.nextUrl.searchParams.get("days") || 3)));
   const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
 
-  try {
-    const { data, error } = await supabase.rpc("rebuild_rollup_orders", { since });
-    if (error) throw error;
-    return NextResponse.json({ ok: true, table: "rollup_daily_orders", since, rowsUpserted: data ?? null });
-  } catch (e: any) {
-    // Never 500 the cron over a missing function (migration not applied yet) -
-    // report it so the run log shows why, but let the schedule keep going.
-    return NextResponse.json(
-      { ok: false, table: "rollup_daily_orders", since, error: e?.message || "rollup rebuild failed" },
-      { status: 200 },
-    );
+  // Each rollup is independent - one missing function (migration not applied
+  // yet) must not stop the others. Always 200 so the schedule never wedges.
+  const results: Record<string, unknown> = { since };
+  for (const fn of ["rebuild_rollup_orders", "rebuild_rollup_state_orders"] as const) {
+    try {
+      const { data, error } = await supabase.rpc(fn, { since });
+      if (error) throw error;
+      results[fn] = { ok: true, rows: data ?? null };
+    } catch (e: any) {
+      results[fn] = { ok: false, error: e?.message || "rebuild failed" };
+    }
   }
+  return NextResponse.json(results);
 }
 
 export const GET = POST;

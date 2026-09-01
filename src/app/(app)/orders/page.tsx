@@ -86,7 +86,10 @@ export default function OrdersPage() {
       return q;
     };
 
-    let query = supabase.from("orders").select("*, customer:customers!inner(*)", { count: "exact" });
+    // "estimated" uses planner stats for large result sets (exact for small
+    // ones) - the header total is "~20,647", it doesn't need a full-table
+    // scan on every page load, especially while the DB is throttled.
+    let query = supabase.from("orders").select("*, customer:customers!inner(*)", { count: "estimated" });
     query = applyAdvancedFilters(query);
 
     if (status !== "all") {
