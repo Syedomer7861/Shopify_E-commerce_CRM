@@ -134,10 +134,11 @@ export default function PerformancePage() {
       );
       return;
     }
+    // Any active internal user is browsable here, not just role='agent' -
+    // managers, HR, and Workspace-department staff have performance history too.
     supabase
       .from("profiles")
       .select("id, name")
-      .eq("role", "agent")
       .eq("is_active", true)
       .not("email", "ilike", "%demo%")
       .not("name", "ilike", "%demo%")

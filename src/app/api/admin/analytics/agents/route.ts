@@ -60,7 +60,9 @@ export async function GET(req: NextRequest) {
     const { data: allProfiles } = await supabase
         .from("profiles")
         .select("id, name, email, last_seen_at, live_state, role, status")
-        .or("role.eq.agent,role.eq.admin")
+        // Every internal role has attendance + activity history now (Workspace
+        // department, managers, HR), not just role in (agent, admin). Demo
+        // accounts stay excluded.
         .not("email", "ilike", "%demo%")
         .not("name", "ilike", "%demo%")
         .or('is_demo.is.null,is_demo.eq.false');
