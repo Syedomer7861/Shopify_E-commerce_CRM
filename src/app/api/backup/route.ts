@@ -51,22 +51,34 @@ async function handleBackup(req: NextRequest) {
   // Off-platform (Google Drive) copy of the business-critical tables.
   // Supabase already takes its own automatic daily backups of the full
   // database; this weekly Drive copy is the off-Supabase safety net, so it
-  // carries only records that are NOT reconstructable from other data:
+  // carries only records that are NOT trivially reconstructable:
   //
   //   customers, orders, order_revenue_attribution, tasks, profiles,
   //   call_logs, abandoned_carts   - core business + revenue records
   //   settings, campaigns, campaign_templates, workflows - configuration
+  //   workflow_steps               - automation step definitions (with
+  //                                  `workflows` these fully define every
+  //                                  workflow; without them steps must be
+  //                                  hand re-authored on a Drive-only restore)
+  //   workflow_instances           - in-flight automation runtime state
+  //                                  (current_step_id + next_run_at + status
+  //                                  per customer) - lets the executor resume
+  //                                  every pending sequence after a restore;
+  //                                  also keeps orders.attributed_instance_id
+  //                                  from dangling
   //   audit_logs                   - compliance / forensic trail
   //   agent_attendance             - HR record, not derivable
   //   leaves                       - HR record
   //
-  // Deliberately EXCLUDED (present in Supabase's own backups, and either
-  // regenerable or transient engine state, and high-churn):
-  //   workflow_instances - transient per-customer workflow runtime state
-  //   workflow_logs      - per-step execution log, regenerable from workflows
+  // Deliberately EXCLUDED (present in Supabase's own daily backups; pure
+  // history with no functional dependency - the engine appends but never
+  // reads it):
+  //   workflow_logs - per-step execution log ("was message X already sent")
   //
   // Ordered by importance - if the 50s time budget runs out partway, the
-  // tables that matter most were backed up first.
+  // tables that matter most were backed up first. workflow_steps sits next
+  // to `workflows` (definition pair); workflow_instances is last (runtime
+  // state, least costly to lose vs the definitions).
   const tables = [
     "customers",
     "orders",
@@ -82,6 +94,8 @@ async function handleBackup(req: NextRequest) {
     "agent_attendance",
     "leaves",
     "workflows",
+    "workflow_steps",
+    "workflow_instances",
   ];
 
   // Explicit column lists where SELECT * pulls fields the backup does not

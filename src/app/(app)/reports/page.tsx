@@ -312,28 +312,48 @@ export default function ReportsPage() {
       const previous = await getStatsForRange(prevStart, prevEnd);
 
       // ── Delivery breakdown (lifetime status split) ────────────────────
-      // Sum the nightly rollup_daily_orders (~1 row/day) instead of scanning
-      // every orders row. Falls back to the live column scan if the rollup
-      // table is missing or empty (pre-migration / first cron not run yet).
+      // Historical days come from the nightly rollup_daily_orders (~1 row/day);
+      // today's orders are added with a small live query bounded to today only,
+      // so the donut is live-accurate without ever scanning the full orders
+      // table. `day < todayIST` on the rollup side avoids double-counting the
+      // partial row the trailing-3-day cron may already have written for today.
+      // Fallback: if the rollup is unavailable/empty, one live column scan
+      // (covers all history including today).
       const breakdownCounts: Record<string, number> = { delivered: 0, in_transit: 0, rto: 0, pending: 0 };
-      const tallyDeliveryLive = async () => {
+      const tallyDeliveryLiveAll = async () => {
         const { data } = await supabase.from("orders").select("delivery_status");
         for (const o of data || []) {
-          if ((o.delivery_status as string) in breakdownCounts) breakdownCounts[o.delivery_status as string]++;
+          const s = o.delivery_status as string;
+          if (s in breakdownCounts) breakdownCounts[s]++;
         }
       };
+      const istNow = new Date(Date.now() + 5.5 * 3600 * 1000);
+      const todayIstDate = istNow.toISOString().slice(0, 10); // YYYY-MM-DD in IST
+      const todayStartUtc = new Date(`${todayIstDate}T00:00:00+05:30`).toISOString();
       try {
-        const { data: roll, error: rollErr } = await supabase.from("rollup_daily_orders").select("by_status");
-        if (!rollErr && roll && roll.length > 0) {
+        const { data: roll, error: rollErr } = await supabase
+          .from("rollup_daily_orders")
+          .select("by_status")
+          .lt("day", todayIstDate);
+        if (rollErr) throw rollErr;
+        if (!roll || roll.length === 0) {
+          await tallyDeliveryLiveAll(); // rollup not built yet
+        } else {
           for (const r of roll) {
             const bs = (r.by_status as Record<string, number>) || {};
             for (const k of Object.keys(breakdownCounts)) breakdownCounts[k] += Number(bs[k]) || 0;
           }
-        } else {
-          await tallyDeliveryLive();
+          const { data: todayRows } = await supabase
+            .from("orders")
+            .select("delivery_status")
+            .gte("ordered_at", todayStartUtc);
+          for (const o of todayRows || []) {
+            const s = o.delivery_status as string;
+            if (s in breakdownCounts) breakdownCounts[s]++;
+          }
         }
       } catch {
-        await tallyDeliveryLive();
+        await tallyDeliveryLiveAll();
       }
       const breakdown = [
         { label: "Delivered", color: "bg-[#1c1c1c]", key: "delivered" },
