@@ -75,7 +75,16 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "attendance") {
-      const { data, error } = await supabase.from("attendance_log").select("*").order("date", { ascending: false });
+      // Historical-access escape hatch: bounded by default (1 year), but the
+      // caller can widen it with ?days=N when a longer view is genuinely
+      // needed. Explicit columns - the table only has these five.
+      const days = Math.min(3650, Math.max(1, Number(searchParams.get("days")) || 365));
+      const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from("attendance_log")
+        .select("id, agent_id, date, status, created_at")
+        .gte("date", since)
+        .order("date", { ascending: false });
       if (error) throw error;
       return NextResponse.json(data);
     }
@@ -90,6 +99,13 @@ export async function GET(req: NextRequest) {
 
     // Default: Fetch everything for a full sync
     const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
+    // attendance_log / agent_attendance are append-only and were fetched in
+    // full (SELECT *) on every page load, every realtime event, and (until
+    // Phase 1) every 3 min. The HR views are a rolling recent window, so
+    // bound the default sync to 90 days. Older records stay reachable via
+    // GET /api/hr/data?type=attendance&days=N.
+    const attendanceSince = new Date(Date.now() - 90 * 86_400_000).toISOString();
+    const attendanceSinceDate = attendanceSince.slice(0, 10);
     const [employees, announcements, policies, revisions, expenses, reviews, training, grievances, attendance, rawLogs, holidays, slaTasks, openTasksWithOrders, payrollRuns] = await Promise.all([
       supabase.from("profiles").select("*").order("is_active", { ascending: false }),
       supabase.from("announcements").select("*").order("is_pinned", { ascending: false }).order("created_at", { ascending: false }),
@@ -99,8 +115,12 @@ export async function GET(req: NextRequest) {
       supabase.from("performance_reviews").select("*, profiles(name)").order("created_at", { ascending: false }),
       supabase.from("training_assignments").select("*, profiles(name)").order("created_at", { ascending: false }),
       supabase.from("grievances").select("*, profiles(name)").order("created_at", { ascending: false }),
-      supabase.from("attendance_log").select("*"),
-      supabase.from("agent_attendance").select("*"),
+      supabase.from("attendance_log")
+        .select("agent_id, date, status")
+        .gte("date", attendanceSinceDate),
+      supabase.from("agent_attendance")
+        .select("agent_id, status, created_at")
+        .gte("created_at", attendanceSince),
       supabase.from("holidays").select("*").order("date", { ascending: true }),
       // Last 14 days of completed tasks, for the real SLA/efficiency
       // benchmark below (this week vs last week, not an invented baseline).

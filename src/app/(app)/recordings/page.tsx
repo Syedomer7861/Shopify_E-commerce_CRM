@@ -16,55 +16,69 @@ export default function CallRecordingsPage() {
   const { profile, loading: profileLoading } = useCurrentProfile();
   const [logs, setLogs] = useState<RawCallLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [search, setSearch] = useState("");
 
-  const fetchLogs = useCallback(async () => {
+  // Only the columns the table renders + playback. The old query did
+  // SELECT * over EVERY recorded call in history on every page open.
+  const RECORDING_COLS = "id, customer_phone, duration_seconds, created_at, recording_url, agent:profiles(name, email)";
+  const PAGE_SIZE = 50;
+
+  // page = 0 → newest 50; "Load More" fetches the next 50 and appends.
+  // Older recordings stay reachable by paging back through them.
+  const fetchPage = useCallback(async (page: number) => {
+    const isDemo = typeof document !== 'undefined' && isDemoMode();
+    if (isDemo) {
+      const { MOCK_RAW_CALLS } = await import('@/lib/mock-data');
+      return { rows: MOCK_RAW_CALLS.filter((c: any) => c.recording_url) as any[], more: false };
+    }
+    const from = page * PAGE_SIZE;
+    const { data, error } = await supabase
+      .from("raw_call_logs")
+      .select(RECORDING_COLS)
+      .not("recording_url", "is", null)
+      .order("created_at", { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) {
+      console.warn("Error fetching call recordings, table might be missing:", error);
+      return { rows: [], more: false };
+    }
+    return { rows: (data || []) as any[], more: (data?.length || 0) === PAGE_SIZE };
+  }, [supabase]);
+
+  const loadFirst = useCallback(async () => {
     setLoading(true);
     try {
-      const isDemo = typeof document !== 'undefined' && isDemoMode();
-      if (isDemo) {
-        const { MOCK_RAW_CALLS } = await import('@/lib/mock-data');
-        setLogs(MOCK_RAW_CALLS.filter((c: any) => c.recording_url) as any);
-        setLoading(false);
-        return;
-      }
-
-      // PostgREST caps a single select at 1000 rows - recordings accumulate
-      // over months, so paginate rather than silently dropping older calls
-      // past the cap.
-      const PAGE = 1000;
-      let all: any[] = [];
-      for (let from = 0; ; from += PAGE) {
-        const { data, error } = await supabase
-          .from("raw_call_logs")
-          .select(`
-            *,
-            agent:profiles(name, email)
-          `)
-          .not("recording_url", "is", null)
-          .order("created_at", { ascending: false })
-          .range(from, from + PAGE - 1);
-
-        if (error) {
-          console.warn("Error fetching call recordings, table might be missing:", error);
-          break;
-        }
-        if (!data || data.length === 0) break;
-        all = all.concat(data);
-        if (data.length < PAGE) break;
-      }
-      setLogs(all);
+      const { rows, more } = await fetchPage(0);
+      setLogs(rows);
+      setHasMore(more);
     } catch (err) {
       console.error(err);
       setLogs([]);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [fetchPage]);
+
+  const loadMore = useCallback(async () => {
+    setLoadingMore(true);
+    try {
+      const nextPage = Math.floor(logs.length / PAGE_SIZE);
+      const { rows, more } = await fetchPage(nextPage);
+      setLogs(prev => [...prev, ...rows]);
+      setHasMore(more);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [fetchPage, logs.length]);
 
   useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+    loadFirst();
+  }, [loadFirst]);
 
   const formatDuration = (seconds?: number) => {
     if (!seconds) return "0:00";
@@ -206,6 +220,24 @@ export default function CallRecordingsPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {!loading && hasMore && (
+          <div className="px-6 py-4 border-t border-[#eceae4] bg-[#fcfbf8] flex items-center justify-center">
+            <button
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="btn-secondary text-xs gap-2 disabled:opacity-50"
+            >
+              {loadingMore ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+              Load older recordings
+            </button>
+          </div>
+        )}
+        {!loading && search && hasMore && (
+          <div className="px-6 pb-4 text-center text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">
+            Search covers loaded recordings — load more to search older calls
           </div>
         )}
       </div>

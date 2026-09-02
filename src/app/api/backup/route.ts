@@ -47,10 +47,26 @@ async function handleBackup(req: NextRequest) {
   // silently RLS-blocked on most tables - confirmed live, every table but
   // abandoned_carts came back "empty" under the cookie-scoped client.
   const supabase = createAdminClient();
-  // Ordered by importance - if the time budget runs out partway (a real
-  // possibility on Hobby with a database this size), the tables that
-  // matter most were backed up first, not whatever happened to sort
-  // alphabetically.
+
+  // Off-platform (Google Drive) copy of the business-critical tables.
+  // Supabase already takes its own automatic daily backups of the full
+  // database; this weekly Drive copy is the off-Supabase safety net, so it
+  // carries only records that are NOT reconstructable from other data:
+  //
+  //   customers, orders, order_revenue_attribution, tasks, profiles,
+  //   call_logs, abandoned_carts   - core business + revenue records
+  //   settings, campaigns, campaign_templates, workflows - configuration
+  //   audit_logs                   - compliance / forensic trail
+  //   agent_attendance             - HR record, not derivable
+  //   leaves                       - HR record
+  //
+  // Deliberately EXCLUDED (present in Supabase's own backups, and either
+  // regenerable or transient engine state, and high-churn):
+  //   workflow_instances - transient per-customer workflow runtime state
+  //   workflow_logs      - per-step execution log, regenerable from workflows
+  //
+  // Ordered by importance - if the 50s time budget runs out partway, the
+  // tables that matter most were backed up first.
   const tables = [
     "customers",
     "orders",
@@ -66,9 +82,13 @@ async function handleBackup(req: NextRequest) {
     "agent_attendance",
     "leaves",
     "workflows",
-    "workflow_instances",
-    "workflow_logs",
   ];
+
+  // Explicit column lists where SELECT * pulls fields the backup does not
+  // need. Core business tables stay on "*" so a restore is always complete.
+  const BACKUP_SELECT: Record<string, string> = {
+    audit_logs: "id, actor_id, actor_email, entity_type, entity_id, action, summary, metadata, created_at",
+  };
   const timestamp = new Date().toISOString().split("T")[0];
   const results: any[] = [];
   const deadline = makeDeadline({ budgetMs: BACKUP_BUDGET_MS });
@@ -78,7 +98,7 @@ async function handleBackup(req: NextRequest) {
     const rows: any[] = [];
     for (let from = 0; ; from += PAGE) {
       if (deadline.expired()) break;
-      const { data, error } = await supabase.from(table).select("*").range(from, from + PAGE - 1);
+      const { data, error } = await supabase.from(table).select(BACKUP_SELECT[table] ?? "*").range(from, from + PAGE - 1);
       if (error) throw error;
       if (!data || data.length === 0) break;
       rows.push(...data);

@@ -23,6 +23,7 @@ const REVENUE_COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444", "
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "tasks" | "customers" | "rto" | "recovery" | "shipping" | "agents" | "attendance" | "products">("overview");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [exportingMaster, setExportingMaster] = useState(false);
   const [dateRange, setDateRange] = useState({
     start: format(startOfMonth(new Date()), "yyyy-MM-dd"),
@@ -628,21 +629,10 @@ export default function ReportsPage() {
     return () => {  };
   }, []);
 
-  // Background Pulse: Silently refresh analytics every 30s
-  useEffect(() => {
-    if (activeTab !== "agents" && activeTab !== "attendance" && activeTab !== "overview") return;
-    const interval = setInterval(() => {
-      if (typeof document !== 'undefined' && document.hidden) return;
-      // Interaction Sentinel
-      const isInteracting = document.activeElement?.tagName === 'INPUT' ||
-                           document.activeElement?.tagName === 'TEXTAREA' ||
-                           document.querySelector('[role="dialog"]');
-      if (isInteracting) return;
-
-      fetchAnalytics(true);
-    }, 3 * 60000); // safety-net refresh; realtime + manual reload cover the rest
-    return () => clearInterval(interval);
-  }, [activeTab, fetchAnalytics]);
+  // The 3-minute background poll was removed: it re-ran ~8 queries (two of
+  // them unbounded full-table scans on orders/customers) for anyone with the
+  // tab open. Analytics refreshes on date/filter change, and the header
+  // "Refresh" button gives an explicit on-demand refetch.
 
   useEffect(() => {
     if (loading || activeTab !== "agents") return;
@@ -1166,7 +1156,18 @@ export default function ReportsPage() {
               <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Report Delivery</span>
               <span className="text-[11px] font-bold text-[#1c1c1c]">Excel • PDF • WhatsApp</span>
             </div>
-            <button 
+            <button
+              disabled={refreshing}
+              onClick={async () => {
+                setRefreshing(true);
+                try { await fetchAnalytics(true); } finally { setRefreshing(false); }
+              }}
+              className="btn-secondary"
+              title="Refresh analytics"
+            >
+              <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} /> Refresh
+            </button>
+            <button
               disabled={exportingMaster}
               onClick={() => setShowMasterExport(true)} 
               className="btn-secondary"

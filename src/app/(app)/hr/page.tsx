@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { isDemoMode } from "@/lib/demo";
@@ -153,7 +153,6 @@ function HRDashboardContent() {
   const [mounted, setMounted] = useState(false);
   const [leaveActionModal, setLeaveActionModal] = useState<{ id: string, action: 'approved' | 'rejected' } | null>(null);
   const [leaveRemarks, setLeaveRemarks] = useState("");
-  const refreshInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -311,12 +310,9 @@ function HRDashboardContent() {
   useEffect(() => {
     if (!profileLoading && (currentProfile?.role === 'admin' || currentProfile?.role === 'hr')) {
       fetchData();
-      // Realtime below drives live updates; poll is only a missed-event
-      // safety net (fetchData hits /api/hr/data, which is expensive).
-      refreshInterval.current = setInterval(() => {
-        if (typeof document !== 'undefined' && document.hidden) return;
-        fetchData();
-      }, 3 * 60_000);
+      // The 3-minute poll was removed: /api/hr/data issues ~14 queries incl.
+      // two append-only tables. Realtime (below) covers status/leave changes,
+      // and the header "Refresh" button covers everything else on demand.
 
       const supabase = createClient();
       const channel = supabase
@@ -326,7 +322,6 @@ function HRDashboardContent() {
         .subscribe();
 
       return () => {
-        if (refreshInterval.current) clearInterval(refreshInterval.current);
         supabase.removeChannel(channel);
       };
     }

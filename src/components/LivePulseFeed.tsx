@@ -5,7 +5,9 @@ import { timeAgo, cn } from "@/lib/utils";
 import { Activity, Zap, ShoppingBag, CheckCircle2, AlertTriangle, User, RefreshCw } from "lucide-react";
 import { isDemoMode } from "@/lib/demo";
 
-const POLL_MS = 60_000;
+// 120s: this is the dashboard activity feed, not a call-center workflow
+// surface, so a 2-minute cadence is fine and halves its request volume.
+const POLL_MS = 120_000;
 
 export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[] }) {
   const [logs, setLogs] = useState<any[]>(initialLogs);
