@@ -502,23 +502,44 @@ export default function ReportsPage() {
       });
       const dailyTrendArr = Object.entries(dailyTrendMap).map(([date, d]) => ({ date, ...d })).sort((a,b) => b.date.localeCompare(a.date));
 
-      const states: Record<string, { count: number; revenue: number }> = {};
-      current.revData?.forEach(o => {
+      // ── State distribution (Phase 2A-2a) ─────────────────────────────
+      // Server-side aggregate: thin guarded route -> reports_state_distribution
+      // (SECURITY INVOKER) -> <= 12 rows + grand total. The page no longer
+      // downloads order rows just to group them by customer state.
+      let stateDist: any[] = [];
+      try {
+        const sdRes = await fetch(
+          `/api/reports/state-distribution?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}` +
+          `&state=${encodeURIComponent(filters.state)}&segment=${encodeURIComponent(filters.segment)}` +
+          `&paymentMode=${encodeURIComponent(filters.paymentMode)}`
+        );
+        if (!sdRes.ok) throw new Error(`state-distribution HTTP ${sdRes.status}`);
+        const sd = await sdRes.json();
+        const total = Number(sd?.data?.total_revenue) || 0;
+        stateDist = (sd?.data?.rows || []).map((r: any) => ({
+          state: r.state,
+          count: Number(r.orders) || 0,
+          revenue: Number(r.revenue) || 0,
+          share: total > 0 ? Math.round((Number(r.revenue) / total) * 100) : 0,
+        }));
+      } catch (sdErr) {
+        // TEMPORARY rollout fallback - to be removed once 2A-2a is verified in
+        // production. Clearly logged so any use is visible in the console.
+        console.warn("[2A-2a][FALLBACK] /api/reports/state-distribution unavailable; using legacy client-side aggregate:", sdErr);
+        const states: Record<string, { count: number; revenue: number }> = {};
+        current.revData?.forEach(o => {
           const s = (o.customer as any)?.state || "Other";
           if (!states[s]) states[s] = { count: 0, revenue: 0 };
           states[s].count++;
           states[s].revenue += Number(o.total_price) || 0;
-      });
-      // Was dividing each state's revenue (all orders, any status) by
-      // current.revenue (delivered-only) - a much smaller denominator, so
-      // shares summed to over 1000% instead of 100%. Compare against the
-      // same total the per-state figures are drawn from.
-      const totalStateRevenue = Object.values(states).reduce((acc, d) => acc + d.revenue, 0);
-      const stateDist = Object.entries(states).map(([state, d]) => ({
+        });
+        const totalStateRevenue = Object.values(states).reduce((acc, d) => acc + d.revenue, 0);
+        stateDist = Object.entries(states).map(([state, d]) => ({
           state,
           ...d,
-          share: totalStateRevenue > 0 ? Math.round((d.revenue / totalStateRevenue) * 100) : 0
-      })).sort((a,b) => b.revenue - a.revenue).slice(0, 10);
+          share: totalStateRevenue > 0 ? Math.round((d.revenue / totalStateRevenue) * 100) : 0,
+        })).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+      }
       // 4. Products & Workflows (Enriched)
       const productMap: Record<string, { units: number; revenue: number }> = {};
       current.revData?.forEach(o => {
