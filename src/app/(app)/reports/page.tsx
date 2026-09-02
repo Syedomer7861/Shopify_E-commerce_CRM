@@ -311,34 +311,76 @@ export default function ReportsPage() {
       const current = await getStatsForRange(start, end);
       const previous = await getStatsForRange(prevStart, prevEnd);
 
-      const { data: deliveryData } = await supabase.from("orders").select("delivery_status");
+      // ── Delivery breakdown (lifetime status split) ────────────────────
+      // Sum the nightly rollup_daily_orders (~1 row/day) instead of scanning
+      // every orders row. Falls back to the live column scan if the rollup
+      // table is missing or empty (pre-migration / first cron not run yet).
+      const breakdownCounts: Record<string, number> = { delivered: 0, in_transit: 0, rto: 0, pending: 0 };
+      const tallyDeliveryLive = async () => {
+        const { data } = await supabase.from("orders").select("delivery_status");
+        for (const o of data || []) {
+          if ((o.delivery_status as string) in breakdownCounts) breakdownCounts[o.delivery_status as string]++;
+        }
+      };
+      try {
+        const { data: roll, error: rollErr } = await supabase.from("rollup_daily_orders").select("by_status");
+        if (!rollErr && roll && roll.length > 0) {
+          for (const r of roll) {
+            const bs = (r.by_status as Record<string, number>) || {};
+            for (const k of Object.keys(breakdownCounts)) breakdownCounts[k] += Number(bs[k]) || 0;
+          }
+        } else {
+          await tallyDeliveryLive();
+        }
+      } catch {
+        await tallyDeliveryLive();
+      }
       const breakdown = [
         { label: "Delivered", color: "bg-[#1c1c1c]", key: "delivered" },
         { label: "In Transit", color: "bg-[#eceae4]", key: "in_transit" },
         { label: "RTO", color: "bg-rose-500", key: "rto" },
         { label: "Pending", color: "bg-gray-300", key: "pending" },
-      ].map(b => ({
-        label: b.label,
-        value: deliveryData?.filter(o => o.delivery_status === b.key).length || 0,
-        color: b.color
-      }));
+      ].map(b => ({ label: b.label, value: breakdownCounts[b.key] || 0, color: b.color }));
 
-      // Manual Segment Aggregation (Safe fallback for missing views)
-      const { data: allCustomers, error: custErr } = await supabase.from("customers").select("segment, total_orders");
-      if (custErr) console.error("Customer Segment Fetch Error:", custErr);
-      const segmentMap: Record<string, { count: number, orders: number }> = { 
-          repeat: { count: 0, orders: 0 }, 
-          one_time: { count: 0, orders: 0 }, 
-          inactive: { count: 0, orders: 0 }, 
-          risky: { count: 0, orders: 0 } 
+      // ── Segment stats ────────────────────────────────────────────────
+      // Read the pre-aggregated v_segment_summary view (one row per segment)
+      // instead of pulling every customer row. Falls back to the live scan
+      // if the view is unavailable.
+      const segmentMap: Record<string, { count: number, orders: number }> = {
+          repeat: { count: 0, orders: 0 },
+          one_time: { count: 0, orders: 0 },
+          inactive: { count: 0, orders: 0 },
+          risky: { count: 0, orders: 0 }
       };
-      allCustomers?.forEach(c => {
-          const s = (c.segment || 'inactive') as keyof typeof segmentMap;
-          if (segmentMap[s] !== undefined) {
-              segmentMap[s].count++;
-              segmentMap[s].orders += Number(c.total_orders || 0);
+      let totalCustCount = 0;
+      try {
+        const { data: segRows, error: segErr } = await supabase
+          .from("v_segment_summary")
+          .select("segment, count, avg_orders");
+        if (segErr || !segRows) throw segErr || new Error("v_segment_summary unavailable");
+        for (const row of segRows) {
+          const key = ((row.segment as string) || "inactive") as keyof typeof segmentMap;
+          const cnt = Number(row.count) || 0;
+          totalCustCount += cnt;
+          if (segmentMap[key] !== undefined) {
+            segmentMap[key].count += cnt;
+            // avg_orders * count reconstructs sum(total_orders); the
+            // downstream `orders / count` then yields avg_orders unchanged.
+            segmentMap[key].orders += (Number(row.avg_orders) || 0) * cnt;
           }
-      });
+        }
+      } catch (segErr) {
+        console.error("Segment view unavailable, falling back to live scan:", segErr);
+        const { data: allCustomers } = await supabase.from("customers").select("segment, total_orders");
+        totalCustCount = allCustomers?.length || 0;
+        allCustomers?.forEach(c => {
+          const s = ((c.segment as string) || 'inactive') as keyof typeof segmentMap;
+          if (segmentMap[s] !== undefined) {
+            segmentMap[s].count++;
+            segmentMap[s].orders += Number(c.total_orders || 0);
+          }
+        });
+      }
 
       const segmentStats = [
           { segment: "Repeat", count: segmentMap.repeat.count, color: "#1c1c1c", dot: "bg-[#1c1c1c]", avg_orders: segmentMap.repeat.count > 0 ? (segmentMap.repeat.orders / segmentMap.repeat.count).toFixed(1) : "0.0" },
@@ -348,7 +390,6 @@ export default function ReportsPage() {
       ];
 
       const repeatCount = segmentMap.repeat.count;
-      const totalCustCount = (allCustomers?.length || 0);
       const reorderRateValue = totalCustCount ? Math.round((Number(repeatCount) / Number(totalCustCount)) * 100) : 0;
 
       const taskOutcomes = [
