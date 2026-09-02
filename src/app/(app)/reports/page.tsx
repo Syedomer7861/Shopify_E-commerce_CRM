@@ -67,10 +67,10 @@ export default function ReportsPage() {
     workflowPerformance: [],
     metaRevenue: 0,
     agentAttendance: [],
-    rawCallsLogs: [],
-    rawOrdersLogs: [],
-    rawAbandonedData: [],
-    rawWorkflowLogs: [],
+    // Count of orders in the selected range (was `rawOrdersLogs.length`).
+    // The full order/call/cart/workflow row arrays are no longer stashed here
+    // for exports - each export fetches its own rows at click time.
+    ordersInRange: 0,
     dailyAttendanceLogs: [],
     aovTrend: []
   });
@@ -624,6 +624,7 @@ export default function ReportsPage() {
         deliveryBreakdown: breakdown,
         segmentStats: segmentStats,
         rtoOrders: (current.revData || []).filter(o => o.delivery_status === "rto").slice(0, 10),
+        ordersInRange: current.totOrders ?? (current.revData?.length || 0),
         taskBreakdown: taskOutcomes,
         agentPerformance: agentData.data || [],
         dailyTrends: dailyTrendArr,
@@ -636,16 +637,12 @@ export default function ReportsPage() {
             followed: current.callsData?.filter(c => (c.task?.task_type === "recovery") || (c.note?.toLowerCase().includes("recovery"))).length || 0, 
             recovered: current.abData?.filter(x => x.recovery_status === "recovered").length || 0 
         },
-        rawCallsLogs: current.callsData || [],
-        rawOrdersLogs: current.revData || [],
-        abandonedStats: { 
+        abandonedStats: {
             count: current.abCount, 
             potential: current.abData?.reduce((acc, x) => acc + (Number(x.total_price) || 0), 0) || 0, 
             recovered: current.abRecovered, 
             rate: current.abCount > 0 ? Math.round(((current.abData?.filter(x => x.recovery_status === "recovered").length || 0) / current.abCount) * 100) : 0 
         },
-        rawAbandonedData: current.abData || [],
-        rawWorkflowLogs: workflowAll || [],
         metaRevenue: current.metaRev,
         workflowPerformance: workflowPerf,
         agentAttendance: agentData.data || [],
@@ -742,11 +739,13 @@ export default function ReportsPage() {
   async function generateMasterDataPDF() {
     setExportingMaster(true);
     try {
-      const { data: allCustomers } = await supabase.from("customers").select("*").order("name");
-      const { data: allOrders } = await supabase.from("orders").select("*, customer:customers(name, phone, state), workflow_instances(workflows(name))").order("ordered_at", { ascending: false });
-      const { data: allCalls } = await supabase.from("call_logs").select("*, customer:customers(name, phone)").order("called_at", { ascending: false });
-      const { data: allAB } = await supabase.from("abandoned_carts").select("*, customer:customers(name, phone)").order("abandoned_at", { ascending: false });
-      
+      // Explicit columns (was SELECT *): only the fields the Master Archive
+      // pages below actually render.
+      const { data: allCustomers } = await supabase.from("customers").select("name, phone, email, segment, total_spent, state, total_orders").order("name");
+      const { data: allOrders } = await supabase.from("orders").select("order_number, total_price, delivery_status, ordered_at, customer:customers(name, phone, state), workflow_instances(workflows(name))").order("ordered_at", { ascending: false });
+      const { data: allCalls } = await supabase.from("call_logs").select("called_at, outcome, agent_name, note, customer:customers(name, phone)").order("called_at", { ascending: false });
+      const { data: allAB } = await supabase.from("abandoned_carts").select("total_price, recovery_status, abandoned_at, customer:customers(name, phone)").order("abandoned_at", { ascending: false });
+
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       pdf.setFillColor(28, 28, 28);
@@ -846,16 +845,18 @@ export default function ReportsPage() {
           await generateMasterDataPDF();
           return;
       }
-      const { data: allCustomers } = await supabase.from("customers").select("*").order("name");
-      let orderQuery = supabase.from("orders").select("*, customer:customers(name, phone), workflow_instances(workflows(name))").order("ordered_at", { ascending: false });
-      
+      // Explicit columns (was SELECT *). Same filter behaviour as before -
+      // only filters.state is applied here, to orders.
+      const { data: allCustomers } = await supabase.from("customers").select("name, phone, email, segment, total_spent, state, total_orders").order("name");
+      let orderQuery = supabase.from("orders").select("order_number, total_price, delivery_status, ordered_at, customer:customers(name, phone), workflow_instances(workflows(name))").order("ordered_at", { ascending: false });
+
       if (filters.state !== "all") {
           orderQuery = orderQuery.eq("customer.state", filters.state);
       }
       const { data: allOrders } = await orderQuery;
-      const { data: allCalls } = await supabase.from("call_logs").select("*, customer:customers(name, phone)").order("called_at", { ascending: false });
-      const { data: allAB } = await supabase.from("abandoned_carts").select("*, customer:customers(name, phone)").order("abandoned_at", { ascending: false });
-      const { data: allWorkflows } = await supabase.from("workflow_instances").select("*, workflows(name), customers(name, phone)").not("order_id", "is", null);
+      const { data: allCalls } = await supabase.from("call_logs").select("called_at, outcome, agent_name, note, customer:customers(name, phone)").order("called_at", { ascending: false });
+      const { data: allAB } = await supabase.from("abandoned_carts").select("total_price, recovery_status, abandoned_at, customer:customers(name, phone)").order("abandoned_at", { ascending: false });
+      const { data: allWorkflows } = await supabase.from("workflow_instances").select("order_id, created_at, workflows(name), customers(name, phone)").not("order_id", "is", null);
 
       const wb = XLSX.utils.book_new();
       
@@ -900,6 +901,68 @@ export default function ReportsPage() {
     }
   }
 
+  // ── Click-time export row fetchers ────────────────────────────────────
+  // The normal Reports page load no longer stashes raw order/call/cart/
+  // workflow arrays in `stats`. Each export fetches ONLY the rows + columns
+  // it needs, applying the same date range and the same state/segment/
+  // agent/payment filters the page currently has selected.
+  function exportWindow() {
+    const s = new Date(dateRange.start); s.setHours(0, 0, 0, 0);
+    const e = new Date(dateRange.end); e.setHours(23, 59, 59, 999);
+    return { startISO: s.toISOString(), endISO: e.toISOString() };
+  }
+  async function fetchExportOrders() {
+    const { startISO, endISO } = exportWindow();
+    const inner = filters.state !== "all" || filters.segment !== "all" ? "!inner" : "";
+    let q = supabase
+      .from("orders")
+      .select(`order_number, total_price, delivery_status, ordered_at, customer:customers${inner}(name, phone, state, segment)`)
+      .gte("ordered_at", startISO).lte("ordered_at", endISO)
+      .order("ordered_at", { ascending: false });
+    if (filters.state !== "all") q = q.eq("customer.state", filters.state);
+    if (filters.segment !== "all") q = q.eq("customer.segment", filters.segment);
+    if (filters.paymentMode !== "all") q = q.eq("payment_gateway", filters.paymentMode === "COD" ? "Cash on Delivery (COD)" : "Prepaid");
+    const { data } = await q;
+    return data || [];
+  }
+  async function fetchExportCalls() {
+    const { startISO, endISO } = exportWindow();
+    const inner = filters.state !== "all" || filters.segment !== "all" ? "!inner" : "";
+    let q = supabase
+      .from("call_logs")
+      .select(`called_at, outcome, disposition, agent_name, note, customer:customers${inner}(name, phone, state, segment), task:tasks(assigned_to)`)
+      .gte("called_at", startISO).lte("called_at", endISO)
+      .order("called_at", { ascending: false });
+    if (filters.state !== "all") q = q.eq("customer.state", filters.state);
+    if (filters.segment !== "all") q = q.eq("customer.segment", filters.segment);
+    if (filters.agentId !== "all") q = q.eq("task.assigned_to", filters.agentId);
+    const { data } = await q;
+    return data || [];
+  }
+  async function fetchExportAbandoned() {
+    const { startISO, endISO } = exportWindow();
+    const inner = filters.state !== "all" || filters.segment !== "all" ? "!inner" : "";
+    let q = supabase
+      .from("abandoned_carts")
+      .select(`total_price, recovery_status, abandoned_at, customer:customers${inner}(name, phone, state, segment)`)
+      .gte("abandoned_at", startISO).lte("abandoned_at", endISO)
+      .order("abandoned_at", { ascending: false });
+    if (filters.state !== "all") q = q.eq("customer.state", filters.state);
+    if (filters.segment !== "all") q = q.eq("customer.segment", filters.segment);
+    const { data } = await q;
+    return data || [];
+  }
+  async function fetchExportWorkflows() {
+    const { startISO, endISO } = exportWindow();
+    const { data } = await supabase
+      .from("workflow_instances")
+      .select("order_id, status, created_at, workflows(name), orders:order_id(customer:customers(name))")
+      .not("order_id", "is", null)
+      .gte("created_at", startISO).lte("created_at", endISO)
+      .order("created_at", { ascending: false });
+    return data || [];
+  }
+
   async function handleAdvancedExport() {
     setIsExporting(true);
     try {
@@ -910,17 +973,25 @@ export default function ReportsPage() {
       const wb = XLSX.utils.book_new();
       const filename = `CureForever_Advanced_${dateRange.start}_to_${dateRange.end}.${exportOptions.format}`;
 
+      // Fetch only the datasets whose sheets are actually selected.
+      const [exOrders, exCalls, exAB, exWF] = await Promise.all([
+        exportOptions.sheets.orders ? fetchExportOrders() : Promise.resolve([] as any[]),
+        exportOptions.sheets.calls ? fetchExportCalls() : Promise.resolve([] as any[]),
+        exportOptions.sheets.recovery ? fetchExportAbandoned() : Promise.resolve([] as any[]),
+        exportOptions.sheets.workflows ? fetchExportWorkflows() : Promise.resolve([] as any[]),
+      ]);
+
       if (exportOptions.sheets.summary) {
         const summary = [["Metric", "Value"], ["Total Calls", stats.totalCalls], ["Delivered Revenue", stats.totalRevenue], ["Recovered Revenue", stats.abandonedStats.recovered]];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summary), "Summary");
       }
       if (exportOptions.sheets.orders) {
-        const orders = [["Order No", "Customer", "Phone", "Total", "Status", "Date"], ...stats.rawOrdersLogs.map((o: any) => [o.order_number, o.customer?.name, o.customer?.phone, o.total_price, o.delivery_status, format(new Date(o.ordered_at), "yyyy-MM-dd")])];
+        const orders = [["Order No", "Customer", "Phone", "Total", "Status", "Date"], ...exOrders.map((o: any) => [o.order_number, o.customer?.name, o.customer?.phone, o.total_price, o.delivery_status, format(new Date(o.ordered_at), "yyyy-MM-dd")])];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(orders), "Orders");
       }
 
       if (exportOptions.sheets.calls) {
-        const calls = [["Timestamp", "Customer", "Phone", "Outcome", "Disposition", "Agent", "Note"], ...stats.rawCallsLogs.map((c: any) => [format(new Date(c.called_at), "PPpp"), c.customer?.name, c.customer?.phone, c.outcome, c.disposition, c.agent_name, c.note])];
+        const calls = [["Timestamp", "Customer", "Phone", "Outcome", "Disposition", "Agent", "Note"], ...exCalls.map((c: any) => [format(new Date(c.called_at), "PPpp"), c.customer?.name, c.customer?.phone, c.outcome, c.disposition, c.agent_name, c.note])];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(calls), "Call Logs");
       }
 
@@ -944,12 +1015,12 @@ export default function ReportsPage() {
       }
 
       if (exportOptions.sheets.recovery) {
-        const recovery = [["Customer", "Phone", "Cart Total", "Status", "Abandoned Date"], ...stats.rawAbandonedData.map((a: any) => [a.customer?.name, a.customer?.phone, a.total_price, a.recovery_status, format(new Date(a.abandoned_at), "yyyy-MM-dd")])];
+        const recovery = [["Customer", "Phone", "Cart Total", "Status", "Abandoned Date"], ...exAB.map((a: any) => [a.customer?.name, a.customer?.phone, a.total_price, a.recovery_status, format(new Date(a.abandoned_at), "yyyy-MM-dd")])];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(recovery), "Abandoned Recovery");
       }
 
       if (exportOptions.sheets.workflows) {
-        const wfs = [["Workflow", "Customer", "Order ID", "Status", "Date"], ...stats.rawWorkflowLogs.map((w: any) => [w.workflows?.name, w.orders?.customer?.name || "Customer", w.order_id, w.status, format(new Date(w.created_at), "yyyy-MM-dd")])];
+        const wfs = [["Workflow", "Customer", "Order ID", "Status", "Date"], ...exWF.map((w: any) => [w.workflows?.name, w.orders?.customer?.name || "Customer", w.order_id, w.status, format(new Date(w.created_at), "yyyy-MM-dd")])];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wfs), "Workflow Attribution");
       }
       
@@ -971,6 +1042,14 @@ export default function ReportsPage() {
   async function generatePDFReport() {
       setIsExporting(true);
       try {
+          // Click-time row fetches for the detail pages (same date range +
+          // filters as the page). Only fetched for the pages actually enabled.
+          const [pdfOrders, pdfCalls, pdfAB] = await Promise.all([
+            exportOptions.sheets.orders ? fetchExportOrders() : Promise.resolve([] as any[]),
+            exportOptions.sheets.calls ? fetchExportCalls() : Promise.resolve([] as any[]),
+            exportOptions.sheets.recovery ? fetchExportAbandoned() : Promise.resolve([] as any[]),
+          ]);
+
           const reportElement = document.getElementById('analytics-report-wrapper');
           if (!reportElement) throw new Error("Report content not found");
           const pdf = new jsPDF('p', 'mm', 'a4');
@@ -1043,7 +1122,7 @@ export default function ReportsPage() {
               autoTable(pdf, {
                   startY: 25,
                   head: [["ID", "Customer", "Total", "Status", "Date"]],
-                  body: stats.rawOrdersLogs.slice(0, 100).map((o: any) => [o.order_number, (o.customer as any)?.name || "-", formatCurrency(o.total_price), o.delivery_status, format(new Date(o.ordered_at), "MMM dd")]),
+                  body: pdfOrders.slice(0, 100).map((o: any) => [o.order_number, (o.customer as any)?.name || "-", formatCurrency(o.total_price), o.delivery_status, format(new Date(o.ordered_at), "MMM dd")]),
                   headStyles: { fillColor: [28, 28, 28] }
               });
           }
@@ -1056,7 +1135,7 @@ export default function ReportsPage() {
               autoTable(pdf, {
                   startY: 25,
                   head: [["Time", "Customer", "Outcome", "Agent"]],
-                  body: stats.rawCallsLogs.slice(0, 100).map((c: any) => [format(new Date(c.called_at), "HH:mm"), c.customer?.name || "-", c.outcome, c.agent_name]),
+                  body: pdfCalls.slice(0, 100).map((c: any) => [format(new Date(c.called_at), "HH:mm"), c.customer?.name || "-", c.outcome, c.agent_name]),
                   headStyles: { fillColor: [245, 158, 11] }
               });
           }
@@ -1070,7 +1149,7 @@ export default function ReportsPage() {
               autoTable(pdf, {
                   startY: 25,
                   head: [["Customer", "Total", "Status", "Date"]],
-                  body: stats.rawAbandonedData.map((a: any) => [a.customer?.name || "-", formatCurrency(a.total_price), a.recovery_status, format(new Date(a.abandoned_at), "yyyy-MM-dd")]),
+                  body: pdfAB.map((a: any) => [a.customer?.name || "-", formatCurrency(a.total_price), a.recovery_status, format(new Date(a.abandoned_at), "yyyy-MM-dd")]),
                   headStyles: { fillColor: [225, 29, 72] }
               });
           }
@@ -1387,12 +1466,12 @@ export default function ReportsPage() {
                trendValue={getTrendValue(stats.totalCalls, prevStats?.callsCount)} 
                sparklineData={stats.dailyTrends.slice(-7).map((d: any) => ({ value: d.calls || 0 }))}
             />
-            <StatCard 
-               label="Total Orders" 
-               value={stats.rawOrdersLogs.length} 
-               sub="Gross volume" 
-               trend={getTrend(stats.rawOrdersLogs.length, prevStats?.totOrders)} 
-               trendValue={getTrendValue(stats.rawOrdersLogs.length, prevStats?.totOrders)} 
+            <StatCard
+               label="Total Orders"
+               value={stats.ordersInRange}
+               sub="Gross volume"
+               trend={getTrend(stats.ordersInRange, prevStats?.totOrders)}
+               trendValue={getTrendValue(stats.ordersInRange, prevStats?.totOrders)}
                sparklineData={stats.dailyTrends.slice(-7).map((d: any) => ({ value: d.orders || 0 }))}
             />
             <StatCard label="Reorder Rate" value={`${stats.reorderRate}%`} sub="Repeat segment" />
@@ -1421,12 +1500,12 @@ export default function ReportsPage() {
                trend={getTrend(stats.metaRevenue, prevStats?.metaRev)}
                trendValue={getTrendValue(stats.metaRevenue, prevStats?.metaRev)}
             />
-            <StatCard 
-               label="AOV" 
-               value={formatCurrency(stats.totalRevenue / (stats.rawOrdersLogs.length || 1))} 
-               sub="Avg Order Value" 
-               trend={getTrend(stats.totalRevenue / (stats.rawOrdersLogs.length || 1), prevStats?.revenue / (prevStats?.totOrders || 1))}
-               trendValue={getTrendValue(stats.totalRevenue / (stats.rawOrdersLogs.length || 1), prevStats?.revenue / (prevStats?.totOrders || 1))}
+            <StatCard
+               label="AOV"
+               value={formatCurrency(stats.totalRevenue / (stats.ordersInRange || 1))}
+               sub="Avg Order Value"
+               trend={getTrend(stats.totalRevenue / (stats.ordersInRange || 1), prevStats?.revenue / (prevStats?.totOrders || 1))}
+               trendValue={getTrendValue(stats.totalRevenue / (stats.ordersInRange || 1), prevStats?.revenue / (prevStats?.totOrders || 1))}
             />
             <StatCard 
                label="Abandoned" 
@@ -1706,7 +1785,7 @@ export default function ReportsPage() {
                                 <span>{w.value}</span>
                              </div>
                              <div className="h-1.5 bg-[#eceae4] rounded-full overflow-hidden">
-                                <div className="h-full bg-[#1c1c1c]" style={{ width: `${(w.value / stats.rawOrdersLogs.length) * 100}%` }} />
+                                <div className="h-full bg-[#1c1c1c]" style={{ width: `${(w.value / (stats.ordersInRange || 1)) * 100}%` }} />
                              </div>
                           </div>
                        ))}
