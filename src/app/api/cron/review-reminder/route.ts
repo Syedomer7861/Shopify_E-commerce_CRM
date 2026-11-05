@@ -21,47 +21,67 @@ export async function POST(req: NextRequest) {
 
 async function processRequest(req: NextRequest) {
   const supabase = getSupabase();
-  const today = new Date().toISOString().split("T")[0];
 
   try {
-    // 1. Get Settings
-    const settings = await getSystemSettings(supabase);
-    
-    const effectiveBridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings?.whatsapp_bridge_url;
-    if (!settings?.whatsapp_enabled || !effectiveBridgeUrl || !settings?.wa_auto_order_delivered) {
-      console.log("⏭️ Review Cron Skipped: WhatsApp or Auto-Review disabled in Settings.");
-      return NextResponse.json({ skipped: true, reason: "WhatsApp or Auto-Review disabled in settings" });
+    const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+    let sentCount = 0;
+    let totalTasks = 0;
+
+    for (const org of orgs ?? []) {
+      const result = await processOrg(supabase, org.id);
+      sentCount += result.sent;
+      totalTasks += result.total;
     }
 
-    // 2. Find "review" tasks due today
-    const { data: tasks, error } = await supabase
-      .from("tasks")
-      .select(`
+    return NextResponse.json({ sent: sentCount, total: totalTasks });
+  } catch (err: any) {
+    console.error("Review reminder error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+async function processOrg(supabase: any, orgId: string) {
+  const today = new Date().toISOString().split("T")[0];
+
+  // 1. Get Settings
+  const settings = await getSystemSettings(supabase, orgId);
+
+  const effectiveBridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings?.whatsapp_bridge_url;
+  if (!settings?.whatsapp_enabled || !effectiveBridgeUrl || !settings?.wa_auto_order_delivered) {
+    return { sent: 0, total: 0 };
+  }
+
+  // 2. Find "review" tasks due today
+  const { data: tasks, error } = await supabase
+    .from("tasks")
+    .select(`
+      id,
+      task_type,
+      due_date,
+      status,
+      customer:customers (
         id,
-        task_type,
-        due_date,
-        status,
-        customer:customers (
-          id,
-          name,
-          phone,
-          whatsapp_reminders_enabled
-        ),
-        order:orders (
-          order_number,
-          line_items
-        )
-      `)
-      .eq("task_type", "review")
-      .eq("due_date", today)
-      .eq("status", "pending");
+        name,
+        phone,
+        whatsapp_reminders_enabled
+      ),
+      order:orders (
+        order_number,
+        line_items
+      )
+    `)
+    .eq("task_type", "review")
+    .eq("due_date", today)
+    .eq("status", "pending")
+    .eq("org_id", orgId);
 
-    if (error) throw error;
-    if (!tasks?.length) return NextResponse.json({ sent: 0, reason: "No review tasks due today" });
+  if (error) throw error;
+  if (!tasks?.length) return { sent: 0, total: 0 };
 
-    let sentCount = 0;
-    const bridgeUrl = effectiveBridgeUrl;
+  let sentCount = 0;
+  const bridgeUrl = effectiveBridgeUrl;
 
+  {
     for (const task of tasks) {
       const customer = task.customer as any;
       if (customer.whatsapp_reminders_enabled === false) continue;
@@ -89,6 +109,7 @@ async function processRequest(req: NextRequest) {
           }).eq("id", task.id);
 
           await supabase.from("call_logs").insert({
+            org_id: orgId,
             task_id: task.id,
             customer_id: customer.id,
             outcome: "done",
@@ -100,10 +121,7 @@ async function processRequest(req: NextRequest) {
         console.error(`Error sending review WA to ${customer.phone}:`, err);
       }
     }
-
-    return NextResponse.json({ sent: sentCount, total: tasks.length });
-  } catch (err: any) {
-    console.error("Review reminder error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
   }
+
+  return { sent: sentCount, total: tasks.length };
 }

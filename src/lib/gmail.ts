@@ -2,13 +2,13 @@ import { google } from "googleapis";
 import { createServerClient } from "./supabase";
 import { getSystemSettings } from "./server-settings";
 
-export async function getGmailClient() {
+export async function getGmailClient(orgId?: string) {
   const supabase = createServerClient();
   // settings RLS is admin-only now (it holds API secrets); this is called
   // from automated flows (order-confirmation emails, workflow-engine) that
   // don't always run under an admin session, so it needs the service-role
   // fallback rather than a raw .select() under the caller's own session.
-  const settings = await getSystemSettings(supabase);
+  const settings = await getSystemSettings(supabase, orgId);
 
   if (!settings) {
     throw new Error("Failed to fetch settings from database.");
@@ -37,14 +37,16 @@ export async function sendGmail({
   to,
   subject,
   body,
-  attachments = []
+  attachments = [],
+  orgId
 }: {
   to: string;
   subject: string;
   body: string;
   attachments?: { filename: string; content: string; contentType: string }[];
+  orgId?: string;
 }) {
-  const auth = await getGmailClient();
+  const auth = await getGmailClient(orgId);
   const gmail = google.gmail({ version: "v1", auth });
 
   // An HTML-only message (no text/plain alternative) is a real spam-score

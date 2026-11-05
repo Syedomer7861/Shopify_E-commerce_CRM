@@ -25,61 +25,82 @@ async function processRequest() {
   const supabase = getSupabase();
 
   try {
-    // 1. Get Settings
-    const settings = await getSystemSettings(supabase);
-    
-    if (!settings) {
-      console.log("⏭️ Recovery Cron Skipped: Settings not found.");
-      return NextResponse.json({ skipped: true, reason: "Settings not found" });
-    }
-
-    const effectiveBridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings.whatsapp_bridge_url;
-    const waEnabled = settings.whatsapp_enabled && effectiveBridgeUrl && settings.wa_auto_cart_abandoned;
-    const emailEnabled = settings.gmail_refresh_token && settings.email_auto_cart_abandoned;
-
-    if (!waEnabled && !emailEnabled) {
-      console.log("⏭️ Recovery Cron Skipped: Both WhatsApp and Email recovery automations disabled.");
-      return NextResponse.json({ skipped: true, reason: "Automations disabled in settings" });
-    }
-
-    const delayHours = settings.recovery_delay_hours || 24;
-    const thresholdDate = new Date(Date.now() - (delayHours * 60 * 60 * 1000)).toISOString();
-
-    // 2. Find "recovery" tasks that are pending and older than the threshold
-    const { data: tasks, error } = await supabase
-      .from("tasks")
-      .select(`
-        id,
-        task_type,
-        due_date,
-        status,
-        created_at,
-        customer:customers (
-          id,
-          name,
-          phone,
-          email,
-          whatsapp_reminders_enabled,
-          custom_meta
-        ),
-        abandoned_cart:abandoned_carts (
-          id,
-          cart_token,
-          line_items,
-          total_price,
-          custom_meta
-        )
-      `)
-      .eq("task_type", "recovery")
-      .eq("status", "pending")
-      .lte("created_at", thresholdDate);
-
-    if (error) throw error;
-    if (!tasks?.length) return NextResponse.json({ sent: 0, reason: "No recovery tasks ready yet" });
-
+    const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
     let waSentCount = 0;
     let emailSentCount = 0;
+    let totalTasks = 0;
 
+    for (const org of orgs ?? []) {
+      const result = await processOrg(supabase, org.id);
+      waSentCount += result.waSent;
+      emailSentCount += result.emailSent;
+      totalTasks += result.total;
+    }
+
+    return NextResponse.json({ wa_sent: waSentCount, email_sent: emailSentCount, total: totalTasks });
+  } catch (err: any) {
+    console.error("Recovery reminder error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+async function processOrg(supabase: any, orgId: string) {
+  let waSentCount = 0;
+  let emailSentCount = 0;
+
+  // 1. Get Settings
+  const settings = await getSystemSettings(supabase, orgId);
+
+  if (!settings) {
+    console.log(`⏭️ Recovery Cron Skipped for org ${orgId}: Settings not found.`);
+    return { waSent: 0, emailSent: 0, total: 0 };
+  }
+
+  const effectiveBridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings.whatsapp_bridge_url;
+  const waEnabled = settings.whatsapp_enabled && effectiveBridgeUrl && settings.wa_auto_cart_abandoned;
+  const emailEnabled = settings.gmail_refresh_token && settings.email_auto_cart_abandoned;
+
+  if (!waEnabled && !emailEnabled) {
+    return { waSent: 0, emailSent: 0, total: 0 };
+  }
+
+  const delayHours = settings.recovery_delay_hours || 24;
+  const thresholdDate = new Date(Date.now() - (delayHours * 60 * 60 * 1000)).toISOString();
+
+  // 2. Find "recovery" tasks that are pending and older than the threshold
+  const { data: tasks, error } = await supabase
+    .from("tasks")
+    .select(`
+      id,
+      task_type,
+      due_date,
+      status,
+      created_at,
+      customer:customers (
+        id,
+        name,
+        phone,
+        email,
+        whatsapp_reminders_enabled,
+        custom_meta
+      ),
+      abandoned_cart:abandoned_carts (
+        id,
+        cart_token,
+        line_items,
+        total_price,
+        custom_meta
+      )
+    `)
+    .eq("task_type", "recovery")
+    .eq("status", "pending")
+    .eq("org_id", orgId)
+    .lte("created_at", thresholdDate);
+
+  if (error) throw error;
+  if (!tasks?.length) return { waSent: 0, emailSent: 0, total: 0 };
+
+  {
     for (const task of tasks) {
       const customer = task.customer as any;
       const abandonedCart = task.abandoned_cart as any;
@@ -115,19 +136,20 @@ async function processRequest() {
         const body = personaliseTemplate(bodyTemplate, variables);
 
         try {
-          await sendGmail({ to: customer.email, subject, body });
+          await sendGmail({ to: customer.email, subject, body, orgId });
           emailSentCount++;
           taskActioned = true;
         } catch (err) { console.error(`Email Error:`, err); }
       }
 
       if (taskActioned) {
-        await supabase.from("tasks").update({ 
-          status: "done", 
-          completed_at: new Date().toISOString() 
+        await supabase.from("tasks").update({
+          status: "done",
+          completed_at: new Date().toISOString()
         }).eq("id", task.id);
 
         await supabase.from("call_logs").insert({
+          org_id: orgId,
           task_id: task.id,
           customer_id: customer.id,
           outcome: "done",
@@ -136,10 +158,7 @@ async function processRequest() {
         });
       }
     }
-
-    return NextResponse.json({ wa_sent: waSentCount, email_sent: emailSentCount, total: tasks.length });
-  } catch (err: any) {
-    console.error("Recovery reminder error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
   }
+
+  return { waSent: waSentCount, emailSent: emailSentCount, total: tasks.length };
 }

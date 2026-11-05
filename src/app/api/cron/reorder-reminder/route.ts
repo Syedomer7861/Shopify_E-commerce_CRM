@@ -23,63 +23,84 @@ export async function POST(req: NextRequest) {
 
 async function processRequest(req: NextRequest) {
   const supabase = getSupabase();
-  const today = new Date().toISOString().split("T")[0];
 
   try {
-    // 1. Get Settings
-    const settings = await getSystemSettings(supabase);
-    
-    if (!settings) {
-      console.log("⏭️ Reorder Cron Skipped: Settings not found.");
-      return NextResponse.json({ skipped: true, reason: "Settings not found" });
-    }
-
-    const effectiveBridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings.whatsapp_bridge_url;
-    const waEnabled = settings.whatsapp_enabled && effectiveBridgeUrl && settings.wa_auto_reorder;
-    const emailEnabled = settings.gmail_refresh_token && settings.email_auto_reorder;
-
-    if (!waEnabled && !emailEnabled) {
-      console.log("⏭️ Reorder Cron Skipped: Both WhatsApp and Email reorder automations disabled.");
-      return NextResponse.json({ skipped: true, reason: "Automations disabled in settings" });
-    }
-
-    // 2. Find "reorder" tasks due today
-    const { data: tasks, error } = await supabase
-      .from("tasks")
-      .select(`
-        id,
-        task_type,
-        due_date,
-        status,
-        customer:customers (
-          id,
-          name,
-          phone,
-          email,
-          whatsapp_reminders_enabled
-        ),
-        order:orders (
-          id,
-          order_number,
-          line_items,
-          shopify_order_id,
-          total_price,
-          tracking_number,
-          fulfillment_status,
-          delivery_status,
-          ordered_at
-        )
-      `)
-      .eq("task_type", "reorder")
-      .eq("due_date", today)
-      .eq("status", "pending");
-
-    if (error) throw error;
-    if (!tasks?.length) return NextResponse.json({ sent: 0, reason: "No reorder tasks due today" });
-
+    const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
     let waSentCount = 0;
     let emailSentCount = 0;
+    let totalTasks = 0;
 
+    for (const org of orgs ?? []) {
+      const result = await processOrg(supabase, org.id);
+      waSentCount += result.waSent;
+      emailSentCount += result.emailSent;
+      totalTasks += result.total;
+    }
+
+    return NextResponse.json({ wa_sent: waSentCount, email_sent: emailSentCount, total: totalTasks });
+  } catch (err: any) {
+    console.error("Reorder reminder error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+async function processOrg(supabase: any, orgId: string) {
+  const today = new Date().toISOString().split("T")[0];
+  let waSentCount = 0;
+  let emailSentCount = 0;
+
+  // 1. Get Settings
+  const settings = await getSystemSettings(supabase, orgId);
+
+  if (!settings) {
+    console.log(`⏭️ Reorder Cron Skipped for org ${orgId}: Settings not found.`);
+    return { waSent: 0, emailSent: 0, total: 0 };
+  }
+
+  const effectiveBridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings.whatsapp_bridge_url;
+  const waEnabled = settings.whatsapp_enabled && effectiveBridgeUrl && settings.wa_auto_reorder;
+  const emailEnabled = settings.gmail_refresh_token && settings.email_auto_reorder;
+
+  if (!waEnabled && !emailEnabled) {
+    return { waSent: 0, emailSent: 0, total: 0 };
+  }
+
+  // 2. Find "reorder" tasks due today
+  const { data: tasks, error } = await supabase
+    .from("tasks")
+    .select(`
+      id,
+      task_type,
+      due_date,
+      status,
+      customer:customers (
+        id,
+        name,
+        phone,
+        email,
+        whatsapp_reminders_enabled
+      ),
+      order:orders (
+        id,
+        order_number,
+        line_items,
+        shopify_order_id,
+        total_price,
+        tracking_number,
+        fulfillment_status,
+        delivery_status,
+        ordered_at
+      )
+    `)
+    .eq("task_type", "reorder")
+    .eq("due_date", today)
+    .eq("status", "pending")
+    .eq("org_id", orgId);
+
+  if (error) throw error;
+  if (!tasks?.length) return { waSent: 0, emailSent: 0, total: 0 };
+
+  {
     for (const task of tasks) {
       const customer = task.customer as any;
       const order = task.order as any;
@@ -115,19 +136,20 @@ async function processRequest(req: NextRequest) {
         const body = personaliseTemplate(bodyTemplate, variables);
 
         try {
-          await sendGmail({ to: customer.email, subject, body });
+          await sendGmail({ to: customer.email, subject, body, orgId });
           emailSentCount++;
           taskActioned = true;
         } catch (err) { console.error(`Email Error:`, err); }
       }
 
       if (taskActioned) {
-        await supabase.from("tasks").update({ 
-          status: "done", 
-          completed_at: new Date().toISOString() 
+        await supabase.from("tasks").update({
+          status: "done",
+          completed_at: new Date().toISOString()
         }).eq("id", task.id);
 
         await supabase.from("call_logs").insert({
+          org_id: orgId,
           task_id: task.id,
           customer_id: customer.id,
           outcome: "done",
@@ -136,10 +158,7 @@ async function processRequest(req: NextRequest) {
         });
       }
     }
-
-    return NextResponse.json({ wa_sent: waSentCount, email_sent: emailSentCount, total: tasks.length });
-  } catch (err: any) {
-    console.error("Reorder reminder error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
   }
+
+  return { waSent: waSentCount, emailSent: emailSentCount, total: tasks.length };
 }
