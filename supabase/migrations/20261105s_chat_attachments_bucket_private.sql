@@ -1,0 +1,17 @@
+-- The chat-attachments storage bucket was created with public = true.
+-- Section 3 of 20260822d_advisor_warnings.sql already restricted the
+-- storage.objects SELECT policy to `authenticated`, but that only governs
+-- RLS-checked object access — a public bucket serves any file via
+-- /storage/v1/object/public/<bucket>/<path> with ZERO auth, bypassing RLS
+-- entirely regardless of policies on storage.objects. Anyone with (or
+-- guessing) a file path could read any org's chat attachment.
+--
+-- Fixed by: switching ChatInput.tsx's upload flow from getPublicUrl() to a
+-- 10-year createSignedUrl() (src/components/chat/ChatInput.tsx), backfilling
+-- any existing public-URL messages to signed URLs (none existed on prod —
+-- 0 image/file messages found), then flipping the bucket itself to private.
+-- Both the backfill and this flip were applied directly via the Supabase
+-- JS client (service role), not SQL Editor, since bucket-level `public` and
+-- signed-URL generation aren't reachable from plain SQL. Recorded here for
+-- history; re-running the UPDATE below is idempotent either way.
+UPDATE storage.buckets SET public = false WHERE id = 'chat-attachments';

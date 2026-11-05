@@ -110,12 +110,15 @@ export function ChatInput() {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      const TEN_YEARS_SECONDS = 10 * 365 * 24 * 60 * 60;
+      const { data: signedData, error: signError } = await supabase.storage
         .from('chat-attachments')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, TEN_YEARS_SECONDS);
+
+      if (signError || !signedData) throw signError || new Error("Could not sign attachment URL");
 
       const type = forceType || (file.type.startsWith('image/') ? 'image' : 'file');
-      sendMessage(activeChannel.id, file.name, type, publicUrl);
+      sendMessage(activeChannel.id, file.name, type, signedData.signedUrl);
       
       toast.success("File uploaded");
     } catch (err: any) {
