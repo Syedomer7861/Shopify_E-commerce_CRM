@@ -138,6 +138,12 @@ export default function LoginPage() {
 
         </div>
 
+        <div className="mt-8 text-center">
+          <a href="/signup" className="text-[10px] font-black text-[#1c1c1c]/40 hover:text-[#1c1c1c] uppercase tracking-widest transition-colors">
+            New organization? Create a workspace
+          </a>
+        </div>
+
         {/* Footer Info */}
         <div className="mt-12 text-center">
           <div className="flex items-center justify-center gap-6 mb-4">

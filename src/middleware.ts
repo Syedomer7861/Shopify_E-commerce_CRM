@@ -59,13 +59,14 @@ export async function middleware(request: NextRequest) {
 
   // Protect all routes except login, api, and static files
   const isLoginPage = request.nextUrl.pathname.startsWith('/login')
+  const isSignupPage = request.nextUrl.pathname.startsWith('/signup')
   const isApiRoute = request.nextUrl.pathname.startsWith('/api')
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
   const isStaticFile = request.nextUrl.pathname.includes('.')
 
   // Demo mode is a real login (see login/page.tsx): the demo cookie is only set
   // after signInWithPassword succeeds, so it must never stand in for a session.
-  if (!user && !isLoginPage && !isApiRoute && !isAuthRoute && !isStaticFile) {
+  if (!user && !isLoginPage && !isSignupPage && !isApiRoute && !isAuthRoute && !isStaticFile) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
