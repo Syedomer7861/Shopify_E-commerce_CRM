@@ -13,11 +13,12 @@ import { createAdminClient } from "@/lib/supabase";
 // row for this agent before inserting the new one - same pattern the
 // webhook route already uses on its "started" event - keeps at most one
 // live entry per agent instead of accumulating orphans forever.
-async function logOutboundCall(supabase: ReturnType<typeof createAdminClient>, agentId: string | null, customerPhone: string, taskId?: string | null) {
+async function logOutboundCall(supabase: ReturnType<typeof createAdminClient>, agentId: string | null, orgId: string | null, customerPhone: string, taskId?: string | null) {
   if (agentId) {
     await supabase.from("raw_call_logs").delete().eq("agent_id", agentId).eq("status", "in_progress");
   }
   await supabase.from("raw_call_logs").insert({
+    org_id: orgId,
     agent_id: agentId,
     customer_phone: customerPhone,
     task_id: taskId || null,
@@ -54,26 +55,13 @@ export async function POST(req: Request) {
       });
     }
 
-    // 2. Fetch telephony settings
     const supabase = createAdminClient();
-    const { data: settings, error: settingsError } = await supabase
-      .from("settings")
-      .select("*")
-      .eq("id", "00000000-0000-0000-0000-000000000000")
-      .maybeSingle();
 
-    if (settingsError || !settings) {
-      return NextResponse.json({ ok: false, error: "Failed to load telephony settings from database" }, { status: 500 });
-    }
-
-    const provider = settings.telephony_provider || "none";
-    if (provider === "none") {
-      return NextResponse.json({ ok: false, error: "No cloud telephony provider is configured in Settings" }, { status: 400 });
-    }
-
-    // 3. Resolve Agent Phone Number (and identity, for raw_call_logs below)
+    // 2. Resolve Agent Phone Number, identity, and org (telephony
+    // settings are per-org - the agent's own profile tells us which).
     let agentPhone = agentPhoneOverride;
     let agentId: string | null = null;
+    let agentOrgId: string | null = null;
 
     if (!agentPhone) {
       // In a real session, we can verify the agent using user token
@@ -92,29 +80,55 @@ export async function POST(req: Request) {
         // Since we are server-side, let's query the last active profile or default to caller setting
         const { data: lastProfile } = await supabase
           .from("profiles")
-          .select("id, phone")
+          .select("id, phone, org_id")
           .eq("role", "agent")
           .eq("is_active", true)
           .limit(1)
           .maybeSingle();
         agentPhone = lastProfile?.phone;
         agentId = lastProfile?.id || null;
+        agentOrgId = lastProfile?.org_id || null;
       } else {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("id, phone")
+          .select("id, phone, org_id")
           .eq("id", userId)
           .maybeSingle();
         agentPhone = profile?.phone;
         agentId = profile?.id || null;
+        agentOrgId = profile?.org_id || null;
       }
     }
 
     if (!agentPhone) {
-      return NextResponse.json({ 
-        ok: false, 
-        error: "Agent phone number is missing. Please set your phone number in your Profile/settings." 
+      return NextResponse.json({
+        ok: false,
+        error: "Agent phone number is missing. Please set your phone number in your Profile/settings."
       }, { status: 400 });
+    }
+
+    // agentPhoneOverride skips agent resolution above, so it never
+    // resolved an org either - fall back to the seed org in that case
+    // (today's only path; this override is an internal/legacy option).
+    if (!agentOrgId) {
+      const { getDefaultOrgId } = await import("@/lib/server-settings");
+      agentOrgId = await getDefaultOrgId();
+    }
+
+    // 3. Fetch telephony settings for the agent's own org.
+    const { data: settings, error: settingsError } = await supabase
+      .from("settings")
+      .select("*")
+      .eq("org_id", agentOrgId)
+      .maybeSingle();
+
+    if (settingsError || !settings) {
+      return NextResponse.json({ ok: false, error: "Failed to load telephony settings from database" }, { status: 500 });
+    }
+
+    const provider = settings.telephony_provider || "none";
+    if (provider === "none") {
+      return NextResponse.json({ ok: false, error: "No cloud telephony provider is configured in Settings" }, { status: 400 });
     }
 
     // Standardize phone format (remove spaces, dashes, ensure prefix)
@@ -128,7 +142,7 @@ export async function POST(req: Request) {
     if (provider === "demo") {
       // Log Demo Call
       try {
-        await logOutboundCall(supabase, agentId, finalCustomerPhone, taskId);
+        await logOutboundCall(supabase, agentId, agentOrgId, finalCustomerPhone, taskId);
       } catch (err) {
         console.error("Failed to log Demo call:", err);
       }
@@ -173,7 +187,7 @@ export async function POST(req: Request) {
 
       // 5. Audit Log standard
       try {
-        await logOutboundCall(supabase, agentId, finalCustomerPhone, taskId);
+        await logOutboundCall(supabase, agentId, agentOrgId, finalCustomerPhone, taskId);
       } catch (err) {
         console.error("Failed to log click-to-call in raw_call_logs:", err);
       }
@@ -211,7 +225,7 @@ export async function POST(req: Request) {
 
       // Log Exotel Call
       try {
-        await logOutboundCall(supabase, agentId, finalCustomerPhone, taskId);
+        await logOutboundCall(supabase, agentId, agentOrgId, finalCustomerPhone, taskId);
       } catch (err) {
         console.error("Failed to log Exotel call:", err);
       }

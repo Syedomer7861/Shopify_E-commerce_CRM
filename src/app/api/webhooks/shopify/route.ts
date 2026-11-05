@@ -19,13 +19,40 @@ export async function POST(req: NextRequest) {
   try {
     const topic = req.headers.get("x-shopify-topic");
     const hmac = req.headers.get("x-shopify-hmac-sha256");
+    const shopDomain = req.headers.get("x-shopify-shop-domain");
     const rawBody = await req.text();
     const payload = JSON.parse(rawBody);
-    const settings = await getSystemSettings(supabase);
 
-    // 1. Signature Verification
+    // 0. Org Resolution. Shopify sends which store a webhook is from in
+    // the X-Shopify-Shop-Domain header - match it against each org's own
+    // settings.shopify_store_domain to find the right tenant BEFORE
+    // reading settings (so signature verification below checks THAT
+    // org's secret, not an arbitrary one). Falls back to the seed org
+    // when the domain doesn't match any configured org - today's only
+    // path, since CureForever's domain is already set.
+    const { getDefaultOrgId } = await import("@/lib/server-settings");
+    let orgId: string | null = null;
+    if (shopDomain) {
+      const { data: matchedOrg } = await supabase
+        .from("settings")
+        .select("org_id")
+        .eq("shopify_store_domain", shopDomain)
+        .maybeSingle();
+      orgId = matchedOrg?.org_id || null;
+    }
+    if (!orgId) orgId = await getDefaultOrgId();
+    if (!orgId) {
+      console.error("🚨 Shopify Webhook: could not resolve an organization for this event.");
+      return NextResponse.json({ error: "Organization resolution failed" }, { status: 500 });
+    }
+
+    const settings = await getSystemSettings(supabase, orgId);
+
+    // 1. Signature Verification. Env var wins when set (today's
+    // CureForever-only path, unchanged); settings.shopify_webhook_secret
+    // is what a 2nd org fills in from their own Settings page instead.
     const secret = process.env.SHOPIFY_WEBHOOK_SECRET || settings?.shopify_webhook_secret;
-    
+
     if (isSecretConfigured(secret)) {
       const hash = crypto
         .createHmac("sha256", secret)
@@ -45,6 +72,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Logging
     const { data: logEntry } = await supabase.from("webhook_logs").insert({
+      org_id: orgId,
       source: "shopify",
       topic: topic || "unknown",
       payload: payload,
@@ -89,6 +117,7 @@ export async function POST(req: NextRequest) {
       if (phone) {
         // Upsert Customer
         const { data: customerArr } = await supabase.from("customers").upsert({
+          org_id: orgId,
           name: `${customerData?.first_name || ""} ${customerData?.last_name || ""}`.trim() || "Shopify Customer",
           phone: phone,
           email: payload.email || customerData?.email || null,
@@ -97,7 +126,7 @@ export async function POST(req: NextRequest) {
           state: payload.shipping_address?.province || null,
           zip: payload.shipping_address?.zip || null,
           address: payload.shipping_address?.address1 || null,
-        }, { onConflict: "phone" }).select("id, total_orders, rto_flag, segment");
+        }, { onConflict: "org_id,phone" }).select("id, total_orders, rto_flag, segment");
 
         const customer = customerArr?.[0] as any;
         if (customer) {
@@ -134,14 +163,16 @@ export async function POST(req: NextRequest) {
             .from("orders")
             .select("id, delivery_status, source, custom_meta")
             .or(`shopify_order_id.eq.${shopifyId},order_number.eq.${orderNumber}`)
+            .eq("org_id", orgId)
             .maybeSingle() as { data: any; error: any };
 
           const currentStatus = deliveryStatus;
           const statusToSave = (existingOrder && existingOrder.source === "shiprocket" && existingOrder.delivery_status !== "pending")
-            ? existingOrder.delivery_status 
+            ? existingOrder.delivery_status
             : currentStatus;
 
           const upsertData: any = {
+            org_id: orgId,
             customer_id: customer.id,
             shopify_order_id: shopifyId,
             order_number: orderNumber,
@@ -164,7 +195,7 @@ export async function POST(req: NextRequest) {
             upsertData.id = existingOrder.id;
           }
 
-          const { data: orderArr } = await supabase.from("orders").upsert(upsertData, { onConflict: "shopify_order_id" }).select("id");
+          const { data: orderArr } = await supabase.from("orders").upsert(upsertData, { onConflict: "org_id,shopify_order_id" }).select("id");
           const order = orderArr?.[0];
 
           // [NEW] Proactive Task Generation (Immediate Verification)
@@ -185,6 +216,7 @@ export async function POST(req: NextRequest) {
               if (isCod || riskAnalysis.level === "CRITICAL" || riskAnalysis.level === "HIGH") {
                  const riskBonus = riskAnalysis.level === "CRITICAL" ? 50 : 20;
                  const { error: codErr } = await supabase.from("tasks").upsert({
+                   org_id: orgId,
                    customer_id: customer.id,
                    order_id: order?.id,
                    task_type: "cod_verify",
@@ -200,7 +232,7 @@ export async function POST(req: NextRequest) {
           }
 
           // Auto-resolve any abandoned cart tasks
-          await supabase.from("abandoned_carts").update({ recovery_status: "recovered" }).eq("phone", phone);
+          await supabase.from("abandoned_carts").update({ recovery_status: "recovered" }).eq("phone", phone).eq("org_id", orgId);
           const { data: cartTasks } = await supabase.from("tasks")
             .select("id")
             .eq("customer_id", customer.id)
@@ -255,14 +287,16 @@ export async function POST(req: NextRequest) {
 
       if (phone) {
         const { data: customerArr } = await supabase.from("customers").upsert({
+          org_id: orgId,
           name: `${customerData?.first_name || ""} ${customerData?.last_name || ""}`.trim() || "Checkout Guest",
           phone: phone,
           email: payload.email || customerData?.email || null,
-        }, { onConflict: "phone" }).select("id, total_orders, rto_flag, segment");
+        }, { onConflict: "org_id,phone" }).select("id, total_orders, rto_flag, segment");
 
         const customer = customerArr?.[0];
         if (customer) {
           const { data: cartArr } = await supabase.from("abandoned_carts").upsert({
+            org_id: orgId,
             customer_id: customer.id,
             phone: phone,
             email: payload.email || null,
@@ -274,7 +308,7 @@ export async function POST(req: NextRequest) {
             ],
             recovery_status: "pending",
             abandoned_at: payload.updated_at || payload.created_at,
-          }, { onConflict: "cart_token" }).select("id");
+          }, { onConflict: "org_id,cart_token" }).select("id");
 
           const cart = cartArr?.[0];
           if (cart) {
@@ -286,6 +320,7 @@ export async function POST(req: NextRequest) {
             const finalDueDate = recoveryDate < now ? now : recoveryDate;
 
             await supabase.from("tasks").upsert({
+              org_id: orgId,
               abandoned_cart_id: cart.id,
               customer_id: customer.id,
               task_type: "recovery",

@@ -23,8 +23,17 @@ export async function POST(req: NextRequest) {
       errors: [] as string[]
     };
 
-    const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
-    const { data: settings } = await supabase.from("settings").select("recovery_delay_hours").eq("id", SETTINGS_ID).single();
+    // This is an internal-secret-gated bulk import tool with no session
+    // and no per-row tenant info (a spreadsheet upload), so it's scoped
+    // to the seed org - same as the other single-bridge/single-org
+    // internal tools (WhatsApp bridge, system-health).
+    const { getDefaultOrgId } = await import("@/lib/server-settings");
+    const orgId = await getDefaultOrgId();
+    if (!orgId) {
+      return NextResponse.json({ error: "Could not resolve an organization" }, { status: 500 });
+    }
+
+    const { data: settings } = await supabase.from("settings").select("recovery_delay_hours").eq("org_id", orgId).maybeSingle();
     const delayHours = settings?.recovery_delay_hours || 24;
 
     for (const row of rows) {
@@ -56,9 +65,10 @@ export async function POST(req: NextRequest) {
 
         // 2. Upsert Customer
         const { data: custData, error: custErr } = await supabase.from("customers").upsert({
+          org_id: orgId,
           name: rawName || (cleanPhone ? "Shopify Customer" : "Checkout Guest"),
           phone: identityPhone,
-        }, { onConflict: "phone" }).select("id, rto_flag, total_orders").single();
+        }, { onConflict: "org_id,phone" }).select("id, rto_flag, total_orders").single();
 
         if (custErr || !custData) {
           report.errors.push(`Customer fail for ${cartId}: ${custErr?.message}`);
@@ -69,6 +79,7 @@ export async function POST(req: NextRequest) {
         // 3. Upsert Abandoned Cart
         const abandonedAt = dateStr ? new Date(dateStr).toISOString() : new Date().toISOString();
         const { data: cartData, error: cartErr } = await supabase.from("abandoned_carts").upsert({
+          org_id: orgId,
           customer_id: custData.id,
           cart_token: String(cartId),
           phone: cleanPhone || "unknown",
@@ -77,7 +88,7 @@ export async function POST(req: NextRequest) {
           abandoned_at: abandonedAt,
           source: "shiprocket_checkout",
           line_items: [{ name: row["Cart Details"] || "Imported Cart" }]
-        }, { onConflict: "cart_token" }).select("id").single();
+        }, { onConflict: "org_id,cart_token" }).select("id").single();
 
         if (cartErr || !cartData) {
           report.errors.push(`Cart fail for ${cartId}: ${cartErr?.message}`);
@@ -100,6 +111,7 @@ export async function POST(req: NextRequest) {
 
         const dueDateAt = new Date(new Date(abandonedAt).getTime() + (delayHours * 60 * 60 * 1000));
         const { error: taskErr } = await supabase.from("tasks").upsert({
+          org_id: orgId,
           customer_id: custData.id,
           abandoned_cart_id: cartData.id,
           assigned_to: await assignTaskOwner(supabase),

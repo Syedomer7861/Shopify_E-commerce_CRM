@@ -57,8 +57,50 @@ export async function POST(req: NextRequest) {
     body = await req.json();
     console.log("📦 Incoming Shiprocket Webhook:", JSON.stringify(body, null, 2));
 
+    // 1. Security Check + Org Resolution. A per-org secret (settings.
+    // shiprocket_webhook_secret, set from Settings -> Shiprocket) both
+    // authenticates the request AND identifies which org it belongs to -
+    // checked first so a 2nd tenant's own token works without touching
+    // the legacy shared-env-var path below, which still resolves to the
+    // seed org exactly as it always has.
+    const token = req.headers.get("x-shiprocket-secret") || req.nextUrl.searchParams.get("token");
+    const expectedToken = process.env.SHIPROCKET_WEBHOOK_TOKEN;
+    const { getDefaultOrgId } = await import("@/lib/server-settings");
+
+    let orgId: string | null = null;
+    if (token) {
+      const { data: matchedOrg } = await supabase
+        .from("settings")
+        .select("org_id")
+        .eq("shiprocket_webhook_secret", token)
+        .maybeSingle();
+      orgId = matchedOrg?.org_id || null;
+    }
+
+    if (orgId) {
+      // Authenticated via a real per-org secret match above.
+    } else if (isSecretConfigured(expectedToken)) {
+      if (!safeEqual(token, expectedToken)) {
+        console.warn("⚠️ Shiprocket Webhook: rejected - invalid or missing token.");
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      orgId = await getDefaultOrgId();
+    } else if (webhookStrict()) {
+      console.error("🚨 Shiprocket Webhook: rejected - SHIPROCKET_WEBHOOK_TOKEN is not configured.");
+      return NextResponse.json({ error: "Webhook token not configured" }, { status: 503 });
+    } else {
+      console.warn("🚨 Shiprocket Webhook: SHIPROCKET_WEBHOOK_TOKEN is not configured - payload accepted UNVERIFIED. Set it in the host env, then WEBHOOK_STRICT=true.");
+      orgId = await getDefaultOrgId();
+    }
+
+    if (!orgId) {
+      console.error("🚨 Shiprocket Webhook: could not resolve an organization for this event.");
+      return NextResponse.json({ error: "Organization resolution failed" }, { status: 500 });
+    }
+
     // 0. Initial Log
     const { data: logEntry, error: logErr } = await supabase.from("webhook_logs").insert({
+      org_id: orgId,
       source: "shiprocket",
       topic: body.stage || body.status || "unknown",
       payload: body,
@@ -68,22 +110,6 @@ export async function POST(req: NextRequest) {
     if (logErr) console.error("Shiprocket Webhook: could not write webhook_logs:", logErr.message);
     // Undefined when the insert failed - every later update is keyed on it.
     const logId = logEntry?.id;
-
-    // 1. Security Check
-    const token = req.headers.get("x-shiprocket-secret") || req.nextUrl.searchParams.get("token");
-    const expectedToken = process.env.SHIPROCKET_WEBHOOK_TOKEN;
-
-    if (isSecretConfigured(expectedToken)) {
-      if (!safeEqual(token, expectedToken)) {
-        console.warn("⚠️ Shiprocket Webhook: rejected - invalid or missing token.");
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
-    } else if (webhookStrict()) {
-      console.error("🚨 Shiprocket Webhook: rejected - SHIPROCKET_WEBHOOK_TOKEN is not configured.");
-      return NextResponse.json({ error: "Webhook token not configured" }, { status: 503 });
-    } else {
-      console.warn("🚨 Shiprocket Webhook: SHIPROCKET_WEBHOOK_TOKEN is not configured - payload accepted UNVERIFIED. Set it in the host env, then WEBHOOK_STRICT=true.");
-    }
 
     // 2. Identify Event Type & Global IDs
     // Shiprocket sometimes wraps the body in a 'data' or 'payload' property
@@ -189,11 +215,14 @@ export async function POST(req: NextRequest) {
         // Fetch existing to protect name OR handle unmasking
         let existingCust: any = null;
 
-        // Try match by phone first (standard)
+        // Try match by phone first (standard) - org-scoped so a 2nd
+        // tenant's customer with a coincidentally-same phone number can
+        // never match (or be overwritten by) this org's lookup.
         const { data: byPhone } = await supabase
           .from("customers")
           .select("id, name, phone")
           .eq("phone", resolvedIdentity)
+          .eq("org_id", orgId)
           .maybeSingle();
         existingCust = byPhone;
 
@@ -216,6 +245,7 @@ export async function POST(req: NextRequest) {
         const { data: customerData, error: custErr } = await supabase
           .from("customers")
           .upsert({
+            org_id: orgId,
             name: nameToSave,
             phone: resolvedIdentity,
             email: rawEmail,
@@ -223,7 +253,7 @@ export async function POST(req: NextRequest) {
             state: data.state || shipAddr.state || billAddr.state || null,
             zip: data.pincode || shipAddr.zip || billAddr.zip || shipAddr.pincode || null,
             address: combinedAddress || null,
-          }, { onConflict: "phone" })
+          }, { onConflict: "org_id,phone" })
           .select("id");
           
         if (!custErr && customerData && customerData.length > 0) {
@@ -249,6 +279,7 @@ export async function POST(req: NextRequest) {
         const { data: cartDataArr, error: cartErr } = await supabase
           .from("abandoned_carts")
           .upsert({
+            org_id: orgId,
             customer_id: customerId,
             phone: customerPhone || "unknown",
             email: rawEmail || null,
@@ -257,7 +288,7 @@ export async function POST(req: NextRequest) {
             line_items: enrichedItems,
             recovery_status: "pending",
             abandoned_at: new Date().toISOString()
-          }, { onConflict: "cart_token" })
+          }, { onConflict: "org_id,cart_token" })
           .select("id, abandoned_at, total_price");
 
         if (!cartErr && cartDataArr && cartDataArr.length > 0 && customerId) {
@@ -282,9 +313,8 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
-          const { data: settings } = await supabase.from("settings").select("recovery_delay_hours").eq("id", SETTINGS_ID).single();
-          const delayHours = settings?.recovery_delay_hours || 24;
+          const { data: settingsRow } = await supabase.from("settings").select("recovery_delay_hours").eq("org_id", orgId).maybeSingle();
+          const delayHours = settingsRow?.recovery_delay_hours || 24;
           
           const dueDateAt = new Date(Date.now() + (delayHours * 60 * 60 * 1000));
           const dueDateStr = dueDateAt.toISOString().split("T")[0];
@@ -313,6 +343,7 @@ export async function POST(req: NextRequest) {
               const segment = customerDetails?.segment;
 
               await supabase.from("tasks").upsert({
+                org_id: orgId,
                 customer_id: customerId,
                 abandoned_cart_id: cartData.id,
                 assigned_to: await assignTaskOwner(supabase, "recovery", segment),
@@ -346,6 +377,7 @@ export async function POST(req: NextRequest) {
           .from("orders")
           .select("id, source, delivery_status, custom_meta")
           .or(`shopify_order_id.eq.${orderIdentifier},order_number.eq.${orderIdentifier}`)
+          .eq("org_id", orgId)
           .maybeSingle();
 
         const enrichedItems = [
@@ -354,6 +386,7 @@ export async function POST(req: NextRequest) {
         ];
 
         const upsertData: any = {
+          org_id: orgId,
           customer_id: customerId,
           shopify_order_id: orderIdentifier,
           order_number: orderIdentifier,
@@ -386,7 +419,8 @@ export async function POST(req: NextRequest) {
             if (cartId) {
                 await supabase.from("abandoned_carts")
                     .update({ recovery_status: "recovered" })
-                    .eq("cart_token", cartId);
+                    .eq("cart_token", cartId)
+                    .eq("org_id", orgId);
             }
 
             // AUTO-RESOLVE RECOVERY TASKS
@@ -405,6 +439,7 @@ export async function POST(req: NextRequest) {
               }).in("id", taskIds);
               
               await supabase.from("call_logs").insert(taskIds.map(id => ({
+                org_id: orgId,
                 task_id: id,
                 customer_id: customerId,
                 outcome: "done",
@@ -432,6 +467,7 @@ export async function POST(req: NextRequest) {
             if (isCod || riskAnalysis.level === "CRITICAL" || riskAnalysis.level === "HIGH") {
                const riskBonus = riskAnalysis.level === "CRITICAL" ? 50 : 20;
                const { error: codErr } = await supabase.from("tasks").upsert({
+                 org_id: orgId,
                  customer_id: customerId,
                  order_id: internalOrderId,
                  task_type: "cod_verify",
@@ -447,6 +483,7 @@ export async function POST(req: NextRequest) {
             // 2. VIP / Whale Follow-up (Urgent)
             if (orderTotal >= 25000) {
                const { error: vipErr } = await supabase.from("tasks").upsert({
+                 org_id: orgId,
                  customer_id: customerId,
                  order_id: internalOrderId,
                  task_type: "vip_followup",
@@ -462,6 +499,7 @@ export async function POST(req: NextRequest) {
             const { data: customerStats } = await supabase.from("customers").select("total_orders").eq("id", customerId).single();
             if ((customerStats?.total_orders || 0) <= 1) {
                const { error: welcomeErr } = await supabase.from("tasks").upsert({
+                 org_id: orgId,
                  customer_id: customerId,
                  order_id: internalOrderId,
                  task_type: "welcome_call",
@@ -516,6 +554,7 @@ export async function POST(req: NextRequest) {
       const { data: existingOrd } = await supabase.from("orders")
         .select("id, delivery_status")
         .or(`shopify_order_id.eq.${identifierStr},order_number.eq.${identifierStr}`)
+        .eq("org_id", orgId)
         .maybeSingle();
 
       if (existingOrd && existingOrd.delivery_status === crmStatus) {
@@ -548,9 +587,9 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Find existing to protect names
-        const { data: existing } = await supabase.from("customers").select("id, name, phone").eq("phone", phone).maybeSingle();
-        
+        // Find existing to protect names - org-scoped (see Case A's phone lookup)
+        const { data: existing } = await supabase.from("customers").select("id, name, phone").eq("phone", phone).eq("org_id", orgId).maybeSingle();
+
         if (existing) {
           customerId = existing.id;
           const updates: any = {};
@@ -563,6 +602,7 @@ export async function POST(req: NextRequest) {
         } else {
           // Create new
           const { data: customer } = await supabase.from("customers").insert({
+            org_id: orgId,
             name: name,
             phone: phone,
             email: body.customer_email || body.email || body.billing_email || null,
@@ -578,6 +618,7 @@ export async function POST(req: NextRequest) {
         const { data: orders } = await supabase.from("orders")
           .select("id, line_items, shopify_order_id, order_number, customer_id")
           .or(`shopify_order_id.eq.${identifierStr},order_number.eq.${identifierStr}`)
+          .eq("org_id", orgId)
           .limit(1);
 
       if (orders && orders.length > 0) {
@@ -629,6 +670,7 @@ export async function POST(req: NextRequest) {
 
             // Log the self-healing action for audit
             await supabase.from("audit_logs").insert({
+              org_id: orgId,
               entity_type: "task",
               entity_id: orderId,
               action: "self_healing_cancellation",
@@ -653,6 +695,7 @@ export async function POST(req: NextRequest) {
             const segment = customerDetails?.segment;
 
             await supabase.from("tasks").insert({
+              org_id: orgId,
               order_id: orderId,
               customer_id: currentCustomerId || customerId,
               assigned_to: await assignTaskOwner(supabase, "transit_update", segment),
@@ -685,6 +728,7 @@ export async function POST(req: NextRequest) {
             const assignedTo = await assignTaskOwner(supabase, "issue_resolution", customer?.segment);
 
             await supabase.from("tasks").insert({
+              org_id: orgId,
               order_id: orders[0].id,
               customer_id: customerId,
               assigned_to: assignedTo,
@@ -709,6 +753,7 @@ export async function POST(req: NextRequest) {
       } else if (customerId) {
         // If the order doesn't exist yet (Direct Order), we insert it
         const updateData: any = {
+            org_id: orgId,
             customer_id: customerId,
             shopify_order_id: identifier.toString(),
             order_number: identifier.toString(),
@@ -738,6 +783,7 @@ export async function POST(req: NextRequest) {
           if (crmStatus === "in_transit") {
             const { data: customerDetails } = await supabase.from("customers").select("segment").eq("id", customerId).single();
             await supabase.from("tasks").insert({
+              org_id: orgId,
               order_id: newOrderId,
               customer_id: customerId,
               assigned_to: await assignTaskOwner(supabase, "transit_update", customerDetails?.segment),
@@ -749,6 +795,7 @@ export async function POST(req: NextRequest) {
           } else if (crmStatus === "rto" || crmStatus === "failed") {
             const { data: customer } = await supabase.from("customers").select("total_orders, rto_flag, segment").eq("id", customerId).maybeSingle();
             await supabase.from("tasks").insert({
+              org_id: orgId,
               order_id: newOrderId,
               customer_id: customerId,
               assigned_to: await assignTaskOwner(supabase, "issue_resolution", customer?.segment),

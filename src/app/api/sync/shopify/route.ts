@@ -36,16 +36,30 @@ export async function POST(req: NextRequest) {
 
   const supabase = getServiceSupabase(req);
 
+  // One org at a time - each org's own shopify_store_domain/token. An org
+  // with nothing configured just throws inside syncShopifyData and is
+  // skipped rather than aborting every other org's sync.
+  const getActiveOrgIds = async () => {
+    const { data } = await supabase.from("organizations").select("id").eq("is_active", true);
+    return (data || []).map((o: any) => o.id);
+  };
+
   const runSync = async () => {
     try {
       const full = req.nextUrl.searchParams.get("full") === "true";
-      const syncReport = await syncShopifyData(supabase, send, full, { budgetMs: SYNC_BUDGET_MS });
+      const orgIds = await getActiveOrgIds();
+      for (const orgId of orgIds) {
+        try {
+          const syncReport = await syncShopifyData(supabase, send, full, { budgetMs: SYNC_BUDGET_MS }, orgId);
+          send({ progress: 90, message: `Syncing Review Tasks for org ${orgId}...` });
+          const reviewTasksCreated = await syncReviewTasks(supabase, orgId);
+          syncReport.tasks.created += reviewTasksCreated;
+        } catch (orgErr: any) {
+          send({ message: `Org ${orgId} sync failed: ${orgErr.message}` });
+        }
+      }
 
-      send({ progress: 90, message: "Syncing Review Tasks..." });
-      const reviewTasksCreated = await syncReviewTasks(supabase);
-      syncReport.tasks.created += reviewTasksCreated;
-
-      send({ progress: 100, message: "Shopify Sync complete!", report: syncReport, success: true });
+      send({ progress: 100, message: "Shopify Sync complete!", success: true });
       close();
     } catch (e: any) {
       send({ error: e.message });
@@ -59,13 +73,22 @@ export async function POST(req: NextRequest) {
   } else {
     try {
       const isFull = req.nextUrl.searchParams.get("full") === "true";
-      const finalReport = await syncShopifyData(supabase, () => {}, isFull, { budgetMs: SYNC_BUDGET_MS });
-      const reviewTasksCreated = await syncReviewTasks(supabase);
-      finalReport.tasks.created += reviewTasksCreated;
+      const orgIds = await getActiveOrgIds();
+      const reports: any[] = [];
+      for (const orgId of orgIds) {
+        try {
+          const finalReport = await syncShopifyData(supabase, () => {}, isFull, { budgetMs: SYNC_BUDGET_MS }, orgId);
+          const reviewTasksCreated = await syncReviewTasks(supabase, orgId);
+          finalReport.tasks.created += reviewTasksCreated;
+          reports.push({ orgId, ...finalReport });
+        } catch (orgErr: any) {
+          reports.push({ orgId, error: orgErr.message });
+        }
+      }
 
       // 200 either way: a truncated run is partial progress, not an error.
       // The scheduler reads `truncated` to know more work is waiting.
-      return NextResponse.json({ success: true, truncated: finalReport.truncated, report: finalReport });
+      return NextResponse.json({ success: true, truncated: reports.some(r => r.truncated), reports });
     } catch (e: any) {
       return NextResponse.json({ success: false, error: e.message }, { status: 500 });
     }

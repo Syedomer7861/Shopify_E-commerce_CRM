@@ -96,7 +96,8 @@ export async function syncShopifyData(
   supabase: any,
   send: (data: any) => void,
   full: boolean = false,
-  opts?: SyncBudget
+  opts?: SyncBudget,
+  orgId?: string
 ) {
   const deadline = makeDeadline(opts);
   const report = {
@@ -111,14 +112,19 @@ export async function syncShopifyData(
 
   try {
     send({ progress: 10, message: `Shopify ${full ? "FULL " : ""}Sync: Connecting...` });
-    const settings = await getSystemSettings(supabase);
+    const settings = await getSystemSettings(supabase, orgId);
     if (!settings?.shopify_store_domain) {
       const hasID = settings?.id ? `(ID: ${settings.id})` : "(No settings object found)";
       throw new Error(`Shopify domain not configured in settings ${hasID}. Check RLS or Service Role Key.`);
     }
+    // Every write below is stamped with the resolved org, not the caller's
+    // param directly - settings.org_id is the canonical source once
+    // getSystemSettings has resolved it (e.g. from a session when orgId
+    // wasn't passed explicitly).
+    const resolvedOrgId = settings.org_id;
 
     const domain = String(settings.shopify_store_domain).replace(/^https?:\/\//, "").replace(/\/$/, "");
-    const token = await getShopifyAccessToken(supabase);
+    const token = await getShopifyAccessToken(supabase, resolvedOrgId);
 
     const commonHeaders = {
       "X-Shopify-Access-Token": token,
@@ -188,6 +194,7 @@ export async function syncShopifyData(
 
           // Step A: Upsert Customer
           const customerRow = {
+            org_id: resolvedOrgId,
             name: `${customerData?.first_name || ""} ${customerData?.last_name || ""}`.trim() || "Shopify Customer",
             phone: phone,
             email: order.email || customerData?.email || null,
@@ -199,7 +206,7 @@ export async function syncShopifyData(
           };
 
           let { data: customerArr, error: customerErr } = await supabase
-            .from("customers").upsert(customerRow, { onConflict: "phone" })
+            .from("customers").upsert(customerRow, { onConflict: "org_id,phone" })
             .select("id, total_orders, rto_flag");
 
           // One Shopify customer can appear under two phone numbers (an
@@ -210,7 +217,7 @@ export async function syncShopifyData(
           if (customerErr?.code === "23505" && customerRow.shopify_customer_id) {
             ({ data: customerArr, error: customerErr } = await supabase
               .from("customers")
-              .upsert({ ...customerRow, shopify_customer_id: null }, { onConflict: "phone" })
+              .upsert({ ...customerRow, shopify_customer_id: null }, { onConflict: "org_id,phone" })
               .select("id, total_orders, rto_flag"));
           }
 
@@ -238,6 +245,7 @@ export async function syncShopifyData(
             .from("orders")
             .select("id, delivery_status, source, shopify_order_id")
             .or(`shopify_order_id.eq.${shopifyId},order_number.eq.${orderNumber}`)
+            .eq("org_id", resolvedOrgId)
             .maybeSingle();
 
           // Shopify's fulfillment_status only means a shipping label was
@@ -259,6 +267,7 @@ export async function syncShopifyData(
             : currentStatus;
 
           const upsertData: any = {
+            org_id: resolvedOrgId,
             customer_id: customer.id,
             shopify_order_id: shopifyId,
             order_number: orderNumber,
@@ -280,13 +289,13 @@ export async function syncShopifyData(
             await supabase.from("orders").update(upsertData).eq("id", existingOrder.id);
           } else {
             await supabase.from("orders").upsert(upsertData, {
-              onConflict: "shopify_order_id",
+              onConflict: "org_id,shopify_order_id",
               ignoreDuplicates: false
             });
           }
           report.orders.synced++;
-          
-          await supabase.from("abandoned_carts").update({ recovery_status: "recovered" }).eq("phone", phone).eq("recovery_status", "pending");
+
+          await supabase.from("abandoned_carts").update({ recovery_status: "recovered" }).eq("phone", phone).eq("org_id", resolvedOrgId).eq("recovery_status", "pending");
           
         } catch (e: any) {
           report.errors.push(`Order ${order.id}: ${e.message}`);
@@ -382,15 +391,17 @@ export async function syncShopifyData(
           }
 
           const { data: customerArr } = await supabase.from("customers").upsert({
+            org_id: resolvedOrgId,
             name: `${cartCustomer?.first_name || ""} ${cartCustomer?.last_name || ""}`.trim() || (phone ? "Shopify Customer" : "Checkout Guest"),
             phone: identityPhone,
             email: cart.email || cartCustomer?.email || null,
-          }, { onConflict: "phone" }).select("id, total_orders, rto_flag");
+          }, { onConflict: "org_id,phone" }).select("id, total_orders, rto_flag");
 
           const customer = customerArr?.[0];
           if (!customer) continue;
 
           const { data: dbCartArr } = await supabase.from("abandoned_carts").upsert({
+            org_id: resolvedOrgId,
             customer_id: customer.id,
             cart_token: String(cart.token || cart.id),
             phone: phone,
@@ -402,7 +413,7 @@ export async function syncShopifyData(
             ],
             recovery_status: "pending",
             abandoned_at: cart.updated_at || cart.created_at,
-          }, { onConflict: "cart_token" }).select("id");
+          }, { onConflict: "org_id,cart_token" }).select("id");
 
           const dbCart = dbCartArr?.[0];
           if (dbCart) {
@@ -443,6 +454,7 @@ export async function syncShopifyData(
               }
 
               await supabase.from("tasks").upsert({
+                org_id: resolvedOrgId,
                 abandoned_cart_id: dbCart.id,
                 customer_id: customer.id,
                 task_type: "recovery",
@@ -487,7 +499,7 @@ export async function syncShopifyData(
 /**
  * PULL DATA FROM SHIPROCKET API
  */
-export async function syncShiprocketData(supabase: any, send: (data: any) => void, full: boolean = false, opts?: SyncBudget) {
+export async function syncShiprocketData(supabase: any, send: (data: any) => void, full: boolean = false, opts?: SyncBudget, orgId?: string) {
   // Had no budget at all, unlike syncShopifyData - each order does a
   // resolveUnmaskedPhone lookup plus 2-3 DB round trips, and full sync
   // pages up to 20 x 50 orders. Confirmed by production logs: the
@@ -503,8 +515,11 @@ export async function syncShiprocketData(supabase: any, send: (data: any) => voi
 
   try {
     send({ progress: 45, message: "Shiprocket Sync: Connecting..." });
-    const token = await getShiprocketToken(supabase);
-    
+    const settingsRow = await getSystemSettings(supabase, orgId);
+    const resolvedOrgId = settingsRow?.org_id || orgId;
+    if (!resolvedOrgId) throw new Error("Could not resolve an organization for this sync");
+    const token = await getShiprocketToken(supabase, resolvedOrgId);
+
     let currentPage = 1;
     let hasMore = true;
     const MAX_PAGES = full ? 20 : 2; // Pull more if full sync
@@ -546,6 +561,7 @@ export async function syncShiprocketData(supabase: any, send: (data: any) => voi
 
           // 1. Upsert Customer
           const { data: custArr } = await supabase.from("customers").upsert({
+            org_id: resolvedOrgId,
             name: name,
             phone: phone,
             email: email,
@@ -553,7 +569,7 @@ export async function syncShiprocketData(supabase: any, send: (data: any) => voi
             city: sr.shipping_city || null,
             state: sr.shipping_state || null,
             zip: sr.shipping_pincode || null,
-          }, { onConflict: "phone" }).select("id, segment");
+          }, { onConflict: "org_id,phone" }).select("id, segment");
 
           const customer = custArr?.[0];
           if (!customer) continue;
@@ -577,9 +593,11 @@ export async function syncShiprocketData(supabase: any, send: (data: any) => voi
             .from("orders")
             .select("id, source")
             .or(`shopify_order_id.eq.${orderId},order_number.eq.${orderNumber}`)
+            .eq("org_id", resolvedOrgId)
             .maybeSingle();
 
           const orderPayload: any = {
+            org_id: resolvedOrgId,
             shopify_order_id: orderId,
             order_number: orderNumber,
             customer_id: customer.id,
@@ -595,7 +613,7 @@ export async function syncShiprocketData(supabase: any, send: (data: any) => voi
 
           const { error: orderErr } = existingSrOrder
             ? await supabase.from("orders").update(orderPayload).eq("id", existingSrOrder.id)
-            : await supabase.from("orders").upsert(orderPayload, { onConflict: "shopify_order_id" });
+            : await supabase.from("orders").upsert(orderPayload, { onConflict: "org_id,shopify_order_id" });
 
           if (orderErr) {
             report.orders.failed++;
@@ -666,7 +684,7 @@ export async function reclusterCustomer(supabase: any, customerId: string) {
 /**
  * Scans for orders delivered 3 days ago and creates "Review Collection" tasks.
  */
-export async function syncReviewTasks(supabase: any) {
+export async function syncReviewTasks(supabase: any, orgId: string) {
   const threeDaysAgo = new Date();
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
   const dateStr = threeDaysAgo.toISOString().split("T")[0];
@@ -679,6 +697,7 @@ export async function syncReviewTasks(supabase: any) {
     .from("orders")
     .select("id, customer_id, shopify_order_id, order_number, total_price, customer:customers(total_orders, rto_flag, segment)")
     .eq("delivery_status", "delivered")
+    .eq("org_id", orgId)
     .gte("updated_at", dateStr + "T00:00:00Z")
     .lte("updated_at", dateStr + "T23:59:59Z");
 
@@ -706,6 +725,7 @@ export async function syncReviewTasks(supabase: any) {
 
       // 3. Create the review task
       const { error: taskErr } = await supabase.from("tasks").insert({
+        org_id: orgId,
         customer_id: order.customer_id,
         order_id: order.id,
         task_type: "review",

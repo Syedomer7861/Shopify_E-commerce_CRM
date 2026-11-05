@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { getServiceSupabase } from "@/lib/supabase";
 import { TaskType } from "@/types";
-import { getSystemSettings, SETTINGS_ID } from "@/lib/server-settings";
+import { getSystemSettings } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority, reassignOfflineAgentTasks, insertTasksIgnoringDuplicates } from "@/lib/task-engine";
 import { syncShopifyData, syncShiprocketData } from "@/lib/sync-logic";
 import { normalizePhone } from "@/lib/phone-utils";
@@ -55,33 +55,39 @@ export async function POST(req: NextRequest) {
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
 
   const supabase = getSupabase(req);
-  const report = {
-    logs: { processed: 0, failed: 0, skipped: 0 },
-    tasks: { generated: 0, checked: 0 },
-    abandoned: { created: 0, recovered: 0 }
-  };
-  const waResults = { recovery: 0, reorder: 0, review: 0 };
 
-  const runSync = async () => {
-    try {
-      const isFull = req.nextUrl.searchParams.get("full") === "true";
-      
-      send({ progress: 2, message: `Priority 1: Syncing Direct Store Data (Shopify) [${isFull ? 'FULL' : 'QUICK'}]...` });
-      const settings = await getSystemSettings(supabase);
-      const shopifyReport = await syncShopifyData(supabase, send, isFull, { budgetMs: SHOPIFY_BUDGET_MS });
-      console.log("Shopify Sync Report:", shopifyReport);
+  // Everything below used to run once, implicitly against CureForever's
+  // one global settings row and every row in customers/orders/tasks with
+  // no org filter at all. Looping per org and scoping every query inside
+  // runSyncForOrg is what actually makes "Sync Now" safe once a 2nd org
+  // exists - otherwise it would mix every tenant's webhook backlog, task
+  // generation, and self-healing into one pass.
+  async function runSyncForOrg(orgId: string) {
+    const report = {
+      logs: { processed: 0, failed: 0, skipped: 0 },
+      tasks: { generated: 0, checked: 0 },
+      abandoned: { created: 0, recovered: 0 }
+    };
 
-      send({ progress: 40, message: "Priority 2: Pulling Logistics Data (Shiprocket)..." });
-      const shiprocketReport = await syncShiprocketData(supabase, send, isFull, { budgetMs: SHIPROCKET_BUDGET_MS });
-      console.log("Shiprocket Sync Report:", shiprocketReport);
+    const isFull = req.nextUrl.searchParams.get("full") === "true";
 
-      send({ progress: 70, message: "Priority 3: Processing Webhook Log Backlog..." });
-      // 1. PROCESS SHIPROCKET LOGS
+    send({ progress: 2, message: `Priority 1: Syncing Direct Store Data (Shopify) [${isFull ? 'FULL' : 'QUICK'}] for org ${orgId}...` });
+    const settings = await getSystemSettings(supabase, orgId);
+    const shopifyReport = await syncShopifyData(supabase, send, isFull, { budgetMs: SHOPIFY_BUDGET_MS }, orgId);
+    console.log("Shopify Sync Report:", shopifyReport);
+
+    send({ progress: 40, message: "Priority 2: Pulling Logistics Data (Shiprocket)..." });
+    const shiprocketReport = await syncShiprocketData(supabase, send, isFull, { budgetMs: SHIPROCKET_BUDGET_MS }, orgId);
+    console.log("Shiprocket Sync Report:", shiprocketReport);
+
+    send({ progress: 70, message: "Priority 3: Processing Webhook Log Backlog..." });
+    // 1. PROCESS SHIPROCKET LOGS
     const { data: logs } = await supabase
       .from("webhook_logs")
       .select("*")
       .in("source", ["shiprocket", "shiprocket_checkout"])
       .eq("status", "received")
+      .eq("org_id", orgId)
       .order("created_at", { ascending: true })
       .limit(isFull ? 500 : 50);
 
@@ -98,7 +104,7 @@ export async function POST(req: NextRequest) {
         const rawPhone = data.phone_number || data.mobile || data.phone || data.customer_phone || data.customer_contact ||
                          data.shipping_address?.phone || data.billing_address?.phone || "";
         const phone = normalizePhone(rawPhone);
-        
+
         if (!phone && !cartId) {
           await supabase.from("webhook_logs").update({ status: "skipped" }).eq("id", log.id);
           report.logs.skipped++;
@@ -111,26 +117,13 @@ export async function POST(req: NextRequest) {
           let customerSegment = null;
           if (phone) {
             const rawEmail = body.email || body.customer_email || body.shipping_address?.email || body.billing_address?.email || null;
-            
-            const firstName = body.first_name || body.shipping_address?.first_name || body.billing_address?.first_name || "";
-            const lastName = body.last_name || body.shipping_address?.last_name || body.billing_address?.last_name || "";
-            const fullName = body.customer_name || body.shipping_address?.name || body.billing_address?.name || 
-                             (firstName ? `${firstName} ${lastName}`.trim() : "Shiprocket Customer");
 
             const shipAddr = body.shipping_address || {};
             const billAddr = body.billing_address || {};
 
-            const combinedAddress = [
-                body.address,
-                shipAddr.address1,
-                shipAddr.address2,
-                billAddr.address1,
-                billAddr.address2
-            ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(", ");
-
             // 1. Check for existing customer to prevent overwriting unmasked data with masked data
-            const { data: existing } = await supabase.from('customers').select('id, phone, segment').eq('phone', phone).maybeSingle();
-            
+            const { data: existing } = await supabase.from('customers').select('id, phone, segment').eq('phone', phone).eq('org_id', orgId).maybeSingle();
+
             if (existing) {
               customerId = existing.id;
               customerSegment = existing.segment;
@@ -139,15 +132,14 @@ export async function POST(req: NextRequest) {
             } else {
               const firstName = body.first_name || body.shipping_address?.first_name || body.billing_address?.first_name || "";
               const lastName = body.last_name || body.shipping_address?.last_name || body.billing_address?.last_name || "";
-              const fullName = body.customer_name || body.shipping_address?.name || body.billing_address?.name || 
+              const fullName = body.customer_name || body.shipping_address?.name || body.billing_address?.name ||
                                (firstName ? `${firstName} ${lastName}`.trim() : "Shiprocket Customer");
 
-              const shipAddr = body.shipping_address || {};
-              const billAddr = body.billing_address || {};
               const combinedAddress = [body.address, shipAddr.address1, shipAddr.address2, billAddr.address1, billAddr.address2]
                 .filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(", ");
 
               const { data: customerData } = await supabase.from("customers").upsert({
+                org_id: orgId,
                 name: fullName,
                 phone: phone,
                 email: rawEmail,
@@ -155,8 +147,8 @@ export async function POST(req: NextRequest) {
                 state: body.state || shipAddr.state || billAddr.state || null,
                 zip: body.pincode || shipAddr.zip || billAddr.zip || shipAddr.pincode || null,
                 address: combinedAddress || null,
-              }, { onConflict: "phone" }).select("id, segment");
-              
+              }, { onConflict: "org_id,phone" }).select("id, segment");
+
               if (customerData && customerData.length > 0) {
                 customerId = customerData[0].id;
                 customerSegment = customerData[0].segment;
@@ -174,6 +166,7 @@ export async function POST(req: NextRequest) {
              ];
 
              const { data: cartDataArr } = await supabase.from("abandoned_carts").upsert({
+                org_id: orgId,
                 customer_id: customerId,
                 phone: phone || "unknown",
                 email: body.email || null,
@@ -182,7 +175,7 @@ export async function POST(req: NextRequest) {
                 line_items: enrichedItems,
                 recovery_status: "pending",
                 abandoned_at: log.created_at
-             }, { onConflict: "cart_token" }).select("id, abandoned_at");
+             }, { onConflict: "org_id,cart_token" }).select("id, abandoned_at");
 
              if (cartDataArr && cartDataArr.length > 0 && customerId) {
                 const cartData = cartDataArr[0];
@@ -190,6 +183,7 @@ export async function POST(req: NextRequest) {
                 const dueDate = new Date(new Date(cartData.abandoned_at).getTime() + delayHours * 60 * 60 * 1000);
 
                 await supabase.from("tasks").upsert({
+                  org_id: orgId,
                   customer_id: customerId,
                   abandoned_cart_id: cartData.id,
                   assigned_to: await assignTaskOwner(supabase, "recovery", customerSegment),
@@ -219,13 +213,15 @@ export async function POST(req: NextRequest) {
                .from("orders")
                .select("id, delivery_status, source")
                .or(`shopify_order_id.eq.${orderId.toString()},order_number.eq.${orderId.toString()}`)
+               .eq("org_id", orgId)
                .maybeSingle();
 
              const statusToSave = (existingOrder && existingOrder.source === "shiprocket" && existingOrder.delivery_status !== "pending" && crmStatus === "pending")
-               ? existingOrder.delivery_status 
+               ? existingOrder.delivery_status
                : crmStatus;
 
              const upsertData: any = {
+                org_id: orgId,
                 customer_id: customerId,
                 shopify_order_id: orderId.toString(),
                 order_number: orderId.toString(),
@@ -242,11 +238,11 @@ export async function POST(req: NextRequest) {
                upsertData.id = existingOrder.id;
              }
 
-             const { error: orderErr } = await supabase.from("orders").upsert(upsertData, { onConflict: "shopify_order_id" });
+             const { error: orderErr } = await supabase.from("orders").upsert(upsertData, { onConflict: "org_id,shopify_order_id" });
 
              if (!orderErr) {
                 if (cartId) {
-                    await supabase.from("abandoned_carts").update({ recovery_status: "recovered" }).eq("cart_token", cartId);
+                    await supabase.from("abandoned_carts").update({ recovery_status: "recovered" }).eq("cart_token", cartId).eq("org_id", orgId);
                     report.abandoned.recovered++;
                 }
 
@@ -260,13 +256,14 @@ export async function POST(req: NextRequest) {
 
                 if (pendingTasks && pendingTasks.length > 0) {
                   const taskIds = pendingTasks.map(t => t.id);
-                  await supabase.from("tasks").update({ 
-                    status: "done", 
-                    completed_at: new Date().toISOString() 
+                  await supabase.from("tasks").update({
+                    status: "done",
+                    completed_at: new Date().toISOString()
                   } as any).in("id", taskIds);
-                  
+
                   // Log the outcome to Call History
                   await supabase.from("call_logs").insert(taskIds.map(id => ({
+                    org_id: orgId,
                     task_id: id,
                     customer_id: customerId,
                     outcome: "done",
@@ -277,9 +274,9 @@ export async function POST(req: NextRequest) {
              }
           }
 
-          await supabase.from("webhook_logs").update({ 
-            status: "processed", 
-            topic: orderId ? "order_placed" : (body.status_code ? "tracking_update" : "cart_update") 
+          await supabase.from("webhook_logs").update({
+            status: "processed",
+            topic: orderId ? "order_placed" : (body.status_code ? "tracking_update" : "cart_update")
           }).eq("id", log.id);
           report.logs.processed++;
 
@@ -294,14 +291,15 @@ export async function POST(req: NextRequest) {
     // 2. TRIGGER TASK GENERATOR LOGIC
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
+
     const { data: orders } = await supabase
       .from("orders")
       .select("id, customer_id, delivered_at, ordered_at, line_items, delivery_status")
       .in("delivery_status", ["delivered", "Delivered"])
+      .eq("org_id", orgId)
       .gte("updated_at", sevenDaysAgo.toISOString());
 
-    const { data: overrides } = await supabase.from("product_overrides").select("*");
+    const { data: overrides } = await supabase.from("product_overrides").select("*").eq("org_id", orgId);
 
     if (orders) {
         report.tasks.checked = orders.length;
@@ -316,7 +314,7 @@ export async function POST(req: NextRequest) {
            const { data: customer } = await supabase.from("customers").select("rto_flag, segment").eq("id", order.customer_id).single();
            if (customer?.rto_flag) continue;
 
-           // FALLBACK LOGIC: If delivered_at is missing but status is delivered, 
+           // FALLBACK LOGIC: If delivered_at is missing but status is delivered,
            // use ordered_at or created_at as the anchor so the task isn't skipped.
            const anchorDate = order.delivered_at || order.ordered_at || new Date().toISOString();
            const deliveredDate = new Date(anchorDate);
@@ -331,11 +329,11 @@ export async function POST(req: NextRequest) {
            // Find product override based on line items
            const lineItems = order.line_items as any[] || [];
            let activeOverride = null;
-           
+
            if (overrides && overrides.length > 0) {
              for (const item of lineItems) {
-               const match = overrides.find(o => 
-                 o.shopify_product_id === String(item.product_id) || 
+               const match = overrides.find(o =>
+                 o.shopify_product_id === String(item.product_id) ||
                  o.shopify_product_id === item.title ||
                  o.product_name === item.title
                );
@@ -353,6 +351,7 @@ export async function POST(req: NextRequest) {
            ];
 
            const newTasks = taskTemplates.map(t => ({
+             org_id: orgId,
              order_id: order.id,
              customer_id: order.customer_id,
              assigned_to: null,
@@ -386,7 +385,8 @@ export async function POST(req: NextRequest) {
     const { data: issueOrders } = await supabase
       .from("orders")
       .select("id, customer_id, total_price, delivery_status, ordered_at")
-      .in("delivery_status", ["rto", "failed", "in_transit"]);
+      .in("delivery_status", ["rto", "failed", "in_transit"])
+      .eq("org_id", orgId);
 
     const staleCutoff = new Date();
     staleCutoff.setDate(staleCutoff.getDate() - 1);
@@ -412,6 +412,7 @@ export async function POST(req: NextRequest) {
 
             const assignedTo = await assignTaskOwner(supabase, "issue_resolution", customer?.segment);
             await supabase.from("tasks").insert({
+              org_id: orgId,
               order_id: order.id,
               customer_id: order.customer_id,
               assigned_to: assignedTo,
@@ -454,6 +455,7 @@ export async function POST(req: NextRequest) {
 
             const assignedTo = await assignTaskOwner(supabase, "transit_update", customer?.segment);
             await supabase.from("tasks").insert({
+              org_id: orgId,
               order_id: order.id,
               customer_id: order.customer_id,
               assigned_to: assignedTo,
@@ -471,74 +473,99 @@ export async function POST(req: NextRequest) {
         }
       }
     }
-    
-    send({ progress: 60, message: "Running system self-healing checks..." });
-     send({ progress: 80, message: "Triggering automated reminders..." });
-    // 4. TRIGGER AUTO-SENDERS (Automation Fix)
-    const baseUrl = req.nextUrl.origin;
-    const internalHeaders: HeadersInit = process.env.CRON_SECRET
-      ? { "x-cron-secret": process.env.CRON_SECRET }
-      : {};
-    
-    // Trigger them in parallel but don't wait for them to finish before responding
-    // This allows the UI to stop "Refreshing..." as soon as the database is updated
-    Promise.all([
-      fetch(`${baseUrl}/api/cron/recovery-reminder`, { headers: internalHeaders, cache: 'no-store' }).catch(() => null),
-      fetch(`${baseUrl}/api/cron/reorder-reminder`, { headers: internalHeaders, cache: 'no-store' }).catch(() => null),
-      fetch(`${baseUrl}/api/cron/review-reminder`, { headers: internalHeaders, cache: 'no-store' }).catch(() => null)
-    ]);
-
-    // 5. SYSTEM PULSE
-    const syncSummary = { 
-      summary: "Global CRM Refresh Triggered", 
-      report: report
-    };
-
-    // Log to Sheets silently
-    try {
-      const { appendToSheet } = await import("@/lib/google-sheets");
-      appendToSheet("Audit_Logs", {
-        timestamp: new Date().toISOString(),
-        action: "REFRESH",
-        entity: "Admin",
-        summary: `Refreshed dashboard and synced ${report.logs.processed} logs.`,
-      }).catch(() => {});
-    } catch {}
 
     // Touch settings to fire the realtime UPDATE event Sidebar/Dashboard
     // listen for (signals "a sync just finished", not the value itself).
-    // Was a bare await with no local try/catch, so a failure here (e.g. the
-    // fixed-id row not existing under this id in a given environment) threw
-    // past this point and landed in the outer catch below - which reports
-    // the WHOLE sync as failed even though Shopify/Shiprocket/webhook work
-    // above already completed. Best-effort, same as the Sheets log above.
+    // Best-effort - a failure here shouldn't fail the whole sync, since
+    // everything above already completed.
     try {
-      await supabase.from("settings").update({ updated_at: new Date().toISOString() }).eq("id", SETTINGS_ID);
+      await supabase.from("settings").update({ updated_at: new Date().toISOString() }).eq("org_id", orgId);
     } catch (e) {
       console.error("Settings touch (realtime signal) failed:", e);
     }
 
-    send({ progress: 100, message: "Sync Complete!", ...report });
-    close();
-
-  } catch (err: any) {
-    console.error("Super Sync Error:", err);
-    send({ error: err.message });
-    close();
+    return report;
   }
-};
+
+  const runSync = async () => {
+    try {
+      const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+      const orgIds = (orgs || []).map((o: any) => o.id);
+
+      const combinedReport = {
+        logs: { processed: 0, failed: 0, skipped: 0 },
+        tasks: { generated: 0, checked: 0 },
+        abandoned: { created: 0, recovered: 0 }
+      };
+      const waResults = { recovery: 0, reorder: 0, review: 0 };
+
+      for (const orgId of orgIds) {
+        try {
+          const orgReport = await runSyncForOrg(orgId);
+          combinedReport.logs.processed += orgReport.logs.processed;
+          combinedReport.logs.failed += orgReport.logs.failed;
+          combinedReport.logs.skipped += orgReport.logs.skipped;
+          combinedReport.tasks.generated += orgReport.tasks.generated;
+          combinedReport.tasks.checked += orgReport.tasks.checked;
+          combinedReport.abandoned.created += orgReport.abandoned.created;
+          combinedReport.abandoned.recovered += orgReport.abandoned.recovered;
+        } catch (orgErr: any) {
+          console.error(`Sync failed for org ${orgId}:`, orgErr);
+          send({ message: `Org ${orgId} sync failed: ${orgErr.message}` });
+        }
+      }
+
+      send({ progress: 60, message: "Running system self-healing checks..." });
+      send({ progress: 80, message: "Triggering automated reminders..." });
+      // 4. TRIGGER AUTO-SENDERS (Automation Fix)
+      const baseUrl = req.nextUrl.origin;
+      const internalHeaders: HeadersInit = process.env.CRON_SECRET
+        ? { "x-cron-secret": process.env.CRON_SECRET }
+        : {};
+
+      // Trigger them in parallel but don't wait for them to finish before responding
+      // This allows the UI to stop "Refreshing..." as soon as the database is updated
+      Promise.all([
+        fetch(`${baseUrl}/api/cron/recovery-reminder`, { headers: internalHeaders, cache: 'no-store' }).catch(() => null),
+        fetch(`${baseUrl}/api/cron/reorder-reminder`, { headers: internalHeaders, cache: 'no-store' }).catch(() => null),
+        fetch(`${baseUrl}/api/cron/review-reminder`, { headers: internalHeaders, cache: 'no-store' }).catch(() => null)
+      ]);
+
+      // 5. SYSTEM PULSE
+      // Log to Sheets silently
+      try {
+        const { appendToSheet } = await import("@/lib/google-sheets");
+        appendToSheet("Audit_Logs", {
+          timestamp: new Date().toISOString(),
+          action: "REFRESH",
+          entity: "Admin",
+          summary: `Refreshed dashboard and synced ${combinedReport.logs.processed} logs across ${orgIds.length} org(s).`,
+        }).catch(() => {});
+      } catch {}
+
+      send({ progress: 100, message: "Sync Complete!", ...combinedReport });
+      close();
+
+      return { report: combinedReport, waResults };
+    } catch (err: any) {
+      console.error("Super Sync Error:", err);
+      send({ error: err.message });
+      close();
+      throw err;
+    }
+  };
 
   if (streaming) {
     runSync();
     return new NextResponse(stream, { headers: syncHeaders });
   } else {
-    await runSync();
-    return NextResponse.json({ 
-      success: true, 
-      report: { 
-        ...report, 
-        whatsapp: waResults 
-      } 
+    const result = await runSync();
+    return NextResponse.json({
+      success: true,
+      report: {
+        ...result.report,
+        whatsapp: result.waResults
+      }
     });
   }
 }

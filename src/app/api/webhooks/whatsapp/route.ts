@@ -3,6 +3,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
 import { hasInternalSecret } from "@/lib/auth-utils";
 import { normalizePhone } from "@/lib/phone-utils";
+import { getDefaultOrgId } from "@/lib/server-settings";
 
 export async function POST(req: NextRequest) {
   const limited = rateLimit(req, "webhook-whatsapp", 300, 60000);
@@ -19,6 +20,21 @@ export async function POST(req: NextRequest) {
   try {
     const { from, body, timestamp, type, selectedButtonId } = await req.json();
 
+    // Org resolution: unlike Shiprocket/Shopify, the inbound payload here
+    // carries only the CUSTOMER's phone, never anything identifying which
+    // business's WhatsApp number received it - because there's only one
+    // bridge process (wa_server.js) today, logged into one WhatsApp
+    // Business account. True multi-tenant WhatsApp needs one bridge
+    // deployment per org (each paired with its own number), which is
+    // infrastructure/deployment work, not something this route can route
+    // around on its own. Falls back to the seed org, matching the
+    // single-bridge reality.
+    const orgId = await getDefaultOrgId();
+    if (!orgId) {
+      console.error("🚨 WhatsApp Webhook: could not resolve an organization for this event.");
+      return NextResponse.json({ error: "Organization resolution failed" }, { status: 500 });
+    }
+
     // 1. Clean the incoming phone number (remove @c.us and non-digits)
     const cleanPhone = normalizePhone(from.split("@")[0]);
 
@@ -29,6 +45,7 @@ export async function POST(req: NextRequest) {
       .from("customers")
       .select("id, name")
       .eq("phone", cleanPhone)
+      .eq("org_id", orgId)
       .maybeSingle();
 
     if (custErr) throw custErr;
@@ -77,6 +94,7 @@ export async function POST(req: NextRequest) {
 
           for (const t of resolvedTasks || []) {
             await supabase.from("call_logs").insert({
+              org_id: orgId,
               task_id: t.id,
               customer_id: customer.id,
               outcome: "done",
@@ -88,6 +106,7 @@ export async function POST(req: NextRequest) {
         } else if (selectedButtonId === "reschedule") {
           // Create an urgent task for the agent to call for rescheduling
           await supabase.from("tasks").insert({
+            org_id: orgId,
             customer_id: customer.id,
             task_type: "issue_resolution",
             status: "pending",
@@ -101,6 +120,7 @@ export async function POST(req: NextRequest) {
 
       // Log the activity
       await supabase.from("webhook_logs").insert({
+        org_id: orgId,
         source: "whatsapp",
         topic: "message",
         payload: { 
