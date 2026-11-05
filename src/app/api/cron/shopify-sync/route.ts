@@ -22,6 +22,15 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient();
 
+  const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+  const reports: any[] = [];
+  for (const org of orgs ?? []) {
+    reports.push({ orgId: org.id, ...(await syncOrg(supabase, org.id)) });
+  }
+  return NextResponse.json({ success: true, reports });
+}
+
+async function syncOrg(supabase: any, orgId: string) {
   const report = {
     orders: { synced: 0, skipped: 0 },
     abandoned: { synced: 0, skipped: 0 },
@@ -30,13 +39,13 @@ export async function GET(req: NextRequest) {
   };
 
   try {
-    const settings = await getSystemSettings(supabase);
+    const settings = await getSystemSettings(supabase, orgId);
     if (!settings?.shopify_store_domain || !settings?.shopify_api_key) {
-      return NextResponse.json({ success: false, error: "Shopify not configured" });
+      return { success: false, error: "Shopify not configured" };
     }
 
     const domain = String(settings.shopify_store_domain).replace(/^https?:\/\//, "").replace(/\/$/, "");
-    const token = await getShopifyAccessToken(supabase);
+    const token = await getShopifyAccessToken(supabase, orgId);
 
     const commonHeaders = {
       "X-Shopify-Access-Token": token,
@@ -75,6 +84,7 @@ export async function GET(req: NextRequest) {
 
         // Upsert Customer
         const { data: customerArr } = await supabase.from("customers").upsert({
+          org_id: orgId,
           name: `${customerData?.first_name || ""} ${customerData?.last_name || ""}`.trim() || "Shopify Customer",
           phone: phone,
           email: order.email || customerData?.email || null,
@@ -82,7 +92,7 @@ export async function GET(req: NextRequest) {
           city: order.shipping_address?.city || null,
           state: order.shipping_address?.province || null,
           zip: order.shipping_address?.zip || null,
-        }, { onConflict: "phone" }).select("id, total_orders, rto_flag");
+        }, { onConflict: "org_id,phone" }).select("id, total_orders, rto_flag");
 
         const customer = customerArr?.[0];
         if (customer) {
@@ -95,6 +105,7 @@ export async function GET(req: NextRequest) {
           }));
 
           const { error: orderErr } = await supabase.from("orders").upsert({
+            org_id: orgId,
             customer_id: customer.id,
             shopify_order_id: String(order.id),
             order_number: String(order.order_number || order.name),
@@ -109,7 +120,7 @@ export async function GET(req: NextRequest) {
             delivery_status: "pending",
             ordered_at: order.created_at,
             source: "shopify",
-          }, { onConflict: "shopify_order_id" });
+          }, { onConflict: "org_id,shopify_order_id" });
 
           if (!orderErr) report.orders.synced++;
         }
@@ -145,10 +156,11 @@ export async function GET(req: NextRequest) {
         }
 
         const { data: customerArr } = await supabase.from("customers").upsert({
+          org_id: orgId,
           name: `${cartCustomer?.first_name || ""} ${cartCustomer?.last_name || ""}`.trim() || "Checkout Guest",
           phone: phone,
           email: cart.email || cartCustomer?.email || null,
-        }, { onConflict: "phone" }).select("id, total_orders, rto_flag");
+        }, { onConflict: "org_id,phone" }).select("id, total_orders, rto_flag");
 
         const customer = customerArr?.[0];
         if (customer) {
@@ -161,6 +173,7 @@ export async function GET(req: NextRequest) {
           }
 
           const { data: dbCartArr } = await supabase.from("abandoned_carts").upsert({
+            org_id: orgId,
             customer_id: customer.id,
             cart_token: String(cart.token || cart.id),
             phone: phone,
@@ -168,7 +181,7 @@ export async function GET(req: NextRequest) {
             line_items: cart.line_items || [],
             recovery_status: "pending",
             abandoned_at: cart.updated_at || cart.created_at,
-          }, { onConflict: "cart_token" }).select("id");
+          }, { onConflict: "org_id,cart_token" }).select("id");
 
           const dbCart = dbCartArr?.[0];
           if (dbCart) {
@@ -190,6 +203,7 @@ export async function GET(req: NextRequest) {
             recoveryDate.setHours(recoveryDate.getHours() + (settings.recovery_delay_hours || 24));
 
             await supabase.from("tasks").upsert({
+              org_id: orgId,
               abandoned_cart_id: dbCart.id,
               customer_id: customer.id,
               task_type: "recovery",
@@ -218,14 +232,15 @@ export async function GET(req: NextRequest) {
 
     // 3. LOG RESULTS
     await supabase.from("webhook_logs").insert({
+      org_id: orgId,
       source: "system_sync",
       topic: isAuditWindow ? "shopify_deep_audit" : "shopify_incremental_sync",
       payload: report,
       status: "processed"
     });
 
-    return NextResponse.json({ success: true, report });
+    return { success: true, report };
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return { success: false, error: error.message };
   }
 }

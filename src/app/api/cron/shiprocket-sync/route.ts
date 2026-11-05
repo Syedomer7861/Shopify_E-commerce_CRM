@@ -30,9 +30,23 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient();
 
   try {
-    const settings = await getSystemSettings(supabase);
+    const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+    const results = [];
+    for (const org of orgs ?? []) {
+      results.push({ orgId: org.id, ...(await syncOrgOrders(supabase, org.id)) });
+    }
+    return NextResponse.json({ orgs: results });
+  } catch (err: any) {
+    console.error("🚀 Shiprocket Sync Cron Error:", err.message);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+async function syncOrgOrders(supabase: any, orgId: string) {
+  try {
+    const settings = await getSystemSettings(supabase, orgId);
     if (!settings?.shiprocket_email || !settings?.shiprocket_password) {
-      return NextResponse.json({ error: "Shiprocket credentials not configured" }, { status: 400 });
+      return { skipped: true, reason: "Shiprocket credentials not configured" };
     }
 
     // 1. Authenticate with Shiprocket
@@ -66,12 +80,13 @@ export async function POST(req: NextRequest) {
       .select("id, shopify_order_id, tracking_number, delivery_status, customer_id")
       .in("delivery_status", ["pending", "in_transit", "out_for_delivery"])
       .not("tracking_number", "is", null)
+      .eq("org_id", orgId)
       .order("updated_at", { ascending: true })
       .limit(BATCH_LIMIT);
 
     if (orderErr) throw orderErr;
     if (!activeOrders || activeOrders.length === 0) {
-      return NextResponse.json({ processed: 0, message: "No active orders to sync" });
+      return { processed: 0, message: "No active orders to sync" };
     }
 
     console.log(`🔄 Shiprocket Cron: Syncing ${activeOrders.length} active orders...`);
@@ -148,15 +163,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    return {
       processed: activeOrders.length,
       updated: updatedCount,
       truncated,
-    });
+    };
 
   } catch (err: any) {
-    console.error("🚀 Shiprocket Sync Cron Error:", err.message);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error(`🚀 Shiprocket Sync Cron Error (org ${orgId}):`, err.message);
+    return { error: err.message };
   }
 }
 
