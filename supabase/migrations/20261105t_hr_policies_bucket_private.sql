@@ -1,0 +1,11 @@
+-- Same gap class as 20261105s (chat-attachments): the hr-policies storage
+-- bucket was also created with public = true, serving any HR policy
+-- document via a public URL with zero auth regardless of storage.objects
+-- RLS. Found while auditing all buckets after the chat-attachments fix.
+--
+-- Fixed by: switching the upload route (src/app/api/hr/policies/upload/
+-- route.ts) from getPublicUrl() to a 10-year createSignedUrl(), backfilling
+-- existing hr_policies.file_url rows (none existed on prod), then flipping
+-- the bucket to private. Applied directly via the Supabase JS client
+-- (service role), same reasoning as 20261105s. Recorded here for history.
+UPDATE storage.buckets SET public = false WHERE id = 'hr-policies';

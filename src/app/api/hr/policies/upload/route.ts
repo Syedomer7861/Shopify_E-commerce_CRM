@@ -67,11 +67,15 @@ export async function POST(req: NextRequest) {
       });
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage.from("hr-policies").getPublicUrl(path);
+    const TEN_YEARS_SECONDS = 10 * 365 * 24 * 60 * 60;
+    const { data: signedData, error: signError } = await supabase.storage
+      .from("hr-policies")
+      .createSignedUrl(path, TEN_YEARS_SECONDS);
+    if (signError || !signedData) throw signError || new Error("Could not sign policy file URL");
 
     const { data: row, error: insertError } = await supabase
       .from("hr_policies")
-      .insert([{ name, category, file_url: publicUrl, file_size: formatSize(file.size) }])
+      .insert([{ name, category, file_url: signedData.signedUrl, file_size: formatSize(file.size) }])
       .select()
       .single();
     if (insertError) throw insertError;
