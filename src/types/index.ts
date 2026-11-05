@@ -308,6 +308,7 @@ export interface Profile {
   org_id: string;
   permissions: UserPermissions;
   is_active: boolean;
+  is_platform_admin?: boolean;
   status?: "online" | "break" | "meeting" | "lunch" | "away" | "offline";
   last_seen_at?: string;
   live_state?: {
