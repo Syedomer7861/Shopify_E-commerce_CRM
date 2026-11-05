@@ -7,8 +7,25 @@ import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import type { Profile, UserPermissions } from "@/types";
 import { AccessDenied } from "@/components/ui";
-import { DEFAULT_PERMISSIONS, DEFAULT_HR_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS, DEFAULT_MARKETING_PERMISSIONS, NAV_MODULE_GROUPS, ALL_NAV_MODULES, allowedNavModules, normalizePermissions, hasPermission } from "@/lib/permissions";
+import { DEFAULT_PERMISSIONS, NAV_MODULE_GROUPS, ALL_NAV_MODULES, allowedNavModules, normalizePermissions, hasPermission } from "@/lib/permissions";
 import { isDemoMode } from "@/lib/demo";
+import type { Role } from "@/types";
+
+// Short blurb for the system roles seeded by Phase 2a; any other role
+// (admin-created) just reads as "Custom role".
+const ROLE_BLURBS: Record<string, string> = {
+  agent: "Sales Only", hr: "Staffing", manager: "Operations",
+  marketing: "Boards & Campaigns", admin: "Full System",
+};
+// Demo mode never hits the DB, so the role picker needs something to
+// render — same 5 roles/permissions Phase 2a seeded into the real table.
+const FALLBACK_ROLES: Role[] = [
+  { id: "agent", org_id: "", name: "agent", is_system: true, permissions: DEFAULT_PERMISSIONS, nav_modules: null, created_at: "" },
+  { id: "hr", org_id: "", name: "hr", is_system: true, permissions: { ...DEFAULT_PERMISSIONS, view_analytics: true }, nav_modules: null, created_at: "" },
+  { id: "manager", org_id: "", name: "manager", is_system: true, permissions: { view_analytics: true, can_import: true, can_delete: false, manage_team: true, manage_orders: true, manage_customers: true, send_whatsapp: true, audit_tasks: true, manage_automations: true, manage_marketing: true, manage_workspaces: true }, nav_modules: null, created_at: "" },
+  { id: "marketing", org_id: "", name: "marketing", is_system: true, permissions: { view_analytics: true, can_import: false, can_delete: false, manage_team: false, manage_orders: false, manage_customers: true, send_whatsapp: true, audit_tasks: false, manage_automations: false, manage_marketing: true, manage_workspaces: false, nav_modules: ["my-hub", "chat", "request-creative"] }, nav_modules: ["my-hub", "chat", "request-creative"], created_at: "" },
+  { id: "admin", org_id: "", name: "admin", is_system: true, permissions: {}, nav_modules: null, created_at: "" },
+];
 
 const NAV_MODULE_LABELS: Record<string, string> = {
   dashboard: "Dashboard", tasks: "Tasks", chat: "Chat", "my-hub": "My Hub",
@@ -28,6 +45,7 @@ import { createTeamMemberServer, updateTeamMemberPasswordServer, deleteTeamMembe
 export default function TeamPage() {
   const [loading, setLoading] = useState(true);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [editModal, setEditModal] = useState(false);
   const [addModal, setAddModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
@@ -40,7 +58,7 @@ export default function TeamPage() {
   const [roleFilter, setRoleFilter] = useState("all");
 
   // New user state
-  const [newUser, setNewUser] = useState({ email: "", password: "", name: "", role: "agent" as "agent" | "admin" | "hr" | "manager" | "marketing" });
+  const [newUser, setNewUser] = useState({ email: "", password: "", name: "", role: "agent" });
   const { profile: currentProfile, loading: profileLoading } = useCurrentProfile();
 
   const supabase = createClient();
@@ -78,11 +96,25 @@ export default function TeamPage() {
     setLoading(false);
   }, [supabase, currentProfile?.role]);
 
+  const fetchRoles = useCallback(async () => {
+    if (isDemoMode()) return;
+    const { data, error } = await supabase
+      .from("roles")
+      .select("*")
+      .order("created_at", { ascending: true });
+    if (!error && data) setRoles(data as Role[]);
+  }, [supabase]);
+
   useEffect(() => {
     if (!profileLoading) {
       fetchProfiles();
+      fetchRoles();
     }
-  }, [profileLoading, currentProfile?.id, fetchProfiles]);
+  }, [profileLoading, currentProfile?.id, fetchProfiles, fetchRoles]);
+
+  // Roles table (Phase 2a) is the live source; FALLBACK_ROLES only covers
+  // demo mode or the brief window before the fetch above resolves.
+  const roleOptions = roles.length > 0 ? roles : FALLBACK_ROLES;
 
   async function handleAddMember() {
     if (!newUser.email || !newUser.password) return toast.error("Email and Password are required");
@@ -103,28 +135,7 @@ export default function TeamPage() {
       password: newUser.password,
       name: newUser.name,
       role: newUser.role,
-      permissions: newUser.role === "admin" ? {
-        view_analytics: true,
-        can_import: true,
-        can_delete: true,
-        manage_team: true,
-        manage_orders: true,
-        manage_customers: true,
-        send_whatsapp: true,
-        audit_tasks: true,
-        manage_automations: true,
-      } : newUser.role === "manager" ? {
-        view_analytics: true,
-        can_import: true,
-        can_delete: false,
-        manage_team: true,
-        manage_orders: true,
-        manage_customers: true,
-        send_whatsapp: true,
-        audit_tasks: true,
-        manage_automations: false,
-      } : newUser.role === "marketing" ? DEFAULT_MARKETING_PERMISSIONS
-        : DEFAULT_PERMISSIONS,
+      permissions: (roleOptions.find(r => r.name === newUser.role)?.permissions as UserPermissions) || DEFAULT_PERMISSIONS,
     });
 
     if (!res.success) {
@@ -357,7 +368,7 @@ export default function TeamPage() {
           />
         </div>
         <div className="flex p-1 bg-gray-100 rounded-xl w-fit">
-          {["all", "admin", "manager", "marketing", "hr", "agent", "demo"].map(role => (
+          {["all", ...roleOptions.map(r => r.name), "demo"].map(role => (
             <button
               key={role}
               onClick={() => setRoleFilter(role)}
@@ -532,12 +543,12 @@ export default function TeamPage() {
           </div>
           <div>
             <label className="text-xs font-medium text-gray-700 block mb-1">Initial Role</label>
-            <select className="select" value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value as any })}>
-              <option value="agent">Sales Agent</option>
-              <option value="hr">HR (Staffing)</option>
-              <option value="manager">Manager (Operations)</option>
-              <option value="marketing">Workspace (Boards &amp; Campaigns)</option>
-              <option value="admin">Administrator</option>
+            <select className="select" value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })}>
+              {roleOptions.map(r => (
+                <option key={r.name} value={r.name}>
+                  {r.name.charAt(0).toUpperCase() + r.name.slice(1)}{ROLE_BLURBS[r.name] ? ` (${ROLE_BLURBS[r.name]})` : ""}
+                </option>
+              ))}
             </select>
           </div>
           <button onClick={handleAddMember} disabled={isUpdating} className="btn-primary w-full py-2.5 mt-2">
@@ -589,41 +600,18 @@ export default function TeamPage() {
           <div className="space-y-3">
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Security Role</label>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-               <button
-                 onClick={() => updateProfile({ role: "agent", permissions: DEFAULT_PERMISSIONS })}
-                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'agent' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
-               >
-                 <div className={`text-xs font-bold ${selectedProfile?.role === 'agent' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>Agent</div>
-                 <div className="text-[9px] text-gray-400 mt-0.5">Sales Only</div>
-               </button>
-               <button 
-                 onClick={() => updateProfile({ role: "hr", permissions: DEFAULT_HR_PERMISSIONS })}
-                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'hr' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
-               >
-                 <div className={`text-xs font-bold ${selectedProfile?.role === 'hr' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>HR</div>
-                 <div className="text-[9px] text-gray-400 mt-0.5">Staffing</div>
-               </button>
-               <button
-                 onClick={() => updateProfile({ role: "manager", permissions: DEFAULT_MANAGER_PERMISSIONS })}
-                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'manager' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
-               >
-                 <div className={`text-xs font-bold ${selectedProfile?.role === 'manager' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>Manager</div>
-                 <div className="text-[9px] text-gray-400 mt-0.5">Operations</div>
-               </button>
-               <button
-                 onClick={() => updateProfile({ role: "marketing", permissions: DEFAULT_MARKETING_PERMISSIONS })}
-                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'marketing' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
-               >
-                 <div className={`text-xs font-bold ${selectedProfile?.role === 'marketing' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>Workspace</div>
-                 <div className="text-[9px] text-gray-400 mt-0.5">Boards & Campaigns</div>
-               </button>
-               <button
-                 onClick={() => updateProfile({ role: "admin" })}
-                 className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === 'admin' ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
-               >
-                 <div className={`text-xs font-bold ${selectedProfile?.role === 'admin' ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>Admin</div>
-                 <div className="text-[9px] text-gray-400 mt-0.5">Full System</div>
-               </button>
+              {roleOptions.map(r => (
+                <button
+                  key={r.name}
+                  onClick={() => updateProfile(r.name === "admin"
+                    ? { role: r.name }
+                    : { role: r.name, permissions: r.permissions })}
+                  className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === r.name ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
+                >
+                  <div className={`text-xs font-bold capitalize ${selectedProfile?.role === r.name ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>{r.name}</div>
+                  <div className="text-[9px] text-gray-400 mt-0.5">{ROLE_BLURBS[r.name] || "Custom role"}</div>
+                </button>
+              ))}
             </div>
           </div>
           

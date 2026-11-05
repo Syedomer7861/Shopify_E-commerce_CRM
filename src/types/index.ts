@@ -281,11 +281,31 @@ export interface UserPermissions {
   nav_modules?: string[] | null;
 }
 
+export interface Role {
+  id: string;
+  org_id: string;
+  name: string;
+  is_system: boolean;
+  permissions: UserPermissions;
+  nav_modules: string[] | null;
+  created_at: string;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  plan: string;
+  is_active: boolean;
+  created_at: string;
+}
+
 export interface Profile {
   id: string;
   email: string;
   name?: string;
   role: "admin" | "agent" | "hr" | "manager" | "marketing";
+  org_id: string;
   permissions: UserPermissions;
   is_active: boolean;
   status?: "online" | "break" | "meeting" | "lunch" | "away" | "offline";

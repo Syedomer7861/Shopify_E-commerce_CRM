@@ -42,6 +42,7 @@ const adminNav = [
   { label: "Templates",   href: "/templates",   icon: Sparkles,   permission: "manage_team" },
   { label: "Workflows",   href: "/workflows",   icon: Zap,        permission: "manage_team" },
   { label: "Team",        href: "/team",        icon: Shield,     permission: "manage_team" },
+  { label: "Roles",       href: "/roles",       icon: UserCheck,  permission: "manage_team" },
   { label: "System Health", href: "/system-health", icon: Activity, permission: "manage_team" },
   { label: "Settings",    href: "/settings",    icon: Settings,   permission: "manage_team" },
 ];

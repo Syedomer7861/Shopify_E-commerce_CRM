@@ -75,7 +75,7 @@ export const NAV_MODULE_GROUPS: Record<string, readonly string[]> = {
     "floor", "reports", "abandoned-carts", "admin-logs", "recordings",
     "import", "campaigns", "templates", "workflows", "system-health", "settings",
   ],
-  "Management": ["team", "hr", "manager"],
+  "Management": ["team", "roles", "hr", "manager"],
 };
 
 export const ALL_NAV_MODULES = Object.values(NAV_MODULE_GROUPS).flat();
