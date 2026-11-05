@@ -43,7 +43,7 @@ export async function GET(_req: NextRequest) {
 
 // POST /api/marketing/spaces — create a Space (workspace-admin only). Creator becomes owner.
 export async function POST(req: NextRequest) {
-  const { errorResponse, supabase, user } = await requireWorkspaceAdmin();
+  const { errorResponse, supabase, user, profile } = await requireWorkspaceAdmin();
   if (errorResponse) return errorResponse;
 
   let raw: unknown;
@@ -64,22 +64,36 @@ export async function POST(req: NextRequest) {
     .limit(1)
     .maybeSingle();
 
-  const { data: space, error } = await supabase!
+  // Generate the id client-side rather than chaining .select() on the
+  // insert. `INSERT ... RETURNING` re-checks the new row against the
+  // table's SELECT policy (mkt_spaces_read -> can_access_space()), and that
+  // self-referential check doesn't reliably see the row that's still being
+  // inserted in the same statement — admin/workspace-admin or not, it was
+  // failing with a 42501 even though is_workspace_admin() and org_id both
+  // checked out independently. Knowing the id upfront sidesteps RETURNING
+  // entirely instead of working around it with a second lookup.
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  const { error } = await supabase!
     .from("mkt_spaces")
     .insert({
+      id,
       name: parsed.data.name,
       color: parsed.data.color ?? null,
       icon: parsed.data.icon ?? null,
       position: (last?.position ?? 0) + 1000,
       created_by: user!.id,
-    })
-    .select("*")
-    .single();
+      org_id: profile!.org_id,
+    });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   await supabase!
     .from("mkt_space_members")
-    .insert({ space_id: space.id, user_id: user!.id, role: "owner", added_by: user!.id });
+    .insert({ space_id: id, user_id: user!.id, role: "owner", added_by: user!.id, org_id: profile!.org_id });
 
-  return NextResponse.json({ ...space, my_role: "owner", member_count: 1 }, { status: 201 });
+  return NextResponse.json({
+    id, name: parsed.data.name, color: parsed.data.color ?? null, icon: parsed.data.icon ?? null,
+    position: (last?.position ?? 0) + 1000, archived: false, created_by: user!.id, org_id: profile!.org_id,
+    created_at: now, updated_at: now, my_role: "owner", member_count: 1,
+  }, { status: 201 });
 }
