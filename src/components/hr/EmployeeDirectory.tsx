@@ -33,7 +33,7 @@ const DESIGNATIONS = [
   "Sales Manager", "SEO Expert", "Senior Agent", "Senior Support Agent", 
   "Support Team Lead", "Team Lead", "Website Developer"
 ];
-const INDIAN_STATES = [
+export const INDIAN_STATES = [
   "Andaman & Nicobar", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chandigarh", "Chhattisgarh", 
   "Delhi", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jammu & Kashmir", "Jharkhand", "Karnataka", 
   "Kerala", "Ladakh", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", 

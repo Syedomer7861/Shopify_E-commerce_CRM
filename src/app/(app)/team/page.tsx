@@ -10,6 +10,7 @@ import { AccessDenied } from "@/components/ui";
 import { DEFAULT_PERMISSIONS, NAV_MODULE_GROUPS, ALL_NAV_MODULES, allowedNavModules, normalizePermissions, hasPermission } from "@/lib/permissions";
 import { isDemoMode } from "@/lib/demo";
 import type { Role } from "@/types";
+import { INDIAN_STATES } from "@/components/hr/EmployeeDirectory";
 
 // Short blurb for the system roles seeded by Phase 2a; any other role
 // (admin-created) just reads as "Custom role".
@@ -286,9 +287,9 @@ export default function TeamPage() {
     updateProfile({ permissions: perms });
   };
 
-  const toggleSpecialization = (type: 'segments' | 'tasks', value: string) => {
+  const toggleSpecialization = (type: 'segments' | 'tasks' | 'states', value: string) => {
     if (!selectedProfile) return;
-    const field = type === 'segments' ? 'assigned_segments' : 'assigned_task_types';
+    const field = type === 'segments' ? 'assigned_segments' : type === 'tasks' ? 'assigned_task_types' : 'assigned_states';
     const current = (selectedProfile[field] || []) as string[];
     const updated = current.includes(value) 
       ? current.filter(v => v !== value) 
@@ -799,6 +800,30 @@ export default function TeamPage() {
                  })}
                </div>
                <p className="text-[9px] text-gray-400 italic">If none selected, agent sees all task types.</p>
+             </div>
+
+             <div className="space-y-3">
+               <div className="text-[10px] font-medium text-gray-500">Field Territory (States)</div>
+               <div className="flex flex-wrap gap-2">
+                 {INDIAN_STATES.map(state => {
+                   const isSelected = selectedProfile?.assigned_states?.includes(state);
+                   return (
+                     <button
+                       key={state}
+                       onClick={() => toggleSpecialization('states', state)}
+                       className={cn(
+                         "px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border",
+                         isSelected
+                           ? "bg-emerald-600 text-white border-emerald-600"
+                           : "bg-white text-gray-500 border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                       )}
+                     >
+                       {state.toUpperCase()}
+                     </button>
+                   );
+                 })}
+               </div>
+               <p className="text-[9px] text-gray-400 italic">For on-field reps. If none selected, no state restriction applies.</p>
              </div>
           </div>
           
