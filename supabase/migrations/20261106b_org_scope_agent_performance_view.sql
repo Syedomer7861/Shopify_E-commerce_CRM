@@ -1,7 +1,14 @@
--- v_agent_performance (20260826g) never exposed org_id, so daily-digest's
--- leaderboard query (service-role, bypasses RLS on the underlying tables
--- regardless) mixed every org's agents together. Adding org_id to the
--- view's own output lets callers filter it like any other query.
+-- v_agent_performance never exposed org_id, so daily-digest's leaderboard
+-- query (service-role, bypasses RLS on the underlying tables regardless)
+-- mixed every org's agents together. Adding org_id to the view's own
+-- output lets callers filter it like any other query.
+--
+-- The live column list on prod (confirmed via information_schema, since
+-- the migration history here is desynced from prod - see
+-- [[supabase-migration-workflow]]) has NO "status" column, unlike
+-- 20260826g's source. CREATE OR REPLACE VIEW can only ever ADD columns at
+-- the end, never reorder/rename/insert among existing ones (42P16) - this
+-- matches the live 12 columns exactly and appends org_id as the 13th.
 CREATE OR REPLACE VIEW v_agent_performance AS
 WITH activity_metrics AS (
     SELECT
@@ -24,7 +31,6 @@ SELECT
     p.is_active,
     p.last_seen_at,
     p.avatar_url,
-    p.status,
     COALESCE(am.total_calls, 0) as total_calls,
     COALESCE(am.total_whatsapp, 0) as total_whatsapp,
     COALESCE(am.tasks_resolved, 0) as tasks_resolved,
