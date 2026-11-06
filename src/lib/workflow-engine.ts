@@ -294,11 +294,11 @@ export class WorkflowEngine {
     if (message_text) {
        // Personalise custom text
        const personalised = personaliseTemplate(message_text, variables);
-       const res = await sendWhatsApp(customer.phone, personalised);
+       const res = await sendWhatsApp(customer.phone, personalised, undefined, orgId);
        if (!res.ok) throw new Error(res.error || "WhatsApp custom message failed");
     } else {
        const templateName = template_name || "Review Reminder";
-       const res = await sendMetaTemplate(customer.phone, templateName, variables);
+       const res = await sendMetaTemplate(customer.phone, templateName, variables, orgId);
        if (!res.ok) throw new Error(res.error || "WhatsApp template send failed");
     }
   }
@@ -448,7 +448,7 @@ export class WorkflowEngine {
       const message = personaliseTemplate(template, variables);
       console.log(`🤖 Auto-WhatsApp: Sending '${trigger}' message to ${customer.phone}`);
       
-      const res = await sendWhatsApp(customer.phone, message);
+      const res = await sendWhatsApp(customer.phone, message, undefined, orgId);
       if (!res.ok) {
         console.error(`❌ Auto-WhatsApp Failed: ${res.error}`);
       }

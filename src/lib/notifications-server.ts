@@ -20,6 +20,7 @@ export async function notifyAdmin(message: string, type: "alert" | "info" | "err
 
     // 2. Log Internal Alert to Audit Logs
     await supabase.from("audit_logs").insert({
+      org_id: settings?.org_id,
       action: action,
       entity_type: "system",
       summary: message.startsWith("[") ? message : `[${type.toUpperCase()}] ${message}`,
@@ -31,7 +32,7 @@ export async function notifyAdmin(message: string, type: "alert" | "info" | "err
         const { sendWhatsApp, cleanPhone } = await import("./whatsapp");
         const cleanedAdminPhone = cleanPhone(adminPhone);
 
-        await sendWhatsApp(cleanedAdminPhone, message);
+        await sendWhatsApp(cleanedAdminPhone, message, undefined, settings?.org_id);
     }
 
     return { ok: true };
@@ -50,7 +51,12 @@ export async function notifyUser(userId: string, title: string, body?: string, l
   try {
     const { createAdminClient } = await import("./supabase");
     const supabase = createAdminClient();
-    await supabase.from("notifications").insert({ user_id: userId, title, body: body || null, link: link || null, type });
+    // Service-role insert has no session to resolve org_id's DEFAULT from
+    // (it'd silently fall back to the seed org regardless of which
+    // tenant this user actually belongs to) - resolve it explicitly from
+    // the target user's own profile instead.
+    const { data: profile } = await supabase.from("profiles").select("org_id").eq("id", userId).maybeSingle();
+    await supabase.from("notifications").insert({ org_id: profile?.org_id, user_id: userId, title, body: body || null, link: link || null, type });
   } catch (err) {
     console.error("Failed to create user notification:", err);
   }

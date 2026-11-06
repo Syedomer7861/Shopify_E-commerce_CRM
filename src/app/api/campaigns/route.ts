@@ -140,7 +140,7 @@ export async function PATCH(req: NextRequest) {
   if (campaign.status === "completed") return NextResponse.json({ error: "Campaign already completed" }, { status: 400 });
   if (!campaign.template?.body) return NextResponse.json({ error: "Campaign has no template" }, { status: 400 });
 
-  const count = await populateRecipients(supabase, id, campaign.target_segment);
+  const count = await populateRecipients(supabase, id, campaign.target_segment, campaign.org_id);
 
   const { data: updated, error: updateError } = await supabase!
     .from("campaigns")

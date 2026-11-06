@@ -6,8 +6,8 @@ import { sendWhatsApp, personaliseTemplate, getTemplateVariables } from "@/lib/w
  * JSON file that doesn't survive across Vercel invocations - now it's rows
  * in campaign_recipients so a send loop can resume across cron ticks.
  */
-export async function populateRecipients(supabase: any, campaignId: string, targetSegment: string) {
-  let query = supabase.from("customers").select("id, name, phone, segment");
+export async function populateRecipients(supabase: any, campaignId: string, targetSegment: string, orgId: string) {
+  let query = supabase.from("customers").select("id, name, phone, segment").eq("org_id", orgId);
   if (targetSegment && targetSegment !== "all") {
     query = query.eq("segment", targetSegment);
   }
@@ -15,6 +15,7 @@ export async function populateRecipients(supabase: any, campaignId: string, targ
   if (error) throw error;
 
   const recipients = (customers || []).filter((c: any) => c.phone).map((c: any) => ({
+    org_id: orgId,
     campaign_id: campaignId,
     customer_id: c.id,
     name: c.name || "Unknown Customer",
@@ -34,12 +35,12 @@ export async function populateRecipients(supabase: any, campaignId: string, targ
 export async function launchScheduledCampaigns(supabase: any) {
   const { data: due } = await supabase
     .from("campaigns")
-    .select("id, target_segment")
+    .select("id, target_segment, org_id")
     .eq("status", "scheduled")
     .lte("scheduled_at", new Date().toISOString());
 
   for (const campaign of due || []) {
-    const count = await populateRecipients(supabase, campaign.id, campaign.target_segment);
+    const count = await populateRecipients(supabase, campaign.id, campaign.target_segment, campaign.org_id);
     await supabase
       .from("campaigns")
       .update({ status: "running", total_recipients: count, delivered_count: 0, failed_count: 0 })
@@ -77,6 +78,8 @@ export async function processCampaignSends(supabase: any, deadlineMs: number) {
     .from("campaigns")
     .select("*, template:campaign_templates(*)")
     .eq("status", "running");
+  // campaign rows already carry their own org_id (select("*")) - used below
+  // to resolve the right org's WhatsApp/Meta settings per send.
 
   for (const campaign of running || []) {
     if (Date.now() >= deadlineMs) break;
@@ -108,7 +111,7 @@ export async function processCampaignSends(supabase: any, deadlineMs: number) {
       const message = personaliseTemplate(campaign.template.body, variables);
 
       try {
-        const result = await sendWhatsApp(recipient.phone, message);
+        const result = await sendWhatsApp(recipient.phone, message, undefined, campaign.org_id);
         if (result.ok) {
           deliveredCount++;
           await supabase.from("campaign_recipients").update({ status: "delivered", sent_at: new Date().toISOString() }).eq("id", recipient.id);

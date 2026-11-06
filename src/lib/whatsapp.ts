@@ -19,7 +19,8 @@ async function saveMessageToHistory({
   type,
   direction,
   metaId,
-  metadata = {}
+  metadata = {},
+  orgId
 }: {
   phone: string;
   body: string;
@@ -27,17 +28,22 @@ async function saveMessageToHistory({
   direction: "inbound" | "outbound";
   metaId?: string;
   metadata?: any;
+  orgId?: string;
 }) {
   const supabase = createServerClient();
-  
-  // Clean phone for lookup
+
+  // Clean phone for lookup - org-scoped so this can't attribute the
+  // message history to a different tenant's customer sharing the same
+  // phone number.
   const cleanedPhone = phone.replace(/[^0-9]/g, "").replace(/^91/, "");
-  const { data: customer } = await supabase.from("customers")
+  let customerQuery = supabase.from("customers")
     .select("id")
-    .or(`phone.ilike.%${cleanedPhone}%,alt_phone.ilike.%${cleanedPhone}%`)
-    .single();
+    .or(`phone.ilike.%${cleanedPhone}%,alt_phone.ilike.%${cleanedPhone}%`);
+  if (orgId) customerQuery = customerQuery.eq("org_id", orgId);
+  const { data: customer } = await customerQuery.single();
 
   await supabase.from("whatsapp_messages").insert({
+    org_id: orgId,
     customer_id: customer?.id || null,
     phone,
     body,
@@ -159,12 +165,12 @@ async function sendTwilioSMS(
   }
 }
 
-export async function sendWhatsApp(phone: string, message: string, imagePath?: string): Promise<WhatsAppResponse> {
+export async function sendWhatsApp(phone: string, message: string, imagePath?: string, orgId?: string): Promise<WhatsAppResponse> {
   return sendQueue.enqueue(async () => {
     const supabase = createServerClient();
     await enforceSafeguardDelay(supabase);
 
-    const settings = await getSystemSettings(supabase);
+    const settings = await getSystemSettings(supabase, orgId);
 
 
     let whatsappResult: WhatsAppResponse = { ok: false, error: "No WhatsApp messaging gateway configured" };
@@ -186,7 +192,8 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
              body: message,
              type: "text",
              direction: "outbound",
-             metadata: { gateway: "local_bridge" }
+             metadata: { gateway: "local_bridge" },
+             orgId: settings?.org_id
            });
            return { ok: true };
         }
@@ -225,7 +232,8 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
             type: "text",
             direction: "outbound",
             metaId: data.messages?.[0]?.id,
-            metadata: { gateway: "meta" }
+            metadata: { gateway: "meta" },
+            orgId: settings?.org_id
           });
           return { ok: true, messageId: data.messages?.[0]?.id };
         }
@@ -259,7 +267,8 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
             type: "sms",
             direction: "outbound",
             metaId: smsRes.sid,
-            metadata: { gateway: "sms_fallback", sms_provider: "twilio", whatsapp_error: whatsappResult.error }
+            metadata: { gateway: "sms_fallback", sms_provider: "twilio", whatsapp_error: whatsappResult.error },
+            orgId: settings?.org_id
           });
           return { ok: true, messageId: smsRes.sid };
         } else {
@@ -276,22 +285,24 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
 }
 
 export async function sendMetaTemplate(
-  phone: string, 
-  templateName: string, 
-  data: Record<string, any>
+  phone: string,
+  templateName: string,
+  data: Record<string, any>,
+  orgId?: string
 ): Promise<WhatsAppResponse> {
   return sendQueue.enqueue(async () => {
     const supabase = createServerClient();
     await enforceSafeguardDelay(supabase);
 
+    const settings = await getSystemSettings(supabase, orgId);
+
     // 1. Resolve Template Mapping from DB
-    const { data: template } = await supabase
+    let templateQuery = supabase
       .from("campaign_templates")
       .select("meta_template_name, meta_variable_mapping, body")
-      .eq("name", templateName)
-      .single();
-
-    const settings = await getSystemSettings(supabase);
+      .eq("name", templateName);
+    if (settings?.org_id) templateQuery = templateQuery.eq("org_id", settings.org_id);
+    const { data: template } = await templateQuery.single();
 
     let metaName = template?.meta_template_name;
 
@@ -349,7 +360,8 @@ export async function sendMetaTemplate(
               type: "template",
               direction: "outbound",
               metaId: resData.messages?.[0]?.id,
-              metadata: { template_name: metaName, params: parameters }
+              metadata: { template_name: metaName, params: parameters },
+              orgId: settings?.org_id
            });
            return { ok: true, messageId: resData.messages?.[0]?.id };
          }
@@ -385,7 +397,8 @@ export async function sendMetaTemplate(
             type: "sms",
             direction: "outbound",
             metaId: smsRes.sid,
-            metadata: { gateway: "sms_fallback", sms_provider: "twilio", template_name: metaName, whatsapp_error: whatsappResult.error }
+            metadata: { gateway: "sms_fallback", sms_provider: "twilio", template_name: metaName, whatsapp_error: whatsappResult.error },
+            orgId: settings?.org_id
           });
           return { ok: true, messageId: smsRes.sid };
         } else {
