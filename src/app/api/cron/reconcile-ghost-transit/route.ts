@@ -46,6 +46,16 @@ export async function POST(req: NextRequest) {
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();
+
+  const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+  const reports: any[] = [];
+  for (const org of orgs ?? []) {
+    reports.push({ orgId: org.id, ...(await reconcileOrg(supabase, org.id)) });
+  }
+  return NextResponse.json({ orgs: reports });
+}
+
+async function reconcileOrg(supabase: ReturnType<typeof createAdminClient>, orgId: string) {
   // cron-job.org's free tier hard-caps its own wait at 30s (confirmed live
   // on shiprocket-sync - no way to raise it), well under Vercel's 60s
   // ceiling this was originally sized for. 20s leaves real margin for
@@ -65,12 +75,12 @@ export async function POST(req: NextRequest) {
   };
 
   try {
-    const settings = await getSystemSettings(supabase);
+    const settings = await getSystemSettings(supabase, orgId);
     if (!settings?.shopify_store_domain) {
-      return NextResponse.json({ error: "Shopify not configured" }, { status: 400 });
+      return { error: "Shopify not configured" };
     }
     const domain = String(settings.shopify_store_domain).replace(/^https?:\/\//, "").replace(/\/$/, "");
-    const shopifyToken = await getShopifyAccessToken(supabase);
+    const shopifyToken = await getShopifyAccessToken(supabase, orgId);
 
     // Shiprocket auth is only needed if we actually recover a tracking
     // number, so it's done lazily on first use rather than up front.
@@ -101,12 +111,13 @@ export async function POST(req: NextRequest) {
       .in("delivery_status", ["in_transit", "pending"])
       .is("tracking_number", null)
       .eq("source", "shopify")
+      .eq("org_id", orgId)
       .order("ordered_at", { ascending: true })
       .limit(BATCH_SIZE);
 
     if (fetchErr) throw fetchErr;
     if (!ghostOrders || ghostOrders.length === 0) {
-      return NextResponse.json({ processed: 0, message: "No ghost transit or mislabeled pending orders left", report });
+      return { processed: 0, message: "No ghost transit or mislabeled pending orders left", report };
     }
 
     // Shopify supports a comma-separated ids filter, up to 250 at a time -
@@ -196,10 +207,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ processed: report.checked, report });
+    return { processed: report.checked, report };
   } catch (err: any) {
-    console.error("Reconcile ghost transit error:", err.message);
-    return NextResponse.json({ error: err.message, report }, { status: 500 });
+    console.error(`Reconcile ghost transit error (org ${orgId}):`, err.message);
+    return { error: err.message, report };
   }
 }
 

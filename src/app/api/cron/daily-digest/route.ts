@@ -12,26 +12,36 @@ export async function POST(req: NextRequest) {
   if (unauthorized) return unauthorized;
 
   const supabase = getSupabase();
+
+  const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+  const force = req.nextUrl.searchParams.get("force") === "true";
+  const results = [];
+  for (const org of orgs ?? []) {
+    results.push({ orgId: org.id, ...(await sendDigestForOrg(supabase, org.id, force)) });
+  }
+  return NextResponse.json({ orgs: results });
+}
+
+async function sendDigestForOrg(supabase: ReturnType<typeof createAdminClient>, orgId: string, force: boolean) {
   const now = new Date();
   const yesterday = new Date(now.getTime() - 86400000).toISOString();
   const todayDate = now.toISOString().split("T")[0];
 
   // 1. Get Settings
-  const settings = await getSystemSettings(supabase);
-  if (!settings?.whatsapp_admin_phone) return NextResponse.json({ error: "No admin phone set" });
+  const settings = await getSystemSettings(supabase, orgId);
+  if (!settings?.whatsapp_admin_phone) return { error: "No admin phone set" };
 
   // Time-based blackout check (Only for Admin Digest)
-  const force = req.nextUrl.searchParams.get("force") === "true";
   if (settings.whatsapp_send_time && !force) {
     const currentFormattedTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
     if (currentFormattedTime < settings.whatsapp_send_time.substring(0, 5)) {
-      return NextResponse.json({ skipped: true, reason: `Admin digest scheduled for ${settings.whatsapp_send_time}. Current: ${currentFormattedTime}` });
+      return { skipped: true, reason: `Admin digest scheduled for ${settings.whatsapp_send_time}. Current: ${currentFormattedTime}` };
     }
   }
 
   // 2. Fetch Strategic Stats
   // 💰 FINANCE & ATTRIBUTION
-  const { data: orders } = await supabase.from("orders").select("total_price, attributed_instance_id").gte("ordered_at", yesterday);
+  const { data: orders } = await supabase.from("orders").select("total_price, attributed_instance_id").eq("org_id", orgId).gte("ordered_at", yesterday);
   const totalRevenue = (orders || []).reduce((s, o) => s + (Number(o.total_price) || 0), 0);
   const waRevenue = (orders || []).filter(o => o.attributed_instance_id).reduce((s, o) => s + (Number(o.total_price) || 0), 0);
   const orderCount = orders?.length || 0;
@@ -41,6 +51,7 @@ export async function POST(req: NextRequest) {
   const { count: healedCount } = await supabase
     .from("customers")
     .select("id", { count: 'exact', head: true })
+    .eq("org_id", orgId)
     .gte("updated_at", yesterday)
     .not("phone", "ilike", "%x%")
     .not("phone", "ilike", "%_SR_%");
@@ -49,16 +60,18 @@ export async function POST(req: NextRequest) {
   const { data: leaderboard } = await supabase
     .from("v_agent_performance")
     .select("name, total_calls, tasks_resolved")
+    .eq("org_id", orgId)
     .order("total_calls", { ascending: false })
     .limit(3);
 
   // ⌛ TASK PIPELINE
-  const { count: pendingTotal } = await supabase.from("tasks").select("id", { count: 'exact', head: true }).eq("status", "pending");
+  const { count: pendingTotal } = await supabase.from("tasks").select("id", { count: 'exact', head: true }).eq("status", "pending").eq("org_id", orgId);
   const { data: todayTasks } = await supabase
     .from("tasks")
     .select("task_type, customer:customers(name)")
     .eq("due_date", todayDate)
-    .eq("status", "pending");
+    .eq("status", "pending")
+    .eq("org_id", orgId);
   
   const reorderTasksCount = (todayTasks || []).filter(t => t.task_type === 'reorder').length;
 
@@ -116,25 +129,25 @@ export async function POST(req: NextRequest) {
     if (!res.ok || !result.ok) {
       // WA bridge is running but WA session is not ready — not a server error
       const reason = result.error || `Bridge responded with ${res.status}`;
-      console.warn(`[DailyDigest] WA send skipped: ${reason}`);
-      return NextResponse.json({ 
+      console.warn(`[DailyDigest] WA send skipped (org ${orgId}): ${reason}`);
+      return {
         sent: false,
         skipped: true,
         reason,
         totalRevenue,
         waRevenue
-      });
+      };
     }
 
-    return NextResponse.json({ sent: true, totalRevenue, waRevenue });
+    return { sent: true, totalRevenue, waRevenue };
   } catch (err: any) {
     // Network error (bridge unreachable) — log but return 200
     const isNetworkError = err.name === "AbortError" || err.message?.includes("fetch failed") || err.message?.includes("ECONNREFUSED");
     if (isNetworkError) {
-      console.warn(`[DailyDigest] WA bridge unreachable: ${err.message}`);
-      return NextResponse.json({ sent: false, skipped: true, reason: "WA bridge unreachable", totalRevenue, waRevenue });
+      console.warn(`[DailyDigest] WA bridge unreachable (org ${orgId}): ${err.message}`);
+      return { sent: false, skipped: true, reason: "WA bridge unreachable", totalRevenue, waRevenue };
     }
-    return NextResponse.json({ sent: false, error: err.message }, { status: 500 });
+    return { sent: false, error: err.message };
   }
 }
 

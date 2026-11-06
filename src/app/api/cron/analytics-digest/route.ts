@@ -29,9 +29,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ skipped: true, reason: "Weekly digest only sends on Mondays" });
   }
 
-  const settings = await getSystemSettings(supabase);
+  const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+  const results = [];
+  for (const org of orgs ?? []) {
+    results.push({ orgId: org.id, ...(await sendDigestForOrg(supabase, org.id, range, now)) });
+  }
+  return NextResponse.json({ orgs: results });
+}
+
+async function sendDigestForOrg(supabase: ReturnType<typeof createAdminClient>, orgId: string, range: "daily" | "weekly", now: Date) {
+  const settings = await getSystemSettings(supabase, orgId);
   if (!settings?.whatsapp_admin_phone) {
-    return NextResponse.json({ error: "No admin phone set" });
+    return { error: "No admin phone set" };
   }
 
   const rangeStart = new Date(now.getTime() - (range === "weekly" ? 7 : 1) * 86_400_000).toISOString();
@@ -41,6 +50,7 @@ export async function POST(req: NextRequest) {
     const { data: orders } = await supabase
       .from("orders")
       .select("total_price, delivery_status, line_items, customer:customers(state)")
+      .eq("org_id", orgId)
       .gte("ordered_at", rangeStart)
       .lte("ordered_at", rangeEnd);
 
@@ -74,6 +84,7 @@ export async function POST(req: NextRequest) {
     const { data: carts } = await supabase
       .from("abandoned_carts")
       .select("total_price, recovery_status")
+      .eq("org_id", orgId)
       .gte("abandoned_at", rangeStart)
       .lte("abandoned_at", rangeEnd);
     const cartList = carts || [];
@@ -83,8 +94,8 @@ export async function POST(req: NextRequest) {
 
     // Reorder rate is a snapshot of the whole customer base, not scoped to
     // this range - same definition the Analytics page itself uses.
-    const { count: repeatCount } = await supabase.from("customers").select("id", { count: "exact", head: true }).eq("segment", "repeat");
-    const { count: totalCustomers } = await supabase.from("customers").select("id", { count: "exact", head: true });
+    const { count: repeatCount } = await supabase.from("customers").select("id", { count: "exact", head: true }).eq("segment", "repeat").eq("org_id", orgId);
+    const { count: totalCustomers } = await supabase.from("customers").select("id", { count: "exact", head: true }).eq("org_id", orgId);
     const reorderRate = totalCustomers ? Math.round(((repeatCount || 0) / totalCustomers) * 100) : 0;
 
     const periodLabel = range === "weekly" ? "Last 7 Days" : "Last 24 Hours";
@@ -120,18 +131,18 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok || !result.ok) {
       const reason = result.error || `Bridge responded with ${res.status}`;
-      console.warn(`[AnalyticsDigest] WA send skipped: ${reason}`);
-      return NextResponse.json({ sent: false, skipped: true, reason, range, orderCount, deliveredRevenue });
+      console.warn(`[AnalyticsDigest] WA send skipped (org ${orgId}): ${reason}`);
+      return { sent: false, skipped: true, reason, range, orderCount, deliveredRevenue };
     }
 
-    return NextResponse.json({ sent: true, range, orderCount, deliveredRevenue, rtoRate, reorderRate });
+    return { sent: true, range, orderCount, deliveredRevenue, rtoRate, reorderRate };
   } catch (err: any) {
     const isNetworkError = err.name === "AbortError" || err.message?.includes("fetch failed") || err.message?.includes("ECONNREFUSED");
     if (isNetworkError) {
-      console.warn(`[AnalyticsDigest] WA bridge unreachable: ${err.message}`);
-      return NextResponse.json({ sent: false, skipped: true, reason: "WA bridge unreachable" });
+      console.warn(`[AnalyticsDigest] WA bridge unreachable (org ${orgId}): ${err.message}`);
+      return { sent: false, skipped: true, reason: "WA bridge unreachable" };
     }
-    return NextResponse.json({ sent: false, error: err.message }, { status: 500 });
+    return { sent: false, error: err.message };
   }
 }
 

@@ -20,19 +20,29 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient();
 
+  const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+  const results = [];
+  for (const org of orgs ?? []) {
+    results.push({ orgId: org.id, ...(await sweepOrg(supabase, org.id)) });
+  }
+  return NextResponse.json({ success: true, orgs: results });
+}
+
+async function sweepOrg(supabase: any, orgId: string) {
   try {
-    const settings = await getSystemSettings(supabase);
-    const token = await getShiprocketToken(supabase);
+    const settings = await getSystemSettings(supabase, orgId);
+    const token = await getShiprocketToken(supabase, orgId);
 
     // 2. Find masked customers to heal
     const { data: customers } = await supabase
       .from("customers")
       .select("id, phone, name, email")
       .or('phone.ilike.%x%,phone.ilike.%_SR_%')
+      .eq("org_id", orgId)
       .limit(50); // Safe batch size
 
     if (!customers || customers.length === 0) {
-      return NextResponse.json({ success: true, message: "Sentinel: All records clean!" });
+      return { message: "Sentinel: All records clean!" };
     }
 
     let unmaskedCount = 0;
@@ -65,6 +75,7 @@ export async function GET(req: NextRequest) {
               .from("customers")
               .select("id")
               .eq("phone", phone)
+              .eq("org_id", orgId)
               .neq("id", cust.id)
               .maybeSingle();
 
@@ -89,13 +100,12 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: `Sentinel Sweep Complete: ${unmaskedCount} healed, ${mergedCount} merged.` 
-    });
+    return {
+      message: `Sentinel Sweep Complete: ${unmaskedCount} healed, ${mergedCount} merged.`
+    };
 
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return { error: err.message };
   }
 }
 
