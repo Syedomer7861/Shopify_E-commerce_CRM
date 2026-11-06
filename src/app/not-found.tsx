@@ -32,7 +32,7 @@ export default function NotFound() {
         </div>
 
         <p className="mt-12 text-[9px] text-[#1c1c1c]/20 font-bold uppercase tracking-widest">
-          &copy; 2026 CureForever Administrative Control
+          &copy; 2026 CodeCrest Administrative Control
         </p>
       </div>
     </div>

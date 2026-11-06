@@ -529,7 +529,7 @@ export default function TeamPage() {
         <div className="space-y-4">
           <div>
             <label className="text-xs font-medium text-gray-700 block mb-1">Email Address (Login ID)</label>
-            <input type="email" className="input" placeholder="agent@cureforever.in" 
+            <input type="email" className="input" placeholder="agent@yourcompany.com"
               value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} />
           </div>
           <div>

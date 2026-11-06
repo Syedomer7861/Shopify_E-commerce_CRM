@@ -33,7 +33,7 @@ export async function POST(req: Request) {
       const params = new URLSearchParams();
       params.append("To", phone);
       params.append("From", twilio_number);
-      params.append("Body", "CureForever CRM SMS Gateway Verification: Outbound SMS routing and API integration are fully functional!");
+      params.append("Body", "CodeCrest CRM SMS Gateway Verification: Outbound SMS routing and API integration are fully functional!");
 
       console.log("[SMS TEST] Dispatching Twilio SMS to:", phone);
       const res = await fetch(url, {

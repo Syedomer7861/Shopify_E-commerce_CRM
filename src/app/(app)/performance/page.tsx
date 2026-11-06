@@ -76,24 +76,13 @@ function formatClockTime(iso: string | undefined, use24h: boolean): string {
   });
 }
 
-// Best-effort real logo for PDF exports - Shopify CDN assets are usually
-// CORS-open for storefront use, but this must never block an export if
-// that assumption is wrong somewhere, so any failure just falls back to
-// the text-only branded header below.
+// Best-effort real logo for PDF exports, falling back to the text-only
+// branded header below on any failure. Was hardcoded to CureForever's own
+// Shopify CDN logo asset, which doesn't belong on a CodeCrest-branded
+// report for a different tenant - disabled until this reads a per-org
+// logo (e.g. from settings) instead of one hardcoded brand's.
 async function tryGetLogoDataUri(): Promise<string | null> {
-  try {
-    const res = await fetch("https://cureforever.in/cdn/shop/files/Cureforever_TM_Logo_1.png?v=1751527749&width=200");
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    return await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 export default function PerformancePage() {
@@ -389,7 +378,7 @@ export default function PerformancePage() {
   const exportFileBase = () => {
     const agentPart = (selectedAgentName || "Agent").replace(/[^a-zA-Z0-9]/g, "_");
     const { start, end } = getRange(preset, customStart, customEnd);
-    return `CureForever_${agentPart}_Performance_${start.slice(0, 10)}_to_${end.slice(0, 10)}`;
+    return `CodeCrest_${agentPart}_Performance_${start.slice(0, 10)}_to_${end.slice(0, 10)}`;
   };
 
   async function handleExport(exportFormat: "csv" | "xlsx" | "pdf") {
@@ -424,7 +413,7 @@ export default function PerformancePage() {
         }
         pdf.setTextColor(255, 255, 255);
         pdf.setFontSize(16);
-        pdf.text("CUREFOREVER", logoDataUri ? 34 : 10, 15);
+        pdf.text("CODECREST", logoDataUri ? 34 : 10, 15);
         pdf.setFontSize(9);
         pdf.text("Daily Performance & Attendance Report", logoDataUri ? 34 : 10, 22);
         pdf.setFontSize(8);
@@ -542,7 +531,7 @@ export default function PerformancePage() {
         // ever emits the first sheet for bookType "csv") - one flat file
         // with labeled sections instead, a common plain-text report shape.
         const combined: (string | number)[][] = [
-          ["CUREFOREVER — PERFORMANCE REPORT"], [],
+          ["CODECREST — PERFORMANCE REPORT"], [],
           ["SUMMARY"], ...summaryRows, [],
         ];
         if (taskTypeRows.length > 0) combined.push(["TASK TYPE DISTRIBUTION"], BREAKDOWN_HEADERS, ...taskTypeRows, []);

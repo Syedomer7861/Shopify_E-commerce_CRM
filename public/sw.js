@@ -16,10 +16,10 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: "CureForever CRM", body: event.data.text() };
+    payload = { title: "CodeCrest CRM", body: event.data.text() };
   }
 
-  const title = payload.title || "CureForever CRM";
+  const title = payload.title || "CodeCrest CRM";
   const options = {
     body: payload.body || "",
     icon: "/icons/icon-192.png",

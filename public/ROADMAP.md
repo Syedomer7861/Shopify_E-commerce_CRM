@@ -1,12 +1,12 @@
-# CureForever CRM — Complete User Roadmap
+# CodeCrest CRM — Complete User Roadmap
 
-> Your personal guide to mastering the CureForever CRM. This document covers every feature, page, and workflow so you can get the most out of your system from Day 1.
+> Your personal guide to mastering CodeCrest CRM. This document covers every feature, page, and workflow so you can get the most out of your system from Day 1.
 
 ---
 
 ## 🏠 What Is This CRM?
 
-CureForever CRM is a **health & wellness e-commerce CRM** purpose-built to:
+CodeCrest CRM is a **multi-tenant e-commerce operations CRM** purpose-built to:
 - Track every customer from their first order to repeat purchases
 - Automate follow-up calls and WhatsApp reminders
 - Recover abandoned carts and lost revenue
@@ -252,4 +252,4 @@ node wa_server.js    # Start WhatsApp bridge at localhost:3001
 
 ---
 
-*Built with ❤️ for CureForever*
+*Built with ❤️ for every team running CodeCrest CRM*

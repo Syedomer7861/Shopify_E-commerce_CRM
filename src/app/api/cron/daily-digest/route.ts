@@ -88,7 +88,7 @@ async function sendDigestForOrg(supabase: ReturnType<typeof createAdminClient>, 
   const taskList = (todayTasks || []).slice(0, 5).map((t: any) => `• ${t.customer?.name || "Customer"} (${t.task_type})`).join("\n");
 
   const message = 
-    `📊 *CUREFOREVER INTELLIGENCE REPORT*\n` +
+    `📊 *CODECREST INTELLIGENCE REPORT*\n` +
     `📅 _Period: Last 24 Hours_\n` +
     `──────────────────\n\n` +
     

@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       // Twilio standard call endpoint
       const url = `https://api.twilio.com/2010-04-01/Accounts/${twilio_sid}/Calls.json`;
       
-      const twimlXml = `<Response><Say voice="alice">Hello! This is a verification call from your CureForever CRM Cloud Telephony gateway. Your connection is working perfectly. Goodbye!</Say></Response>`;
+      const twimlXml = `<Response><Say voice="alice">Hello! This is a verification call from your CodeCrest CRM Cloud Telephony gateway. Your connection is working perfectly. Goodbye!</Say></Response>`;
       
       const params = new URLSearchParams();
       params.append("To", phone);

@@ -1035,7 +1035,7 @@ export default function SettingsPage() {
     const ws = XLSX.utils.json_to_sheet(template);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Overrides");
-    XLSX.writeFile(wb, "cureforever_override_template.xlsx");
+    XLSX.writeFile(wb, "codecrest_override_template.xlsx");
     toast.success("Template Downloaded!");
   };
 
@@ -2218,7 +2218,7 @@ export default function SettingsPage() {
                   type="text" 
                   value={settings.gmail_project_id || ""} 
                   onChange={e => setSettings({ ...settings, gmail_project_id: e.target.value })}
-                  placeholder="cureforever2025"
+                  placeholder="your_webhook_secret_2025"
                   className="input font-mono text-[10px] bg-[#fcfbf8]" 
                 />
               </div>
@@ -2287,7 +2287,7 @@ export default function SettingsPage() {
             <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 flex items-center gap-2">
               <Zap className="w-3.5 h-3.5 text-amber-500" /> Branded Email Automations
             </h4>
-            <p className="text-[10px] text-[#5f5f5d] mb-8 italic">Enable these to send professional, branded HTML emails automatically. These will be wrapped in your high-fidelity template with the CureForever logo.</p>
+            <p className="text-[10px] text-[#5f5f5d] mb-8 italic">Enable these to send professional, branded HTML emails automatically. These will be wrapped in a high-fidelity template.</p>
             
             <div className="space-y-6">
               {[
@@ -2399,7 +2399,7 @@ export default function SettingsPage() {
                   type="text" 
                   value={settings.shopify_store_domain || ""} 
                   onChange={e => setSettings({ ...settings, shopify_store_domain: e.target.value })}
-                  placeholder="e.g. cureforever.myshopify.com"
+                  placeholder="e.g. yourstore.myshopify.com"
                   className="input text-[10px] font-bold bg-[#fcfbf8]" 
                 />
                 <p className="text-[9px] text-[#5f5f5d] mt-2 opacity-50">Your primary myshopify.com domain.</p>

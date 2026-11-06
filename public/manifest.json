@@ -1,7 +1,7 @@
 {
-  "name": "CureForever CRM",
-  "short_name": "CureForever",
-  "description": "Administrative Command Center for CureForever operations.",
+  "name": "CodeCrest CRM",
+  "short_name": "CodeCrest",
+  "description": "Administrative Command Center for CodeCrest CRM operations.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0A2514",

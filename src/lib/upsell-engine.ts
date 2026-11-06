@@ -1,5 +1,5 @@
 /**
- * Rule-based Upsell Engine for CureForever Products.
+ * Rule-based Upsell Engine for Products.
  */
 export interface UpsellSuggestion {
   product_name: string;

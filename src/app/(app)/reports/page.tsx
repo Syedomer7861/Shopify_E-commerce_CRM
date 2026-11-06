@@ -773,7 +773,7 @@ export default function ReportsPage() {
       pdf.rect(0, 0, pdfWidth, 40, 'F');
       pdf.setFontSize(22);
       pdf.setTextColor(255, 255, 255);
-      pdf.text("CUREFOREVER — MASTER ARCHIVE", 10, 25);
+      pdf.text("CODECREST — MASTER ARCHIVE", 10, 25);
       pdf.setFontSize(10);
       pdf.text(`Administrative Registry Audit | Generated: ${format(new Date(), "PPpp")}`, 10, 32);
 
@@ -843,7 +843,7 @@ export default function ReportsPage() {
           headStyles: { fillColor: [28, 28, 28] }
       });
 
-      const filename = `CureForever_Master_History_${format(new Date(), "yyyy-MM-dd")}.pdf`;
+      const filename = `CodeCrest_Master_History_${format(new Date(), "yyyy-MM-dd")}.pdf`;
       if (masterExportOptions.destination === "download") {
           pdf.save(filename);
       } else {
@@ -906,7 +906,7 @@ export default function ReportsPage() {
       const attendanceHeaders = ["Date", "Agent", "Clock In", "Clock Out", "Work Hours", "Break Hours", "Net Hours", "Tasks", "Revenue"];
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([attendanceHeaders, ...stats.dailyAttendanceLogs.map((a: any) => [a.date, a.name, a.clockIn, a.clockOut, a.workHours, a.breakHours, a.netHours, a.tasks, a.revenue])]), "Attendance Register");
 
-      const filename = `CureForever_Master_Data_${format(new Date(), "yyyy-MM-dd")}.${masterExportOptions.format}`;
+      const filename = `CodeCrest_Master_Data_${format(new Date(), "yyyy-MM-dd")}.${masterExportOptions.format}`;
       if (masterExportOptions.destination === "download") {
         XLSX.writeFile(wb, filename);
       } else {
@@ -992,7 +992,7 @@ export default function ReportsPage() {
           return;
       }
       const wb = XLSX.utils.book_new();
-      const filename = `CureForever_Advanced_${dateRange.start}_to_${dateRange.end}.${exportOptions.format}`;
+      const filename = `CodeCrest_Advanced_${dateRange.start}_to_${dateRange.end}.${exportOptions.format}`;
 
       // Fetch only the datasets whose sheets are actually selected.
       const [exOrders, exCalls, exAB, exWF] = await Promise.all([
@@ -1084,7 +1084,7 @@ export default function ReportsPage() {
           pdf.rect(0, 0, pdfWidth, 45, 'F');
           pdf.setFontSize(22);
           pdf.setTextColor(255, 255, 255);
-          pdf.text("CUREFOREVER — PERFORMANCE DOSSIER", 10, 22);
+          pdf.text("CODECREST — PERFORMANCE DOSSIER", 10, 22);
           pdf.setFontSize(10);
           pdf.text(`High-Fidelity Performance Audit | ${dateRange.start} — ${dateRange.end}`, 10, 30);
           pdf.addImage(imgData, 'PNG', 10, 50, canvasWidth, canvasHeight);
@@ -1205,7 +1205,7 @@ export default function ReportsPage() {
 
 
 
-          const filename = `CureForever_Intelligence_${dateRange.start}.pdf`;
+          const filename = `CodeCrest_Intelligence_${dateRange.start}.pdf`;
           if (exportOptions.destination === "download") {
               pdf.save(filename);
           } else {

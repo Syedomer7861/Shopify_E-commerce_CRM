@@ -5,10 +5,10 @@ import { Suspense } from "react";
 import { PHProvider } from "./providers";
 import PostHogPageView from "./_components/PostHogPageView";
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://cureforever-crm.vercel.app";
-const SITE_TITLE = "CureForever CRM — Shopify & Shiprocket Order Management";
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://codecrest-crm.vercel.app";
+const SITE_TITLE = "CodeCrest CRM — Shopify & Shiprocket Order Management";
 const OG_DESCRIPTION =
-  "CureForever CRM unifies Shopify orders, Shiprocket shipping, WhatsApp support, and agent performance in one dashboard for fast-moving e-commerce teams.";
+  "CodeCrest CRM unifies Shopify orders, Shiprocket shipping, WhatsApp support, and agent performance in one dashboard for fast-moving e-commerce teams.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -21,16 +21,16 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "CureForever CRM",
+    title: "CodeCrest CRM",
   },
   openGraph: {
     type: "website",
     url: SITE_URL,
-    siteName: "CureForever CRM",
+    siteName: "CodeCrest CRM",
     title: SITE_TITLE,
     description: OG_DESCRIPTION,
     images: [
-      { url: "/og-image.png", width: 1200, height: 665, alt: "CureForever CRM dashboard" },
+      { url: "/og-image.png", width: 1200, height: 665, alt: "CodeCrest CRM dashboard" },
     ],
   },
   twitter: {

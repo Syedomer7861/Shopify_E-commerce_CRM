@@ -1,4 +1,4 @@
-# CureForever CRM: Shopify & Shiprocket Operations Hub
+# CodeCrest CRM: Shopify & Shiprocket Operations Hub
 
 [![Next.js 14](https://img.shields.io/badge/Framework-Next.js%2014-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![Supabase](https://img.shields.io/badge/Database-Supabase-emerald?style=flat-square&logo=supabase)](https://supabase.com/)
@@ -7,7 +7,7 @@
 
 **Live Production:** [https://cureforever-crm.vercel.app/](https://cureforever-crm.vercel.app/)
 
-> **The Ultimate Operations Engine** for CureForever. High-fidelity task automation, "Poor Man's" cloud telephony, and real-time customer engagement.
+> **The Ultimate Operations Engine.** High-fidelity task automation, "Poor Man's" cloud telephony, and real-time customer engagement.
 
 ---
 
@@ -114,5 +114,5 @@ The CRM is optimized for **Vercel**.
 
 ---
 
-Built with passion for **CureForever**.  
+Built with passion for every team running CodeCrest CRM.  
 *Hardened for 2026 Production Standards.*

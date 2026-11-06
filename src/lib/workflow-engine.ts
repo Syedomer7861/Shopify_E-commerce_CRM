@@ -9,7 +9,7 @@ const supabase = createServerClient();
 export type WorkflowTrigger = "order_placed" | "order_delivered" | "order_rto" | "cart_abandoned" | "customer_tag_added" | "order_in_transit" | "customer_created" | "delivery_attempt_failed" | "out_for_delivery" | "stale_shipment" | "final_followup";
 
 /**
- * WorkflowEngine - The stateful execution hub for CureForever CRM.
+ * WorkflowEngine - The stateful execution hub for CodeCrest CRM.
  */
 export class WorkflowEngine {
   

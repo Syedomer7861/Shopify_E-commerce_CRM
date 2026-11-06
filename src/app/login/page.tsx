@@ -7,8 +7,8 @@ import toast from "react-hot-toast";
 import { sendAdminNotification } from "@/lib/notifications";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("agent@cureforever.in");
-  const [password, setPassword] = useState("demo1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -69,7 +69,7 @@ export default function LoginPage() {
               <Zap className="w-8 h-8 text-[#f7f4ed]" strokeWidth={2} />
             </div>
           </div>
-          <h1 className="text-3xl font-display text-[#1c1c1c] tracking-tight mb-2 font-black uppercase">CureForever</h1>
+          <h1 className="text-3xl font-display text-[#1c1c1c] tracking-tight mb-2 font-black uppercase">CodeCrest</h1>
           <div className="flex items-center justify-center gap-2">
             <div className="h-px w-6 bg-[#1c1c1c]/10" />
             <span className="text-[#1c1c1c]/40 text-[9px] font-black uppercase tracking-[0.3em]">Administrative Suite</span>
@@ -90,7 +90,7 @@ export default function LoginPage() {
               <input
                 type="email"
                 className="w-full h-14 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-5 text-[#1c1c1c] placeholder:text-[#1c1c1c]/20 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c]/20 transition-all text-sm font-medium"
-                placeholder="admin@cureforever.in"
+                placeholder="you@yourcompany.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
@@ -152,7 +152,7 @@ export default function LoginPage() {
             <span className="text-[9px] font-black text-[#1c1c1c]/20 uppercase tracking-[0.2em]">Created By <a className="text-[9px] font-black text-[#1c1c1c]/20 uppercase tracking-[0.2em]" href="https://codecreststudio.vercel.app/">Codecrest_Studio</a></span>
           </div>
           <p className="text-[9px] text-[#1c1c1c]/20 font-bold uppercase tracking-widest leading-relaxed">
-            &copy; 2026 Cureforever Administrative Control
+            &copy; 2026 CodeCrest Administrative Control
           </p>
         </div>
       </div>

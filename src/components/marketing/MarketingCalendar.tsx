@@ -40,7 +40,7 @@ function buildICS(tasks: MktTask[], listName: string): string {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//CureForever CRM//Workspace Calendar//EN",
+    "PRODID:-//CodeCrest CRM//Workspace Calendar//EN",
     `X-WR-CALNAME:${esc(listName)}`,
   ];
   for (const t of tasks) {
@@ -50,7 +50,7 @@ function buildICS(tasks: MktTask[], listName: string): string {
     const endExclusive = format(addDays(parseISO(t.due_date), 1), "yyyyMMdd");
     lines.push(
       "BEGIN:VEVENT",
-      `UID:${t.id}@cureforever-crm`,
+      `UID:${t.id}@codecrest-crm`,
       `DTSTAMP:${stamp}`,
       `DTSTART;VALUE=DATE:${start}`,
       `DTEND;VALUE=DATE:${endExclusive}`,
