@@ -83,8 +83,25 @@ export async function POST(req: NextRequest) {
     try {
       log("--- Sync Started ---");
       send({ progress: 2, message: "Initializing unmasking engine..." });
-      
-      const settings = await getSystemSettings(supabase);
+
+      // 2. Find masked customers (this org only - see the merge check
+      // further down for why an unscoped version of this is dangerous,
+      // not just wasteful)
+      const { customerId } = await req.json().catch(() => ({}));
+
+      let orgId: string | undefined;
+      let query;
+      if (customerId) {
+          const { data: target } = await supabase.from("customers").select("org_id").eq("id", customerId).maybeSingle();
+          orgId = target?.org_id;
+          query = supabase.from("customers").select("id, phone, name, email").eq("id", customerId);
+      } else {
+          const { getDefaultOrgId } = await import("@/lib/server-settings");
+          orgId = await getDefaultOrgId() || undefined;
+          query = supabase.from("customers").select("id, phone, name, email").or('phone.ilike.%x%,phone.ilike.%_SR_%').eq("org_id", orgId).limit(100);
+      }
+
+      const settings = await getSystemSettings(supabase, orgId);
       if (!settings?.shiprocket_email || !settings?.shiprocket_password) {
         send({ error: "Shiprocket credentials missing" });
         return close();
@@ -93,21 +110,10 @@ export async function POST(req: NextRequest) {
       // 1. Authenticate (Smart Cache)
       let token: string;
       try {
-        token = await getShiprocketToken(supabase);
+        token = await getShiprocketToken(supabase, orgId);
       } catch (authError) {
         send({ error: "Shiprocket Authentication failed" });
         return close();
-      }
-
-      // 2. Find masked customers
-      const { customerId } = await req.json().catch(() => ({}));
-
-      let query = supabase.from("customers").select("id, phone, name, email");
-      
-      if (customerId) {
-          query = query.eq("id", customerId);
-      } else {
-          query = query.or('phone.ilike.%x%,phone.ilike.%_SR_%').limit(100);
       }
 
       const { data: customers } = await query;
@@ -192,7 +198,7 @@ export async function POST(req: NextRequest) {
           }
 
           if (phone && !phone.includes("x") && !phone.includes("X")) {
-            const { data: existing } = await supabase.from("customers").select("id, name").eq("phone", phone).neq("id", cust.id).maybeSingle();
+            const { data: existing } = await supabase.from("customers").select("id, name").eq("phone", phone).eq("org_id", orgId).neq("id", cust.id).maybeSingle();
 
             if (existing) {
                 log(`  Merging into existing: ${existing.name} (${existing.id})`);

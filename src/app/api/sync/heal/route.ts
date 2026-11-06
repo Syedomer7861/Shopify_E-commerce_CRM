@@ -44,6 +44,15 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient();
 
+  const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+  const reports = [];
+  for (const org of orgs ?? []) {
+    reports.push({ orgId: org.id, ...(await healOrg(supabase, org.id)) });
+  }
+  return NextResponse.json({ success: true, orgs: reports });
+}
+
+async function healOrg(supabase: ReturnType<typeof createAdminClient>, orgId: string) {
   // PostgREST caps a single select at 1000 rows by default - every full-table
   // scan below was silently only ever seeing the oldest 1000 of 16k+
   // customers (confirmed by a prior run reporting exactly "1000 stats
@@ -52,13 +61,18 @@ export async function POST(req: NextRequest) {
   // always returns the same oldest-1000 slice. Page through with .range()
   // so every phase actually sees the full table. orderCol must be a stable,
   // never-null column so paging doesn't skip or repeat rows across pages.
-  async function fetchAll(table: string, select: string, orderCol: string): Promise<any[]> {
+  // Every call below is scoped to this org via the orgFilter column -
+  // without it, this engine's merge/delete logic would merge and destroy
+  // a DIFFERENT org's customer or order row the moment two tenants shared
+  // a phone or email number.
+  async function fetchAll(table: string, select: string, orderCol: string, orgFilterCol: string = "org_id"): Promise<any[]> {
     const PAGE = 1000;
     const all: any[] = [];
     for (let from = 0; ; from += PAGE) {
       const { data, error } = await supabase
         .from(table)
         .select(select)
+        .eq(orgFilterCol, orgId)
         .order(orderCol, { ascending: true })
         .range(from, from + PAGE - 1);
       if (error || !data || data.length === 0) break;
@@ -331,6 +345,7 @@ export async function POST(req: NextRequest) {
       .from("customers")
       .select("id, phone, name, email")
       .or("phone.ilike.%x%,phone.ilike.%_SR_%")
+      .eq("org_id", orgId)
       .limit(200);
 
     if (maskedCustomers) {
@@ -358,6 +373,7 @@ export async function POST(req: NextRequest) {
               .from("customers")
               .select("id, name")
               .eq("phone", phone)
+              .eq("org_id", orgId)
               .neq("id", cust.id)
               .maybeSingle();
 
@@ -479,6 +495,7 @@ export async function POST(req: NextRequest) {
       .from("orders")
       .select("id, ordered_at")
       .eq("delivery_status", "delivered")
+      .eq("org_id", orgId)
       .is("delivered_at", null);
 
     if (missingDeliveredAt && missingDeliveredAt.length > 0) {
@@ -501,15 +518,17 @@ export async function POST(req: NextRequest) {
       .select("id, customer_id, order_id, orders!inner(delivery_status)")
       .in("task_type", ["issue_resolution", "transit_update"])
       .not("status", "in", '("done","cancelled","skipped")')
-      .eq("orders.delivery_status", "delivered");
+      .eq("orders.delivery_status", "delivered")
+      .eq("org_id", orgId);
 
     if (mismatchedTasks && mismatchedTasks.length > 0) {
       for (const task of mismatchedTasks) {
         await supabase.from("tasks")
           .update({ status: "cancelled" })
           .eq("id", task.id);
-        
+
         await supabase.from("call_logs").insert({
+          org_id: orgId,
           task_id: task.id,
           customer_id: task.customer_id,
           outcome: "done",
@@ -520,16 +539,15 @@ export async function POST(req: NextRequest) {
       console.log(`🧹 Repaired ${mismatchedTasks.length} stale tasks.`);
     }
 
-    console.log("✅ Data Healing Complete:", report);
+    console.log(`✅ Data Healing Complete for org ${orgId}:`, report);
 
-    return NextResponse.json({ 
-      success: true, 
+    return {
       report,
       message: `Healed: ${report.merged} duplicate customers merged, ${report.ordersMerged} duplicate orders merged, ${report.unmasked} phones unmasked, ${report.statsRecalculated} customer stats recalculated, ${report.ordersLinked} delivery dates fixed.`
-    });
+    };
 
   } catch (err: any) {
-    console.error("❌ Data Healing Error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error(`❌ Data Healing Error (org ${orgId}):`, err);
+    return { error: err.message };
   }
 }

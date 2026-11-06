@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
 import { requireInternal } from "@/lib/auth-utils";
+import { getDefaultOrgId } from "@/lib/server-settings";
 
 const supabase = createAdminClient();
 
@@ -76,11 +77,19 @@ export async function POST(req: NextRequest) {
   const log: string[] = [];
 
   try {
+    // This tool still uses the raw SHIPROCKET_EMAIL/SECRET_KEY env vars
+    // directly rather than per-org settings, so it's inherently tied to
+    // one Shiprocket account - the seed org's. Scoping the customer scan
+    // and dedup check to it is still required though, since an unscoped
+    // phone match could merge a different org's customer into this one.
+    const orgId = await getDefaultOrgId();
+
     // Get all masked customers
     const { data: maskedCustomers, error } = await supabase
       .from("customers")
       .select("id, name, phone, email")
-      .or("phone.like.%_SR_%, phone.like.%xxxxxxxxx%");
+      .or("phone.like.%_SR_%, phone.like.%xxxxxxxxx%")
+      .eq("org_id", orgId);
 
     if (error) throw error;
     log.push(`Found ${maskedCustomers?.length ?? 0} masked customers`);
@@ -113,6 +122,7 @@ export async function POST(req: NextRequest) {
         .from("customers")
         .select("id")
         .eq("phone", realPhone)
+        .eq("org_id", orgId)
         .neq("id", customer.id)
         .maybeSingle();
 
