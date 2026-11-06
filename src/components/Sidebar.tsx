@@ -549,7 +549,7 @@ export default function Sidebar() {
             <Zap className="w-3.5 h-3.5 lg:w-5 lg:h-5 text-[#fcfbf8]" strokeWidth={2.5} />
           </div>
           <div className="flex flex-col lg:flex">
-            <div className="text-[#1c1c1c] font-black text-sm lg:text-xl tracking-tighter lg:tracking-tight font-display">Cure</div>
+            <div className="text-[#1c1c1c] font-black text-sm lg:text-xl tracking-tighter lg:tracking-tight font-display">CodeCrest</div>
             <div className="hidden lg:flex items-center gap-1.5 mt-0.5">
               <div className="w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[#5f5f5d]/60 text-[8px] lg:text-[9px] uppercase font-black tracking-widest">Live Engine</span>

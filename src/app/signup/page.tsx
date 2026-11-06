@@ -53,7 +53,7 @@ export default function SignupPage() {
               <Zap className="w-8 h-8 text-[#f7f4ed]" strokeWidth={2} />
             </div>
           </div>
-          <h1 className="text-3xl font-display text-[#1c1c1c] tracking-tight mb-2 font-black uppercase">Cure</h1>
+          <h1 className="text-3xl font-display text-[#1c1c1c] tracking-tight mb-2 font-black uppercase">CodeCrest</h1>
           <div className="flex items-center justify-center gap-2">
             <div className="h-px w-6 bg-[#1c1c1c]/10" />
             <span className="text-[#1c1c1c]/40 text-[9px] font-black uppercase tracking-[0.3em]">Create Your Workspace</span>
