@@ -545,8 +545,8 @@ export default function Sidebar() {
     <aside className="w-full lg:w-64 lg:min-w-[256px] h-16 lg:h-screen bg-[#f7f4ed] flex flex-row lg:flex-col border-t lg:border-r border-[#eceae4] fixed bottom-0 lg:relative z-50 transition-all duration-300">
       <div className="px-4 lg:px-6 py-4 lg:py-10 border-r lg:border-b border-[#eceae4]/50 flex items-center lg:block flex-shrink-0 bg-white lg:bg-transparent">
         <div className="flex items-center gap-2 lg:gap-3">
-          <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-xl bg-[#1c1c1c] flex items-center justify-center shadow-lg shadow-[#1c1c1c]/10">
-            <Zap className="w-3.5 h-3.5 lg:w-5 lg:h-5 text-[#fcfbf8]" strokeWidth={2.5} />
+          <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full overflow-hidden flex-shrink-0 shadow-lg shadow-[#1c1c1c]/10">
+            <img src="/logo-mark.png" alt="CodeCrest" className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col lg:flex">
             <div className="text-[#1c1c1c] font-black text-sm lg:text-xl tracking-tighter lg:tracking-tight font-display">CodeCrest</div>

@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
 import {
-  Zap, ShoppingBag, Truck, MessageSquare, Users, BarChart3, ShieldCheck,
-  Building2, ArrowRight, CheckCircle2, Workflow, PhoneCall, LayoutGrid, Mail,
+  ShoppingBag, Truck, MessageSquare, Users, BarChart3,
+  Building2, ArrowRight, CheckCircle2, Workflow, PhoneCall, LayoutGrid,
 } from "lucide-react";
 
 const FEATURES = [
@@ -73,8 +73,8 @@ export default function LandingPage() {
       <header className="sticky top-0 z-40 bg-[#f7f4ed]/90 backdrop-blur border-b border-[#eceae4]">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#1c1c1c] flex items-center justify-center shadow-lg shadow-[#1c1c1c]/10">
-              <Zap className="w-4 h-4 text-[#fcfbf8]" strokeWidth={2.5} />
+            <div className="w-8 h-8 rounded-full overflow-hidden shadow-lg shadow-[#1c1c1c]/10">
+              <img src="/logo-mark.png" alt="CodeCrest" className="w-full h-full object-cover" />
             </div>
             <span className="font-display font-black tracking-tight text-lg">CodeCrest</span>
           </div>
@@ -227,8 +227,8 @@ export default function LandingPage() {
       <footer className="border-t border-[#eceae4] bg-white">
         <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded-lg bg-[#1c1c1c] flex items-center justify-center">
-              <Zap className="w-3 h-3 text-[#fcfbf8]" strokeWidth={2.5} />
+            <div className="w-6 h-6 rounded-full overflow-hidden">
+              <img src="/logo-mark.png" alt="CodeCrest" className="w-full h-full object-cover" />
             </div>
             <span className="font-display font-bold text-sm">CodeCrest CRM</span>
           </div>

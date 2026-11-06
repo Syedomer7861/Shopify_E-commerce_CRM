@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   description: OG_DESCRIPTION,
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.webp",
+    icon: "/favicon.ico",
   },
   appleWebApp: {
     capable: true,

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Zap, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import { sendAdminNotification } from "@/lib/notifications";
@@ -64,9 +64,9 @@ export default function LoginPage() {
         {/* Logo Section */}
         <div className="text-center mb-12 animate-fade-in">
           <div className="group relative w-16 h-16 mx-auto mb-6">
-            <div className="absolute inset-0 bg-[#1c1c1c]/10 rounded-2xl blur-xl group-hover:bg-[#1c1c1c]/20 transition-all duration-500" />
-            <div className="relative w-full h-full bg-[#1c1c1c] rounded-2xl flex items-center justify-center shadow-2xl transition-transform hover:scale-105 duration-300">
-              <Zap className="w-8 h-8 text-[#f7f4ed]" strokeWidth={2} />
+            <div className="absolute inset-0 bg-[#1c1c1c]/10 rounded-full blur-xl group-hover:bg-[#1c1c1c]/20 transition-all duration-500" />
+            <div className="relative w-full h-full rounded-full overflow-hidden shadow-2xl transition-transform hover:scale-105 duration-300">
+              <img src="/logo-mark.png" alt="CodeCrest" className="w-full h-full object-cover" />
             </div>
           </div>
           <h1 className="text-3xl font-display text-[#1c1c1c] tracking-tight mb-2 font-black uppercase">CodeCrest</h1>
