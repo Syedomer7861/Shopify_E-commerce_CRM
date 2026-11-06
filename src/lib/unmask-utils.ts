@@ -12,32 +12,39 @@ export async function resolveUnmaskedPhone(
   email: string | null,
   orderId: string | null,
   srData: any,
-  token: string | null = null
+  token: string | null = null,
+  orgId?: string
 ): Promise<string | null> {
   // 1. Try Extracting from provided Shiprocket Data (Standard)
   let phone = extractStandardPhone(srData);
   if (phone && !isMasked(phone)) return phone;
 
-  // 2. Try Local Cross-Reference: Email match in Customers table
+  // 2. Try Local Cross-Reference: Email match in Customers table. Org-scoped
+  // when known - otherwise this could return a DIFFERENT tenant's real
+  // phone number for a shared/generic email and have the caller write it
+  // onto this org's customer row.
   if (email && email !== "noreply@shiprocket.com") {
-    const { data: other } = await supabase
+    let emailQuery = supabase
       .from("customers")
       .select("phone")
       .eq("email", email)
       .not("phone", "ilike", "%x%")
-      .not("phone", "ilike", "%_SR_%")
+      .not("phone", "ilike", "%_SR_%");
+    if (orgId) emailQuery = emailQuery.eq("org_id", orgId);
+    const { data: other } = await emailQuery
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    
+
     if (other?.phone) return other.phone;
   }
 
   // 3. Try Local Side-Channel: Abandoned Carts
-  const cartQuery = supabase.from("abandoned_carts").select("phone").not("phone", "ilike", "%x%");
-  if (customerId) cartQuery.eq("customer_id", customerId);
-  else if (email) cartQuery.eq("email", email);
-  
+  let cartQuery = supabase.from("abandoned_carts").select("phone").not("phone", "ilike", "%x%");
+  if (customerId) cartQuery = cartQuery.eq("customer_id", customerId);
+  else if (email) cartQuery = cartQuery.eq("email", email);
+  if (orgId) cartQuery = cartQuery.eq("org_id", orgId);
+
   const { data: cartMatches } = await cartQuery.order("abandoned_at", { ascending: false }).limit(1);
   if (cartMatches?.[0]?.phone && !isMasked(cartMatches[0].phone)) {
     return cartMatches[0].phone;
@@ -63,11 +70,12 @@ export async function resolveUnmaskedPhone(
   // extractStandardPhone already trusts, just from an earlier webhook
   // event for the same order rather than the current one.
   if (orderId) {
-    const { data: logs } = await supabase
+    let logsQuery = supabase
       .from("webhook_logs")
       .select("payload")
-      .or(`payload->>order_id.eq.${orderId},payload->>channel_order_id.eq.${orderId}`)
-      .order("created_at", { ascending: false });
+      .or(`payload->>order_id.eq.${orderId},payload->>channel_order_id.eq.${orderId}`);
+    if (orgId) logsQuery = logsQuery.eq("org_id", orgId);
+    const { data: logs } = await logsQuery.order("created_at", { ascending: false });
 
     if (logs) {
       for (const log of logs) {
@@ -81,7 +89,7 @@ export async function resolveUnmaskedPhone(
   // 5. [LAST RESORT] Try Shopify Direct Bypass (Feature 16)
   // This is the slowest step (Network call), so we do it last.
   if (orderId) {
-      const shopifyData = await fetchUnmaskedFromShopify(supabase, orderId);
+      const shopifyData = await fetchUnmaskedFromShopify(supabase, orderId, orgId);
       if (shopifyData?.phone) {
           console.log(`🔓 Unmasked via Shopify Bypass [Order ${orderId}]: ${shopifyData.phone}`);
           return shopifyData.phone;

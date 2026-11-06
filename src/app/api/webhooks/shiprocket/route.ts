@@ -189,7 +189,9 @@ export async function POST(req: NextRequest) {
                 "", // ID not known yet
                 rawEmail,
                 orderId || cartId || null,
-                data
+                data,
+                null,
+                orgId
             );
             if (resolved && !resolved.includes("x") && !resolved.includes("_SR_")) {
                 console.log(`🔓 Sentinel Unmasked on Arrival: ${resolved}`);
@@ -579,7 +581,9 @@ export async function POST(req: NextRequest) {
             "", // customerId not yet known
             body.customer_email || body.email || null,
             identifierStr,
-            body
+            body,
+            null,
+            orgId
           );
           if (resolved && !resolved.includes("x")) {
              console.log(`🔓 Unmasked customer via Tracking Webhook: ${resolved}`);

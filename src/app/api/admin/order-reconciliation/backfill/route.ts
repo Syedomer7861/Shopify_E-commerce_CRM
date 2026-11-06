@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
 
         if (isMasked) {
           const email = order.email || customerData?.email || null;
-          const resolved = await resolveUnmaskedPhone(supabase, "", email, String(order.order_number || order.name), order, token);
+          const resolved = await resolveUnmaskedPhone(supabase, "", email, String(order.order_number || order.name), order, token, orgId);
           phone = (resolved && !resolved.includes("x") && resolved.length >= 7) ? resolved : placeholderPhone(shopifyId);
         }
 
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
         if (!sr) throw new Error("Order not found in Shiprocket listing");
 
         const email = sr.billing_email || sr.shipping_email || sr.customer_email || null;
-        const phone = await resolveUnmaskedPhone(supabase, "", email, orderId, sr, token);
+        const phone = await resolveUnmaskedPhone(supabase, "", email, orderId, sr, token, orgId);
         if (!phone) throw new Error("No resolvable phone number");
 
         const { data: custArr, error: customerErr } = await supabase!.from("customers").upsert({

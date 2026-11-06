@@ -102,10 +102,12 @@ export async function POST(req: NextRequest) {
       if (isMasked) {
         const resolved = await resolveUnmaskedPhone(
           supabase,
-          "", 
+          "",
           payload.email || customerData?.email || null,
           String(payload.id),
-          payload
+          payload,
+          null,
+          orgId
         );
         if (resolved && !resolved.includes("x") && resolved.length >= 7) {
           phone = resolved;

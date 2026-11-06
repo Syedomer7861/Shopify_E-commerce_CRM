@@ -12,11 +12,12 @@ function stripHtml(html: string | null | undefined) {
  * active=true; anything no longer returned by Shopify gets deactivated
  * rather than deleted, so historical suggestion logs still resolve.
  */
-export async function refreshProductCatalog(supabase: any) {
-  const settings = await getSystemSettings(supabase);
+export async function refreshProductCatalog(supabase: any, orgId?: string) {
+  const settings = await getSystemSettings(supabase, orgId);
   if (!settings?.shopify_store_domain) throw new Error("Shopify not configured");
+  const resolvedOrgId = settings.org_id;
   const domain = String(settings.shopify_store_domain).replace(/^https?:\/\//, "").replace(/\/$/, "");
-  const token = await getShopifyAccessToken(supabase);
+  const token = await getShopifyAccessToken(supabase, resolvedOrgId);
 
   const seenIds: string[] = [];
   let synced = 0;
@@ -36,6 +37,7 @@ export async function refreshProductCatalog(supabase: any) {
       seenIds.push(id);
 
       const { error } = await supabase.from("product_catalog").upsert({
+        org_id: resolvedOrgId,
         shopify_product_id: id,
         name: p.title,
         price,
@@ -46,7 +48,7 @@ export async function refreshProductCatalog(supabase: any) {
         image_url: p.image?.src || null,
         active: true,
         last_synced_at: new Date().toISOString(),
-      }, { onConflict: "shopify_product_id" });
+      }, { onConflict: "org_id,shopify_product_id" });
 
       if (!error) synced++;
     }
@@ -64,6 +66,7 @@ export async function refreshProductCatalog(supabase: any) {
       .from("product_catalog")
       .update({ active: false })
       .eq("active", true)
+      .eq("org_id", resolvedOrgId)
       .not("shopify_product_id", "in", `(${seenIds.map((id) => `"${id}"`).join(",")})`)
       .select("id", { count: "exact", head: true });
     deactivated = count || 0;

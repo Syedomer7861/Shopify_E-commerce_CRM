@@ -21,8 +21,16 @@ export async function POST(req: NextRequest) {
 
   const supabase = getServiceSupabase(req);
   try {
-    const result = await refreshProductCatalog(supabase);
-    return NextResponse.json({ ok: true, ...result });
+    const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+    const results = [];
+    for (const org of orgs ?? []) {
+      try {
+        results.push({ orgId: org.id, ...(await refreshProductCatalog(supabase, org.id)) });
+      } catch (orgErr: any) {
+        results.push({ orgId: org.id, error: orgErr.message });
+      }
+    }
+    return NextResponse.json({ ok: true, orgs: results });
   } catch (e: any) {
     console.error("refresh-product-catalog error:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });

@@ -182,7 +182,8 @@ export async function syncShopifyData(
                   email,
                   String(order.order_number || order.name),
                   order,
-                  token
+                  token,
+                  resolvedOrgId
               );
               if (resolved && !resolved.includes("x") && resolved.length >= 7) {
                   phone = resolved;
@@ -380,7 +381,8 @@ export async function syncShopifyData(
                   email,
                   null, // No order ID yet
                   cart,
-                  token
+                  token,
+                  resolvedOrgId
               );
               if (resolved && !resolved.includes("x") && resolved.length >= 7) {
                   phone = resolved;
@@ -553,7 +555,7 @@ export async function syncShiprocketData(supabase: any, send: (data: any) => voi
           const email = sr.billing_email || sr.shipping_email || sr.customer_email || null;
           
           // Try to resolve unmasked phone
-          const phone = await resolveUnmaskedPhone(supabase, "", email, orderId, sr, token);
+          const phone = await resolveUnmaskedPhone(supabase, "", email, orderId, sr, token, resolvedOrgId);
           if (!phone) continue;
 
           const name = extractShiprocketName(sr);

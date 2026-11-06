@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
           log(`  Shopify Order ID: ${shopifyOrderId}`);
 
           // 🕵️ Step 1: Try Local Multi-Source Resolution
-          let phone = await resolveUnmaskedPhone(supabase, cust.id, cust.email || null, shopifyOrderId || null, null, token);
+          let phone = await resolveUnmaskedPhone(supabase, cust.id, cust.email || null, shopifyOrderId || null, null, token, orgId);
           
           if (phone && !phone.includes("x")) {
               log(`  ✅ Step 1 SUCCESS: ${phone}`);

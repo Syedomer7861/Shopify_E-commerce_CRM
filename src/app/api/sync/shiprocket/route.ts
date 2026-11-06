@@ -152,7 +152,15 @@ export async function POST(req: NextRequest) {
   const runSync = async () => {
     try {
       send({ progress: 2, message: "Handshaking with Shiprocket..." });
-      const settings = await getSystemSettings(supabase);
+      // This manual "Sync Shiprocket" button route still only ever
+      // resolves the seed org - it duplicates sync-logic.ts's
+      // syncShiprocketData (already looped per org) rather than reusing
+      // it, so multi-org support for this specific button is deferred;
+      // what matters here is that every write below is actually stamped
+      // and scoped, so running it can't corrupt a different org's data.
+      const { getDefaultOrgId } = await import("@/lib/server-settings");
+      const orgId = await getDefaultOrgId();
+      const settings = await getSystemSettings(supabase, orgId || undefined);
 
       if (!settings?.shiprocket_email || !settings?.shiprocket_password) {
         send({ error: "Shiprocket credentials not configured" });
@@ -226,7 +234,7 @@ export async function POST(req: NextRequest) {
             let isMasked = phone ? (phone.includes("x") || phone.includes("X") || phone.includes("*")) : true;
 
             if (isMasked && orderId) {
-                const betterPhone = await resolveUnmaskedPhone(supabase, "", email, orderId.toString(), sr, token);
+                const betterPhone = await resolveUnmaskedPhone(supabase, "", email, orderId.toString(), sr, token, orgId || undefined);
                 if (betterPhone && !betterPhone.includes("x")) {
                     phone = betterPhone;
                     isMasked = false;
@@ -243,7 +251,7 @@ export async function POST(req: NextRequest) {
             const srCustomerId = sr.customer_id?.toString() || `SR_${orderId}`;
             let customerId: string | null = null;
 
-            const { data: existingById } = await supabase.from("customers").select("id, name, phone, address, city, state").eq("shopify_customer_id", srCustomerId).maybeSingle();
+            const { data: existingById } = await supabase.from("customers").select("id, name, phone, address, city, state").eq("shopify_customer_id", srCustomerId).eq("org_id", orgId).maybeSingle();
 
             if (existingById) {
               customerId = existingById.id;
@@ -259,7 +267,7 @@ export async function POST(req: NextRequest) {
               }
             } else {
               if (!isMasked) {
-                const { data: existingByPhone } = await supabase.from("customers").select("id, name").eq("phone", phone).maybeSingle();
+                const { data: existingByPhone } = await supabase.from("customers").select("id, name").eq("phone", phone).eq("org_id", orgId).maybeSingle();
                 if (existingByPhone) {
                   customerId = existingByPhone.id;
                   await supabase.from("customers").update({ shopify_customer_id: srCustomerId }).eq("id", customerId);
@@ -270,6 +278,7 @@ export async function POST(req: NextRequest) {
               if (!customerId) {
                 const uniquePhone = isMasked ? `${phone}_${srCustomerId}` : phone;
                 const { data: newCust } = await supabase.from("customers").insert({
+                  org_id: orgId,
                   shopify_customer_id: srCustomerId, name, phone: uniquePhone, email,
                   address: addressData.address, city: addressData.city, state: addressData.state, zip: addressData.zip,
                 }).select("id").single();
@@ -300,9 +309,11 @@ export async function POST(req: NextRequest) {
               .from("orders")
               .select("id, source")
               .or(`shopify_order_id.eq.${orderId},order_number.eq.${orderNumberStr}`)
+              .eq("org_id", orgId)
               .maybeSingle();
 
             const orderPayload: any = {
+              org_id: orgId,
               shopify_order_id: orderId.toString(),
               order_number: orderNumberStr,
               customer_id: customerId,
@@ -318,7 +329,7 @@ export async function POST(req: NextRequest) {
 
             const { error: upsertErr } = existingSrOrder
               ? await supabase.from("orders").update(orderPayload).eq("id", existingSrOrder.id)
-              : await supabase.from("orders").upsert(orderPayload, { onConflict: "shopify_order_id" });
+              : await supabase.from("orders").upsert(orderPayload, { onConflict: "org_id,shopify_order_id" });
 
             if (upsertErr) throw upsertErr;
 
@@ -328,6 +339,7 @@ export async function POST(req: NextRequest) {
                 .from("orders")
                 .select("id")
                 .eq("shopify_order_id", orderId.toString())
+                .eq("org_id", orgId)
                 .maybeSingle();
 
               if (orderRef) {
@@ -364,6 +376,7 @@ export async function POST(req: NextRequest) {
 
       send({ progress: 95, message: "Finalizing sync report..." });
       await supabase.from("webhook_logs").insert({
+        org_id: orgId,
         source: "shiprocket", topic: "system_sync", status: "processed",
         payload: { summary: "Shiprocket API Sync Completed", report: report }
       });

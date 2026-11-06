@@ -4,9 +4,11 @@ import { getSystemSettings, getShopifyAccessToken } from "./server-settings";
 let shopifyUnauthorizedUntilMs = 0;
 let hasLoggedUnauthorizedBackoff = false;
 
-let cachedSettings: any = null;
-let cachedToken: string | null = null;
-let cacheExpiry = 0;
+// Keyed by org (a literal "" key when no orgId is given, e.g. legacy call
+// sites that haven't been threaded through yet) - a single shared slot here
+// would serve one org's Shopify settings/token to a different org's lookup
+// within the 5-minute window.
+const cache = new Map<string, { settings: any; token: string | null; expiry: number }>();
 
 /**
  * Shopify Direct Bypass Utility
@@ -14,7 +16,8 @@ let cacheExpiry = 0;
  */
 export async function fetchUnmaskedFromShopify(
   supabase: SupabaseClient,
-  orderNumber: string
+  orderNumber: string,
+  orgId?: string
 ): Promise<{ phone: string | null; name: string | null } | null> {
   try {
     const now = Date.now();
@@ -28,11 +31,15 @@ export async function fetchUnmaskedFromShopify(
     hasLoggedUnauthorizedBackoff = false;
 
     // Cache settings and token for 5 minutes to speed up the loop
-    if (!cachedSettings || !cachedToken || now > cacheExpiry) {
-      cachedSettings = await getSystemSettings(supabase);
-      cachedToken = await getShopifyAccessToken(supabase);
-      cacheExpiry = now + 5 * 60 * 1000;
+    const cacheKey = orgId || "";
+    let entry = cache.get(cacheKey);
+    if (!entry || !entry.token || now > entry.expiry) {
+      const settings = await getSystemSettings(supabase, orgId);
+      const token = await getShopifyAccessToken(supabase, orgId);
+      entry = { settings, token, expiry: now + 5 * 60 * 1000 };
+      cache.set(cacheKey, entry);
     }
+    const cachedSettings = entry.settings;
 
     if (!cachedSettings?.shopify_store_domain || !cachedSettings?.shopify_api_key) {
       console.warn("Shopify Unmasking: Missing credentials in settings.");
@@ -40,7 +47,7 @@ export async function fetchUnmaskedFromShopify(
     }
 
     const domain = cachedSettings.shopify_store_domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
-    const token = cachedToken;
+    const token = entry.token;
     if (!token) return null;
 
     // Use Shopify REST API to find the order by name (e.g., #1001)

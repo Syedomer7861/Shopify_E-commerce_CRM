@@ -364,7 +364,9 @@ async function healOrg(supabase: ReturnType<typeof createAdminClient>, orgId: st
             cust.id,
             cust.email || null,
             order?.shopify_order_id || null,
-            null
+            null,
+            null,
+            orgId
           );
 
           if (phone && !phone.includes("x") && !phone.includes("X") && !phone.includes("_SR_")) {

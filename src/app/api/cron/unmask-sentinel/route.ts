@@ -66,7 +66,8 @@ async function sweepOrg(supabase: any, orgId: string) {
            cust.email || null,
            order?.shopify_order_id || null,
            null,
-           token
+           token,
+           orgId
         );
 
         if (phone && !phone.includes("x") && !phone.includes("X")) {
