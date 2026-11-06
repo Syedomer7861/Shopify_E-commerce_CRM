@@ -26,8 +26,11 @@ export async function GET(req: NextRequest) {
   }
 
   const settings = await getSystemSettings(supabase!);
+  const orgId = settings?.org_id;
 
-  // 1. Every shopify_order_id we already have.
+  // 1. Every shopify_order_id we already have (this org only - otherwise
+  // another tenant's order sharing the same Shopify numeric id, which is
+  // likely since Shopify ids are per-store, would read as a false match).
   const ourIds = new Set<string>();
   {
     const PAGE = 1000;
@@ -36,6 +39,7 @@ export async function GET(req: NextRequest) {
         .from("orders")
         .select("shopify_order_id")
         .not("shopify_order_id", "is", null)
+        .eq("org_id", orgId)
         .range(from, from + PAGE - 1);
       if (!data || data.length === 0) break;
       data.forEach((o: any) => ourIds.add(String(o.shopify_order_id)));

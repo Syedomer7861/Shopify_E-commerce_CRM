@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
   const shiprocketIds: string[] = body.shiprocketIds || [];
 
   const settings = await getSystemSettings(supabase!);
+  const orgId = settings?.org_id;
   const report = {
     shopify: { attempted: shopifyIds.length, synced: 0, failed: [] as { id: string; error: string }[] },
     shiprocket: { attempted: shiprocketIds.length, synced: 0, failed: [] as { id: string; error: string }[] },
@@ -64,6 +65,7 @@ export async function POST(req: NextRequest) {
         }
 
         const customerRow = {
+          org_id: orgId,
           name: `${customerData?.first_name || ""} ${customerData?.last_name || ""}`.trim() || "Shopify Customer",
           phone,
           email: order.email || customerData?.email || null,
@@ -75,13 +77,13 @@ export async function POST(req: NextRequest) {
         };
 
         let { data: customerArr, error: customerErr } = await supabase!
-          .from("customers").upsert(customerRow, { onConflict: "phone" })
+          .from("customers").upsert(customerRow, { onConflict: "org_id,phone" })
           .select("id");
 
         if (customerErr?.code === "23505" && customerRow.shopify_customer_id) {
           ({ data: customerArr, error: customerErr } = await supabase!
             .from("customers")
-            .upsert({ ...customerRow, shopify_customer_id: null }, { onConflict: "phone" })
+            .upsert({ ...customerRow, shopify_customer_id: null }, { onConflict: "org_id,phone" })
             .select("id"));
         }
         if (customerErr) throw new Error(`Customer upsert: ${customerErr.message}`);
@@ -95,6 +97,7 @@ export async function POST(req: NextRequest) {
         const currentStatus = order.fulfillment_status === "fulfilled" ? "in_transit" : "pending";
 
         const { error: orderErr } = await supabase!.from("orders").upsert({
+          org_id: orgId,
           customer_id: customer.id,
           shopify_order_id: String(order.id),
           order_number: orderNumber,
@@ -105,11 +108,11 @@ export async function POST(req: NextRequest) {
           delivery_status: currentStatus,
           ordered_at: order.created_at,
           source: "shopify",
-        }, { onConflict: "shopify_order_id" });
+        }, { onConflict: "org_id,shopify_order_id" });
 
         if (orderErr) throw new Error(`Order upsert: ${orderErr.message}`);
 
-        await supabase!.from("abandoned_carts").update({ recovery_status: "recovered" }).eq("phone", phone).eq("recovery_status", "pending");
+        await supabase!.from("abandoned_carts").update({ recovery_status: "recovered" }).eq("phone", phone).eq("org_id", orgId).eq("recovery_status", "pending");
 
         report.shopify.synced++;
       } catch (err: any) {
@@ -158,6 +161,7 @@ export async function POST(req: NextRequest) {
         if (!phone) throw new Error("No resolvable phone number");
 
         const { data: custArr, error: customerErr } = await supabase!.from("customers").upsert({
+          org_id: orgId,
           name: extractShiprocketName(sr),
           phone,
           email,
@@ -165,7 +169,7 @@ export async function POST(req: NextRequest) {
           city: sr.shipping_city || null,
           state: sr.shipping_state || null,
           zip: sr.shipping_pincode || null,
-        }, { onConflict: "phone" }).select("id");
+        }, { onConflict: "org_id,phone" }).select("id");
 
         if (customerErr) throw new Error(`Customer upsert: ${customerErr.message}`);
         const customer = custArr?.[0];
@@ -173,6 +177,7 @@ export async function POST(req: NextRequest) {
 
         const crmStatus = mapShiprocketStatus(sr.status || "");
         const { error: orderErr } = await supabase!.from("orders").upsert({
+          org_id: orgId,
           shopify_order_id: orderId,
           order_number: sr.order_no || orderId,
           customer_id: customer.id,
@@ -184,7 +189,7 @@ export async function POST(req: NextRequest) {
           tracking_number: sr.shipments?.[0]?.awb || sr.awb_code || null,
           courier_name: sr.shipments?.[0]?.courier || sr.courier_name || null,
           line_items: extractShiprocketLineItems(sr),
-        }, { onConflict: "shopify_order_id" });
+        }, { onConflict: "org_id,shopify_order_id" });
 
         if (orderErr) throw new Error(`Order upsert: ${orderErr.message}`);
 
