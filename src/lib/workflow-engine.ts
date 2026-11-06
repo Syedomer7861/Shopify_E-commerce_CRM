@@ -20,6 +20,17 @@ export class WorkflowEngine {
     const customerId = payload.customer_id;
     if (!customerId) return;
 
+    // Every downstream lookup (settings, workflows, task assignment) needs
+    // to know which tenant this is - resolved once here from the customer
+    // row rather than requiring every one of this method's many callers
+    // (webhooks, crons, tasks/attempt) to pass it through explicitly.
+    const { data: customerOrgRow } = await supabase.from("customers").select("org_id").eq("id", customerId).maybeSingle();
+    const orgId = customerOrgRow?.org_id;
+    if (!orgId) {
+      console.error(`⚡ Workflow Engine: could not resolve an organization for customer ${customerId}, skipping trigger ${trigger}.`);
+      return;
+    }
+
     console.log(`⚡ Workflow Engine Triggered: ${trigger} for customer ${customerId}`);
 
     if (trigger === "order_rto") {
@@ -53,7 +64,7 @@ export class WorkflowEngine {
       }
     }
     try {
-      await this.processSystemAutomation(trigger, payload);
+      await this.processSystemAutomation(trigger, payload, orgId);
     } catch (err: any) {
       console.error("❌ System Automation Error:", err.message);
     }
@@ -64,6 +75,7 @@ export class WorkflowEngine {
       .select("*, workflow_steps(*)")
       .eq("trigger_event", trigger)
       .eq("is_active", true)
+      .eq("org_id", orgId)
       .order("step_order", { foreignTable: "workflow_steps", ascending: true });
 
     if (!workflows || workflows.length === 0) return;
@@ -92,6 +104,7 @@ export class WorkflowEngine {
         .from("workflow_instances")
         .select("id")
         .eq("workflow_id", workflow.id)
+        .eq("org_id", orgId)
         .eq("status", "active");
       
       if (payload.order_id) {
@@ -122,6 +135,7 @@ export class WorkflowEngine {
       }
 
       await supabase.from("workflow_instances").insert({
+        org_id: orgId,
         workflow_id: workflow.id,
         customer_id: customerId,
         order_id: payload.order_id || null,
@@ -145,7 +159,20 @@ export class WorkflowEngine {
    */
   static async executeStep(instance: any) {
     const supabase = createServerClient();
-    
+
+    // workflow_instances carries its own org_id (Phase 1 retrofit), set
+    // when trigger() created this instance - resolve it defensively from
+    // the customer if an older row somehow predates that column being set.
+    let orgId = instance.org_id;
+    if (!orgId) {
+      const { data: customerOrgRow } = await supabase.from("customers").select("org_id").eq("id", instance.customer_id).maybeSingle();
+      orgId = customerOrgRow?.org_id;
+    }
+    if (!orgId) {
+      console.error(`⚙️ Workflow Executor: could not resolve an organization for instance ${instance.id}, skipping.`);
+      return;
+    }
+
     // 1. Fetch step details
     const { data: step } = await supabase
       .from("workflow_steps")
@@ -169,12 +196,13 @@ export class WorkflowEngine {
             .from("product_overrides")
             .select("inventory_quantity")
             .eq("shopify_product_id", instance.metadata?.product_id)
+            .eq("org_id", orgId)
             .single();
-          
+
           if (override && override.inventory_quantity <= 0) {
              console.log(`[WORKFLOW] Step skipped: Product ${instance.metadata?.product_id} out of stock.`);
-             await this.logAction(instance.id, step.id, "skipped", `Inventory 0 for product ${instance.metadata?.product_id}`);
-             
+             await this.logAction(instance.id, step.id, "skipped", `Inventory 0 for product ${instance.metadata?.product_id}`, {}, orgId);
+
              // Move to next step or complete
              await supabase.from("workflow_instances").update({
                current_step_id: null,
@@ -184,10 +212,10 @@ export class WorkflowEngine {
              return;
           }
 
-          await this.handleMessageAction(step, instance);
+          await this.handleMessageAction(step, instance, orgId);
           break;
         case "task":
-          await this.handleTaskAction(step, instance);
+          await this.handleTaskAction(step, instance, orgId);
           break;
         case "delay":
           // Delays are "passive" steps handled by nextRunAt calculation
@@ -217,7 +245,7 @@ export class WorkflowEngine {
           next_run_at: nextRun.toISOString()
         }).eq("id", instance.id);
 
-        await this.logAction(instance.id, step.id, step.type, "processed");
+        await this.logAction(instance.id, step.id, step.type, "processed", {}, orgId);
       } else {
         // No more steps: Complete
         await this.completeInstance(instance, "completed");
@@ -225,12 +253,12 @@ export class WorkflowEngine {
 
     } catch (err: any) {
       console.error(`❌ Step Execution Error [${step.id}]:`, err.message);
-      await this.logAction(instance.id, step.id, step.type, "failed", { error: err.message });
+      await this.logAction(instance.id, step.id, step.type, "failed", { error: err.message }, orgId);
     }
   }
 
-  private static async handleMessageAction(step: any, instance: any) {
-    const settings = await getSystemSettings(supabase);
+  private static async handleMessageAction(step: any, instance: any, orgId: string) {
+    const settings = await getSystemSettings(supabase, orgId);
     if (!settings?.whatsapp_enabled) {
       console.log(`[WORKFLOW] Message action skipped: WhatsApp disabled globally.`);
       return;
@@ -275,9 +303,9 @@ export class WorkflowEngine {
     }
   }
 
-  private static async handleTaskAction(step: any, instance: any) {
+  private static async handleTaskAction(step: any, instance: any, orgId: string) {
     const { task_type, priority_bonus = 0 } = step.params;
-    
+
     // Fetch customer segment for strict assignment enforcement
     const { data: customer } = await supabase.from("customers").select("segment").eq("id", instance.customer_id).single();
     const segment = customer?.segment;
@@ -288,12 +316,13 @@ export class WorkflowEngine {
        const { data: order } = await supabase.from("orders").select("line_items").eq("id", instance.order_id).single();
        const productId = order?.line_items?.[0]?.product_id;
        if (productId) {
-          const { data: ov } = await supabase.from("product_overrides").select("is_priority").eq("shopify_product_id", productId).single();
+          const { data: ov } = await supabase.from("product_overrides").select("is_priority").eq("shopify_product_id", productId).eq("org_id", orgId).single();
           isPriorityOverride = ov?.is_priority || false;
        }
     }
 
     await supabase.from("tasks").upsert({
+      org_id: orgId,
       customer_id: instance.customer_id,
       order_id: instance.order_id,
       task_type: task_type || "follow_up",
@@ -304,8 +333,9 @@ export class WorkflowEngine {
     }, { onConflict: "order_id, task_type" });
   }
 
-  private static async logAction(instanceId: string, stepId: string, actionType: string, status: string, payload: any = {}) {
+  private static async logAction(instanceId: string, stepId: string, actionType: string, status: string, payload: any = {}, orgId?: string) {
     await supabase.from("workflow_logs").insert({
+      org_id: orgId,
       instance_id: instanceId,
       step_id: stepId,
       action_type: actionType,
@@ -318,8 +348,8 @@ export class WorkflowEngine {
    * Universal System Automation
    * Checks settings flags and sends immediate WhatsApp messages if enabled.
    */
-  private static async processSystemAutomation(trigger: WorkflowTrigger, payload: any) {
-    const settings = await getSystemSettings(supabase);
+  private static async processSystemAutomation(trigger: WorkflowTrigger, payload: any, orgId: string) {
+    const settings = await getSystemSettings(supabase, orgId);
     if (!settings || !settings.whatsapp_enabled) return;
 
     let flag = false;
@@ -333,6 +363,7 @@ export class WorkflowEngine {
           .select("id")
           .eq("topic", trigger)
           .eq("status", "processed")
+          .eq("org_id", orgId)
           .filter("payload->>order_id", "eq", payload.order_id)
           .gte("created_at", new Date(Date.now() - 3600000).toISOString())
           .maybeSingle();
@@ -474,7 +505,7 @@ export class WorkflowEngine {
 
           console.log(`📧 Auto-Email: Sending '${trigger}' branded email to ${customer.email}`);
           try {
-            await sendGmail({ to: customer.email, subject: personalisedSubject, body: personalisedBody });
+            await sendGmail({ to: customer.email, subject: personalisedSubject, body: personalisedBody, orgId });
           } catch (err: any) {
             console.error(`❌ Auto-Email Failed: ${err.message}`);
           }
