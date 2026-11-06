@@ -18,7 +18,6 @@ WITH activity_metrics AS (
 )
 SELECT
     p.id as agent_id,
-    p.org_id,
     COALESCE(NULLIF(p.name, ''), p.email) as name,
     p.email,
     p.role,
@@ -30,6 +29,7 @@ SELECT
     COALESCE(am.total_whatsapp, 0) as total_whatsapp,
     COALESCE(am.tasks_resolved, 0) as tasks_resolved,
     COALESCE(am.revenue_recovered, 0) as revenue_recovered,
-    p.weekly_revenue_target
+    p.weekly_revenue_target,
+    p.org_id
 FROM profiles p
 LEFT JOIN activity_metrics am ON LOWER(p.email) = am.agent_email;
