@@ -63,10 +63,16 @@ export async function middleware(request: NextRequest) {
   const isApiRoute = request.nextUrl.pathname.startsWith('/api')
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
   const isStaticFile = request.nextUrl.pathname.includes('.')
+  // "/" is the public marketing page for a logged-out visitor (src/app/
+  // page.tsx renders LandingPage when there's no session) - without this,
+  // every anonymous visit to the root was redirected straight to /login
+  // before that page's own client-side logic ever ran, so the marketing
+  // page could never actually be seen.
+  const isRootPage = request.nextUrl.pathname === '/'
 
   // Demo mode is a real login (see login/page.tsx): the demo cookie is only set
   // after signInWithPassword succeeds, so it must never stand in for a session.
-  if (!user && !isLoginPage && !isSignupPage && !isApiRoute && !isAuthRoute && !isStaticFile) {
+  if (!user && !isLoginPage && !isSignupPage && !isApiRoute && !isAuthRoute && !isStaticFile && !isRootPage) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
