@@ -15,33 +15,45 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient();
   // Ops/testing escape hatch: process exactly one order by id instead of
-  // scanning the real backlog.
+  // scanning the real backlog. Org-agnostic - the order itself pins the org.
   const onlyOrderId = req.nextUrl.searchParams.get("orderId");
 
-  let issueOrders: any[] | null;
   if (onlyOrderId) {
     // Matches orders_needing_issue_task's own condition (rto/failed only
     // for now) rather than re-deriving it separately, so the test path
     // can't drift from the real one.
     const { data, error } = await supabase
       .from("orders")
-      .select("id, customer_id, total_price, delivery_status, ordered_at")
+      .select("id, customer_id, org_id, total_price, delivery_status, ordered_at")
       .eq("id", onlyOrderId)
       .in("delivery_status", ["rto", "failed"]);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    issueOrders = data;
-  } else {
-    // orders_needing_issue_task (migrations/20260827e_task_backlog_rpcs.sql)
-    // already excludes orders that have the task and orders by id - a plain
-    // .limit(N) with no ordering and no exclusion filter was confirmed live
-    // to make zero real progress across repeated calls (Postgres has no
-    // obligation to return different rows), and the in_transit branch is
-    // disabled there for now - see that migration's comment for why.
-    const { data, error } = await supabase.rpc("orders_needing_issue_task", { limit_n: BATCH_LIMIT });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    issueOrders = data;
+    if (!data?.length) return NextResponse.json({ issueTasks: 0, scanned: 0 });
+    const result = await processIssueOrders(supabase, data[0].org_id, data);
+    return NextResponse.json(result);
   }
 
+  const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+  let issueTasks = 0, scanned = 0;
+  for (const org of orgs ?? []) {
+    // orders_needing_issue_task (migrations/20260827e_task_backlog_rpcs.sql,
+    // org-scoped in 20261106a) already excludes orders that have the task
+    // and orders by id - a plain .limit(N) with no ordering and no
+    // exclusion filter was confirmed live to make zero real progress
+    // across repeated calls (Postgres has no obligation to return
+    // different rows), and the in_transit branch is disabled there for
+    // now - see that migration's comment for why.
+    const { data, error } = await supabase.rpc("orders_needing_issue_task", { limit_n: BATCH_LIMIT, target_org_id: org.id });
+    if (error) { console.error(`issue-task-generator RPC failed for org ${org.id}:`, error.message); continue; }
+    if (!data?.length) continue;
+    const result = await processIssueOrders(supabase, org.id, data);
+    issueTasks += result.issueTasks;
+    scanned += result.scanned;
+  }
+  return NextResponse.json({ issueTasks, scanned });
+}
+
+async function processIssueOrders(supabase: any, orgId: string, issueOrders: any[]) {
   let issueTasks = 0;
 
   for (const order of issueOrders || []) {
@@ -64,6 +76,7 @@ export async function POST(req: NextRequest) {
     // cod_verify/vip_followup avoid this because they already upsert on
     // this same constraint - matching that pattern here instead.
     const { error: issueErr } = await supabase.from("tasks").upsert({
+      org_id: orgId,
       order_id: order.id,
       customer_id: order.customer_id,
       assigned_to: assignedTo,
@@ -82,7 +95,7 @@ export async function POST(req: NextRequest) {
     else console.error(`issue_resolution task insert failed for order ${order.id}:`, issueErr.message);
   }
 
-  return NextResponse.json({ issueTasks, scanned: issueOrders?.length || 0 });
+  return { issueTasks, scanned: issueOrders?.length || 0 };
 }
 
 // Vercel Cron invokes scheduled paths with GET.

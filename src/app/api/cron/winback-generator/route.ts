@@ -19,37 +19,50 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient();
   // Ops/testing escape hatch: process exactly one customer by id instead
-  // of scanning the real backlog.
+  // of scanning the real backlog. Org-agnostic - the customer itself pins the org.
   const onlyCustomerId = req.nextUrl.searchParams.get("customerId");
 
-  let dormantCustomers: any[] | null;
   if (onlyCustomerId) {
     const sixtyDaysAgo = new Date();
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
     const { data, error } = await supabase
       .from("customers")
-      .select("id, name, last_order_date, segment")
+      .select("id, name, org_id, last_order_date, segment")
       .eq("id", onlyCustomerId)
       .lt("last_order_date", sixtyDaysAgo.toISOString());
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    dormantCustomers = data;
-  } else {
-    // customers_needing_winback (migrations/20260827e_task_backlog_rpcs.sql)
-    // already excludes customers who have the task and orders by id - a
-    // plain .limit(N) with no ordering and no exclusion filter was
-    // confirmed live (on the sibling issue-task-generator route) to make
-    // zero real progress across repeated calls.
-    const { data, error } = await supabase.rpc("customers_needing_winback", { limit_n: BATCH_LIMIT });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    dormantCustomers = data;
+    if (!data?.length) return NextResponse.json({ winbackTasks: 0, scanned: 0 });
+    const result = await processDormantCustomers(supabase, data[0].org_id, data);
+    return NextResponse.json(result);
   }
 
+  const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+  let winbackTasks = 0, scanned = 0;
+  for (const org of orgs ?? []) {
+    // customers_needing_winback (migrations/20260827e_task_backlog_rpcs.sql,
+    // org-scoped in 20261106a) already excludes customers who have the
+    // task and orders by id - a plain .limit(N) with no ordering and no
+    // exclusion filter was confirmed live (on the sibling
+    // issue-task-generator route) to make zero real progress across
+    // repeated calls.
+    const { data, error } = await supabase.rpc("customers_needing_winback", { limit_n: BATCH_LIMIT, target_org_id: org.id });
+    if (error) { console.error(`winback-generator RPC failed for org ${org.id}:`, error.message); continue; }
+    if (!data?.length) continue;
+    const result = await processDormantCustomers(supabase, org.id, data);
+    winbackTasks += result.winbackTasks;
+    scanned += result.scanned;
+  }
+  return NextResponse.json({ winbackTasks, scanned });
+}
+
+async function processDormantCustomers(supabase: any, orgId: string, dormantCustomers: any[]) {
   let winbackTasks = 0;
 
   for (const cust of dormantCustomers || []) {
     // Assign to best available agent for re-engagement
     const assignedTo = await assignTaskOwner(supabase, "win_back", cust.segment);
     const { error: winErr } = await supabase.from("tasks").insert({
+      org_id: orgId,
       customer_id: cust.id,
       assigned_to: assignedTo,
       task_type: "win_back",
@@ -62,7 +75,7 @@ export async function POST(req: NextRequest) {
     else console.error(`win_back task insert failed for customer ${cust.id}:`, winErr.message);
   }
 
-  return NextResponse.json({ winbackTasks, scanned: dormantCustomers?.length || 0 });
+  return { winbackTasks, scanned: dormantCustomers?.length || 0 };
 }
 
 // Vercel Cron invokes scheduled paths with GET.

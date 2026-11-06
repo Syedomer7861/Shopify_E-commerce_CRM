@@ -40,48 +40,59 @@ export async function POST(req: NextRequest) {
 
   const supabase = getSupabase();
   // Ops/testing escape hatch: process exactly one order by id instead of
-  // scanning the real backlog.
+  // scanning the real backlog. Org-agnostic - the order itself pins the org.
   const onlyOrderId = req.nextUrl.searchParams.get("orderId");
 
-  let orders: any[] | null;
   if (onlyOrderId) {
     const { data, error } = await supabase
       .from("orders")
-      .select("id, customer_id, delivered_at, line_items, delivery_status, customer:customers(rto_flag, segment)")
+      .select("id, customer_id, org_id, delivered_at, line_items, delivery_status, customer:customers(rto_flag, segment)")
       .eq("id", onlyOrderId)
       .in("delivery_status", ["delivered", "Delivered"])
       .not("delivered_at", "is", null);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    orders = (data || []).map((o: any) => ({ ...o, rto_flag: o.customer?.rto_flag, segment: o.customer?.segment }));
-  } else {
-    // orders_needing_review_tasks (migrations/20260827e_task_backlog_rpcs.sql)
-    // already excludes orders that have the tasks, RTO-flagged customers,
-    // and orders by id - a plain .limit(N) with no ordering and no
-    // exclusion filter was confirmed live (on the sibling
-    // issue-task-generator route) to make zero real progress across
-    // repeated calls.
-    const { data, error } = await supabase.rpc("orders_needing_review_tasks", { limit_n: BATCH_LIMIT });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    orders = data;
+    const orders = (data || []).map((o: any) => ({ ...o, rto_flag: o.customer?.rto_flag, segment: o.customer?.segment }));
+    if (!orders.length) return NextResponse.json({ generated: 0, checked: 0 });
+    const result = await processOrders(supabase, orders[0].org_id, orders);
+    return NextResponse.json(result);
   }
 
-  if (!orders?.length) return NextResponse.json({ generated: 0, checked: 0 });
+  const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+  let generated = 0, checked = 0, skipped = 0;
+  for (const org of orgs ?? []) {
+    // orders_needing_review_tasks (migrations/20260827e_task_backlog_rpcs.sql,
+    // org-scoped in 20261106a) already excludes orders that have the
+    // tasks, RTO-flagged customers, and orders by id - a plain .limit(N)
+    // with no ordering and no exclusion filter was confirmed live (on the
+    // sibling issue-task-generator route) to make zero real progress
+    // across repeated calls.
+    const { data, error } = await supabase.rpc("orders_needing_review_tasks", { limit_n: BATCH_LIMIT, target_org_id: org.id });
+    if (error) { console.error(`task-generator RPC failed for org ${org.id}:`, error.message); continue; }
+    if (!data?.length) continue;
+    const result = await processOrders(supabase, org.id, data);
+    generated += result.generated;
+    checked += result.checked;
+    skipped += result.skipped;
+  }
+  return NextResponse.json({ generated, checked, skipped });
+}
 
-  // Fetch global settings
-  const settings = await getSystemSettings(supabase);
+async function processOrders(supabase: any, orgId: string, orders: any[]) {
+  // Fetch this org's settings
+  const settings = await getSystemSettings(supabase, orgId);
 
   let generated = 0;
   let skipped = 0;
 
   // Fetch product overrides once for the entire batch
-  const { data: overrideData } = await supabase.from("product_overrides").select("*");
+  const { data: overrideData } = await supabase.from("product_overrides").select("*").eq("org_id", orgId);
 
   for (const order of orders) {
     const customer = { rto_flag: order.rto_flag, segment: order.segment };
 
     // 3. Resolve Offsets
     const lineItem = order.line_items?.[0];
-    const override = overrideData?.find(o =>
+    const override = overrideData?.find((o: any) =>
       o.shopify_product_id === String(lineItem?.product_id) ||
       o.shopify_product_id === String(lineItem?.id) ||
       o.shopify_product_id === lineItem?.title ||
@@ -108,6 +119,7 @@ export async function POST(req: NextRequest) {
 
     const assignedTo = await assignTaskOwner(supabase, "review", customer?.segment);
     const newTasks = taskTemplates.map(t => ({
+      org_id: orgId,
       order_id: order.id,
       customer_id: order.customer_id,
       assigned_to: assignedTo,
@@ -142,11 +154,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({
+  return {
     generated,
     checked: orders.length,
     skipped
-  });
+  };
 }
 
 // Vercel Cron invokes scheduled paths with GET.
