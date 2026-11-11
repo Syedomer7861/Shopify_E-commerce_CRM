@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 import { makeDeadline } from "@/lib/sync-logic";
 
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
@@ -21,7 +21,7 @@ const RETENTION_DAYS = 60;
 const BATCH_SIZE = 200;
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();

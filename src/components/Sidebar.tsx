@@ -15,6 +15,8 @@ import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
 
 import { DEFAULT_PERMISSIONS, hasPermission, isAdmin, isWorkspaceAdmin, allowedNavModules } from "@/lib/permissions";
+import { loadProfile } from "@/lib/profile-loader";
+import { visibleModules } from "@/lib/modules";
 import { sendAdminNotification } from "@/lib/notifications";
 import { Modal } from "./ui";
 import { useChat } from "@/context/ChatContext";
@@ -43,6 +45,7 @@ const adminNav = [
   { label: "Workflows",   href: "/workflows",   icon: Zap,        permission: "manage_team" },
   { label: "Team",        href: "/team",        icon: Shield,     permission: "manage_team" },
   { label: "Roles",       href: "/roles",       icon: UserCheck,  permission: "manage_team" },
+  { label: "Organisation", href: "/organisation", icon: Users,    permission: "manage_team" },
   { label: "System Health", href: "/system-health", icon: Activity, permission: "manage_team" },
   { label: "Settings",    href: "/settings",    icon: Settings,   permission: "manage_team" },
 ];
@@ -208,21 +211,18 @@ export default function Sidebar() {
       }
       
       const user = session.user;
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      const profile: Profile = profileData || { 
-        id: user.id, 
-        email: user.email!, 
-        role: "agent", 
-        permissions: DEFAULT_PERMISSIONS, 
+      // Keeps its own copy (shift status is updated locally below), but reads
+      // it through the same loader as everything else.
+      const profile: Profile = (await loadProfile(supabase, user.id)) || {
+        id: user.id,
+        email: user.email!,
+        role: "agent",
+        org_id: "",
+        permissions: DEFAULT_PERMISSIONS,
         is_active: true,
         created_at: new Date().toISOString()
       };
-      
+
       setProfile(profile);
       fetchTaskCounts(user.id, profile.role, profile);
       fetchTodayAttendance(user.id);
@@ -535,7 +535,11 @@ export default function Sidebar() {
   const totalTasks = counts.due + counts.overdue;
   const adminUser = isAdmin(profile);
   const allowedModules = allowedNavModules(profile);
-  const visibleNav = allowedModules ? nav.filter(n => allowedModules.includes(n.key)) : nav;
+  // Permission-engine modules come from the registry (lib/modules), gated by role grants rather than nav_modules.
+  // On phones they live in the More menu so the bottom bar stays short.
+  const moduleNav = visibleModules(profile).map(m => ({ key: m.key, label: m.label, href: m.href, icon: m.icon, badge: undefined as string | undefined, desktopOnly: true }));
+  const visibleNav: { key: string; label: string; href: string; icon: typeof LayoutDashboard; badge?: string; desktopOnly?: boolean }[] =
+    [...(allowedModules ? nav.filter(n => allowedModules.includes(n.key)) : nav), ...moduleNav];
   // For a user with an explicit module allowlist, also hide the Operations /
   // Management / Human Capital links they aren't allowed. null allowlist
   // (every normal user) -> never blocks anything.
@@ -562,13 +566,14 @@ export default function Sidebar() {
         <div className="hidden lg:block text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3">Main Menu</div>
         
         {/* Core Mobile Navigation - Primary Items */}
-        {visibleNav.map(({ label, href, icon: Icon, badge }) => {
+        {visibleNav.map(({ label, href, icon: Icon, badge, desktopOnly }) => {
           const active = path === href || (href !== "/" && path.startsWith(href));
           const badgeValue = badge === "taskCount" ? totalTasks : (badge === "chatUnread" ? unreadCount : 0);
 
           return (
             <Link key={href} href={href} className={cn(
-              "flex flex-col lg:flex-row items-center gap-0.5 lg:gap-3 px-2.5 lg:px-4 py-1 lg:py-2.5 rounded-xl lg:rounded-lg text-[9px] lg:text-sm font-bold lg:font-medium transition-all duration-200 group relative whitespace-nowrap min-w-[56px] lg:min-w-0",
+              desktopOnly ? "hidden lg:flex" : "flex",
+              "flex-col lg:flex-row items-center gap-0.5 lg:gap-3 px-2.5 lg:px-4 py-1 lg:py-2.5 rounded-xl lg:rounded-lg text-[9px] lg:text-sm font-bold lg:font-medium transition-all duration-200 group relative whitespace-nowrap min-w-[56px] lg:min-w-0",
               active 
                 ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" 
                 : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
@@ -738,6 +743,18 @@ export default function Sidebar() {
 
            {/* Mobile Management/Admin Sections */}
            <div className="space-y-4 pt-4 border-t border-[#eceae4]">
+              {moduleNav.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Business</h4>
+                  <div className="grid grid-cols-2 gap-1">
+                    {moduleNav.map(item => (
+                      <Link key={item.key} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                        <item.icon className="w-4 h-4 text-[#5f5f5d]" /> {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
               {(adminUser || profile?.role === "manager" || profile?.permissions?.audit_tasks) && !modBlocked("manager") && (
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Management</h4>

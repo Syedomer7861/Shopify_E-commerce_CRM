@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req);
   if (unauthorized) return unauthorized;
 
   const supabase = createServerClient();
 
-  // settings RLS is admin-only now; requireInternal allows any authenticated
+  // settings RLS is admin-only now; requirePrivileged allows any authenticated
   // caller here, so this needs the service-role fallback.
   const settings = await getSystemSettings(supabase);
   const bridgeUrl = settings?.whatsapp_bridge_url || "http://127.0.0.1:3001";

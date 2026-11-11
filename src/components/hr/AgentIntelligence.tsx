@@ -161,7 +161,7 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
           <p className="text-[11px] text-gray-400 font-bold uppercase tracking-[0.2em] ml-13">Telemetry & Performance Audit</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex bg-white p-1 rounded-xl border border-gray-100 shadow-inner">
             <input 
               type="date" 

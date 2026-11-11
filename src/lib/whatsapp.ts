@@ -176,7 +176,7 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
     let whatsappResult: WhatsAppResponse = { ok: false, error: "No WhatsApp messaging gateway configured" };
 
     // 1. Legacy wa_server.js Local Bridge (Primary Route if configured)
-    const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings?.whatsapp_bridge_url;
+    const bridgeUrl = settings?.whatsapp_bridge_url || process.env.WHATSAPP_BRIDGE_URL;
     if (bridgeUrl) {
       try {
         const res = await fetch(`${bridgeUrl}/send`, {

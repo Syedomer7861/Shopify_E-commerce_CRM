@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 import { createAdminClient } from "@/lib/supabase";
 import { fetchUnmaskedFromShopify } from "@/lib/shopify-unmask";
 
@@ -30,7 +30,7 @@ export const maxDuration = 60;
 const BATCH_LIMIT = 25; // Shopify API calls are the bottleneck, not DB - keep small per invocation
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();

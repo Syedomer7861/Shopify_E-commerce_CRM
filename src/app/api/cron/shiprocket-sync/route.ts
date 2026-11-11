@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 import { WorkflowEngine } from "@/lib/workflow-engine";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 import { makeDeadline } from "@/lib/sync-logic";
 import { mapShiprocketStatus } from "@/lib/shiprocket-status";
 
@@ -24,7 +24,7 @@ const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
 const STALE_EVENT_DAYS = 7;
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();

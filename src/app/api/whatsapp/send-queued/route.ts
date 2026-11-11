@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 import { logServerAuditEvent } from "@/lib/audit";
@@ -9,7 +9,7 @@ function getSupabase() {
 }
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req);
   if (unauthorized) return unauthorized;
 
   const { taskId, customMessage, mediaData, mimetype, filename } = await req.json();

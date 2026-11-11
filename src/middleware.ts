@@ -60,6 +60,10 @@ export async function middleware(request: NextRequest) {
   // Protect all routes except login, api, and static files
   const isLoginPage = request.nextUrl.pathname.startsWith('/login')
   const isSignupPage = request.nextUrl.pathname.startsWith('/signup')
+  // Self-serve signup is retired - /signup just redirects here (see
+  // src/app/signup/page.tsx) - and this is also the landing page's "Contact
+  // Us" CTA, so it has to be reachable logged-out same as /login.
+  const isContactPage = request.nextUrl.pathname.startsWith('/contact')
   const isApiRoute = request.nextUrl.pathname.startsWith('/api')
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
   const isStaticFile = request.nextUrl.pathname.includes('.')
@@ -72,7 +76,7 @@ export async function middleware(request: NextRequest) {
 
   // Demo mode is a real login (see login/page.tsx): the demo cookie is only set
   // after signInWithPassword succeeds, so it must never stand in for a session.
-  if (!user && !isLoginPage && !isSignupPage && !isApiRoute && !isAuthRoute && !isStaticFile && !isRootPage) {
+  if (!user && !isLoginPage && !isSignupPage && !isContactPage && !isApiRoute && !isAuthRoute && !isStaticFile && !isRootPage) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

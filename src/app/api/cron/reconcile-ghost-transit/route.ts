@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 import { makeDeadline } from "@/lib/sync-logic";
 import { mapShiprocketStatus } from "@/lib/shiprocket-status";
 
@@ -42,7 +42,7 @@ function mapShopifyShipmentStatus(status: string | null | undefined) {
  * no evidence they ever shipped). Cancelled orders get "failed".
  */
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();

@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { createContext, createElement, useContext, useEffect, useState, useMemo, useRef, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase";
 import type { Profile } from "@/types";
 import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
+import { loadProfile } from "@/lib/profile-loader";
 import { isDemoMode } from "@/lib/demo";
 
-export function useCurrentProfile() {
+type ProfileState = { profile: Profile | null; loading: boolean };
+
+const ProfileContext = createContext<ProfileState | null>(null);
+
+function useProfileLoader(enabled: boolean): ProfileState {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = useMemo(() => createClient(), []);
@@ -18,20 +23,24 @@ export function useCurrentProfile() {
   // even though the actual profile data hadn't changed. Only publish a new
   // reference when the content actually differs.
   const lastSerialized = useRef<string | null>(null);
-  const publishProfile = (next: Profile | null) => {
-    const serialized = JSON.stringify(next);
-    if (serialized === lastSerialized.current) return;
-    lastSerialized.current = serialized;
-    setProfile(next);
-  };
 
   useEffect(() => {
+    if (!enabled) return;
     let active = true;
 
-    async function load(sessionUser?: { id: string; email?: string | null } | null) {
-      setLoading(true);
+    const publishProfile = (next: Profile | null) => {
+      const serialized = JSON.stringify(next);
+      if (serialized === lastSerialized.current) return;
+      lastSerialized.current = serialized;
+      setProfile(next);
+    };
 
-      // Check for Demo Mode first
+    async function load(sessionUser?: { id: string; email?: string | null } | null) {
+      // Only the first load shows a loading state. Later runs (token refresh,
+      // tab focus) refresh quietly - flipping `loading` back on made every
+      // page that gates on it unmount its content and refetch its data.
+      if (lastSerialized.current === null) setLoading(true);
+
       const isDemo = isDemoMode();
       if (isDemo) {
         publishProfile({
@@ -68,30 +77,29 @@ export function useCurrentProfile() {
         return;
       }
 
-      const { data } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+      const loaded = await loadProfile(supabase, user.id);
+      if (!active) return;
 
-      if (active) {
-        const finalProfile = (data || {
-          id: user.id,
-          email: user.email || "",
-          role: "agent",
-          permissions: DEFAULT_PERMISSIONS,
-          is_active: true,
-          created_at: new Date().toISOString(),
-        }) as Profile;
+      const finalProfile = (loaded || {
+        id: user.id,
+        email: user.email || "",
+        role: "agent",
+        permissions: DEFAULT_PERMISSIONS,
+        is_active: true,
+        created_at: new Date().toISOString(),
+      }) as Profile;
 
-        // Auto-enable demo mode if the profile is marked as demo in DB or has 'demo' in email
-        const isDemoEmail = finalProfile.email?.toLowerCase().includes("demo");
-        if ((finalProfile.is_demo || isDemoEmail) && !isDemo) {
-          document.cookie = "crm-demo-mode=true; path=/; max-age=86400; samesite=lax";
-          // We might want to reload here to ensure all components pick up the demo mode
-          window.location.reload();
-          return;
-        }
-
-        publishProfile(finalProfile);
-        setLoading(false);
+      // Demo mode follows the is_demo flag only. This used to also fire for
+      // any email containing "demo", which silently swapped a real
+      // account's data for mock numbers.
+      if (finalProfile.is_demo) {
+        document.cookie = "crm-demo-mode=true; path=/; max-age=86400; samesite=lax";
+        window.location.reload();
+        return;
       }
+
+      publishProfile(finalProfile);
+      setLoading(false);
     }
 
     load();
@@ -103,7 +111,24 @@ export function useCurrentProfile() {
       active = false;
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, enabled]);
 
   return { profile, loading };
+}
+
+/**
+ * Loads the signed-in profile once for everything under it. Without this,
+ * each of the ~40 components calling useCurrentProfile() ran its own
+ * profile + role queries and its own auth subscription on every page.
+ */
+export function ProfileProvider({ children }: { children: ReactNode }) {
+  const state = useProfileLoader(true);
+  return createElement(ProfileContext.Provider, { value: state }, children);
+}
+
+/** The shared profile when inside ProfileProvider; a standalone load otherwise. */
+export function useCurrentProfile(): ProfileState {
+  const shared = useContext(ProfileContext);
+  const own = useProfileLoader(!shared);
+  return shared ?? own;
 }

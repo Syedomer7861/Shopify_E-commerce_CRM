@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 
 function getSupabase() {
   return createAdminClient();
 }
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
   if (unauthorized) return unauthorized;
 
   const supabase = getSupabase();
@@ -77,7 +77,7 @@ async function sendDigestForOrg(supabase: ReturnType<typeof createAdminClient>, 
 
   // 🏥 SYSTEM CHECK
   // Priority: env var (most reliable locally) → settings DB → localhost default
-  const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings.whatsapp_bridge_url || "http://localhost:3001";
+  const bridgeUrl = settings.whatsapp_bridge_url || process.env.WHATSAPP_BRIDGE_URL || "http://localhost:3001";
   let bridgeStatus = "OFFLINE ❌";
   try {
     const bRes = await fetch(`${bridgeUrl}/status`);

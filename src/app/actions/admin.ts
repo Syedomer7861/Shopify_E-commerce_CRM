@@ -32,7 +32,9 @@ export async function createTeamMemberServer({
   email: string;
   password: string;
   name: string;
-  role: "admin" | "agent" | "hr" | "manager" | "marketing";
+  // Any org-defined role name from the `roles` table, not just the 5 built-ins
+  // (see src/types/index.ts's Profile.role comment for why this is widened).
+  role: string;
   permissions: UserPermissions;
 }) {
   if (!(await requireAdminCaller())) return { success: false, error: "Unauthorized" };

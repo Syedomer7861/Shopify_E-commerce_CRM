@@ -1,28 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
-import { requireInternal } from "@/lib/auth-utils";
-import { getDefaultOrgId } from "@/lib/server-settings";
+import { requirePrivileged } from "@/lib/auth-utils";
+import { getDefaultOrgId, getShiprocketToken as getOrgShiprocketToken } from "@/lib/server-settings";
 
 const supabase = createAdminClient();
-
-async function getShiprocketToken(): Promise<string | null> {
-  try {
-    const res = await fetch("https://apiv2.shiprocket.in/v1/external/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: process.env.SHIPROCKET_EMAIL,
-        password: process.env.SHIPROCKET_SECRET_KEY,
-      }),
-    });
-    const data = await res.json();
-    return data.token || null;
-  } catch (err: any) {
-    console.error("Shiprocket Login Error:", err);
-    return null;
-  }
-}
 
 async function getPhoneFromShiprocket(
   orderNumber: string,
@@ -67,7 +49,7 @@ export async function POST(req: NextRequest) {
   const limited = rateLimit(req, "sync", 5, 60000);
   if (limited) return limited;
 
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req);
   if (unauthorized) return unauthorized;
 
   let unmasked = 0;
@@ -77,12 +59,10 @@ export async function POST(req: NextRequest) {
   const log: string[] = [];
 
   try {
-    // This tool still uses the raw SHIPROCKET_EMAIL/SECRET_KEY env vars
-    // directly rather than per-org settings, so it's inherently tied to
-    // one Shiprocket account - the seed org's. Scoping the customer scan
-    // and dedup check to it is still required though, since an unscoped
-    // phone match could merge a different org's customer into this one.
-    const orgId = await getDefaultOrgId();
+    // Caller may target a specific org (?org_id=...); otherwise the seed
+    // org, same default every other internal/cron route falls back to.
+    const orgId = req.nextUrl.searchParams.get("org_id") || await getDefaultOrgId();
+    if (!orgId) throw new Error("Could not resolve an organization to backfill");
 
     // Get all masked customers
     const { data: maskedCustomers, error } = await supabase
@@ -94,12 +74,15 @@ export async function POST(req: NextRequest) {
     if (error) throw error;
     log.push(`Found ${maskedCustomers?.length ?? 0} masked customers`);
 
-    // Get Shiprocket token
-    const token = await getShiprocketToken();
-    if (!token) {
-      log.push("⚠️ Shiprocket login failed — will only use webhook logs");
-    } else {
+    // Get this org's own Shiprocket token (its settings.shiprocket_email/
+    // password from Settings -> Logistics) - same helper the sync routes use,
+    // not a shared env-wide login.
+    let token: string | null = null;
+    try {
+      token = await getOrgShiprocketToken(supabase, orgId);
       log.push("✅ Shiprocket token obtained");
+    } catch (tokenErr: any) {
+      log.push(`⚠️ Shiprocket login failed (${tokenErr.message}) — will only use webhook logs`);
     }
 
     // Process each masked customer

@@ -51,8 +51,8 @@ const FEATURES = [
 const STEPS = [
   {
     step: "01",
-    title: "Create your workspace",
-    desc: "Sign up and get your own fully isolated organization in seconds — your data, your team, your rules.",
+    title: "Tell us what you need",
+    desc: "Reach out and we'll set up your own fully isolated organization for you — your data, your team, your rules.",
   },
   {
     step: "02",
@@ -80,8 +80,8 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-3">
             <Link href="/login" className="btn-ghost text-sm">Sign In</Link>
-            <Link href="/signup" className="btn-primary text-sm">
-              Get Started <ArrowRight className="w-3.5 h-3.5" />
+            <Link href="/contact" className="btn-primary text-sm">
+              Contact Us <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
@@ -105,15 +105,15 @@ export default function LandingPage() {
             time closing orders.
           </p>
           <div className="flex items-center justify-center gap-3">
-            <Link href="/signup" className="btn-primary px-6 py-3 text-sm">
-              Create Your Workspace <ArrowRight className="w-4 h-4" />
+            <Link href="/contact" className="btn-primary px-6 py-3 text-sm">
+              Contact Us <ArrowRight className="w-4 h-4" />
             </Link>
             <Link href="/login" className="btn-secondary px-6 py-3 text-sm">
               Sign In
             </Link>
           </div>
           <p className="text-[#5f5f5d]/60 text-xs mt-5 uppercase tracking-widest font-bold">
-            No credit card required &middot; Your own isolated organization
+            Provisioned by our team &middot; Your own isolated organization
           </p>
         </div>
       </section>
@@ -188,7 +188,7 @@ export default function LandingPage() {
               </h2>
               <p className="text-white/60 text-sm leading-relaxed">
                 Every organization gets its own isolated data, roles, integrations, and workspace.
-                Nothing is shared across tenants by accident — it's enforced at the database level,
+                Nothing is shared across tenants by accident — it&apos;s enforced at the database level,
                 not just hidden in the UI.
               </p>
             </div>
@@ -212,10 +212,10 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section className="max-w-3xl mx-auto px-6 pb-24 text-center">
         <h2 className="page-title mb-4">Ready to bring your operations into one place?</h2>
-        <p className="text-[#5f5f5d] mb-8">Create your workspace and invite your team — no setup calls, no waiting.</p>
+        <p className="text-[#5f5f5d] mb-8">Tell us about your team — we&apos;ll set up your workspace and hand it over ready to use.</p>
         <div className="flex items-center justify-center gap-3">
-          <Link href="/signup" className="btn-primary px-6 py-3 text-sm">
-            Create Your Workspace <ArrowRight className="w-4 h-4" />
+          <Link href="/contact" className="btn-primary px-6 py-3 text-sm">
+            Contact Us <ArrowRight className="w-4 h-4" />
           </Link>
           <Link href="/login" className="btn-secondary px-6 py-3 text-sm">
             Sign In
@@ -234,7 +234,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-6 text-[11px] text-[#5f5f5d] font-medium uppercase tracking-wider">
             <Link href="/login" className="hover:text-[#1c1c1c] transition-colors">Sign In</Link>
-            <Link href="/signup" className="hover:text-[#1c1c1c] transition-colors">Sign Up</Link>
+            <Link href="/contact" className="hover:text-[#1c1c1c] transition-colors">Contact Us</Link>
           </div>
           <p className="text-[#5f5f5d]/60 text-xs">&copy; 2026 CodeCrest CRM. All rights reserved.</p>
         </div>

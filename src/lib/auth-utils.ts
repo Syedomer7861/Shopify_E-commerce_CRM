@@ -64,6 +64,10 @@ export async function ensureAdmin() {
 
 import crypto from "crypto";
 import type { NextRequest } from "next/server";
+import type { UserPermissions } from "@/types";
+import { loadProfile } from "./profile-loader";
+import { hasPermission, isAdmin } from "./permissions";
+import { can, type Action } from "./access";
 
 /** Constant-time string compare. Returns false for empty/mismatched input. */
 export function safeEqual(a?: string | null, b?: string | null) {
@@ -120,6 +124,34 @@ export async function requireInternal(req: NextRequest | Request): Promise<NextR
 }
 
 /**
+ * Guard for operational routes (cron jobs, repair tools, integration tests).
+ * requireInternal() lets ANY signed-in user through, which is right for the
+ * everyday data routes that use it but meant an agent could trigger a
+ * backfill or restart the WhatsApp bridge with a plain fetch. This allows a
+ * trusted internal secret, an admin, or a signed-in user holding at least
+ * one of `anyOf` - nobody else. 401 when logged out, 403 when not permitted.
+ */
+export async function requirePrivileged(
+  req: NextRequest | Request,
+  anyOf: (keyof UserPermissions)[] = []
+): Promise<NextResponse | null> {
+  if (hasInternalSecret(req)) return null;
+
+  let profile = null;
+  try {
+    const supabase = createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) profile = await loadProfile(supabase, user.id);
+  } catch {
+    // No cookie context (background task) - treat as anonymous.
+  }
+
+  if (!profile) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (isAdmin(profile) || anyOf.some((p) => hasPermission(profile, p))) return null;
+  return NextResponse.json({ error: "Forbidden: you don't have permission to run this" }, { status: 403 });
+}
+
+/**
  * Webhook secrets that ship as defaults and must never count as configured.
  */
 // Values that have appeared in the repo or the settings UI as examples. A
@@ -144,4 +176,24 @@ export function isSecretConfigured(secret?: string | null): secret is string {
  */
 export function webhookStrict() {
   return process.env.WEBHOOK_STRICT === "true";
+}
+
+/**
+ * Guard for the permission-engine modules (see ./access). Resolves the
+ * signed-in user's scope for module.action from their role's grants.
+ * Returns an errorResponse (401/403) or the session plus that scope, so the
+ * route can narrow its query. RLS enforces the same grants underneath.
+ */
+export async function requirePermission(module: string, action: Action) {
+  const denied = (status: 401 | 403, error: string) =>
+    ({ errorResponse: NextResponse.json({ error }, { status }), profile: null, supabase: null, scope: null });
+
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return denied(401, "Unauthorized: please log in");
+
+  const profile = await loadProfile(supabase, user.id);
+  const scope = can(profile, module, action);
+  if (!profile || !scope) return denied(403, "Forbidden: your role doesn't allow this");
+  return { errorResponse: null, profile, supabase, scope };
 }

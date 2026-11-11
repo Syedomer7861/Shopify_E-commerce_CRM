@@ -2,7 +2,7 @@ import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings, getShiprocketToken } from "@/lib/server-settings";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { NextRequest, NextResponse } from "next/server";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 
 export const dynamic = "force-dynamic";
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
@@ -15,7 +15,7 @@ export const maxDuration = 60;
  * Target: All customers with 'x', 'X', or '_SR_' in their phone.
  */
 export async function GET(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();

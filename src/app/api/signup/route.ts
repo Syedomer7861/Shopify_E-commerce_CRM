@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { getAuthenticatedSession } from "@/lib/auth-utils";
 
-// Public signup: creates a new organization + its first admin. Mirrors
-// src/app/actions/admin.ts's service-role pattern for employee creation,
-// but with no caller-auth gate - this route IS the public entry point.
+// Workspace provisioning: creates a new organization + its first admin.
+// Used to be the public self-serve entry point (no caller-auth gate at
+// all) - the landing page sent anyone straight here. Workspaces are now
+// handed out by the platform team instead (see /contact), so this is
+// platform-admin-only: still how we provision a new tenant, just no
+// longer reachable by a stranger with curl. Mirrors
+// src/app/actions/admin.ts's service-role pattern for employee creation.
 
 const SignupSchema = z.object({
   orgName: z.string().trim().min(2).max(120),
@@ -18,6 +23,15 @@ function slugify(s: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const { errorResponse, profile } = await getAuthenticatedSession();
+  if (errorResponse) return errorResponse;
+  if (!profile?.is_platform_admin) {
+    return NextResponse.json(
+      { error: "Self-serve signup is disabled. Request a workspace at /contact and our team will provision it for you." },
+      { status: 403 }
+    );
+  }
+
   let raw: unknown;
   try {
     raw = await req.json();

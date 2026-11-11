@@ -44,7 +44,8 @@ export default function WorkflowManager() {
     try {
       const res = await fetch("/api/workflows");
       const data = await res.json();
-      setWorkflows(data.workflows || []);
+      // Business rules (kind = "rule") share this table but are edited on /workflows/rules.
+      setWorkflows((data.workflows || []).filter((w: any) => w.kind !== "rule"));
     } catch (e) {}
     finally { setLoading(false); }
   };

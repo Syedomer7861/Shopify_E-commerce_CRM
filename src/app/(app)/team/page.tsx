@@ -25,7 +25,7 @@ const FALLBACK_ROLES: Role[] = [
   { id: "hr", org_id: "", name: "hr", is_system: true, permissions: { ...DEFAULT_PERMISSIONS, view_analytics: true }, nav_modules: null, created_at: "" },
   { id: "manager", org_id: "", name: "manager", is_system: true, permissions: { view_analytics: true, can_import: true, can_delete: false, manage_team: true, manage_orders: true, manage_customers: true, send_whatsapp: true, audit_tasks: true, manage_automations: true, manage_marketing: true, manage_workspaces: true }, nav_modules: null, created_at: "" },
   { id: "marketing", org_id: "", name: "marketing", is_system: true, permissions: { view_analytics: true, can_import: false, can_delete: false, manage_team: false, manage_orders: false, manage_customers: true, send_whatsapp: true, audit_tasks: false, manage_automations: false, manage_marketing: true, manage_workspaces: false, nav_modules: ["my-hub", "chat", "request-creative"] }, nav_modules: ["my-hub", "chat", "request-creative"], created_at: "" },
-  { id: "admin", org_id: "", name: "admin", is_system: true, permissions: {}, nav_modules: null, created_at: "" },
+  { id: "admin", org_id: "", name: "admin", is_system: true, permissions: {} as UserPermissions, nav_modules: null, created_at: "" },
 ];
 
 const NAV_MODULE_LABELS: Record<string, string> = {
@@ -69,7 +69,7 @@ export default function TeamPage() {
     if (isDemo) {
       setLoading(true);
       const { MOCK_TEAM } = await import("@/lib/mockData");
-      setProfiles(MOCK_TEAM as Profile[]);
+      setProfiles(MOCK_TEAM as unknown as Profile[]);
       setLoading(false);
       return;
     }
@@ -368,7 +368,7 @@ export default function TeamPage() {
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex p-1 bg-gray-100 rounded-xl w-fit">
+        <div className="flex p-1 bg-gray-100 rounded-xl w-fit max-w-full overflow-x-auto scrollbar-hide">
           {["all", ...roleOptions.map(r => r.name), "demo"].map(role => (
             <button
               key={role}

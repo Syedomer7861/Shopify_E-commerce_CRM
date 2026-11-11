@@ -9,6 +9,7 @@ import { Shield, TrendingUp, Users, DollarSign, Map, RefreshCw } from "lucide-re
 import Link from "next/link";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { AccessDenied } from "@/components/ui";
+import { AssignTaskWidget } from "@/components/dashboard/AssignTaskWidget";
 
 export default function ManagerHubPage() {
   const { profile, loading: profileLoading } = useCurrentProfile();
@@ -59,6 +60,7 @@ export default function ManagerHubPage() {
                   <TrendingUp className="w-4 h-4 ml-2 opacity-50 group-hover:opacity-100 transition-opacity group-hover:translate-x-1 duration-300" />
                </div>
             </Link>
+            <AssignTaskWidget />
             <GlobalSync />
           </div>
         </div>

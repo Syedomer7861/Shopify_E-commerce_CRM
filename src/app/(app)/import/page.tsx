@@ -268,8 +268,8 @@ export default function ImportPage() {
             )}>
               {(["mapping","preview","done"].includes(step) && i < ["upload","mapping","preview","done"].indexOf(step)) ? "✓" : i + 1}
             </div>
-            <span className={cn("text-xs font-medium capitalize", step === s ? "text-[#1c1c1c]" : "text-gray-400")}>{s}</span>
-            {i < 3 && <div className={cn("w-8 h-0.5", (step !== "upload" && i === 0) || (["preview","done"].includes(step) && i <= 1) || (step === "done" && i === 2) ? "bg-[#1c1c1c]" : "bg-gray-200")} />}
+            <span className={cn("text-xs font-medium capitalize", step === s ? "text-[#1c1c1c]" : "text-gray-400 hidden sm:inline")}>{s}</span>
+            {i < 3 && <div className={cn("w-4 sm:w-8 h-0.5", (step !== "upload" && i === 0) || (["preview","done"].includes(step) && i <= 1) || (step === "done" && i === 2) ? "bg-[#1c1c1c]" : "bg-gray-200")} />}
           </div>
         ))}
       </div>

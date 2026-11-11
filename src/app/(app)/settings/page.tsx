@@ -532,18 +532,30 @@ export default function SettingsPage() {
   const fetchSettings = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch the most recently updated settings row
+      // settings is one row per org - this page used to always read/write
+      // the single legacy SETTINGS_ID row (a leftover from before
+      // multi-tenancy), so every org except whichever one happens to still
+      // own that literal id got either someone else's settings or an RLS
+      // rejection on save ("new row violates row-level security policy for
+      // table settings" - org_id didn't match). Resolve the caller's own
+      // org first, same as getSystemSettings() on the server side.
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: myProfile } = await supabase.from("profiles").select("org_id").eq("id", user?.id).maybeSingle();
+      const orgId = myProfile?.org_id;
+
       const { data, error } = await supabase
         .from("settings")
         .select("*")
-        .eq("id", SETTINGS_ID)
+        .eq("org_id", orgId)
         .maybeSingle();
 
       if (data) {
         setSettings(data);
-      } else {
-        // Create the master row if it's missing
-        const { data: newRow } = await supabase.from("settings").insert({ id: SETTINGS_ID }).select().single();
+      } else if (orgId) {
+        // Every org gets a blank row via the seed_default_settings trigger
+        // on signup; create one on demand rather than leaving this page
+        // with nothing to read if that ever doesn't fire.
+        const { data: newRow } = await supabase.from("settings").insert({ org_id: orgId }).select().single();
         if (newRow) setSettings(newRow);
       }
       
@@ -807,11 +819,15 @@ export default function SettingsPage() {
     setSaving(true);
     let fallbackTriggered = false;
     try {
-      // 1. Fetch current DB state to ensure we don't overwrite sensitive tokens saved via callback
+      // 1. Fetch current DB state to ensure we don't overwrite sensitive tokens saved via callback.
+      // settings.id (this org's real row), not the deprecated single-row
+      // SETTINGS_ID - every org but the one that happens to still have that
+      // literal placeholder id would otherwise always read back nothing here,
+      // silently dropping any refresh token an OAuth callback had just saved.
       const { data: currentDbSettings } = await supabase
         .from("settings")
         .select("gmail_refresh_token, shopify_refresh_token")
-        .eq("id", SETTINGS_ID)
+        .eq("id", settings.id)
         .maybeSingle();
 
       const finalSettings = { ...settings };
@@ -1129,7 +1145,7 @@ export default function SettingsPage() {
               { label: "Retention anchor (Final)", field: "final_offset_days", desc: "Terminal follow-up before archival", max: 90 },
               { label: "Churn threshold (Inactive)", field: "inactive_threshold_days", desc: "Dormancy limit for active customer status", max: 180 },
             ].map(f => (
-              <div key={f.field} className="flex items-center justify-between py-6 border-b border-[#eceae4]/50 last:border-0 gap-8">
+              <div key={f.field} className="flex flex-col sm:flex-row sm:items-center justify-between py-6 border-b border-[#eceae4]/50 last:border-0 gap-3 sm:gap-8">
                 <div className="flex-1">
                   <div className="text-xs font-bold text-[#1c1c1c]">{f.label}</div>
                   <div className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">{f.desc}</div>
@@ -2494,19 +2510,31 @@ export default function SettingsPage() {
               {testingShopify ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-2" />}
               {testingShopify ? "Validating..." : "Ping Shopify API"}
             </button>
-            <button 
+            <button
               className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest border-[#1c1c1c]/10 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-100 transition-all"
               onClick={handleDeepSync}
               disabled={saving || !settings.shopify_api_key}
             >
               <Zap className={cn("w-3.5 h-3.5 mr-2", saving && "animate-pulse")} /> Run 48h Recovery Audit
             </button>
-            <button 
+            <button
               className="btn-primary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest bg-[#1c1c1c] hover:bg-[#1c1c1c]/90 text-[#f7f4ed]"
               onClick={() => startSyncStream("/api/sync/shopify")}
               disabled={saving || !settings.shopify_api_key}
             >
               <RefreshCw className={cn("w-3.5 h-3.5 mr-2", syncStatus.active && "animate-spin")} /> Sync Catalog
+            </button>
+          </div>
+
+          {/* This tab had no way to persist the Store URL/token/secret fields
+              above - Ping/Audit/Sync all act on whatever's already in the DB
+              and are disabled until shopify_api_key is set, which could never
+              happen through this tab alone. Every other settings tab ends
+              with this same Save Settings button; this one just didn't. */}
+          <div className="flex justify-end pt-8 mt-8 border-t border-[#eceae4]">
+            <button className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-3 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleSave} disabled={saving}>
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Save className="w-3.5 h-3.5 mr-2" />}
+              {saving ? "Saving..." : "Save Settings"}
             </button>
           </div>
         </div>
@@ -2587,11 +2615,13 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex items-start gap-4">
                      <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">3</div>
-                     {/* This used to print a fixed token. It lives in a public
-                         repo, so anyone could read it and post forged carts.
-                         The value belongs in SHIPROCKET_WEBHOOK_TOKEN. */}
+                     {/* Used to point admins at SHIPROCKET_WEBHOOK_TOKEN (a
+                         single env var shared by every org) instead of the
+                         Webhook Secret field a few lines down on this same
+                         tab, which is this org's own and is what the webhook
+                         handler actually checks first. */}
                      <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
-                       Set header <code className="bg-[#eceae4]/30 px-2 py-0.5 rounded font-mono text-[#1c1c1c]">x-shiprocket-secret</code> to the value of <code className="bg-[#eceae4]/30 px-2 py-0.5 rounded font-mono text-[#1c1c1c]">SHIPROCKET_WEBHOOK_TOKEN</code> from your hosting environment.
+                       Set header <code className="bg-[#eceae4]/30 px-2 py-0.5 rounded font-mono text-[#1c1c1c]">x-shiprocket-secret</code> to the <strong>Webhook Secret</strong> value you set below, then save.
                      </p>
                   </div>
                </div>

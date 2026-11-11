@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 import { createAdminClient } from "@/lib/supabase";
 
 // ONE-TIME data repair - see the commit message for src/lib/sync-logic.ts's
@@ -20,7 +20,7 @@ export const maxDuration = 60;
 const BATCH_LIMIT = 200; // pure DB work, no external API calls - can go much bigger than tonight's Shopify-verified repair
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();

@@ -288,6 +288,9 @@ export interface Role {
   is_system: boolean;
   permissions: UserPermissions;
   nav_modules: string[] | null;
+  // Absent until 20261111c is applied.
+  grants?: import("@/lib/access").Grants;
+  home_widgets?: string[] | null;
   created_at: string;
 }
 
@@ -304,9 +307,32 @@ export interface Profile {
   id: string;
   email: string;
   name?: string;
-  role: "admin" | "agent" | "hr" | "manager" | "marketing";
+  // Org-scoped and dynamic in the DB (see `roles` table / validate_profile_role
+  // trigger) - the 5 literals are the built-in starting set, not an exhaustive
+  // union. `(string & {})` keeps autocomplete for them without rejecting a
+  // custom designation name like "graphic_designer".
+  role: "admin" | "agent" | "hr" | "manager" | "marketing" | (string & {});
   org_id: string;
   permissions: UserPermissions;
+  // Resolved from `roles` (by useCurrentProfile) for whatever `role` names
+  // right now - the live floor underneath the per-user `permissions` override
+  // above. Absent when the roles-table lookup hasn't run (e.g. a lightweight
+  // profile object built by hand); normalizePermissions/allowedNavModules in
+  // @/lib/permissions fall back to their hardcoded 5-role switch in that case.
+  role_permissions?: UserPermissions;
+  role_nav_modules?: string[] | null;
+  // roles.grants: module -> action -> scope. See src/lib/access.ts.
+  role_grants?: import("@/lib/access").Grants;
+  role_home_widgets?: string[] | null;
+  // organizations.disabled_modules / session_timeout_minutes (20261111g), via my_org_controls().
+  org_disabled_modules?: string[];
+  org_session_timeout_minutes?: number | null;
+  branch_id?: string | null;
+  department_id?: string | null;
+  designation_id?: string | null;
+  manager_id?: string | null;
+  designation?: string | null;
+  department?: string | null;
   is_active: boolean;
   is_platform_admin?: boolean;
   status?: "online" | "break" | "meeting" | "lunch" | "away" | "offline";
@@ -406,6 +432,9 @@ export interface MktList {
 }
 
 export interface MktTask {
+  // 20261111d: review gate. Absent on databases without that migration.
+  approval_status?: "pending" | "approved" | "rejected" | null;
+  reviewer_id?: string | null;
   id: string;
   list_id: string;
   parent_task_id?: string | null;

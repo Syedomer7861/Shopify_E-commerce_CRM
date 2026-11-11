@@ -48,10 +48,12 @@ export async function POST(req: NextRequest) {
 
     const settings = await getSystemSettings(supabase, orgId);
 
-    // 1. Signature Verification. Env var wins when set (today's
-    // CureForever-only path, unchanged); settings.shopify_webhook_secret
-    // is what a 2nd org fills in from their own Settings page instead.
-    const secret = process.env.SHOPIFY_WEBHOOK_SECRET || settings?.shopify_webhook_secret;
+    // 1. Signature Verification. The org's OWN settings.shopify_webhook_secret
+    // (set from their Settings -> Shopify API page) wins - each tenant's
+    // custom Shopify app has its own secret, so a shared env var can only
+    // ever match one of them. SHOPIFY_WEBHOOK_SECRET is the fallback for an
+    // org that hasn't filled in its own yet (today's CureForever path).
+    const secret = settings?.shopify_webhook_secret || process.env.SHOPIFY_WEBHOOK_SECRET;
 
     if (isSecretConfigured(secret)) {
       const hash = crypto

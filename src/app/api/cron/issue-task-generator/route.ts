@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 
 // Split out of /api/cron/task-generator - see the comment at the top of
 // that route for why. Creates an issue_resolution task for RTO/failed
@@ -10,7 +10,7 @@ export const maxDuration = 60;
 const BATCH_LIMIT = 50;
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();

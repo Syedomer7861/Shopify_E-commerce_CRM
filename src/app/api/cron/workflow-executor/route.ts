@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { WorkflowEngine } from "@/lib/workflow-engine";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
 // On Pro this can go to 300. The syncs are incremental, so a cut-off run
@@ -17,7 +17,7 @@ function getSupabase() {
  * Runs every ~10 mins to process delayed steps.
  */
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
   if (unauthorized) return unauthorized;
 
   const supabase = getSupabase();

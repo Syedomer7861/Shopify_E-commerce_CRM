@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 
 /**
  * Scheduled WhatsApp delivery for the Analytics/Reports page's own KPIs
@@ -15,7 +15,7 @@ import { requireInternal } from "@/lib/auth-utils";
  * the same daily cron trigger without a separate weekly schedule.
  */
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();
@@ -120,7 +120,7 @@ async function sendDigestForOrg(supabase: ReturnType<typeof createAdminClient>, 
       `\n──────────────────\n` +
       `*View the full breakdown in Analytics.*`;
 
-    const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings.whatsapp_bridge_url || "http://localhost:3001";
+    const bridgeUrl = settings.whatsapp_bridge_url || process.env.WHATSAPP_BRIDGE_URL || "http://localhost:3001";
     const res = await fetch(`${bridgeUrl}/send`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

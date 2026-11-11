@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { allowedNavModules, ALL_NAV_MODULES } from "@/lib/permissions";
+import { createClient } from "@/lib/supabase";
 
 // Pages that are never gated here regardless of the allowlist: /workspace is
 // governed by per-Space membership server-side, and the app's own routes for
@@ -36,6 +37,23 @@ export function ModuleGuard() {
 
     router.replace(modulePath(allowed[0]) || "/workspace");
   }, [profile, loading, pathname, router]);
+
+  // Idle sign-out, when the org admin set a session timeout (Organisation
+  // page). Any key, click or tap restarts the clock.
+  const timeoutMinutes = profile?.org_session_timeout_minutes;
+  useEffect(() => {
+    if (!timeoutMinutes) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const signOut = async () => {
+      await createClient().auth.signOut();
+      window.location.href = "/login";
+    };
+    const restart = () => { clearTimeout(timer); timer = setTimeout(signOut, timeoutMinutes * 60_000); };
+    const events = ["keydown", "pointerdown", "visibilitychange"] as const;
+    events.forEach(e => window.addEventListener(e, restart, { passive: true }));
+    restart();
+    return () => { clearTimeout(timer); events.forEach(e => window.removeEventListener(e, restart)); };
+  }, [timeoutMinutes]);
 
   return null;
 }

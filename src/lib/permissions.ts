@@ -75,7 +75,7 @@ export const NAV_MODULE_GROUPS: Record<string, readonly string[]> = {
     "floor", "reports", "abandoned-carts", "admin-logs", "recordings",
     "import", "campaigns", "templates", "workflows", "system-health", "settings",
   ],
-  "Management": ["team", "roles", "hr", "manager"],
+  "Management": ["team", "roles", "organisation", "hr", "manager"],
 };
 
 export const ALL_NAV_MODULES = Object.values(NAV_MODULE_GROUPS).flat();
@@ -90,6 +90,11 @@ export function allowedNavModules(profile: Partial<Profile> | null | undefined):
   if (isAdmin(profile)) return null;
   const override = profile?.permissions?.nav_modules;
   if (Array.isArray(override)) return override;
+  // useCurrentProfile resolves this from the org's `roles` table - the live,
+  // admin-editable allowlist for `profile.role`, including any custom
+  // designation an admin defined on the Roles page. Falls through to the
+  // hardcoded default below only when that lookup hasn't run.
+  if (profile?.role_nav_modules !== undefined) return profile.role_nav_modules;
   if (profile?.role === "marketing") return DEFAULT_MARKETING_PERMISSIONS.nav_modules ?? null;
   return null;
 }
@@ -99,11 +104,16 @@ export function allowedNavModules(profile: Partial<Profile> | null | undefined):
 // Team → Edit actually sticks for hr/manager/marketing users too (it used
 // to be silently ignored — the role default was returned verbatim).
 export function normalizePermissions(profile: Partial<Profile> | null | undefined): UserPermissions {
+  // Same precedence as allowedNavModules: the role's live DB definition
+  // (useCurrentProfile) beats the hardcoded 5-role switch, which only
+  // applies when that lookup hasn't run - e.g. a hand-built lightweight
+  // profile, or a brand-new role row that failed to resolve.
   const base =
-    profile?.role === "hr" ? DEFAULT_HR_PERMISSIONS :
+    profile?.role_permissions ??
+    (profile?.role === "hr" ? DEFAULT_HR_PERMISSIONS :
     profile?.role === "manager" ? DEFAULT_MANAGER_PERMISSIONS :
     profile?.role === "marketing" ? DEFAULT_MARKETING_PERMISSIONS :
-    DEFAULT_PERMISSIONS;
+    DEFAULT_PERMISSIONS);
   return {
     ...base,
     ...(profile?.permissions || {}),

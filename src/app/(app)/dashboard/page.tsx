@@ -15,6 +15,9 @@ import AnnouncementFeed from "@/components/AnnouncementFeed";
 
 import { CallMonitor } from "@/components/CallMonitor";
 import { isDemoMode } from "@/lib/demo";
+import { allowedNavModules } from "@/lib/permissions";
+import { loadProfile } from "@/lib/profile-loader";
+import { WorkspaceHome } from "@/components/workspace/WorkspaceHome";
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -157,7 +160,7 @@ export default function Dashboard() {
       let prof: any = profile;
       
       if (userId && !profile) {
-        const { data: profData } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+        const profData = await loadProfile(supabase, userId);
         setProfile(profData);
         prof = profData;
 
@@ -687,6 +690,18 @@ export default function Dashboard() {
         </div>
       </div>
     );
+  }
+
+  // This page is a call-queue cockpit (today's calls, recovery rate,
+  // escalations) - meaningless for a role that can't see Tasks at all
+  // (Accountant, Logistics Manager, etc. - see allowedNavModules). They get
+  // an order/revenue-centric home instead. Roles with no nav_modules
+  // allowlist (admin/manager/agent/hr by default) are unaffected.
+  if (profile && !isDemoMode()) {
+    const allowed = allowedNavModules(profile);
+    if (allowed && !allowed.includes("tasks")) {
+      return <WorkspaceHome profile={profile} />;
+    }
   }
 
   const hour = new Date().getHours();

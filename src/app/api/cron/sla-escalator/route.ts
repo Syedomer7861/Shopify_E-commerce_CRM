@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 import { getEscalationLevel } from "@/lib/task-engine";
 import { notifyUser } from "@/lib/notifications-server";
 
@@ -21,7 +21,7 @@ const HIGH_THRESHOLD_DAYS = 3;   // matches getEscalationLevel's "high"
 const CRITICAL_THRESHOLD_DAYS = 7; // matches getEscalationLevel's "critical"
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();

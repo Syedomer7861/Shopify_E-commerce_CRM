@@ -2,18 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getTaskProductName } from "@/lib/utils";
 import { getSystemSettings } from "@/lib/server-settings";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 
 function getSupabase() {
   return createAdminClient();
 }
 
 export async function GET(req: NextRequest) {
-  return processRequest(req);
+  // Was unguarded: only POST checked the caller, so a logged-out GET sent
+  // real WhatsApp reminders. Delegate so both verbs share one check.
+  return POST(req);
 }
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
   if (unauthorized) return unauthorized;
 
   return processRequest(req);
@@ -46,7 +48,7 @@ async function processOrg(supabase: any, orgId: string) {
   // 1. Get Settings
   const settings = await getSystemSettings(supabase, orgId);
 
-  const effectiveBridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings?.whatsapp_bridge_url;
+  const effectiveBridgeUrl = settings?.whatsapp_bridge_url || process.env.WHATSAPP_BRIDGE_URL;
   if (!settings?.whatsapp_enabled || !effectiveBridgeUrl || !settings?.wa_auto_order_delivered) {
     return { sent: 0, total: 0 };
   }

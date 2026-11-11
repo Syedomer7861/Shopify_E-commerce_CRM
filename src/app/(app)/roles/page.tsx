@@ -12,6 +12,8 @@ import type { Role, UserPermissions } from "@/types";
 import { NAV_MODULE_GROUPS, ALL_NAV_MODULES, hasPermission } from "@/lib/permissions";
 import { isDemoMode } from "@/lib/demo";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { HOME_WIDGETS } from "@/components/workspace/WorkspaceHome";
+import { PERMISSION_MODULES, SCOPES, SCOPE_LABELS, type Action, type Grants, type Scope } from "@/lib/access";
 
 const NAV_MODULE_LABELS: Record<string, string> = {
   dashboard: "Dashboard", tasks: "Tasks", chat: "Chat", "my-hub": "My Hub",
@@ -21,7 +23,7 @@ const NAV_MODULE_LABELS: Record<string, string> = {
   "admin-logs": "Alert Logs", recordings: "Recordings", import: "Import",
   campaigns: "Campaigns", templates: "Templates", workflows: "Workflows",
   "system-health": "System Health", settings: "Settings",
-  team: "Team", hr: "HR", manager: "Manager Hub", roles: "Roles",
+  team: "Team", hr: "HR", manager: "Manager Hub", roles: "Roles", organisation: "Organisation",
 };
 
 // Same 10 flags Team page's Access Control modal exposes — kept identical
@@ -46,14 +48,15 @@ const EMPTY_PERMISSIONS: UserPermissions = {
   audit_tasks: false, manage_automations: false, manage_workspaces: false,
 };
 
-type RoleForm = { name: string; permissions: UserPermissions; nav_modules: string[] | null };
+// grants === null: this database has no roles.grants column yet (pre-20261111c), so the matrix is hidden and not saved.
+type RoleForm = { name: string; permissions: UserPermissions; nav_modules: string[] | null; grants: Grants | null; home_widgets: string[] | null };
 
 export default function RolesPage() {
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<Role[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
-  const [form, setForm] = useState<RoleForm>({ name: "", permissions: EMPTY_PERMISSIONS, nav_modules: null });
+  const [form, setForm] = useState<RoleForm>({ name: "", permissions: EMPTY_PERMISSIONS, nav_modules: null, grants: null, home_widgets: null });
   const [saving, setSaving] = useState(false);
 
   const { profile: currentProfile, loading: profileLoading } = useCurrentProfile();
@@ -72,13 +75,13 @@ export default function RolesPage() {
 
   function openCreate() {
     setEditingRole(null);
-    setForm({ name: "", permissions: { ...EMPTY_PERMISSIONS }, nav_modules: null });
+    setForm({ name: "", permissions: { ...EMPTY_PERMISSIONS }, nav_modules: null, grants: roles.some(r => r.grants !== undefined) ? {} : null, home_widgets: null });
     setModalOpen(true);
   }
 
   function openEdit(role: Role) {
     setEditingRole(role);
-    setForm({ name: role.name, permissions: { ...EMPTY_PERMISSIONS, ...role.permissions }, nav_modules: role.nav_modules });
+    setForm({ name: role.name, permissions: { ...EMPTY_PERMISSIONS, ...role.permissions }, nav_modules: role.nav_modules, grants: role.grants ?? null, home_widgets: role.home_widgets ?? null });
     setModalOpen(true);
   }
 
@@ -91,6 +94,13 @@ export default function RolesPage() {
       const cur = f.nav_modules ?? [...ALL_NAV_MODULES];
       const next = cur.includes(key) ? cur.filter(k => k !== key) : [...cur, key];
       return { ...f, nav_modules: next };
+    });
+  }
+
+  function setGrant(module: string, action: Action, scope: Scope | "") {
+    setForm(f => {
+      const { [action]: _removed, ...rest } = f.grants?.[module] ?? {};
+      return { ...f, grants: { ...f.grants, [module]: scope ? { ...rest, [action]: scope } : rest } };
     });
   }
 
@@ -111,7 +121,8 @@ export default function RolesPage() {
     if (!name) return toast.error("Role name is required");
 
     setSaving(true);
-    const payload = { name, permissions: form.permissions, nav_modules: form.nav_modules };
+    // A new role saved with an empty matrix gets its grants derived from the flags by the DB trigger.
+    const payload = { name, permissions: form.permissions, nav_modules: form.nav_modules, ...(form.grants ? { grants: form.grants, home_widgets: form.home_widgets } : {}) };
 
     const { error } = editingRole
       ? await supabase.from("roles").update(payload).eq("id", editingRole.id)
@@ -235,6 +246,62 @@ export default function RolesPage() {
               );
             })}
           </div>
+
+          {form.grants && editingRole?.name !== "admin" && (
+            <div className="space-y-3 pt-4 border-t border-gray-100">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Access Matrix</label>
+              <p className="text-[9px] text-gray-400 leading-tight">
+                What this role can do in each module, and how far it reaches: own records, their reporting team, their department, their branch, or everyone.
+              </p>
+              {Array.from(new Set(PERMISSION_MODULES.map(m => m.group))).map(group => (
+                <div key={group} className="space-y-1.5">
+                  <div className="text-[9px] font-black text-gray-300 uppercase tracking-widest">{group}</div>
+                  {PERMISSION_MODULES.filter(m => m.group === group).map(mod => (
+                    <div key={mod.key} className="p-2.5 rounded-lg border border-gray-100">
+                      <div className="text-[11px] font-semibold text-[#1c1c1c] mb-1.5">{mod.label}</div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                        {mod.actions.map(action => (
+                          <label key={action} className="flex items-center justify-between gap-1.5 text-[10px] text-gray-500 capitalize">
+                            {action}
+                            <select
+                              value={form.grants?.[mod.key]?.[action] ?? ""}
+                              onChange={e => setGrant(mod.key, action, e.target.value as Scope | "")}
+                              className="text-[10px] border border-gray-200 rounded px-1 py-0.5 bg-white text-[#1c1c1c] normal-case"
+                            >
+                              <option value="">No</option>
+                              {SCOPES.map(s => <option key={s} value={s}>{SCOPE_LABELS[s]}</option>)}
+                            </select>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {form.grants && (
+            <div className="space-y-2 pt-4 border-t border-gray-100">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Home Screen</label>
+              <p className="text-[9px] text-gray-400 leading-tight">Widgets this role lands on. All checked = everything it has access to.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {HOME_WIDGETS.map(w => {
+                  const on = form.home_widgets === null || form.home_widgets.includes(w.key);
+                  return (
+                    <label key={w.key} className="flex items-center gap-2 p-2.5 rounded-lg border border-gray-100 text-[11px] text-[#1c1c1c] cursor-pointer">
+                      <input type="checkbox" checked={on} onChange={() => setForm(f => {
+                        const cur = f.home_widgets ?? HOME_WIDGETS.map(x => x.key);
+                        const next = on ? cur.filter(k => k !== w.key) : [...cur, w.key];
+                        return { ...f, home_widgets: next.length === HOME_WIDGETS.length ? null : next };
+                      })} />
+                      {w.label}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-3 pt-4 border-t border-gray-100">
             <div className="flex items-center justify-between">

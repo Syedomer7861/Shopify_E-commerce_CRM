@@ -4,18 +4,20 @@ import { getTaskProductName } from "@/lib/utils";
 import { getSystemSettings } from "@/lib/server-settings";
 import { sendGmail } from "@/lib/gmail";
 import { personaliseTemplate, getTemplateVariables } from "@/lib/whatsapp";
-import { requireInternal } from "@/lib/auth-utils";
+import { requirePrivileged } from "@/lib/auth-utils";
 
 function getSupabase() {
   return createAdminClient();
 }
 
 export async function GET(req: NextRequest) {
-  return processRequest();
+  // Was unguarded: only POST checked the caller, so a logged-out GET sent
+  // real WhatsApp reminders. Delegate so both verbs share one check.
+  return POST(req);
 }
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
   if (unauthorized) return unauthorized;
 
   return processRequest();
@@ -56,7 +58,7 @@ async function processOrg(supabase: any, orgId: string) {
     return { waSent: 0, emailSent: 0, total: 0 };
   }
 
-  const effectiveBridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings.whatsapp_bridge_url;
+  const effectiveBridgeUrl = settings.whatsapp_bridge_url || process.env.WHATSAPP_BRIDGE_URL;
   const waEnabled = settings.whatsapp_enabled && effectiveBridgeUrl && settings.wa_auto_cart_abandoned;
   const emailEnabled = settings.gmail_refresh_token && settings.email_auto_cart_abandoned;
 

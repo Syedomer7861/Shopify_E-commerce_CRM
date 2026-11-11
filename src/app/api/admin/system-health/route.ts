@@ -110,7 +110,7 @@ export async function GET() {
 
   // ── WhatsApp Bridge (local wa_server.js) ─────────────────────────────
   {
-    const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || settings?.whatsapp_bridge_url || "http://127.0.0.1:3001";
+    const bridgeUrl = settings?.whatsapp_bridge_url || process.env.WHATSAPP_BRIDGE_URL || "http://127.0.0.1:3001";
     const { result, error, ms } = await timed(async () => {
       const res = await fetch(`${bridgeUrl}/status`, { signal: AbortSignal.timeout(3000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

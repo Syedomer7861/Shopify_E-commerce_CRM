@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Sparkles, CheckCircle2, Circle, Plus, Trash2, Clock, Calendar as CalendarIcon, StickyNote, Bell, BellRing, ChevronRight } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Sparkles, CheckCircle2, Circle, Plus, Trash2, Clock, Calendar as CalendarIcon, StickyNote, Bell, BellRing, ChevronRight, CheckSquare } from "lucide-react";
 import { PageHeader } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
@@ -9,11 +10,15 @@ import toast from "react-hot-toast";
 import { TodoSection } from "@/components/hub/TodoSection";
 import { NoteSection } from "@/components/hub/NoteSection";
 import { ReminderSection } from "@/components/hub/ReminderSection";
+import { AssignedTasksPanel } from "@/components/dashboard/AssignedTasksPanel";
 import LivePulseFeed from "@/components/LivePulseFeed";
 import { isDemoMode as checkDemoMode } from "@/lib/demo";
 
 export default function MyHubPage() {
-  const [activeTab, setActiveTab] = useState<'todos' | 'notes' | 'reminders'>('todos');
+  const sp = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'todos' | 'notes' | 'reminders' | 'assigned'>(
+    sp.get("tab") === "assigned" ? "assigned" : "todos"
+  );
   const [isDemoMode, setIsDemoMode] = useState(false);
   const { profile } = useCurrentProfile();
 
@@ -46,8 +51,9 @@ export default function MyHubPage() {
       )}
 
       {/* Hub Navigation */}
-      <div className="flex gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:flex gap-3 lg:gap-4 mb-8">
         {[
+          { id: 'assigned', label: 'Assigned Tasks', icon: CheckSquare, color: 'text-indigo-500' },
           { id: 'todos', label: 'Todo List', icon: CheckCircle2, color: 'text-emerald-500' },
           { id: 'notes', label: 'Private Notes', icon: StickyNote, color: 'text-blue-500' },
           { id: 'reminders', label: 'Reminders', icon: Bell, color: 'text-rose-500' },
@@ -74,7 +80,7 @@ export default function MyHubPage() {
                 "text-[10px] uppercase tracking-widest font-bold opacity-60",
                 activeTab === tab.id ? "text-white/60" : "text-gray-400"
               )}>
-                {tab.id === 'todos' ? 'Personal Tasks' : tab.id === 'notes' ? 'Quick Ideas' : 'Timed Alerts'}
+                {tab.id === 'assigned' ? 'From Your Team' : tab.id === 'todos' ? 'Personal Tasks' : tab.id === 'notes' ? 'Quick Ideas' : 'Timed Alerts'}
               </div>
             </div>
             <ChevronRight className={cn(
@@ -87,6 +93,7 @@ export default function MyHubPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
+          {activeTab === 'assigned' && <AssignedTasksPanel userId={profile?.id} />}
           {activeTab === 'todos' && <TodoSection />}
           {activeTab === 'notes' && <NoteSection />}
           {activeTab === 'reminders' && <ReminderSection />}
