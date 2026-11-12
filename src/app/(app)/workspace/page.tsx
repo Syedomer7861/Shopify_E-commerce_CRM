@@ -16,7 +16,9 @@ import { marketingApi } from "@/lib/marketing-client";
 import MarketingBoard from "@/components/marketing/MarketingBoard";
 import MarketingCalendar from "@/components/marketing/MarketingCalendar";
 import MarketingTable from "@/components/marketing/MarketingTable";
-import MarketingDashboard from "@/components/marketing/MarketingDashboard";
+import dynamic from "next/dynamic";
+// Only the Dashboard view draws charts; the chart library loads when it opens.
+const MarketingDashboard = dynamic(() => import("@/components/marketing/MarketingDashboard"), { ssr: false });
 import AutomationsModal from "@/components/marketing/AutomationsModal";
 import ListSettingsModal from "@/components/marketing/ListSettingsModal";
 import SpaceSettingsModal from "@/components/marketing/SpaceSettingsModal";

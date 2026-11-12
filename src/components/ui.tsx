@@ -3,8 +3,10 @@ import { useState, useRef, useEffect } from "react";
 import { cn, SEGMENT_CONFIG, DELIVERY_CONFIG, TASK_TYPE_CONFIG, TASK_STATUS_CONFIG, initials } from "@/lib/utils";
 import type { CustomerSegment, DeliveryStatus, TaskType, TaskStatus } from "@/types";
 import { Download, TrendingUp, TrendingDown, Loader2, ShoppingBag, BarChart3, ClipboardCheck, Users, Info, Sun, Moon, Clock, Truck, Zap, CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft, ChevronDown } from "lucide-react";
-import { AreaChart, Area, ResponsiveContainer } from "recharts";
+import dynamic from "next/dynamic";
 import Link from "next/link";
+
+const Sparkline = dynamic(() => import("./Sparkline"), { ssr: false });
 
 export function SegmentBadge({ segment, rto }: { segment: CustomerSegment; rto?: boolean }) {
   if (rto) return <span className="badge bg-amber-50 border-amber-200 text-amber-700">⚠ RTO</span>;
@@ -159,28 +161,7 @@ export function StatCard({
       
       {sparklineData && sparklineData.length > 0 && (
         <div className="absolute bottom-0 left-0 right-0 h-16 w-full opacity-20 pointer-events-none transition-opacity duration-500 group-hover:opacity-40">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={sparklineData}>
-              <Area 
-                type="monotone" 
-                dataKey="value" 
-                stroke={isGradient ? "rgba(255,255,255,0.4)" : accent || "#1c1c1c"} 
-                fill={isGradient ? "url(#colorWhite)" : "url(#colorAccent)"} 
-                strokeWidth={2} 
-                dot={false} 
-              />
-              <defs>
-                <linearGradient id="colorAccent" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={accent || "#1c1c1c"} stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor={accent || "#1c1c1c"} stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorWhite" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ffffff" stopOpacity={0.2}/>
-                  <stop offset="95%" stopColor="#ffffff" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-            </AreaChart>
-          </ResponsiveContainer>
+          <Sparkline data={sparklineData} isGradient={isGradient} accent={accent} />
         </div>
       )}
     </div>

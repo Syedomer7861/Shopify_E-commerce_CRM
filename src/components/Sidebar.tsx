@@ -80,6 +80,7 @@ export default function Sidebar() {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [mounted, setMounted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const profileFetching = useRef(false);
   const [counts, setCounts] = useState({ due: 0, overdue: 0 });
   const [timers, setTimers] = useState({ workMs: 0, breakMs: 0 });
   const [showStatusModal, setShowStatusModal] = useState<{ id: string, label: string } | null>(null);
@@ -186,6 +187,10 @@ export default function Sidebar() {
   }, [supabase]);
 
   const fetchProfile = useCallback(async () => {
+    // Mount and the INITIAL_SESSION auth event both land here at once; one run
+    // is enough, the second only repeated every query below.
+    if (profileFetching.current) return;
+    profileFetching.current = true;
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
@@ -236,6 +241,8 @@ export default function Sidebar() {
         .then(({ data }) => setSpaces((data as any[]) ?? []));
     } catch (err) {
       console.error("fetchProfile error:", err);
+    } finally {
+      profileFetching.current = false;
     }
   }, [supabase, fetchTaskCounts, fetchTodayAttendance]);
 
@@ -552,7 +559,8 @@ export default function Sidebar() {
           <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full overflow-hidden flex-shrink-0 shadow-lg shadow-[#1c1c1c]/10">
             <img src="/logo-mark.png" alt="CodeCrest" className="w-full h-full object-cover" />
           </div>
-          <div className="flex flex-col lg:flex">
+          {/* Wordmark is desktop-only: on a phone it took a third of the bottom bar and squeezed the tabs into each other. */}
+          <div className="hidden lg:flex flex-col">
             <div className="text-[#1c1c1c] font-black text-sm lg:text-xl tracking-tighter lg:tracking-tight font-display">CodeCrest</div>
             <div className="hidden lg:flex items-center gap-1.5 mt-0.5">
               <div className="w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -573,7 +581,7 @@ export default function Sidebar() {
           return (
             <Link key={href} href={href} className={cn(
               desktopOnly ? "hidden lg:flex" : "flex",
-              "flex-col lg:flex-row items-center gap-0.5 lg:gap-3 px-2.5 lg:px-4 py-1 lg:py-2.5 rounded-xl lg:rounded-lg text-[9px] lg:text-sm font-bold lg:font-medium transition-all duration-200 group relative whitespace-nowrap min-w-[56px] lg:min-w-0",
+              "flex-col lg:flex-row items-center gap-0.5 lg:gap-3 px-2.5 lg:px-4 py-1 lg:py-2.5 rounded-xl lg:rounded-lg text-[9px] lg:text-sm font-bold lg:font-medium transition-all duration-200 group relative whitespace-nowrap min-w-[56px] lg:min-w-0 flex-shrink-0",
               active 
                 ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" 
                 : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
@@ -595,7 +603,7 @@ export default function Sidebar() {
         {/* Mobile 'More' Button */}
         <button 
           onClick={() => setShowMoreMenu(true)}
-          className="lg:hidden flex flex-col items-center gap-0.5 px-3 py-1 text-[#5f5f5d] hover:text-[#1c1c1c] rounded-xl font-bold text-[9px] whitespace-nowrap"
+          className="lg:hidden flex flex-shrink-0 flex-col items-center gap-0.5 px-3 py-1 text-[#5f5f5d] hover:text-[#1c1c1c] rounded-xl font-bold text-[9px] whitespace-nowrap"
         >
           <div className="w-4 h-4 flex items-center justify-center">
             <Settings className="w-4 h-4 text-[#5f5f5d]/60" />

@@ -25,6 +25,12 @@ export type RecordsConfig = {
   /** When set, `status` is editable inline by anyone who can edit the row. */
   statuses?: string[];
   rowActions?: (row: RecordRow, reload: () => void) => ReactNode;
+  /**
+   * Example rows drawn while the table is still empty, so a new team can see
+   * what the module is for. Never written to the database, never exported,
+   * and gone as soon as the first real record exists.
+   */
+  samples?: Record<string, any>[];
 };
 
 const label = (s: string) => s.replace(/_/g, " ");
@@ -106,6 +112,9 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
     URL.revokeObjectURL(a.href);
   }
 
+  const isSample = rows.length === 0 && !!config.samples?.length;
+  const shown: RecordRow[] = isSample ? config.samples!.map((s, i) => ({ ...s, id: "sample-" + i })) : rows;
+
   if (loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   if (notReady) {
     return (
@@ -127,7 +136,13 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
         )}
       </div>
 
-      {rows.length === 0 ? (
+      {isSample && (
+        <div className="mb-3 rounded-lg border border-dashed border-[#d9d5ca] bg-[#f7f4ed] px-3 py-2 text-[11px] text-[#5f5f5d]">
+          <span className="font-bold text-[#1c1c1c]">Sample data.</span> These rows are examples to show how this module works. They are not saved{canCreate ? " and disappear when you add your first " + noun + "." : "."}
+        </div>
+      )}
+
+      {shown.length === 0 ? (
         <EmptyState icon={<Plus className="w-6 h-6" />} title={`No ${noun}s yet`} desc={canCreate ? `Add the first one with "New ${noun}".` : "Nothing you have access to here."} />
       ) : (
         <div className="card overflow-x-auto">
@@ -141,23 +156,23 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
               </tr>
             </thead>
             <tbody>
-              {rows.map(row => (
-                <tr key={row.id} className="border-b border-gray-50 last:border-0">
+              {shown.map(row => (
+                <tr key={row.id} className={"border-b border-gray-50 last:border-0" + (isSample ? " opacity-70" : "")}>
                   {config.columns.map(c => (
                     <td key={c.key} className="p-3 text-[#1c1c1c]">{c.format ? c.format(row[c.key], row) : (row[c.key] ?? "—")}</td>
                   ))}
                   <td className="p-2 min-w-[130px]">
-                    {config.statuses && canEdit ? (
+                    {config.statuses && canEdit && !isSample ? (
                       <Select value={row.status} onChange={v => setStatus(row, v)} triggerClassName="text-xs capitalize"
                         options={config.statuses.map(s => ({ value: s, label: label(s) }))} />
                     ) : (
                       <span className="px-2 py-0.5 rounded-full bg-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-600">{label(row.status || "—")}</span>
                     )}
                   </td>
-                  <td className="p-3 text-gray-500">{people[row[ownerCol]] || "—"}</td>
+                  <td className="p-3 text-gray-500">{isSample ? "Sample" : people[row[ownerCol]] || "—"}</td>
                   <td className="p-3 text-right whitespace-nowrap">
-                    {config.rowActions?.(row, load)}
-                    {canDelete && (
+                    {!isSample && config.rowActions?.(row, load)}
+                    {canDelete && !isSample && (
                       <button onClick={() => remove(row)} aria-label={`Delete ${noun}`} className="text-gray-300 hover:text-rose-500 ml-2 align-middle"><Trash2 className="w-3.5 h-3.5" /></button>
                     )}
                   </td>

@@ -21,6 +21,11 @@ const leads: RecordsConfig = {
     { key: "est_value", label: "Estimated value (₹)", type: "number" },
     { key: "notes", label: "Notes", type: "textarea" },
   ],
+  samples: [
+    { name: "Priya Nair", company: "Nair Ayurveda", phone: "98XXXXXX31", source: "Referral", est_value: 75000, status: "qualified" },
+    { name: "Arjun Mehta", company: "FitBox Studio", phone: "98XXXXXX47", source: "Website", est_value: 30000, status: "contacted" },
+    { name: "Sana Khan", company: "Bloom Organics", phone: "98XXXXXX58", source: "Event", est_value: 120000, status: "new" },
+  ],
 };
 
 const deals: RecordsConfig = {
@@ -36,6 +41,11 @@ const deals: RecordsConfig = {
     { key: "value", label: "Value (₹)", type: "number", required: true },
     { key: "expected_close", label: "Expected close", type: "date" },
     { key: "notes", label: "Notes", type: "textarea" },
+  ],
+  samples: [
+    { title: "Nair Ayurveda: quarterly supply", value: 75000, expected_close: new Date(Date.now() + 10 * 86_400_000).toISOString(), status: "proposal" },
+    { title: "Bloom Organics: launch order", value: 120000, expected_close: new Date(Date.now() + 25 * 86_400_000).toISOString(), status: "negotiation" },
+    { title: "City Pharmacy: annual contract", value: 210000, expected_close: new Date(Date.now() - 6 * 86_400_000).toISOString(), status: "won" },
   ],
 };
 

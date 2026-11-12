@@ -7,7 +7,8 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  // Camera and location are allowed for this site only (Field Visits check-in proof); never for embedded third parties.
+  { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(self)" },
   // HSTS is only meaningful over HTTPS; harmless on localhost since browsers
   // ignore it for http:// origins.
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },

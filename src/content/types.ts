@@ -3,7 +3,7 @@
 // these objects - add an entry to the matching file and the route, sitemap,
 // nav, llms.txt and structured data all pick it up.
 
-export const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://codecrest-crm.vercel.app").replace(/\/$/, "");
+export const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://cureforever-crm.vercel.app").replace(/\/$/, "");
 export const SITE_NAME = "CodeCrest";
 export const CONTENT_UPDATED = "2026-11-12";
 

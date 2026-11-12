@@ -6,7 +6,7 @@ import { PHProvider } from "./providers";
 import PostHogPageView from "./_components/PostHogPageView";
 import ServiceWorkerRegister from "./_components/ServiceWorkerRegister";
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://codecrest-crm.vercel.app";
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://cureforever-crm.vercel.app";
 const SITE_TITLE = "CodeCrest CRM — Shopify & Shiprocket Order Management";
 const OG_DESCRIPTION =
   "CodeCrest CRM unifies Shopify orders, Shiprocket shipping, WhatsApp support, and agent performance in one dashboard for fast-moving e-commerce teams.";

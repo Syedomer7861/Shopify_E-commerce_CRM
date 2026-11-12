@@ -55,7 +55,14 @@ export async function middleware(request: NextRequest) {
   )
 
   // getUser() revalidates the JWT with Supabase; getSession() trusts the cookie as-is.
-  const { data: { user } } = await supabase.auth.getUser()
+  // A link prefetch only fetches a page's static shell (every page's data is
+  // loaded by the browser under row-level security), and the sidebar fires
+  // dozens of them per page load. Those read the session from the cookie; a
+  // real navigation still revalidates with Supabase.
+  const isPrefetch = request.headers.get('next-router-prefetch') === '1'
+  const user = isPrefetch
+    ? (await supabase.auth.getSession()).data.session?.user ?? null
+    : (await supabase.auth.getUser()).data.user
 
   // Protect all routes except login, api, and static files
   const isLoginPage = request.nextUrl.pathname.startsWith('/login')
@@ -121,6 +128,9 @@ export const config = {
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    // Public files (icons, manifest, service worker, offline page, sounds)
+    // were always let through below; skipping them here saves an auth round
+    // trip on each one.
+    '/((?!_next/static|_next/image|favicon.ico|icons/|manifest.json|sw.js|offline.html|.*\\.(?:png|jpg|jpeg|svg|webp|ico|mp3|woff2?)$).*)',
   ],
 }

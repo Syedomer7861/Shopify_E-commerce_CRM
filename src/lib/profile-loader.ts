@@ -10,25 +10,45 @@ import type { Grants } from "./access";
  * profile row doesn't exist.
  */
 export async function loadProfile(supabase: any, userId: string): Promise<Profile | null> {
+  // In the browser the provider, the sidebar and the dashboard all ask for the
+  // same profile within the same moment of page load (and again on the
+  // INITIAL_SESSION auth event). Share the one request that is already in
+  // flight; each caller gets its own copy. Nothing is kept once it settles.
+  if (typeof window === "undefined") return fetchProfile(supabase, userId);
+  let pending = inFlight.get(userId);
+  if (!pending) {
+    pending = fetchProfile(supabase, userId).finally(() => inFlight.delete(userId));
+    inFlight.set(userId, pending);
+  }
+  const shared = await pending;
+  return shared ? { ...shared } : null;
+}
+
+const inFlight = new Map<string, Promise<Profile | null>>();
+
+async function fetchProfile(supabase: any, userId: string): Promise<Profile | null> {
   const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
   if (!data) return null;
 
   const profile = data as Profile;
   if (profile.role && profile.org_id) {
-    const { data: roleRow } = await supabase
-      .from("roles")
-      .select("*") // "*" so a database without roles.grants (pre-20261111c) still resolves
-      .eq("org_id", profile.org_id)
-      .eq("name", profile.role)
-      .maybeSingle();
+    // Role definition and org switches are independent: one round trip, not two.
+    const [{ data: roleRow }, row] = await Promise.all([
+      supabase
+        .from("roles")
+        .select("*") // "*" so a database without roles.grants (pre-20261111c) still resolves
+        .eq("org_id", profile.org_id)
+        .eq("name", profile.role)
+        .maybeSingle(),
+      // The function arrives with 20261111g; before that the call errors and is ignored.
+      orgControls(supabase, profile.org_id),
+    ]);
     if (roleRow) {
       profile.role_permissions = (roleRow.permissions as UserPermissions) || undefined;
       profile.role_nav_modules = roleRow.nav_modules as string[] | null;
       profile.role_grants = (roleRow.grants as Grants) || undefined;
       profile.role_home_widgets = (roleRow.home_widgets as string[] | null) ?? null;
     }
-    // Org-level switches. The function arrives with 20261111g; before that the call errors and is ignored.
-    const row = await orgControls(supabase, profile.org_id);
     if (row) {
       profile.org_disabled_modules = row.disabled_modules || [];
       profile.org_session_timeout_minutes = row.session_timeout_minutes ?? null;

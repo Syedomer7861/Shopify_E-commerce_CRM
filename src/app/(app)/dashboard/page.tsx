@@ -3,7 +3,9 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { AlertTriangle, Clock, CheckCircle2, TrendingUp, Phone, RefreshCw, Sun, Moon, ChevronLeft, ChevronRight, Smartphone } from "lucide-react";
 import { StatCard, PageHeader, Avatar, Pagination } from "@/components/ui";
 import TaskCard from "@/components/TaskCard";
-import { AgentStats } from "@/components/AgentStats";
+import dynamic from "next/dynamic";
+// Charts load after the page shell: the chart library is the heaviest thing here.
+const AgentStats = dynamic(() => import("@/components/AgentStats").then(m => m.AgentStats), { ssr: false });
 import { Leaderboard } from "@/components/Leaderboard";
 import { createClient } from "@/lib/supabase";
 import { SEGMENT_CONFIG, cn, timeAgo, toDbDateString } from "@/lib/utils";
