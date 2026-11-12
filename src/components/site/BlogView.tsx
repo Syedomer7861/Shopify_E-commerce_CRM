@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Check, Clock, Sparkles } from "lucide-react";
 import { SITE_URL } from "@/content";
 import { POSTS, readMins, type BlogCategory, type Post } from "@/content/blog";
-import { CtaBand, DarkBackdrop, JsonLd, ORG_LD } from "./SiteShell";
+import { Btn, CtaBand, DarkBackdrop, JsonLd, Mesh, ORG_LD } from "./SiteShell";
 import { Breadcrumbs, CARD, DataTable, Eyebrow, Faqs, RelatedLinks, Toc, fmtDate, slugify } from "./PageView";
 import { ReadingProgress, Reveal, TiltIn, WordsIn } from "./Motion";
 import Visual from "./Visual";
@@ -38,10 +38,10 @@ export function PostCard({ post, wide }: { post: Post; wide?: boolean }) {
       <div className={`flex flex-col flex-1 ${wide ? "p-6 md:p-9 justify-center" : "p-5"}`}>
         <div className="flex items-center gap-3">
           <Tag category={post.category} />
-          <span className="text-[12px] text-[#5f5f5d] inline-flex items-center gap-1"><Clock className="w-3 h-3" />{readMins(post)} min read</span>
+          <span className="text-[12px] text-[var(--dim)] inline-flex items-center gap-1"><Clock className="w-3 h-3" />{readMins(post)} min read</span>
         </div>
         <h3 className={`font-display font-semibold tracking-tight leading-snug mt-3.5 ${wide ? "text-2xl md:text-[2rem] md:leading-tight" : "text-lg"}`}>{post.title}</h3>
-        <p className={`text-[#5f5f5d] leading-relaxed mt-2 ${wide ? "text-[15px]" : "text-[13.5px] line-clamp-3"} flex-1`}>{post.description}</p>
+        <p className={`text-[var(--dim)] leading-relaxed mt-2 ${wide ? "text-[15px]" : "text-[13.5px] line-clamp-3"} flex-1`}>{post.description}</p>
         <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold">Read article <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" /></span>
       </div>
     </Link>
@@ -56,30 +56,30 @@ export default function PostView({ post }: { post: Post }) {
   return (
     <article>
       <ReadingProgress />
-      <section className="relative bg-[#0f0f0e] text-white overflow-hidden">
-        <DarkBackdrop />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-20 md:pb-28 grid lg:grid-cols-[1.15fr_1fr] gap-12 items-center">
+      <section className="relative overflow-hidden">
+        <Mesh soft />
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-28 md:pt-32 pb-24 md:pb-32 grid lg:grid-cols-[1.15fr_1fr] gap-12 items-center">
           <div className="min-w-0">
-            <Breadcrumbs trail={[["Blog", "/blog"], [post.metaTitle || post.title, `/blog/${post.slug}`]]} dark />
-            <div className="mt-9 flex flex-wrap items-center gap-3 text-[12.5px] text-white/55">
+            <Breadcrumbs trail={[["Blog", "/blog"], [post.metaTitle || post.title, `/blog/${post.slug}`]]} />
+            <div className="mt-9 flex flex-wrap items-center gap-3 text-[12.5px] text-[var(--dim)]">
               <Tag category={post.category} />
               <time dateTime={post.date}>{fmtDate(post.date)}</time>
               <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{mins} min read</span>
             </div>
-            <h1 className="font-display font-semibold tracking-tight text-[2rem] sm:text-[2.75rem] lg:text-5xl leading-[1.08] mt-5"><WordsIn text={post.title} /></h1>
-            <p className="text-[12.5px] text-white/45 mt-6">By the CodeCrest team</p>
+            <h1 className="font-display font-bold tracking-[-0.035em] text-[2rem] sm:text-[2.75rem] lg:text-5xl leading-[1.06] mt-5"><WordsIn text={post.title} /></h1>
+            <p className="text-[12.5px] text-[var(--dim)] mt-6">By the CodeCrest team</p>
           </div>
-          <TiltIn className="min-w-0 hidden md:block"><Visual kind={post.visual} /></TiltIn>
+          <TiltIn className="min-w-0 hidden md:block"><Visual kind={post.visual} bezel /></TiltIn>
         </div>
       </section>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-10 md:-mt-12 relative grid lg:grid-cols-[14rem_1fr] gap-12">
         <div className="hidden lg:block" />
         <Reveal className="max-w-3xl min-w-0">
-          <div className="rounded-2xl border border-emerald-600/20 bg-white p-6 md:p-8 shadow-xl shadow-black/5">
+          <div className="rounded-3xl border border-[var(--line)] bg-white p-6 md:p-8 shadow-xl shadow-black/5">
             <p className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-700"><Sparkles className="w-3.5 h-3.5" />Quick answer</p>
             <p className="text-[17px] leading-[1.7] mt-3" data-speakable>{post.answer}</p>
-            <ul className="mt-6 pt-6 border-t border-[#eceae4] space-y-2.5">
+            <ul className="mt-6 pt-6 border-t border-[var(--line)] space-y-2.5">
               {post.takeaways.map((t) => (
                 <li key={t} className="flex items-start gap-2.5 text-[14.5px] text-[#3a3a38]"><Check className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" strokeWidth={2.5} />{t}</li>
               ))}
@@ -98,7 +98,7 @@ export default function PostView({ post }: { post: Post }) {
               {s.list && (
                 <ul className="mt-6 space-y-2.5">
                   {s.list.map((li) => (
-                    <li key={li} className="flex items-start gap-3 text-[15px] leading-relaxed rounded-xl bg-white border border-[#eceae4] px-4 py-3"><Check className="w-4 h-4 text-emerald-600 mt-1 flex-shrink-0" strokeWidth={2.5} />{li}</li>
+                    <li key={li} className="flex items-start gap-3 text-[15px] leading-relaxed rounded-xl bg-white border border-[var(--line)] px-4 py-3"><Check className="w-4 h-4 text-emerald-600 mt-1 flex-shrink-0" strokeWidth={2.5} />{li}</li>
                   ))}
                 </ul>
               )}
@@ -107,16 +107,14 @@ export default function PostView({ post }: { post: Post }) {
           ))}
 
           <Reveal>
-            <div className="relative overflow-hidden rounded-2xl bg-[#0f0f0e] text-white p-7 md:p-9">
+            <div className="relative overflow-hidden rounded-2xl bg-[#111113] text-white p-7 md:p-9">
               <DarkBackdrop />
               <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
                 <div className="flex-1">
                   <p className="font-display font-semibold text-xl tracking-tight">Want this running as a daily process?</p>
                   <p className="text-white/60 text-[14.5px] mt-1.5 leading-relaxed">CodeCrest gives every order, delivery and customer follow-up an owner and a next step.</p>
                 </div>
-                <Link href="/contact" className="group inline-flex items-center justify-center gap-2 rounded-full bg-emerald-400 text-[#0f0f0e] px-6 py-3 text-sm font-semibold hover:bg-emerald-300 transition-colors whitespace-nowrap">
-                  Talk to us <ArrowUpRight className="w-4 h-4" />
-                </Link>
+                <Btn href="/contact" tone="light" arrow>Talk to us</Btn>
               </div>
             </div>
           </Reveal>

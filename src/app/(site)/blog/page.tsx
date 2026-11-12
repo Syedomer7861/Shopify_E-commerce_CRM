@@ -22,7 +22,7 @@ export default function BlogIndex() {
         {featured && <Reveal className="flex"><PostCard post={featured} wide /></Reveal>}
         <nav aria-label="Categories" className="mt-10 flex flex-wrap gap-2">
           {CATEGORIES.map((c) => (
-            <a key={c} href={`#${slugify(c)}`} className="rounded-full border border-[#1c1c1c]/15 bg-white px-4 py-2 text-[13px] font-semibold hover:bg-[#0f0f0e] hover:text-white hover:border-[#0f0f0e] transition-colors">
+            <a key={c} href={`#${slugify(c)}`} className="rounded-full border border-[#1c1c1c]/15 bg-white px-4 py-2 text-[13px] font-semibold hover:bg-[#111113] hover:text-white hover:border-[#111113] transition-colors">
               {c} <span className="opacity-50 font-normal">{POSTS.filter((p) => p.category === c).length}</span>
             </a>
           ))}

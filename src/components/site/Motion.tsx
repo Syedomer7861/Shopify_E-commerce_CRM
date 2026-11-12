@@ -60,7 +60,7 @@ export function WordsIn({ text, accent, className }: { text: string; accent?: st
     <span className={className}>
       {words.map((w, i) => (
         <span key={i} className="inline-block overflow-hidden align-bottom pb-[0.12em] -mb-[0.12em]">
-          <m.span data-reveal className={`inline-block ${accent && accent.split(" ").includes(w.replace(/[.,]/g, "")) ? "text-emerald-400" : ""}`}
+          <m.span data-reveal className={`inline-block ${accent && accent.split(" ").includes(w.replace(/[.,]/g, "")) ? "font-accent text-grad pr-[0.06em]" : ""}`}
             initial={{ y: "110%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.75, delay: 0.08 + i * 0.045, ease: EASE }}>
             {w}{i < words.length - 1 ? " " : ""}
           </m.span>
@@ -105,7 +105,7 @@ export function Float({ children, className, delay = 0 }: { children: React.Reac
 export function ReadingProgress() {
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 140, damping: 28 });
-  return <m.div aria-hidden className="fixed top-16 inset-x-0 h-0.5 bg-emerald-500 origin-left z-40" style={{ scaleX }} />;
+  return <m.div aria-hidden className="fixed top-0 inset-x-0 h-[3px] bg-gradient-to-r from-[#ff7a45] via-[#ffe36e] to-[#5fe39a] origin-left z-[60]" style={{ scaleX }} />;
 }
 
 export type ShowcaseItem = { eyebrow: string; title: string; text: string; bullets: string[]; href: string; visual: VisualKind };
@@ -131,9 +131,9 @@ export function Showcase({ items }: { items: ShowcaseItem[] }) {
           const on = i === active;
           return (
             <div key={s.title} className={`relative rounded-2xl border transition-colors duration-300 ${on ? "border-[#1c1c1c]/15 bg-white shadow-xl shadow-black/5" : "border-transparent hover:bg-white/60"}`}>
-              {on && auto && <m.span key={active} aria-hidden className="absolute left-0 top-0 h-0.5 bg-emerald-500 rounded-full" initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ duration: 5.2, ease: "linear" }} />}
+              {on && auto && <m.span key={active} aria-hidden className="absolute left-0 top-0 h-0.5 bg-gradient-to-r from-[#ff7a45] to-[#5fe39a] rounded-full" initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ duration: 5.2, ease: "linear" }} />}
               <button type="button" aria-expanded={on} onClick={() => { setActive(i); setAuto(false); }} className="w-full text-left px-5 pt-5 pb-1">
-                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-700">{s.eyebrow}</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#d9541e]">{s.eyebrow}</span>
                 <h3 className="font-display font-semibold tracking-tight text-xl md:text-2xl leading-snug mt-1.5">{s.title}</h3>
               </button>
               <div className={`grid transition-[grid-template-rows] duration-500 ease-out ${on ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>

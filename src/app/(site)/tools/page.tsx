@@ -20,9 +20,9 @@ export default function ToolsIndex() {
           {TOOLS.map((t) => (
             <StaggerItem key={t.slug} className="flex">
               <Link href={`/tools/${t.slug}`} className={`${CARD} w-full`}>
-                <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-700 flex items-center justify-center mb-5 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300"><Calculator className="w-5 h-5" /></div>
+                <div className="w-11 h-11 rounded-xl bg-[#111113]/5 flex items-center justify-center mb-5 group-hover:bg-[#111113] group-hover:text-white transition-colors duration-300"><Calculator className="w-5 h-5" /></div>
                 <h2 className="font-display font-semibold text-xl tracking-tight">{t.name}</h2>
-                <p className="text-[14px] text-[#5f5f5d] leading-relaxed mt-2.5 flex-1">{t.description}</p>
+                <p className="text-[14px] text-[var(--dim)] leading-relaxed mt-2.5 flex-1">{t.description}</p>
                 <span className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-semibold">Open tool <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" /></span>
               </Link>
             </StaggerItem>
