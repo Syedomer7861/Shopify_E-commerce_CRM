@@ -544,9 +544,12 @@ export default function Sidebar() {
   const allowedModules = allowedNavModules(profile);
   // Permission-engine modules come from the registry (lib/modules), gated by role grants rather than nav_modules.
   // On phones they live in the More menu so the bottom bar stays short.
-  const moduleNav = visibleModules(profile).map(m => ({ key: m.key, label: m.label, href: m.href, icon: m.icon, badge: undefined as string | undefined, desktopOnly: true }));
+  const baseNav = allowedModules ? nav.filter(n => allowedModules.includes(n.key)) : nav;
+  // A role with a short main menu (a developer, a designer) has room on the
+  // phone bar, so its modules sit there instead of hiding behind More.
+  const moduleNav = visibleModules(profile).map(m => ({ key: m.key, label: m.label, href: m.href, icon: m.icon, badge: undefined as string | undefined, desktopOnly: baseNav.length > 4 }));
   const visibleNav: { key: string; label: string; href: string; icon: typeof LayoutDashboard; badge?: string; desktopOnly?: boolean }[] =
-    [...(allowedModules ? nav.filter(n => allowedModules.includes(n.key)) : nav), ...moduleNav];
+    [...baseNav, ...moduleNav];
   // For a user with an explicit module allowlist, also hide the Operations /
   // Management / Human Capital links they aren't allowed. null allowlist
   // (every normal user) -> never blocks anything.

@@ -81,12 +81,34 @@ export const NAV_MODULE_GROUPS: Record<string, readonly string[]> = {
 export const ALL_NAV_MODULES = Object.values(NAV_MODULE_GROUPS).flat();
 
 /**
+ * The pages that only make sense for a business selling to consumers and
+ * working a call queue. An organisation that isn't one (an agency, a clinic,
+ * a school, a services firm) turns the whole suite off with one switch on the
+ * Organisation page: the key below goes into organizations.disabled_modules
+ * and these pages close for everyone, admins included. Data is untouched.
+ */
+export const COMMERCE_SUITE = "commerce";
+export const COMMERCE_NAV: readonly string[] = [
+  "tasks", "customers", "orders", "reports", "abandoned-carts",
+  "recordings", "import", "campaigns", "templates", "manager",
+];
+
+/** Main menu a brand-new custom role starts with: nothing industry-specific. */
+export const NEUTRAL_NAV_MODULES: readonly string[] = ["dashboard", "my-hub", "chat", "calendar"];
+
+/**
  * The Main-Menu allowlist for a profile, or null when every module is visible.
  * A per-user `permissions.nav_modules` array always wins; otherwise a
  * Workspace-role user falls back to the locked-down default above; every other
  * role (and admins) is unrestricted.
  */
 export function allowedNavModules(profile: Partial<Profile> | null | undefined): string[] | null {
+  const base = roleNavModules(profile);
+  if (!profile?.org_disabled_modules?.includes(COMMERCE_SUITE)) return base;
+  return (base ?? ALL_NAV_MODULES).filter(key => !COMMERCE_NAV.includes(key));
+}
+
+function roleNavModules(profile: Partial<Profile> | null | undefined): string[] | null {
   if (isAdmin(profile)) return null;
   const override = profile?.permissions?.nav_modules;
   if (Array.isArray(override)) return override;

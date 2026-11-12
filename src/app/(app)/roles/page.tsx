@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import type { Role, UserPermissions } from "@/types";
-import { NAV_MODULE_GROUPS, ALL_NAV_MODULES, hasPermission } from "@/lib/permissions";
+import { NAV_MODULE_GROUPS, ALL_NAV_MODULES, NEUTRAL_NAV_MODULES, hasPermission } from "@/lib/permissions";
 import { isDemoMode } from "@/lib/demo";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { HOME_WIDGETS } from "@/components/workspace/WorkspaceHome";
@@ -75,7 +75,8 @@ export default function RolesPage() {
 
   function openCreate() {
     setEditingRole(null);
-    setForm({ name: "", permissions: { ...EMPTY_PERMISSIONS }, nav_modules: null, grants: roles.some(r => r.grants !== undefined) ? {} : null, home_widgets: null });
+    // A new role starts with the neutral menu, not every page: the admin ticks what the job needs.
+    setForm({ name: "", permissions: { ...EMPTY_PERMISSIONS }, nav_modules: [...NEUTRAL_NAV_MODULES], grants: roles.some(r => r.grants !== undefined) ? {} : null, home_widgets: null });
     setModalOpen(true);
   }
 

@@ -62,6 +62,7 @@ export default function FieldVisitsPage() {
   }
 
   const link = "text-[10px] font-bold underline text-[#1c1c1c]";
+  const action = "px-2.5 py-1.5 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-bold";
   const visits: RecordsConfig = {
     table: "visits", module: "visits", noun: "visit", ownerCol: "owner_id", ownerLabel: "Rep",
     columns: [
@@ -93,10 +94,12 @@ export default function FieldVisitsPage() {
       { party_name: "GreenLeaf Wellness Clinic", purpose: "Product demo", planned_at: hoursFromNow(-2), check_in_at: hoursFromNow(-2), status: "checked_in" },
       { party_name: "Apex Distributors", purpose: "Payment follow-up", planned_at: hoursFromNow(22), status: "planned" },
     ],
+    // On site already: save the visit and go straight to the camera.
+    createAndAct: { label: "Save & check in now (photo + location)", run: (row, reload) => setCheckingIn({ row, reload }) },
     rowActions: (row, reload) => {
       if (row.owner_id !== profile?.id) return null;
-      if (row.status === "planned") return <button onClick={() => setCheckingIn({ row, reload })} className={link}>Check in</button>;
-      if (row.status === "checked_in") return <button onClick={() => complete(row, reload)} className={link}>Complete</button>;
+      if (row.status === "planned") return <button onClick={() => setCheckingIn({ row, reload })} className={action}>Check in</button>;
+      if (row.status === "checked_in") return <button onClick={() => complete(row, reload)} className={action}>Complete</button>;
       return null;
     },
   };
@@ -105,7 +108,7 @@ export default function FieldVisitsPage() {
     <>
       <ModulePage
         title="Field Visits"
-        subtitle="Plan visits, check in on site, log the outcome. Every check-in takes a live photo and the rep's current location together."
+        subtitle="Add a visit, then tap Check in on site: it takes a live photo and your current location together. Log the outcome when you leave."
         tabs={[{ label: "Visits", config: visits }]}
       />
       <CheckInCapture open={!!checkingIn} visiting={checkingIn?.row.party_name || ""} onClose={() => setCheckingIn(null)} onCapture={saveCheckIn} />

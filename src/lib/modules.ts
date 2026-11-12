@@ -1,4 +1,4 @@
-import { CheckCircle2, IndianRupee, LifeBuoy, Target, MapPin, GitBranch, type LucideIcon } from "lucide-react";
+import { CheckCircle2, IndianRupee, LifeBuoy, Target, MapPin, GitBranch, Blocks, type LucideIcon } from "lucide-react";
 import type { Profile } from "@/types";
 import { can } from "./access";
 
@@ -17,10 +17,14 @@ export const APP_MODULES: AppModule[] = [
   { key: "leads", label: "Leads & Deals", href: "/leads", icon: Target, perms: ["leads", "deals"], blurb: "Pipeline from first contact to won" },
   { key: "field", label: "Field Visits", href: "/field", icon: MapPin, perms: ["visits"], blurb: "Planned visits and check-ins" },
   { key: "rules", label: "Rules", href: "/workflows/rules", icon: GitBranch, perms: ["workflows"], blurb: "When X happens, do Y" },
+  // No perms: open to every member. What each person sees inside is decided per app (migration 20261113a).
+  { key: "apps", label: "Apps", href: "/apps", icon: Blocks, perms: [], blurb: "Modules your organisation built for itself" },
 ];
 
 /** Org-level switches offered on the Organisation page (permission module keys). */
 export const SWITCHABLE_MODULES: { key: string; label: string }[] = [
+  // Whole suite, not one permission module: see COMMERCE_SUITE in ./permissions.
+  { key: "commerce", label: "Sales & call centre" },
   { key: "expenses", label: "Expenses" }, { key: "vendors", label: "Vendors" }, { key: "invoices", label: "Invoices" },
   { key: "tickets", label: "Service Desk" }, { key: "leads", label: "Leads" }, { key: "deals", label: "Deals" },
   { key: "visits", label: "Field Visits" }, { key: "approvals", label: "Approvals" },
@@ -29,5 +33,5 @@ export const SWITCHABLE_MODULES: { key: string; label: string }[] = [
 export function visibleModules(profile: Partial<Profile> | null | undefined) {
   // role_grants is undefined until 20261111c is applied - show nothing rather than links to empty pages.
   if (!profile || profile.role_grants === undefined) return [];
-  return APP_MODULES.filter(m => m.perms.some(p => can(profile, p, "view") !== null));
+  return APP_MODULES.filter(m => m.perms.length === 0 || m.perms.some(p => can(profile, p, "view") !== null));
 }

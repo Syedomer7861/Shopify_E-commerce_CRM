@@ -31,6 +31,14 @@ export type RecordsConfig = {
    * and gone as soon as the first real record exists.
    */
   samples?: Record<string, any>[];
+  /** Rows are limited to these column values, and new rows are created with them (Apps: one module's records). */
+  filter?: Record<string, string>;
+  /** Field values live inside this JSON column instead of in columns of their own (Apps). */
+  dataCol?: string;
+  /** Overrides the permission-engine checks for tables it doesn't govern; row security still decides. */
+  access?: { create: boolean; edit: (row: RecordRow) => boolean; delete: boolean; export: boolean };
+  /** A second save button that runs something on the row just created (Field Visits: straight to check-in). */
+  createAndAct?: { label: string; run: (row: RecordRow, reload: () => void) => void };
 };
 
 const label = (s: string) => s.replace(/_/g, " ");
@@ -54,37 +62,49 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   const [saving, setSaving] = useState(false);
 
   const { table, module, noun, ownerCol } = config;
-  const canCreate = can(profile, module, "create") !== null;
-  const canEdit = can(profile, module, "edit") !== null;
-  const canDelete = can(profile, module, "delete") !== null;
-  const canExport = can(profile, module, "export") !== null;
+  const { access, dataCol, filter } = config;
+  const canCreate = access ? access.create : can(profile, module, "create") !== null;
+  const canEditAny = can(profile, module, "edit") !== null;
+  const canEditRow = (row: RecordRow) => (access ? access.edit(row) : canEditAny);
+  const canDelete = access ? access.delete : can(profile, module, "delete") !== null;
+  const canExport = access ? access.export : can(profile, module, "export") !== null;
+  const filterKey = JSON.stringify(filter || {});
 
   const load = useCallback(async () => {
     setLoading(true);
     const [list, team] = await Promise.all([
-      supabase.from(table).select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from(table).select("*").match(JSON.parse(filterKey)).order("created_at", { ascending: false }).limit(200),
       supabase.from("profiles").select("id,name"),
     ]);
     if (list.error) setNotReady(true);
-    else { setNotReady(false); setRows(list.data as RecordRow[]); }
+    else {
+      setNotReady(false);
+      // Real columns win over a same-named key inside the JSON column.
+      setRows((list.data as RecordRow[]).map(r => (dataCol ? { ...(r[dataCol] || {}), ...r } : r)));
+    }
     setPeople(Object.fromEntries((team.data || []).map((p: any) => [p.id, p.name || "Unnamed"])));
     setLoading(false);
-  }, [supabase, table]);
+  }, [supabase, table, filterKey, dataCol]);
 
   useEffect(() => { load(); }, [load]);
 
-  async function create() {
+  async function create(thenAct = false) {
     const missing = config.fields.find(f => f.required && !form[f.key]?.trim());
     if (missing) return toast.error(`${missing.label} is required`);
     setSaving(true);
-    const payload: Record<string, any> = { [ownerCol]: profile.id };
+    // The id is made here rather than read back: INSERT ... RETURNING can be refused by the SELECT policy even when the insert is allowed.
+    const values: Record<string, any> = {};
     for (const f of config.fields) {
       const v = form[f.key]?.trim();
-      if (v) payload[f.key] = f.type === "number" ? Number(v) : v;
+      if (v) values[f.key] = f.type === "number" ? Number(v) : v;
     }
+    const payload: Record<string, any> = { id: crypto.randomUUID(), [ownerCol]: profile.id, ...(filter || {}), ...(dataCol ? { [dataCol]: values } : values) };
     const { error } = await supabase.from(table).insert(payload);
     if (error) toast.error(error.code === "23505" ? `That ${noun} already exists` : error.message);
-    else { toast.success(`${noun[0].toUpperCase()}${noun.slice(1)} added`); setOpen(false); setForm({}); load(); }
+    else {
+      toast.success(`${noun[0].toUpperCase()}${noun.slice(1)} added`); setOpen(false); setForm({}); load();
+      if (thenAct) config.createAndAct?.run({ ...payload, id: payload.id as string }, load);
+    }
     setSaving(false);
   }
 
@@ -162,7 +182,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
                     <td key={c.key} className="p-3 text-[#1c1c1c]">{c.format ? c.format(row[c.key], row) : (row[c.key] ?? "—")}</td>
                   ))}
                   <td className="p-2 min-w-[130px]">
-                    {config.statuses && canEdit && !isSample ? (
+                    {config.statuses && !isSample && canEditRow(row) ? (
                       <Select value={row.status} onChange={v => setStatus(row, v)} triggerClassName="text-xs capitalize"
                         options={config.statuses.map(s => ({ value: s, label: label(s) }))} />
                     ) : (
@@ -170,7 +190,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
                     )}
                   </td>
                   <td className="p-3 text-gray-500">{isSample ? "Sample" : people[row[ownerCol]] || "—"}</td>
-                  <td className="p-3 text-right whitespace-nowrap">
+                  <td className="p-3 text-right whitespace-nowrap sticky right-0 bg-[#f7f4ed]">
                     {!isSample && config.rowActions?.(row, load)}
                     {canDelete && !isSample && (
                       <button onClick={() => remove(row)} aria-label={`Delete ${noun}`} className="text-gray-300 hover:text-rose-500 ml-2 align-middle"><Trash2 className="w-3.5 h-3.5" /></button>
@@ -184,7 +204,14 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
       )}
 
       <Modal open={open} onClose={() => setOpen(false)} title={`New ${noun}`}
-        footer={<button onClick={create} disabled={saving} className="btn-primary w-full py-2.5">{saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : `Save ${noun}`}</button>}>
+        footer={
+          <div className="flex flex-col gap-2 w-full">
+            {config.createAndAct && (
+              <button onClick={() => create(true)} disabled={saving} className="btn-primary w-full py-2.5">{saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : config.createAndAct.label}</button>
+            )}
+            <button onClick={() => create()} disabled={saving} className={(config.createAndAct ? "btn-secondary" : "btn-primary") + " w-full py-2.5"}>{saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : config.createAndAct ? `Save ${noun} for later` : `Save ${noun}`}</button>
+          </div>
+        }>
         <div className="space-y-3">
           {config.fields.map(f => {
             const id = `${table}-${f.key}`;
@@ -197,7 +224,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
                 ) : f.type === "textarea" ? (
                   <textarea id={id} className="input min-h-[72px]" value={form[f.key] || ""} onChange={e => set(e.target.value)} />
                 ) : (
-                  <input id={id} type={f.type || "text"} className="input" value={form[f.key] || ""} onChange={e => set(e.target.value)} min={f.type === "number" ? 0 : undefined} step={f.type === "number" ? "0.01" : undefined} />
+                  <input id={id} type={f.type || "text"} className="input min-w-0 max-w-full appearance-none" value={form[f.key] || ""} onChange={e => set(e.target.value)} min={f.type === "number" ? 0 : undefined} step={f.type === "number" ? "0.01" : undefined} />
                 )}
               </div>
             );
