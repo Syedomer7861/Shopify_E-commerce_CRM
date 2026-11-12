@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
+import { Redis } from "@upstash/redis";
 
 /**
  * Fixed-window rate limiter for API routes.
  *
- * ponytail: per-instance memory, not a shared store. Each serverless instance
- * keeps its own counters, so with N warm instances the real ceiling is N x
- * limit. That is fine for what this is for — stopping one client from
- * hammering an endpoint in a loop — and wrong for anything that must be
- * exact, like billing quotas. Move to Upstash Redis if you ever need a global
- * count; the call sites do not change.
+ * Counts live in Upstash Redis when UPSTASH_REDIS_REST_URL/TOKEN are set, so
+ * the limit holds across every serverless instance. Without them (local dev,
+ * the check script) or if Redis is slow or down, it falls back to
+ * per-instance memory: each warm instance then keeps its own counters, so the
+ * real ceiling is N x limit. A limiter outage must never block a webhook.
+ *
+ * ponytail: fixed window, one INCR per request. Not exact at window edges
+ * (a burst can straddle two windows); use a sliding window if that matters.
  *
  * Vercel's own Firewall sits in front of the function and is the better place
  * for volumetric abuse. This catches what gets past it, and works locally.
@@ -66,20 +69,56 @@ export function checkRateLimit(key: string, limit: number, windowMs: number): Ra
   return { allowed: true, remaining: limit - win.count, retryAfterSeconds };
 }
 
+// Created here rather than imported from lib/redis.ts: that module is
+// "server-only", which throws when the check script loads this file in Node.
+const redis =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN, retry: { retries: 0 } })
+    : null;
+
+// Longest a request waits on Redis before falling back to memory.
+const REDIS_TIMEOUT_MS = 300;
+
+/** Shared count, or null when Redis is not configured, slow or failing. */
+async function checkShared(key: string, limit: number, windowMs: number): Promise<RateLimitResult | null> {
+  if (!redis) return null;
+  const now = Date.now();
+  const windowStart = Math.floor(now / windowMs) * windowMs;
+  const redisKey = `rl:${key}:${windowStart}`;
+  try {
+    const count = await Promise.race([
+      redis.incr(redisKey),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), REDIS_TIMEOUT_MS)),
+    ]);
+    if (count === null) return null;
+    // First hit of the window sets its expiry; not awaited, the key name
+    // already scopes it to this window.
+    if (count === 1) redis.pexpire(redisKey, windowMs * 2).catch(() => {});
+    const retryAfterSeconds = Math.max(1, Math.ceil((windowStart + windowMs - now) / 1000));
+    return count > limit
+      ? { allowed: false, remaining: 0, retryAfterSeconds }
+      : { allowed: true, remaining: limit - count, retryAfterSeconds };
+  } catch (err) {
+    console.error("Rate limiter: Redis unavailable, using in-memory fallback.", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
 /**
  * Guard for a route handler. Returns a 429 response to return early, or null
  * to continue.
  *
- *   const limited = rateLimit(req, "shopify-webhook", 120, 60_000);
+ *   const limited = await rateLimit(req, "shopify-webhook", 120, 60_000);
  *   if (limited) return limited;
  */
-export function rateLimit(
+export async function rateLimit(
   req: Request,
   scope: string,
   limit: number,
   windowMs: number
-): NextResponse | null {
-  const result = checkRateLimit(clientKey(req, scope), limit, windowMs);
+): Promise<NextResponse | null> {
+  const key = clientKey(req, scope);
+  const result = (await checkShared(key, limit, windowMs)) ?? checkRateLimit(key, limit, windowMs);
   if (result.allowed) return null;
 
   console.warn(`Rate limit hit on "${scope}" - ${limit} requests per ${windowMs}ms exceeded.`);

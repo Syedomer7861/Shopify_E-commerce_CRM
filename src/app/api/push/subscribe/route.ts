@@ -12,7 +12,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, "push-subscribe", 20, 60000);
+  const limited = await rateLimit(req, "push-subscribe", 20, 60000);
   if (limited) return limited;
 
   const { errorResponse, user, supabase } = await getAuthenticatedSession();

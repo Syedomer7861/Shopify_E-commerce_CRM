@@ -6,7 +6,7 @@ import { rateLimit } from "@/lib/rate-limit";
 const bodySchema = z.object({ endpoint: z.string().url() });
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, "push-unsubscribe", 20, 60000);
+  const limited = await rateLimit(req, "push-unsubscribe", 20, 60000);
   if (limited) return limited;
 
   const { errorResponse, supabase } = await getAuthenticatedSession();

@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   }
 
   // 3. Abuse cap.
-  const limited = rateLimit(req, "reports-state-distribution", 60, 60_000);
+  const limited = await rateLimit(req, "reports-state-distribution", 60, 60_000);
   if (limited) return limited;
 
   // 4. Validate params.

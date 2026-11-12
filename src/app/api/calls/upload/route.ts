@@ -8,7 +8,7 @@ import { createServerClient } from "@/lib/supabase";
  * Receives audio files from MacroDroid/Android and stores them in Supabase.
  */
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, "calls-upload", 60, 60000);
+  const limited = await rateLimit(req, "calls-upload", 60, 60000);
   if (limited) return limited;
 
   if (!hasInternalSecret(req)) {

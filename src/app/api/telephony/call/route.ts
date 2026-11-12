@@ -29,7 +29,7 @@ async function logOutboundCall(supabase: ReturnType<typeof createAdminClient>, a
 }
 
 export async function POST(req: Request) {
-  const limited = rateLimit(req, "outbound-call", 30, 60000);
+  const limited = await rateLimit(req, "outbound-call", 30, 60000);
   if (limited) return limited;
 
   const unauthorized = await requireInternal(req);

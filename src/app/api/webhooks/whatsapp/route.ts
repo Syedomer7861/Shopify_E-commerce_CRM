@@ -6,7 +6,7 @@ import { normalizePhone } from "@/lib/phone-utils";
 import { getDefaultOrgId } from "@/lib/server-settings";
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, "webhook-whatsapp", 300, 60000);
+  const limited = await rateLimit(req, "webhook-whatsapp", 300, 60000);
   if (limited) return limited;
 
   // Only the WhatsApp bridge daemon (wa_server.js) may post inbound messages.

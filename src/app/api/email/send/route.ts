@@ -6,7 +6,7 @@ import { sendGmail } from "@/lib/gmail";
 import { getSystemSettings } from "@/lib/server-settings";
 
 export async function POST(req: Request) {
-  const limited = rateLimit(req, "outbound-email", 60, 60000);
+  const limited = await rateLimit(req, "outbound-email", 60, 60000);
   if (limited) return limited;
 
   const unauthorized = await requireInternal(req);

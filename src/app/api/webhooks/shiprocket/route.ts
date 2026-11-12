@@ -46,7 +46,7 @@ function getTriggerByStatus(status: string): any {
 }
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, "webhook-shiprocket", 300, 60000);
+  const limited = await rateLimit(req, "webhook-shiprocket", 300, 60000);
   if (limited) return limited;
 
   const supabase = getSupabase();

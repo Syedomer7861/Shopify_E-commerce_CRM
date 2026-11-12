@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  * Receives signals from MacroDroid (Android) or other automation bridges.
  */
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, "calls-webhook", 300, 60000);
+  const limited = await rateLimit(req, "calls-webhook", 300, 60000);
   if (limited) return limited;
 
   if (!hasInternalSecret(req)) {

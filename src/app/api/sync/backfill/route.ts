@@ -46,7 +46,7 @@ function isRealPhone(phone: any): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, "sync", 5, 60000);
+  const limited = await rateLimit(req, "sync", 5, 60000);
   if (limited) return limited;
 
   const unauthorized = await requirePrivileged(req);

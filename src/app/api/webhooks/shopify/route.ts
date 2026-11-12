@@ -11,7 +11,7 @@ import crypto from "crypto";
 import { safeEqual, isSecretConfigured, webhookStrict } from "@/lib/auth-utils";
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, "webhook-shopify", 300, 60000);
+  const limited = await rateLimit(req, "webhook-shopify", 300, 60000);
   if (limited) return limited;
 
   const supabase = createAdminClient();

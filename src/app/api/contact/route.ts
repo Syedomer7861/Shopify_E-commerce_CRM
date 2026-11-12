@@ -16,7 +16,7 @@ const ContactSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, "contact", 5, 60_000);
+  const limited = await rateLimit(req, "contact", 5, 60_000);
   if (limited) return limited;
 
   let raw: unknown;

@@ -12,7 +12,7 @@ const WhatsAppSendSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, "outbound-wa", 60, 60000);
+  const limited = await rateLimit(req, "outbound-wa", 60, 60000);
   if (limited) return limited;
 
   try {

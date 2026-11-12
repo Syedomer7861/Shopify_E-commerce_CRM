@@ -13,7 +13,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, "notifications-send", 60, 60000);
+  const limited = await rateLimit(req, "notifications-send", 60, 60000);
   if (limited) return limited;
 
   const unauthorized = await requireInternal(req);
