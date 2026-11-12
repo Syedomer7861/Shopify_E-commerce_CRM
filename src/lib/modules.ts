@@ -1,4 +1,4 @@
-import { CheckCircle2, IndianRupee, LifeBuoy, Target, MapPin, GitBranch, Blocks, type LucideIcon } from "lucide-react";
+import { CheckCircle2, IndianRupee, LifeBuoy, Target, MapPin, GitBranch, Blocks, ConciergeBell, type LucideIcon } from "lucide-react";
 import type { Profile } from "@/types";
 import { can } from "./access";
 
@@ -11,6 +11,7 @@ import { can } from "./access";
 export type AppModule = { key: string; label: string; href: string; icon: LucideIcon; perms: string[]; blurb: string };
 
 export const APP_MODULES: AppModule[] = [
+  { key: "requests", label: "Requests", href: "/requests", icon: ConciergeBell, perms: [], blurb: "Ask for or log anything, in one place" },
   { key: "approvals", label: "Approvals", href: "/approvals", icon: CheckCircle2, perms: ["approvals", "expenses", "work"], blurb: "Requests waiting on a decision" },
   { key: "finance", label: "Finance", href: "/finance", icon: IndianRupee, perms: ["expenses", "vendors", "invoices"], blurb: "Expense claims, vendors, invoices" },
   { key: "service-desk", label: "Service Desk", href: "/service-desk", icon: LifeBuoy, perms: ["tickets"], blurb: "Internal tickets with SLA clocks" },

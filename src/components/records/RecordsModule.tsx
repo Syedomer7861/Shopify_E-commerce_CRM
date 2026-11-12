@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Plus, Loader2, Download, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Loader2, Download, Trash2, AlertTriangle, Pencil, Search } from "lucide-react";
 import { Modal, EmptyState, Select } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
@@ -10,7 +10,8 @@ import { can } from "@/lib/access";
 export type RecordRow = Record<string, any> & { id: string };
 export type RecordField = {
   key: string; label: string; required?: boolean;
-  type?: "text" | "number" | "date" | "datetime-local" | "textarea" | "select";
+  /** "person" stores a team member's id and shows their name. */
+  type?: "text" | "number" | "date" | "datetime-local" | "textarea" | "select" | "person";
   options?: string[];
 };
 export type RecordsConfig = {
@@ -37,6 +38,8 @@ export type RecordsConfig = {
   dataCol?: string;
   /** Overrides the permission-engine checks for tables it doesn't govern; row security still decides. */
   access?: { create: boolean; edit: (row: RecordRow) => boolean; delete: boolean; export: boolean };
+  /** Lets someone who may edit a row change its fields, not only its status. Off for records another step decides (expense claims, invoices). */
+  editable?: boolean;
   /** A second save button that runs something on the row just created (Field Visits: straight to check-in). */
   createAndAct?: { label: string; run: (row: RecordRow, reload: () => void) => void };
 };
@@ -60,6 +63,9 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState<RecordRow | null>(null);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   const { table, module, noun, ownerCol } = config;
   const { access, dataCol, filter } = config;
@@ -69,6 +75,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   const canDelete = access ? access.delete : can(profile, module, "delete") !== null;
   const canExport = access ? access.export : can(profile, module, "export") !== null;
   const filterKey = JSON.stringify(filter || {});
+  const personKeys = useMemo(() => new Set(config.fields.filter(f => f.type === "person").map(f => f.key)), [config.fields]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -88,6 +95,12 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
 
   useEffect(() => { load(); }, [load]);
 
+  // The Requests page links here with ?new=1 so the form is already open.
+  useEffect(() => {
+    if (canCreate && new URLSearchParams(window.location.search).get("new") === "1") setOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arrival
+  }, []);
+
   async function create(thenAct = false) {
     const missing = config.fields.find(f => f.required && !form[f.key]?.trim());
     if (missing) return toast.error(`${missing.label} is required`);
@@ -97,15 +110,37 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
     for (const f of config.fields) {
       const v = form[f.key]?.trim();
       if (v) values[f.key] = f.type === "number" ? Number(v) : v;
+      else if (editing) values[f.key] = null; // a cleared field must overwrite the old value
+    }
+    if (editing) {
+      // Fields the definition no longer lists stay in the JSON untouched.
+      const change = dataCol ? { [dataCol]: { ...(editing[dataCol] || {}), ...values } } : values;
+      const { error } = await supabase.from(table).update(change).eq("id", editing.id);
+      if (error) toast.error(error.message);
+      else { toast.success("Saved"); closeForm(); load(); }
+      setSaving(false);
+      return;
     }
     const payload: Record<string, any> = { id: crypto.randomUUID(), [ownerCol]: profile.id, ...(filter || {}), ...(dataCol ? { [dataCol]: values } : values) };
     const { error } = await supabase.from(table).insert(payload);
     if (error) toast.error(error.code === "23505" ? `That ${noun} already exists` : error.message);
     else {
-      toast.success(`${noun[0].toUpperCase()}${noun.slice(1)} added`); setOpen(false); setForm({}); load();
+      toast.success(`${noun[0].toUpperCase()}${noun.slice(1)} added`); closeForm(); load();
       if (thenAct) config.createAndAct?.run({ ...payload, id: payload.id as string }, load);
     }
     setSaving(false);
+  }
+
+  function closeForm() { setOpen(false); setEditing(null); setForm({}); }
+
+  function openEdit(row: RecordRow) {
+    const next: Record<string, string> = {};
+    for (const f of config.fields) {
+      const v = row[f.key];
+      if (v === null || v === undefined) continue;
+      next[f.key] = f.type === "date" ? String(v).slice(0, 10) : f.type === "datetime-local" ? String(v).slice(0, 16) : String(v);
+    }
+    setForm(next); setEditing(row); setOpen(true);
   }
 
   async function setStatus(row: RecordRow, status: string) {
@@ -124,7 +159,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   function exportCsv() {
     const keys = [...config.columns.map(c => c.key), "status", ownerCol, "created_at"].filter((k, i, a) => a.indexOf(k) === i);
     const cell = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const csv = [keys.join(","), ...rows.map(r => keys.map(k => cell(k === ownerCol ? people[r[k]] ?? r[k] : r[k])).join(","))].join("\n");
+    const csv = [keys.join(","), ...rows.map(r => keys.map(k => cell(k === ownerCol || personKeys.has(k) ? people[r[k]] ?? r[k] : r[k])).join(","))].join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     a.download = `${table}.csv`;
@@ -133,7 +168,13 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   }
 
   const isSample = rows.length === 0 && !!config.samples?.length;
-  const shown: RecordRow[] = isSample ? config.samples!.map((s, i) => ({ ...s, id: "sample-" + i })) : rows;
+  const all: RecordRow[] = isSample ? config.samples!.map((s, i) => ({ ...s, id: "sample-" + i })) : rows;
+  const statusCounts = all.reduce<Record<string, number>>((acc, r) => { const s = r.status || "—"; acc[s] = (acc[s] || 0) + 1; return acc; }, {});
+  const needle = query.trim().toLowerCase();
+  const shown = all.filter(r =>
+    (!statusFilter || (r.status || "—") === statusFilter) &&
+    (!needle || [...config.columns.map(c => (personKeys.has(c.key) ? people[r[c.key]] : r[c.key])), people[r[ownerCol]], r.status]
+      .some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(needle))));
 
   if (loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   if (notReady) {
@@ -148,6 +189,12 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   return (
     <div>
       <div className="flex flex-wrap items-center justify-end gap-2 mb-3">
+        {all.length > 0 && (
+          <div className="relative flex-1 min-w-[160px] max-w-xs mr-auto">
+            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input type="search" aria-label={`Search ${noun}s`} placeholder="Search" className="input pl-8 text-xs" value={query} onChange={e => setQuery(e.target.value)} />
+          </div>
+        )}
         {canExport && rows.length > 0 && (
           <button onClick={exportCsv} className="btn-secondary flex items-center gap-1.5 text-xs"><Download className="w-3.5 h-3.5" /> Export</button>
         )}
@@ -162,7 +209,20 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
         </div>
       )}
 
-      {shown.length === 0 ? (
+      {Object.keys(statusCounts).length > 1 && (
+        <div className="flex gap-1.5 mb-3 overflow-x-auto scrollbar-hide">
+          {[[null, all.length] as const, ...Object.entries(statusCounts)].map(([s, n]) => (
+            <button key={s ?? "all"} onClick={() => setStatusFilter(s)} aria-pressed={statusFilter === s}
+              className={"px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap border " + (statusFilter === s ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-gray-600 border-[#eceae4]")}>
+              {s === null ? "All" : label(s)} <span className="opacity-60">{n}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {all.length > 0 && shown.length === 0 ? (
+        <EmptyState icon={<Search className="w-6 h-6" />} title="No matches" desc="Try a different search or status." />
+      ) : shown.length === 0 ? (
         <EmptyState icon={<Plus className="w-6 h-6" />} title={`No ${noun}s yet`} desc={canCreate ? `Add the first one with "New ${noun}".` : "Nothing you have access to here."} />
       ) : (
         <div className="card overflow-x-auto">
@@ -179,7 +239,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
               {shown.map(row => (
                 <tr key={row.id} className={"border-b border-gray-50 last:border-0" + (isSample ? " opacity-70" : "")}>
                   {config.columns.map(c => (
-                    <td key={c.key} className="p-3 text-[#1c1c1c]">{c.format ? c.format(row[c.key], row) : (row[c.key] ?? "—")}</td>
+                    <td key={c.key} className="p-3 text-[#1c1c1c]">{c.format ? c.format(row[c.key], row) : personKeys.has(c.key) ? (people[row[c.key]] || "—") : (row[c.key] ?? "—")}</td>
                   ))}
                   <td className="p-2 min-w-[130px]">
                     {config.statuses && !isSample && canEditRow(row) ? (
@@ -192,6 +252,9 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
                   <td className="p-3 text-gray-500">{isSample ? "Sample" : people[row[ownerCol]] || "—"}</td>
                   <td className="p-3 text-right whitespace-nowrap sticky right-0 bg-[#f7f4ed]">
                     {!isSample && config.rowActions?.(row, load)}
+                    {config.editable && !isSample && canEditRow(row) && (
+                      <button onClick={() => openEdit(row)} aria-label={`Edit ${noun}`} className="text-gray-400 hover:text-[#1c1c1c] ml-2 align-middle"><Pencil className="w-3.5 h-3.5" /></button>
+                    )}
                     {canDelete && !isSample && (
                       <button onClick={() => remove(row)} aria-label={`Delete ${noun}`} className="text-gray-300 hover:text-rose-500 ml-2 align-middle"><Trash2 className="w-3.5 h-3.5" /></button>
                     )}
@@ -203,13 +266,13 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
         </div>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title={`New ${noun}`}
+      <Modal open={open} onClose={closeForm} title={editing ? `Edit ${noun}` : `New ${noun}`}
         footer={
           <div className="flex flex-col gap-2 w-full">
-            {config.createAndAct && (
+            {config.createAndAct && !editing && (
               <button onClick={() => create(true)} disabled={saving} className="btn-primary w-full py-2.5">{saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : config.createAndAct.label}</button>
             )}
-            <button onClick={() => create()} disabled={saving} className={(config.createAndAct ? "btn-secondary" : "btn-primary") + " w-full py-2.5"}>{saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : config.createAndAct ? `Save ${noun} for later` : `Save ${noun}`}</button>
+            <button onClick={() => create()} disabled={saving} className={(config.createAndAct && !editing ? "btn-secondary" : "btn-primary") + " w-full py-2.5"}>{saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : editing ? "Save changes" : config.createAndAct ? `Save ${noun} for later` : `Save ${noun}`}</button>
           </div>
         }>
         <div className="space-y-3">
@@ -219,7 +282,9 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
             return (
               <div key={f.key}>
                 <label htmlFor={id} className="text-xs font-medium text-gray-700 block mb-1">{f.label}{f.required && " *"}</label>
-                {f.type === "select" ? (
+                {f.type === "person" ? (
+                  <Select value={form[f.key] || ""} onChange={set} placeholder="Choose a person" options={Object.entries(people).map(([value, name]) => ({ value, label: name }))} />
+                ) : f.type === "select" ? (
                   <Select value={form[f.key] || ""} onChange={set} placeholder="Choose" options={(f.options || []).map(o => ({ value: o, label: label(o) }))} />
                 ) : f.type === "textarea" ? (
                   <textarea id={id} className="input min-h-[72px]" value={form[f.key] || ""} onChange={e => set(e.target.value)} />

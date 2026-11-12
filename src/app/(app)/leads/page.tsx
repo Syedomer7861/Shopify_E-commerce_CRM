@@ -3,7 +3,7 @@ import { ModulePage } from "@/components/records/ModulePage";
 import { money, day, type RecordsConfig } from "@/components/records/RecordsModule";
 
 const leads: RecordsConfig = {
-  table: "leads", module: "leads", noun: "lead", ownerCol: "owner_id",
+  table: "leads", module: "leads", noun: "lead", ownerCol: "owner_id", editable: true,
   columns: [
     { key: "name", label: "Lead" },
     { key: "company", label: "Company" },
@@ -29,7 +29,7 @@ const leads: RecordsConfig = {
 };
 
 const deals: RecordsConfig = {
-  table: "deals", module: "deals", noun: "deal", ownerCol: "owner_id",
+  table: "deals", module: "deals", noun: "deal", ownerCol: "owner_id", editable: true,
   columns: [
     { key: "title", label: "Deal" },
     { key: "value", label: "Value", format: money },

@@ -23,6 +23,7 @@ function toConfig(app: CustomModule, profile: Profile, admin: boolean): RecordsC
     columns: app.fields.slice(0, MAX_COLUMNS).map(f => ({ key: f.key, label: f.label, format: f.type === "number" ? number : f.type === "date" ? day : undefined })),
     fields: app.fields,
     statuses: app.statuses,
+    editable: true,
     // Mirrors the row policies in migration 20261113a, which are what actually decide.
     access: { create: true, edit: row => admin || row.owner_id === profile.id, delete: admin, export: true },
   };

@@ -18,6 +18,7 @@ export const FIELD_TYPES: { value: NonNullable<RecordField["type"]>; label: stri
   { value: "number", label: "Number" },
   { value: "date", label: "Date" },
   { value: "select", label: "Choice list" },
+  { value: "person", label: "Team member" },
 ];
 
 /** "Asset Register" -> "asset-register" (module key) or "asset_register" (field key). */
@@ -33,7 +34,7 @@ export const APP_TEMPLATES: AppDefinition[] = [
     label: "Asset Register", noun: "asset", visibility: "everyone",
     description: "Laptops, phones, vehicles, equipment: who has what and in what condition.",
     statuses: ["in_use", "in_stock", "under_repair", "retired"],
-    fields: [f("Asset name", "text", { required: true }), f("Category", "select", { options: ["Laptop", "Phone", "Vehicle", "Furniture", "Equipment", "Other"] }), f("Serial number"), f("Assigned to"), f("Purchase date", "date"), f("Value", "number"), f("Notes", "textarea")],
+    fields: [f("Asset name", "text", { required: true }), f("Category", "select", { options: ["Laptop", "Phone", "Vehicle", "Furniture", "Equipment", "Other"] }), f("Serial number"), f("Assigned to", "person"), f("Purchase date", "date"), f("Value", "number"), f("Notes", "textarea")],
   },
   {
     label: "Purchase Requests", noun: "request", visibility: "own",
@@ -45,7 +46,7 @@ export const APP_TEMPLATES: AppDefinition[] = [
     label: "Visitor Log", noun: "visitor", visibility: "everyone",
     description: "Who came in, to meet whom, and when they left.",
     statuses: ["expected", "checked_in", "checked_out"],
-    fields: [f("Visitor name", "text", { required: true }), f("Company"), f("Phone"), f("Meeting with"), f("Visit date", "date"), f("Purpose", "textarea")],
+    fields: [f("Visitor name", "text", { required: true }), f("Company"), f("Phone"), f("Meeting with", "person"), f("Visit date", "date"), f("Purpose", "textarea")],
   },
   {
     label: "Contracts", noun: "contract", visibility: "everyone",
@@ -57,7 +58,7 @@ export const APP_TEMPLATES: AppDefinition[] = [
     label: "Training Records", noun: "training", visibility: "everyone",
     description: "Courses and certifications completed by the team.",
     statuses: ["planned", "in_progress", "completed", "expired"],
-    fields: [f("Course", "text", { required: true }), f("Employee", "text", { required: true }), f("Provider"), f("Completed on", "date"), f("Valid until", "date"), f("Notes", "textarea")],
+    fields: [f("Course", "text", { required: true }), f("Employee", "person", { required: true }), f("Provider"), f("Completed on", "date"), f("Valid until", "date"), f("Notes", "textarea")],
   },
   {
     label: "Complaints", noun: "complaint", visibility: "everyone",
