@@ -159,12 +159,12 @@ const KINDS: Record<VisualKind, [() => JSX.Element, string]> = {
   flow: [Flow, "Business rule"], people: [People, "Team floor"], matrix: [Matrix, "Access matrix"],
 };
 
-export default function Visual({ kind = "orders", className = "" }: { kind?: VisualKind; className?: string }) {
+export default function Visual({ kind = "orders", className = "", bare }: { kind?: VisualKind; className?: string; bare?: boolean }) {
   const [Body, label] = KINDS[kind];
   return (
-    <div aria-hidden className={`relative ${className}`}>
-      <div className="absolute -inset-6 bg-gradient-to-tr from-emerald-300/30 via-amber-200/30 to-sky-200/30 blur-3xl rounded-full pointer-events-none" />
-      <div className="relative rounded-2xl border border-[#eceae4] bg-white shadow-2xl shadow-black/10 overflow-hidden">
+    <div aria-hidden className={`relative text-[#1c1c1c] text-left ${className}`}>
+      {!bare && <div className="absolute -inset-6 bg-gradient-to-tr from-emerald-400/30 via-amber-200/20 to-sky-300/30 blur-3xl rounded-full pointer-events-none" />}
+      <div className="relative rounded-2xl border border-[#eceae4] bg-white shadow-2xl shadow-black/20 overflow-hidden">
         <div className="flex items-center gap-1.5 px-4 py-3 border-b border-[#eceae4] bg-[#fcfbf8]">
           <span className="w-2.5 h-2.5 rounded-full bg-[#1c1c1c]/15" /><span className="w-2.5 h-2.5 rounded-full bg-[#1c1c1c]/15" /><span className="w-2.5 h-2.5 rounded-full bg-[#1c1c1c]/15" />
           <span className="ml-3 text-[11px] font-semibold text-[#5f5f5d]">CodeCrest &middot; {label}</span>

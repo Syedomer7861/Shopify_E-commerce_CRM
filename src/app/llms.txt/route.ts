@@ -1,4 +1,5 @@
 import { SECTIONS, SITE_URL, TOOLS } from "@/content";
+import { POSTS } from "@/content/blog";
 
 // llms.txt: a plain-text map of the site for AI assistants and answer
 // engines, generated from the same content as the pages so it never drifts.
@@ -18,6 +19,8 @@ export function GET() {
     ]),
     "## Free tools", "",
     ...TOOLS.map((t) => `- [${t.name}](${SITE_URL}/tools/${t.slug}): ${t.description}`), "",
+    "## Blog", "",
+    ...POSTS.map((p) => `- [${p.title}](${SITE_URL}/blog/${p.slug}): ${p.answer}`), "",
   ];
   return new Response(lines.join("\n"), { headers: { "Content-Type": "text/plain; charset=utf-8" } });
 }

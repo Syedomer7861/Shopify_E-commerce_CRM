@@ -4,6 +4,7 @@ import { solutions } from "./solutions";
 import { integrations } from "./integrations";
 import { comparisons } from "./comparisons";
 import { resources } from "./resources";
+import { getPost } from "./blog";
 
 export * from "./types";
 
@@ -45,7 +46,11 @@ export const getPage = (section: string, slug: string) => getSection(section)?.p
 
 /** Resolve a "section/slug" reference to a link label, or null if it is stale. */
 export function resolveRef(ref: string): { href: string; title: string; section: string } | null {
-  const [section, slug] = ref.split("/") as [SectionKey | "tools", string];
+  const [section, slug] = ref.split("/") as [SectionKey | "tools" | "blog", string];
+  if (section === "blog") {
+    const post = getPost(slug);
+    return post ? { href: `/blog/${slug}`, title: post.metaTitle || post.title, section: "Blog" } : null;
+  }
   if (section === "tools") {
     const t = TOOLS.find((x) => x.slug === slug);
     return t ? { href: `/tools/${slug}`, title: t.name, section: "Free tool" } : null;
