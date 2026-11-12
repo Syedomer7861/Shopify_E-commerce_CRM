@@ -52,7 +52,8 @@ import PayrollRun from "@/components/hr/PayrollRun";
 import HRDocuments from "@/components/hr/HRDocuments";
 import Announcements from "@/components/hr/Announcements";
 import HREngagement from "@/components/hr/HREngagement";
-import AgentIntelligence from "@/components/hr/AgentIntelligence";
+import dynamic from "next/dynamic";
+const AgentIntelligence = dynamic(() => import("@/components/hr/AgentIntelligence"), { ssr: false });
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 
 interface LeaveRequest {

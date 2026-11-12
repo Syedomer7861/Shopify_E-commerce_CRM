@@ -10,14 +10,11 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Cell
 } from "recharts";
 import { PageHeader, StatCard, Modal, Pagination, TaskTypeBadge, DeliveryBadge, TaskStatusBadge } from "@/components/ui";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import html2canvas from "html2canvas";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
-import WorkspacePerformance from "@/components/performance/WorkspacePerformance";
+const WorkspacePerformance = dynamic(() => import("@/components/performance/WorkspacePerformance"), { ssr: false });
 import { cn, formatCurrency, toDbDateString, TASK_TYPE_CONFIG, DELIVERY_CONFIG, TASK_STATUS_CONFIG } from "@/lib/utils";
 import type { TaskType, DeliveryStatus, TaskStatus } from "@/types";
 import toast from "react-hot-toast";
@@ -398,6 +395,8 @@ export default function PerformancePage() {
       const outcomeRows = buildOutcomeRows();
 
       if (exportFormat === "pdf") {
+        // Export libraries are large and only needed on click, so they load here instead of with the page.
+        const [{ default: jsPDF }, { default: autoTable }, { default: html2canvas }] = await Promise.all([import("jspdf"), import("jspdf-autotable"), import("html2canvas")]);
         const pdf = new jsPDF("p", "mm", "a4");
         const pageWidth = pdf.internal.pageSize.getWidth();
 
@@ -540,10 +539,12 @@ export default function PerformancePage() {
         if (ledgerRows.length > 0) combined.push(["DAILY ATTENDANCE LEDGER"], EXPORT_HEADERS, ...ledgerRows, []);
         if (tasksWorkedRows.length > 0) combined.push(["TASKS WORKED"], TASKS_WORKED_HEADERS, ...tasksWorkedRows, []);
         if (activityRows.length > 0) combined.push(["RECENT ACTIVITY"], ACTIVITY_HEADERS, ...activityRows);
+        const XLSX = await import("xlsx");
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(combined), "Report");
         XLSX.writeFile(wb, `${filename}.csv`, { bookType: "csv" });
       } else {
+        const XLSX = await import("xlsx");
         const wb = XLSX.utils.book_new();
         const summarySheet = XLSX.utils.aoa_to_sheet([["Metric", "Value"], ...summaryRows]);
         summarySheet["!cols"] = [{ wch: 20 }, { wch: 30 }];

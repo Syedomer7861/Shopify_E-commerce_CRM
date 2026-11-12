@@ -11,7 +11,6 @@ import { AccessDenied } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission, isAdmin } from "@/lib/permissions";
 import { logAuditEvent } from "@/lib/audit";
-import * as XLSX from "xlsx";
 import { Settings, ProductOverride } from "@/types";
 
 interface PipelineItem {
@@ -999,6 +998,7 @@ export default function SettingsPage() {
     reader.onload = async (evt) => {
       try {
         const bstr = evt.target?.result;
+        const XLSX = await import("xlsx");
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
@@ -1034,7 +1034,7 @@ export default function SettingsPage() {
     reader.readAsBinaryString(file);
   };
 
-  const downloadOverrideTemplate = () => {
+  const downloadOverrideTemplate = async () => {
     const template = [
       {
         "Product Name": "Example Biotin Tablets",
@@ -1048,6 +1048,7 @@ export default function SettingsPage() {
         "Is Priority": "FALSE"
       }
     ];
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.json_to_sheet(template);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Overrides");
@@ -2720,6 +2721,7 @@ export default function SettingsPage() {
                                 reader.onload = async (evt) => {
                                 try {
                                     const data = evt.target?.result;
+                                    const XLSX = await import("xlsx");
                                     const workbook = XLSX.read(data, { type: 'binary' });
                                     const sheetName = workbook.SheetNames[0];
                                     const sheet = workbook.Sheets[sheetName];

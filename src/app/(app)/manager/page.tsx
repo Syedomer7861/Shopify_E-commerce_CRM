@@ -1,10 +1,12 @@
 "use client";
 import ManagerTaskReview from "@/components/ManagerTaskReview";
-import AgentIntelligence from "@/components/hr/AgentIntelligence";
-import CourierPerformance from "@/components/CourierPerformance";
+import dynamic from "next/dynamic";
 import ManagerStatsGrid from "@/components/ManagerStatsGrid";
 import GlobalSync from "@/components/hub/GlobalSync";
-import IndiaSalesMap from "@/components/IndiaSalesMap";
+// Chart and map panels load after the page shell.
+const AgentIntelligence = dynamic(() => import("@/components/hr/AgentIntelligence"), { ssr: false });
+const CourierPerformance = dynamic(() => import("@/components/CourierPerformance"), { ssr: false });
+const IndiaSalesMap = dynamic(() => import("@/components/IndiaSalesMap"), { ssr: false });
 import { Shield, TrendingUp, Users, DollarSign, Map, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";

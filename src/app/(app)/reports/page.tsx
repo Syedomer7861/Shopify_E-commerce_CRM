@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Download, TrendingUp, TrendingDown, Loader2, ShoppingBag, BarChart3, ClipboardCheck, Users, Info, RefreshCw } from "lucide-react";
 import { PageHeader, StatCard } from "@/components/ui";
-import * as XLSX from "xlsx";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase";
 import { cn, formatCurrency } from "@/lib/utils";
 import { startOfMonth, endOfMonth, format, subMonths, isWithinInterval, subDays, differenceInDays } from "date-fns";
@@ -12,10 +12,9 @@ import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
 import { Smartphone, Send, Calendar, CheckSquare, FileSpreadsheet, FileText, Phone, Package, RotateCcw, FileType } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import autoTable from 'jspdf-autotable';
-import IndiaSalesMap from "@/components/IndiaSalesMap";
+
+// The map is large and only needed lower on the page, so it loads here instead of with the page.
+const IndiaSalesMap = dynamic(() => import("@/components/IndiaSalesMap"), { ssr: false });
 import { isDemoMode } from "@/lib/demo";
 
 const REVENUE_COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444", "#14b8a6", "#f97316", "#6366f1"];
@@ -767,6 +766,8 @@ export default function ReportsPage() {
       const { data: allCalls } = await supabase.from("call_logs").select("called_at, outcome, agent_name, note, customer:customers(name, phone)").order("called_at", { ascending: false });
       const { data: allAB } = await supabase.from("abandoned_carts").select("total_price, recovery_status, abandoned_at, customer:customers(name, phone)").order("abandoned_at", { ascending: false });
 
+      // Export libraries are large and only needed on click, so they load here instead of with the page.
+      const [{ default: jsPDF }, { default: autoTable }, { default: html2canvas }] = await Promise.all([import("jspdf"), import("jspdf-autotable"), import("html2canvas")]);
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       pdf.setFillColor(28, 28, 28);
@@ -879,6 +880,7 @@ export default function ReportsPage() {
       const { data: allAB } = await supabase.from("abandoned_carts").select("total_price, recovery_status, abandoned_at, customer:customers(name, phone)").order("abandoned_at", { ascending: false });
       const { data: allWorkflows } = await supabase.from("workflow_instances").select("order_id, created_at, workflows(name), customers(name, phone)").not("order_id", "is", null);
 
+      const XLSX = await import("xlsx");
       const wb = XLSX.utils.book_new();
       
       const custHeaders = ["Name", "Phone", "Email", "Segment", "Total Spent", "State", "Orders"];
@@ -991,6 +993,7 @@ export default function ReportsPage() {
           await generatePDFReport();
           return;
       }
+      const XLSX = await import("xlsx");
       const wb = XLSX.utils.book_new();
       const filename = `CodeCrest_Advanced_${dateRange.start}_to_${dateRange.end}.${exportOptions.format}`;
 
@@ -1073,6 +1076,8 @@ export default function ReportsPage() {
 
           const reportElement = document.getElementById('analytics-report-wrapper');
           if (!reportElement) throw new Error("Report content not found");
+          // Export libraries are large and only needed on click, so they load here instead of with the page.
+          const [{ default: jsPDF }, { default: autoTable }, { default: html2canvas }] = await Promise.all([import("jspdf"), import("jspdf-autotable"), import("html2canvas")]);
           const pdf = new jsPDF('p', 'mm', 'a4');
           const pdfWidth = pdf.internal.pageSize.getWidth();
           const canvas = await html2canvas(reportElement, { scale: 3, useCORS: true, backgroundColor: '#ffffff', windowWidth: 1400 });

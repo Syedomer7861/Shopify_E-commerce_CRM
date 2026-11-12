@@ -4,7 +4,6 @@ import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X, Download, Loader2
 import { PageHeader } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
-import * as XLSX from "xlsx";
 import { processImport, processAbandonedImport, ImportRow } from "@/lib/import-utils";
 import { AccessDenied } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
@@ -54,8 +53,9 @@ export default function ImportPage() {
     setFileName(file.name);
     
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const buffer = e.target?.result;
+      const XLSX = await import("xlsx");
       const workbook = XLSX.read(buffer, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const fileHeaders = (XLSX.utils.sheet_to_json(sheet, { header: 1 })[0] as string[]) || [];
