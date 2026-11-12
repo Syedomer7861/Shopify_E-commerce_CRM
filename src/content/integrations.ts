@@ -1,0 +1,176 @@
+import type { Page } from "./types";
+
+export const integrations: Page[] = [
+  {
+    slug: "shopify",
+    title: "Shopify integration: orders, customers and checkouts in sync",
+    metaTitle: "Shopify CRM Integration",
+    description: "Connect your Shopify store to CodeCrest. Orders, customers and abandoned checkouts sync by webhook and scheduled backfill, scoped to your organisation.",
+    answer: "The Shopify integration brings orders, customers and abandoned checkouts into CodeCrest as they happen. Webhooks deliver changes in real time and a scheduled sync fills any gaps. Your team then verifies, follows up and reports on those orders without opening Shopify admin.",
+    visual: "orders",
+    points: [
+      ["Real time by webhook", "New and updated orders arrive within moments of the event in Shopify."],
+      ["Self-healing sync", "A scheduled job reconciles anything a webhook missed, and history can be backfilled."],
+      ["Your store only", "The connection belongs to your organisation and its data is isolated from every other tenant."],
+    ],
+    sections: [
+      { h: "What syncs", p: "The records your operations team needs.", list: ["Orders with line items, payment mode and status", "Customers, merged by phone number", "Abandoned checkouts", "Products for reorder timing"] },
+      { h: "What you can do with it", p: "Generate COD verification and recovery tasks, send order messages on WhatsApp, time reorder reminders and attribute recovered revenue." },
+    ],
+    steps: [
+      ["Open Settings", "An organisation admin opens the integrations section in Settings."],
+      ["Add your store credentials", "Enter your store address and API credentials from a Shopify custom app."],
+      ["Test the connection", "Run the built-in test to confirm CodeCrest can read your store."],
+      ["Backfill history", "Import past orders so reports and reorder reminders start with full data."],
+    ],
+    faqs: [
+      ["Does CodeCrest change anything in my Shopify store?", "It reads orders, customers and checkouts for your team to work on. Your storefront, products and checkout remain managed in Shopify."],
+      ["Is a Shopify Plus plan required?", "No. The integration uses standard Shopify APIs and webhooks."],
+      ["How fast do orders appear?", "Webhook events arrive in near real time; the scheduled sync covers anything delayed."],
+    ],
+    related: ["features/shopify-order-management", "features/abandoned-cart-recovery", "integrations/shiprocket"],
+  },
+  {
+    slug: "shiprocket",
+    title: "Shiprocket integration: shipment status that creates action",
+    metaTitle: "Shiprocket CRM Integration",
+    description: "Connect Shiprocket to CodeCrest to track AWB status, catch failed deliveries and stuck shipments, and report RTO by state and payment mode.",
+    answer: "The Shiprocket integration pulls shipment and tracking status into each order in CodeCrest. Courier statuses are mapped to clear states, and the ones that need a person, such as a failed delivery or a shipment that has stopped moving, create a task for your team automatically.",
+    visual: "chart",
+    points: [
+      ["Tracking on the order", "AWB, courier and current status sit beside the order and customer history."],
+      ["Exceptions become tasks", "Delivery failures and stalled shipments are routed to an agent the same day."],
+      ["Returns reconciled", "Returned shipments are tracked through to origin so stock and reports stay right."],
+    ],
+    sections: [
+      { h: "What syncs", p: "Shipment records and their status history.", list: ["AWB and courier", "Status updates through transit and delivery", "Delivery failures and reasons", "Return-to-origin movements"] },
+      { h: "What you can do with it", p: "Send proactive transit updates, work an NDR queue, escalate stuck parcels and measure delivery performance by state." },
+    ],
+    steps: [
+      ["Open Settings", "An organisation admin opens the integrations section."],
+      ["Enter Shiprocket API credentials", "Use an API user created in your Shiprocket account."],
+      ["Run a sync", "Existing shipments are matched to their orders."],
+      ["Review the mapping", "Check that delivery and return states appear as expected on recent orders."],
+    ],
+    faqs: [
+      ["Which couriers does this cover?", "Any courier you ship with through Shiprocket, since status comes from Shiprocket."],
+      ["Can CodeCrest create shipments?", "The integration is focused on tracking and follow-up. Shipment creation stays in your existing flow."],
+      ["How often is status updated?", "On a frequent schedule throughout the day."],
+    ],
+    related: ["features/shipping-rto-management", "resources/ndr-management-guide", "integrations/shopify"],
+  },
+  {
+    slug: "whatsapp",
+    title: "WhatsApp integration: message customers from your own number",
+    metaTitle: "WhatsApp CRM Integration",
+    description: "Connect your WhatsApp number to CodeCrest to send templated order messages, cart reminders and campaigns, logged on every customer's timeline.",
+    answer: "The WhatsApp integration connects your organisation's number to CodeCrest so order confirmations, cart reminders, delivery updates and campaigns go out from it. Messages can be triggered by rules or sent by an agent from a task, and each one is recorded against the customer.",
+    visual: "chat",
+    points: [
+      ["Your number, your templates", "Customers hear from the number they already know, in wording you control."],
+      ["Triggered or manual", "Automate the routine messages and let agents send the rest in one click."],
+      ["Everything logged", "Each message sits on the customer's timeline with who or what sent it."],
+    ],
+    sections: [
+      { h: "Use cases", p: "The flows that reduce support load and recover revenue.", list: ["Order confirmation and COD verification", "Abandoned cart reminders", "Transit and delivery updates", "Reorder and review requests", "Segment campaigns"] },
+      { h: "Sending responsibly", p: "Queued sending and rate limits keep volume sensible. Message only customers who expect to hear from you, and follow WhatsApp's own policies for business messaging." },
+    ],
+    steps: [
+      ["Open Settings", "An organisation admin opens the WhatsApp section."],
+      ["Link your number", "Scan the QR code with the WhatsApp account you want to send from."],
+      ["Create templates", "Write messages with variables for name, order and tracking."],
+      ["Attach templates to triggers", "Choose which events send which message."],
+    ],
+    faqs: [
+      ["Is each organisation's WhatsApp separate?", "Each organisation links its own number and its messages are kept within that organisation."],
+      ["Can we send bulk campaigns?", "Yes, to customer segments, with queued sending."],
+      ["What if a customer replies?", "The conversation is available to your team on the customer's record."],
+    ],
+    related: ["features/whatsapp-automation", "tools/whatsapp-link-generator", "resources/abandoned-cart-recovery-guide"],
+  },
+  {
+    slug: "cloud-telephony",
+    title: "Exotel and Twilio integration: calls from inside the CRM",
+    metaTitle: "Exotel & Twilio CRM Integration",
+    description: "Connect Exotel or Twilio to CodeCrest for click-to-call, automatic call logs and recordings on every customer, plus SMS for order updates.",
+    answer: "The telephony integration connects your Exotel or Twilio account to CodeCrest. Agents start calls from an order or task, each call is logged with duration and outcome, and recordings are stored with the customer's history for roles allowed to hear them.",
+    visual: "chat",
+    points: [
+      ["Click-to-call", "Start a call from the task without copying a number."],
+      ["Automatic logging", "Duration, status and recording attach to the customer."],
+      ["SMS when needed", "Send order updates by SMS through the same provider."],
+    ],
+    sections: [
+      { h: "What it enables", p: "A measured calling process for verification, recovery and delivery follow-up.", list: ["Call from order or task", "Call history per customer", "Recordings for review", "Call counts in agent reports"] },
+      { h: "Your account, your rates", p: "Calls and SMS run through your own provider account and are billed by that provider." },
+    ],
+    steps: [
+      ["Open Settings", "An organisation admin opens the telephony section."],
+      ["Enter provider credentials", "Add the keys from your Exotel or Twilio account."],
+      ["Place a test call", "Use the built-in test dial to confirm the connection."],
+    ],
+    faqs: [
+      ["Which providers are supported?", "Exotel and Twilio."],
+      ["Are calls recorded?", "If recording is enabled with your provider, recordings are linked to the call log."],
+      ["Can agents call without seeing the number?", "Yes, with number masking enabled."],
+    ],
+    related: ["features/cloud-telephony", "solutions/customer-support-teams", "integrations/whatsapp"],
+  },
+  {
+    slug: "google-workspace",
+    title: "Google integration: Gmail, Sheets and Drive",
+    metaTitle: "Gmail, Google Sheets & Drive Integration",
+    description: "Send email from Gmail, import and export data with Google Sheets, and keep scheduled backups in Google Drive, connected with Google sign-in.",
+    answer: "The Google integration connects Gmail, Google Sheets and Google Drive to CodeCrest. Email is sent through your Gmail account, data moves to and from Sheets for teams that still rely on them, and scheduled backups are written to Drive.",
+    visual: "flow",
+    points: [
+      ["Email from your domain", "Order and campaign emails go out through your own Gmail account."],
+      ["Sheets when you need them", "Move data in and out for analysis or for teams mid-migration."],
+      ["Backups you hold", "Scheduled exports land in your own Drive."],
+    ],
+    sections: [
+      { h: "What it enables", p: "A bridge between CodeCrest and the Google tools a team already uses.", list: ["Email sending via Gmail", "Sheet import and export", "Scheduled backup to Drive"] },
+      { h: "Access you control", p: "The connection is authorised with Google sign-in by your admin and can be revoked from your Google account at any time." },
+    ],
+    steps: [
+      ["Open Settings", "An organisation admin opens the Google section."],
+      ["Sign in with Google", "Approve the access CodeCrest requests."],
+      ["Choose what to use", "Enable email sending, Sheets or backups as needed."],
+    ],
+    faqs: [
+      ["Does CodeCrest read my inbox?", "The integration is used to send email on your behalf. Review the permissions shown on Google's consent screen before approving."],
+      ["Can we still use spreadsheets?", "Yes. Many teams export to Sheets for ad-hoc analysis while working day to day in CodeCrest."],
+      ["How often are backups taken?", "On a weekly schedule."],
+    ],
+    related: ["features/analytics-reports", "compare/spreadsheets", "integrations/shopify"],
+  },
+  {
+    slug: "csv-import",
+    title: "CSV and Excel import: bring your existing data with you",
+    metaTitle: "CSV & Excel Data Import",
+    description: "Import orders and customers from CSV or Excel with a guided, step-by-step importer that maps columns, normalises phone numbers and flags duplicates.",
+    answer: "CodeCrest's importer loads orders and customers from CSV or Excel in guided steps. You upload a file, map its columns, review a preview and import. Phone numbers are normalised and likely duplicates are flagged so imported data matches what later arrives from your store.",
+    visual: "orders",
+    points: [
+      ["Guided mapping", "Match your columns to CodeCrest fields with a preview before anything is saved."],
+      ["Cleaner than it arrived", "Phone formats are normalised and duplicates detected."],
+      ["No lock-in", "Reports and records export back out to Excel, PDF or CSV."],
+    ],
+    sections: [
+      { h: "When to use it", p: "Moving off spreadsheets, loading orders from a channel without a direct integration, or bringing history from a previous tool.", list: ["Orders and customers", "Checkout exports", "One-off historical loads"] },
+      { h: "Check before you commit", p: "The preview step shows how rows will be read, so a wrong mapping is caught before import." },
+    ],
+    steps: [
+      ["Upload", "Choose a CSV or Excel file."],
+      ["Map columns", "Match each column to a field."],
+      ["Preview", "Check a sample of rows."],
+      ["Import", "Load the data and review the summary."],
+    ],
+    faqs: [
+      ["What file types are supported?", "CSV and Excel."],
+      ["What happens to duplicates?", "Likely duplicates are detected using normalised phone numbers and order identifiers."],
+      ["Can I export my data later?", "Yes. Your data can be exported at any time."],
+    ],
+    related: ["compare/spreadsheets", "features/shopify-order-management", "integrations/google-workspace"],
+  },
+];

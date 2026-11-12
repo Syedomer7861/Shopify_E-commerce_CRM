@@ -1,0 +1,165 @@
+import type { Page } from "./types";
+
+export const solutions: Page[] = [
+  {
+    slug: "d2c-brands",
+    title: "The operations platform for D2C brands on Shopify",
+    metaTitle: "CRM for D2C Brands on Shopify",
+    description: "Run post-purchase operations for a D2C brand: order verification, cart recovery, shipping follow-up, reorders and reviews, with one team and one dashboard.",
+    answer: "D2C brands use CodeCrest to run everything that happens after checkout. Orders sync from Shopify, COD orders are verified, shipments are followed until delivery, and customers are reminded to reorder and review. The team works from one queue and the founder sees recovery, RTO and repeat revenue without asking for a report.",
+    visual: "orders",
+    points: [
+      ["Protect margin on COD", "Verify before dispatch and act on failed deliveries, where most return losses begin."],
+      ["Recover what was nearly a sale", "Abandoned carts become reminders and call tasks, with revenue attributed when they convert."],
+      ["Grow repeat revenue", "Reorder reminders timed to the product, and win-back for customers who went quiet."],
+    ],
+    sections: [
+      { h: "A day in the platform", p: "Agents open their queue and work top-down. Managers watch the floor view and the overdue list. The owner reads a daily digest.", list: ["Verification, recovery and delivery queues", "WhatsApp templates for every stage", "Leaderboards and per-agent outcomes"] },
+      { h: "When it fits", p: "CodeCrest suits brands with a team working orders by hand: a few agents up to a full support floor. A solo founder with a handful of orders a day may not need it yet." },
+    ],
+    faqs: [
+      ["Is CodeCrest only for Indian D2C brands?", "It is built around Shopify, Shiprocket and COD-heavy markets, which fits Indian D2C well. The CRM, workspace and HR modules work anywhere."],
+      ["How long does setup take?", "Our team provisions your organisation and connects your stack with you. There is no self-serve signup to configure alone."],
+      ["Do we need developers?", "No. Integrations are connected from Settings and rules are configured in the interface."],
+    ],
+    related: ["features/shopify-order-management", "features/abandoned-cart-recovery", "resources/how-to-reduce-rto"],
+  },
+  {
+    slug: "cod-heavy-stores",
+    title: "For stores where most orders are cash on delivery",
+    metaTitle: "COD Order Verification & RTO Reduction",
+    description: "Verify COD orders before they ship, score risky orders, follow failed deliveries the same day and see exactly where return-to-origin losses come from.",
+    answer: "Stores with a high share of COD orders use CodeCrest to stop avoidable returns. Each COD order gets a verification task and a risk score before dispatch, failed deliveries are followed up while a re-attempt is still possible, and RTO is reported by state and payment mode so the next decision is based on data.",
+    visual: "chart",
+    points: [
+      ["Verify before you ship", "A confirmed order and a checked address cost one call. A returned parcel costs shipping both ways."],
+      ["See risk early", "Orders are scored on signals such as past refusals, so agents spend time where it pays."],
+      ["Save the delivery", "An NDR task reaches the customer before the courier gives up."],
+    ],
+    sections: [
+      { h: "The COD loop", p: "Order placed, verification call or message, dispatch, transit update, delivery attempt, and follow-up if it fails. Every step is a task or an automated message with an owner.", list: ["COD verification queue", "Risk scoring", "NDR and stuck-shipment tasks", "RTO analytics by state"] },
+      { h: "Know what a return costs you", p: "Use the free RTO loss calculator to put a number on current returns and on what a few points of improvement are worth." },
+    ],
+    faqs: [
+      ["What is RTO?", "Return to origin: a parcel that could not be delivered and is sent back to the seller, who usually pays shipping in both directions."],
+      ["Does verification slow down dispatch?", "It adds a short step for COD orders. Stores generally accept that in exchange for fewer returns, and prepaid orders skip it."],
+      ["Can we convert COD to prepaid?", "Agents can offer it during verification, and the outcome is recorded on the task."],
+    ],
+    related: ["tools/rto-loss-calculator", "tools/cod-vs-prepaid-calculator", "features/shipping-rto-management"],
+  },
+  {
+    slug: "customer-support-teams",
+    title: "For customer support teams that work by phone and WhatsApp",
+    metaTitle: "CRM for E-commerce Customer Support Teams",
+    description: "Give support agents one prioritised queue with the customer's orders, shipments, calls and messages in view. Managers get live floor status and outcomes.",
+    answer: "Support teams use CodeCrest as their working screen. Each agent has a prioritised queue, and every task opens with the customer's orders, shipment status and past conversations. Calls and WhatsApp messages start from the task and are logged automatically. Managers see who is online, what is overdue and how each agent is performing.",
+    visual: "chat",
+    points: [
+      ["Context without searching", "Order, tracking and history are on the task. No switching between tabs to answer a simple question."],
+      ["Fair, visible workload", "Queues are assigned by rule and managers can see and rebalance them."],
+      ["Coaching from evidence", "Call recordings and task outcomes show where an agent needs help."],
+    ],
+    sections: [
+      { h: "For the agent", p: "Open the queue, take the top task, call or message, record the outcome, move on.", list: ["Click-to-call and one-click templates", "Outcome options per task type", "Internal chat for quick questions"] },
+      { h: "For the team lead", p: "A live floor view, an overdue list that escalates on its own, and a leaderboard built from real outcomes." },
+    ],
+    faqs: [
+      ["Can agents work from home?", "Yes. It runs in a browser on desktop or phone, with attendance and the floor view working the same way."],
+      ["Can we hide customer phone numbers from agents?", "Yes. Number masking lets agents call and message without seeing the number."],
+      ["Is there a shared inbox?", "Conversations are attached to customers and tasks rather than a single shared inbox, so ownership is always clear."],
+    ],
+    related: ["features/task-engine", "features/cloud-telephony", "features/team-hr"],
+  },
+  {
+    slug: "operations-teams",
+    title: "For operations teams running the business behind the store",
+    metaTitle: "Business Operations Platform for Small & Mid-Sized Teams",
+    description: "Org structure, approvals, service desk, finance operations and HR in one platform, so internal requests stop living in chat groups and spreadsheets.",
+    answer: "Operations teams use CodeCrest to give internal work a system: who reports to whom, who approves what, where a request is and whether it is late. Service desk tickets, expense claims, vendor invoices and attendance run on shared roles and one approvals inbox instead of separate tools and chat threads.",
+    visual: "flow",
+    points: [
+      ["Requests with owners", "A ticket or claim has a requester, an assignee or approver, a status and a deadline."],
+      ["One org chart, used everywhere", "Reporting lines decide who approves a claim and whose data a manager sees."],
+      ["Less tooling", "Fewer logins, fewer exports and one place to check what is pending."],
+    ],
+    sections: [
+      { h: "What it replaces", p: "Typically a ticket form, a leave sheet, an expense spreadsheet and several chat groups.", list: ["Service desk with SLA", "Approvals inbox", "Vendors, invoices and claims", "Attendance and leave"] },
+      { h: "Adopt one module at a time", p: "Modules can be switched on or off per organisation. Start with the one that hurts most and add the rest when the team is ready." },
+    ],
+    faqs: [
+      ["Do we have to use the e-commerce modules?", "No. An organisation admin can switch off modules that are not relevant."],
+      ["How is this different from a project tool?", "A project tool tracks tasks. CodeCrest also carries roles, approvals, SLAs and business records such as invoices and tickets."],
+      ["Can each department manage its own work?", "Yes. Access is scoped by department, branch or team, and workspaces give each team its own boards."],
+    ],
+    related: ["features/service-desk", "features/approvals-and-rules", "compare/servicenow"],
+  },
+  {
+    slug: "marketing-teams",
+    title: "For marketing and content teams that need to ship on schedule",
+    metaTitle: "Workspace for Marketing & Content Teams",
+    description: "Plan campaigns and content on boards and Gantt charts, send work for review, track time and goals, and reach customer segments on WhatsApp and email.",
+    answer: "Marketing teams use CodeCrest workspaces to plan campaigns and content with boards, Gantt and goals, and send finished work for review before it is marked done. Because customer data is in the same platform, they can also build segments and run WhatsApp or email campaigns without exporting a list.",
+    visual: "board",
+    points: [
+      ["Plan visually", "Board, list and Gantt views over the same tasks, with custom fields for channel, format or campaign."],
+      ["Review before publish", "Send a task for review and it waits in the reviewer's approvals inbox."],
+      ["Campaigns on real segments", "Target repeat buyers, lapsed customers or a product's buyers directly."],
+    ],
+    sections: [
+      { h: "From brief to done", p: "A campaign becomes a list of tasks with owners, dates and attachments. Automations move status and notify people so nobody chases updates.", list: ["Custom fields and automations", "Time tracking and workload", "Goals with progress", "Activity feed"] },
+      { h: "Close to the customer data", p: "Segments are built from orders and behaviour already in the CRM, and campaign sends are logged on each customer's timeline." },
+    ],
+    faqs: [
+      ["Can the marketing team see customer orders?", "Only if their role grants it. Workspaces and CRM data have separate permissions."],
+      ["Does it support file attachments?", "Yes. Tasks can carry attachments such as briefs and creatives."],
+      ["Can we run WhatsApp campaigns?", "Yes, to segments, using your connected number and templates."],
+    ],
+    related: ["features/workspaces", "features/whatsapp-automation", "compare/clickup"],
+  },
+  {
+    slug: "multi-branch-businesses",
+    title: "For businesses with several branches, departments or teams",
+    metaTitle: "Multi-Branch Business Management Software",
+    description: "Model branches, departments, designations and reporting lines, then scope every permission to them so each manager sees exactly their part of the business.",
+    answer: "Businesses with more than one branch or department use CodeCrest to mirror their real structure. Branches, departments, designations and reporting lines are set up once, and permissions are scoped to them. A branch manager sees that branch; a department head sees that department; the owner sees everything.",
+    visual: "matrix",
+    points: [
+      ["Structure that drives access", "Scope a permission to own, team, department, branch or organisation."],
+      ["Changes are recorded", "Moving a person between branches or roles is written to the audit trail."],
+      ["One platform across sites", "Shared process, separated data, and a single place for the owner to look."],
+    ],
+    sections: [
+      { h: "Setting it up", p: "An admin creates branches and departments, places people in them and sets who reports to whom. Existing teams are placed automatically from their current details.", list: ["Branches and departments", "Designations", "Reporting lines", "Role per person"] },
+      { h: "Safe by construction", p: "Placement is validated: a person cannot be put in another organisation's branch, and ordinary users cannot change their own placement." },
+    ],
+    faqs: [
+      ["Can a manager see another branch's data?", "Not unless their role is granted organisation-wide scope."],
+      ["Can one person belong to two branches?", "A person has one placement. Give wider visibility through their role's scope rather than a second placement."],
+      ["Is every organisation's data separate?", "Yes. Organisations are fully isolated from one another at the database level."],
+    ],
+    related: ["features/roles-permissions", "features/field-visits", "resources/role-based-access-control-guide"],
+  },
+  {
+    slug: "agencies-and-service-businesses",
+    title: "For agencies and service businesses managing client work",
+    metaTitle: "Work Management for Agencies & Service Businesses",
+    description: "Run client projects on boards with time tracking, keep leads and deals in a pipeline, and handle approvals, invoices and team attendance in one place.",
+    answer: "Agencies and service businesses use CodeCrest to run delivery and the business around it. Client work lives in workspaces with boards, time tracking and review steps. New business is tracked as leads and deals. Invoices, expense claims, attendance and approvals share the same roles and reporting lines.",
+    visual: "board",
+    points: [
+      ["A space per client or team", "Membership is per space, so people see the clients they work on."],
+      ["Time against tasks", "Track time where the work is, and see workload before promising a date."],
+      ["Pipeline to invoice", "Leads, deals and invoices are tracked in the same platform as delivery."],
+    ],
+    sections: [
+      { h: "Delivery", p: "Boards and Gantt for planning, automations for hand-offs, and a review step before anything is marked done.", list: ["Spaces, boards, Gantt", "Time tracking and goals", "Send for review"] },
+      { h: "The business side", p: "A light sales pipeline, invoice tracking with overdue flags, and claims approved by the right manager." },
+    ],
+    faqs: [
+      ["Can clients log in?", "Access is for members of your organisation. Client portals are not part of the product today."],
+      ["Does it do billing?", "It tracks invoices and their status. It does not generate tax invoices or collect payments."],
+      ["Is it suitable for a team of five?", "Yes. Modules can be switched off so a small team sees only what it uses."],
+    ],
+    related: ["features/workspaces", "features/sales-pipeline", "features/finance-operations"],
+  },
+];

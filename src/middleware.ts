@@ -73,11 +73,24 @@ export async function middleware(request: NextRequest) {
   // before that page's own client-side logic ever ran, so the marketing
   // page could never actually be seen.
   const isRootPage = request.nextUrl.pathname === '/'
+  // Public marketing sections (src/app/(site)). Static content, no data.
+  const isSitePage = ['features', 'solutions', 'integrations', 'compare', 'resources', 'tools']
+    .includes(request.nextUrl.pathname.split('/')[1])
 
   // Demo mode is a real login (see login/page.tsx): the demo cookie is only set
   // after signInWithPassword succeeds, so it must never stand in for a session.
-  if (!user && !isLoginPage && !isSignupPage && !isContactPage && !isApiRoute && !isAuthRoute && !isStaticFile && !isRootPage) {
+  if (!user && !isLoginPage && !isSignupPage && !isContactPage && !isApiRoute && !isAuthRoute && !isStaticFile && !isRootPage && !isSitePage) {
     return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // A signed-in visitor to "/" goes to their own home. Doing it here keeps
+  // the root page server-rendered for everyone else, so search engines get
+  // the real marketing page instead of a loading spinner. Routing matches
+  // what src/app/page.tsx did client-side before.
+  if (user && isRootPage) {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    const home = profile?.role === 'manager' ? '/manager' : profile?.role === 'hr' ? '/hr' : '/dashboard'
+    return NextResponse.redirect(new URL(home, request.url))
   }
 
   // If user is logged in and tries to access login page, redirect to their
