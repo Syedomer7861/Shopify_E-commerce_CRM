@@ -4,6 +4,7 @@ import { Toaster } from "react-hot-toast";
 import { Suspense } from "react";
 import { PHProvider } from "./providers";
 import PostHogPageView from "./_components/PostHogPageView";
+import ServiceWorkerRegister from "./_components/ServiceWorkerRegister";
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://codecrest-crm.vercel.app";
 const SITE_TITLE = "CodeCrest CRM — Shopify & Shiprocket Order Management";
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: "/favicon.ico",
+    apple: "/icons/icon-192.png",
   },
   appleWebApp: {
     capable: true,
@@ -57,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Suspense>
           {children}
         </PHProvider>
+        <ServiceWorkerRegister />
         <Toaster
           position="bottom-right"
           toastOptions={{

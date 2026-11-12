@@ -28,7 +28,8 @@ function Logo({ small, dark }: { small?: boolean; dark?: boolean }) {
     <Link href="/" className="flex items-center gap-2.5" aria-label="CodeCrest home">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/logo-mark.png" alt="" width={small ? 24 : 30} height={small ? 24 : 30} className="rounded-full" />
-      <span className={`font-display font-extrabold tracking-tight ${small ? "text-sm" : "text-lg"} ${dark ? "text-white" : ""}`}>CodeCrest</span>
+      {/* Below 340px (fold phones) the mark alone leaves room for the CTA and menu. */}
+      <span className={`font-display font-extrabold tracking-tight max-[339px]:hidden ${small ? "text-sm" : "text-lg"} ${dark ? "text-white" : ""}`}>CodeCrest</span>
     </Link>
   );
 }
@@ -115,7 +116,10 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[70] focus:bg-white focus:px-3 focus:py-2 focus:rounded">Skip to content</a>
 
       <header className="sticky top-0 z-50 px-3 sm:px-4 pt-3">
-        <div className="max-w-6xl mx-auto h-14 pl-4 pr-2 sm:pl-5 flex items-center justify-between gap-3 rounded-full border border-black/[0.07] bg-white/75 backdrop-blur-xl shadow-[0_8px_30px_rgba(17,17,19,0.06)]">
+        <div className="relative max-w-6xl mx-auto h-14 pl-3 pr-2 min-[360px]:pl-4 sm:pl-5 flex items-center justify-between gap-2 sm:gap-3">
+          {/* The glass is its own layer: backdrop-filter on an ancestor would
+              trap the fixed mobile menu inside this 56px pill. */}
+          <div aria-hidden className="absolute inset-0 -z-10 rounded-full border border-black/[0.07] bg-white/75 backdrop-blur-xl shadow-[0_8px_30px_rgba(17,17,19,0.06)]" />
           <Logo />
           <nav aria-label="Main" className="hidden lg:flex items-center">
             {HEADER_NAV.map((n) => (
@@ -148,7 +152,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
             </Link>
             <details className="lg:hidden">
               <summary className="list-none cursor-pointer w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 [&::-webkit-details-marker]:hidden" aria-label="Menu"><Menu className="w-5 h-5" /></summary>
-              <nav aria-label="Mobile" className="fixed inset-x-3 top-[4.75rem] bottom-3 overflow-y-auto rounded-3xl bg-white border border-black/[0.07] shadow-2xl shadow-black/15 px-5 py-3">
+              <nav aria-label="Mobile" className="fixed inset-x-3 top-[4.75rem] bottom-3 overflow-y-auto overscroll-contain rounded-3xl bg-white border border-black/[0.07] shadow-2xl shadow-black/15 px-5 py-3">
                 {NAV.map((n) => n.items.length ? (
                   <details key={n.href} className="border-b border-[var(--line)] group/m">
                     <summary className="list-none cursor-pointer flex items-center justify-between py-4 font-display font-semibold text-lg [&::-webkit-details-marker]:hidden">{n.label}<ChevronDown className="w-4 h-4 opacity-50 group-open/m:rotate-180 transition-transform" /></summary>

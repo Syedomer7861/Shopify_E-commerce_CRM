@@ -24,7 +24,12 @@ const nextConfig = {
     ]
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // The service worker must be revalidated on every load so a fix reaches
+      // installed apps at once instead of after a cached copy expires.
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] },
+    ];
   },
 };
 

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Offline | CodeCrest</title>
+<style>
+  /* Self-contained: this page is served from the service worker cache when
+     the network is down, so it must not depend on any other file. */
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{display:flex;align-items:center;justify-content:center;padding:24px;background:#f4f3ee;color:#111113;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  main{width:100%;max-width:26rem;text-align:center}
+  .dot{width:56px;height:56px;border-radius:50%;margin:0 auto 24px;background:linear-gradient(135deg,#ff7a45,#ffe36e 55%,#5fe39a)}
+  h1{font-size:clamp(1.6rem,6vw,2.1rem);line-height:1.1;letter-spacing:-.03em;margin:0 0 12px}
+  p{font-size:15.5px;line-height:1.6;color:#5c5c5a;margin:0 0 28px}
+  button{appearance:none;border:0;border-radius:999px;background:#111113;color:#fff;font:600 15px/1 inherit;font-family:inherit;padding:15px 28px;cursor:pointer}
+  button:focus-visible{outline:2px solid #111113;outline-offset:3px}
+  small{display:block;margin-top:20px;font-size:12.5px;color:#5c5c5a}
+</style>
+</head>
+<body>
+<main>
+  <div class="dot" aria-hidden="true"></div>
+  <h1>You are offline</h1>
+  <p>CodeCrest needs a connection to load live orders and tasks. Nothing you were working on has been lost on the server.</p>
+  <button type="button" onclick="location.reload()">Try again</button>
+  <small id="s" role="status">Waiting for a connection&hellip;</small>
+</main>
+<script>
+  // Reload by itself as soon as the connection is back.
+  addEventListener("online", function () { document.getElementById("s").textContent = "Back online. Reloading…"; location.reload(); });
+</script>
+</body>
+</html>
