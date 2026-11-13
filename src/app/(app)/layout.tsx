@@ -10,6 +10,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ModuleGuard } from "@/components/ModuleGuard";
 import { MfaGate } from "@/components/auth/MfaChallenge";
+import { SuspendedGate } from "@/components/auth/SuspendedGate";
 import { ProfileProvider } from "@/hooks/useCurrentProfile";
 import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <AgentHeartbeat />
         <ModuleGuard />
         <MfaGate />
+        <SuspendedGate />
         <AdminNotifier />
         <CommandPalette />
         <NotificationBell />

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { getAuthenticatedSession } from "@/lib/auth-utils";
+import { requirePlatformOwner } from "@/lib/auth-utils";
 
 // Workspace provisioning: creates a new organization + its first admin.
 // Used to be the public self-serve entry point (no caller-auth gate at
@@ -23,13 +23,15 @@ function slugify(s: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const { errorResponse, profile } = await getAuthenticatedSession();
-  if (errorResponse) return errorResponse;
-  if (!profile?.is_platform_admin) {
-    return NextResponse.json(
-      { error: "Self-serve signup is disabled. Request a workspace at /contact and our team will provision it for you." },
-      { status: 403 }
-    );
+  const { errorResponse, user } = await requirePlatformOwner();
+  if (errorResponse) {
+    if (errorResponse.status === 403) {
+      return NextResponse.json(
+        { error: "Self-serve signup is disabled. Request a workspace at /contact and our team will provision it for you." },
+        { status: 403 }
+      );
+    }
+    return errorResponse;
   }
 
   let raw: unknown;
@@ -79,6 +81,13 @@ export async function POST(req: NextRequest) {
     await supabaseAdmin.from("organizations").delete().eq("id", org.id);
     return NextResponse.json({ error: userError?.message || "Failed to create account" }, { status: 500 });
   }
+
+  // The server key bypasses row security, so this route records the action itself.
+  const { error: auditError } = await supabaseAdmin.from("platform_audit_logs").insert({
+    actor_id: user?.id, action: "organizations.create", target_type: "organizations", target_id: org.id,
+    details: { name: orgName, slug, admin_email: email },
+  });
+  if (auditError) console.error("Platform audit write failed:", auditError.message);
 
   return NextResponse.json({ success: true, orgId: org.id, slug }, { status: 201 });
 }

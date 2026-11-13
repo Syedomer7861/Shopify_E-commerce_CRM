@@ -1,11 +1,14 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Building2, Users, Loader2, Power, PowerOff, Mail, Phone } from "lucide-react";
+import { Building2, Users, Loader2, Power, PowerOff, Mail, Phone, ShieldCheck, History } from "lucide-react";
 import { PageHeader, EmptyState, AccessDenied, Select } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { TwoFactorCard } from "@/components/auth/TwoFactorCard";
+
+type AuditRow = { id: string; action: string; target_type: string | null; target_id: string | null; details: { changed?: Record<string, unknown> } | null; created_at: string };
 
 type OrgStat = {
   org_id: string;
@@ -44,6 +47,20 @@ export default function PlatformAdminPage() {
   const [requestBusyId, setRequestBusyId] = useState<string | null>(null);
   const { profile: currentProfile, loading: profileLoading } = useCurrentProfile();
   const supabase = createClient();
+  // Owner data needs a session that passed two-factor; the database enforces
+  // it too (is_platform_owner_verified), this only decides what to draw.
+  const [verified, setVerified] = useState<boolean | null>(null);
+  const [audit, setAudit] = useState<AuditRow[]>([]);
+
+  const checkVerified = useCallback(async () => {
+    const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    setVerified(data?.currentLevel === "aal2");
+  }, [supabase]);
+
+  const fetchAudit = useCallback(async () => {
+    const { data } = await supabase.from("platform_audit_logs").select("*").order("created_at", { ascending: false }).limit(30);
+    setAudit((data || []) as AuditRow[]);
+  }, [supabase]);
 
   const fetchOrgs = useCallback(async () => {
     setLoading(true);
@@ -65,11 +82,16 @@ export default function PlatformAdminPage() {
   }, [supabase]);
 
   useEffect(() => {
-    if (!profileLoading && currentProfile?.is_platform_admin) {
+    if (!profileLoading && currentProfile?.is_platform_admin) checkVerified();
+  }, [profileLoading, currentProfile?.is_platform_admin, checkVerified]);
+
+  useEffect(() => {
+    if (verified) {
       fetchOrgs();
       fetchRequests();
+      fetchAudit();
     }
-  }, [profileLoading, currentProfile?.is_platform_admin, fetchOrgs, fetchRequests]);
+  }, [verified, fetchOrgs, fetchRequests, fetchAudit]);
 
   async function updateRequestStatus(id: string, status: ContactRequest["status"]) {
     setRequestBusyId(id);
@@ -78,7 +100,7 @@ export default function PlatformAdminPage() {
       .update({ status, reviewed_at: new Date().toISOString(), reviewed_by: currentProfile?.id })
       .eq("id", id);
     if (error) toast.error(error.message);
-    else setRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    else { setRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r)); fetchAudit(); }
     setRequestBusyId(null);
   }
 
@@ -91,6 +113,7 @@ export default function PlatformAdminPage() {
     else {
       toast.success(next ? "Organization reactivated" : "Organization suspended");
       setOrgs(prev => prev.map(o => o.org_id === org.org_id ? { ...o, is_active: next } : o));
+      fetchAudit();
     }
     setBusyId(null);
   }
@@ -101,6 +124,23 @@ export default function PlatformAdminPage() {
 
   if (!currentProfile?.is_platform_admin) {
     return <AccessDenied title="Platform Access Only" desc="This page is restricted to the platform's own super-admin account." />;
+  }
+
+  if (verified === null) {
+    return <div className="py-12 text-center text-gray-400">Loading...</div>;
+  }
+
+  if (!verified) {
+    return (
+      <div className="animate-fade-in max-w-md">
+        <PageHeader title="Super Admin" subtitle="Owner access needs two-factor sign-in." />
+        <div className="card p-4 mb-4 flex gap-3 text-xs text-[#5f5f5d]">
+          <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+          <p>Set up two-factor below. Once it is on, this page opens. Your normal workspace is not affected. You can also manage it later in Settings, then Security.</p>
+        </div>
+        <TwoFactorCard onEnabled={checkVerified} />
+      </div>
+    );
   }
 
   return (
@@ -205,6 +245,29 @@ export default function PlatformAdminPage() {
                   <><Power className="w-3 h-3" /> Reactivate</>
                 )}
               </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <h2 className="text-sm font-bold text-[#1c1c1c] mt-10 mb-1 flex items-center gap-2">
+        <History className="w-4 h-4" /> Owner activity
+      </h2>
+      <p className="text-[11px] text-gray-400 mb-4">Every change made from this page. Permanent: nobody can edit or delete it.</p>
+      {audit.length === 0 ? (
+        <EmptyState icon={<History className="w-6 h-6" />} title="No owner actions yet" desc="Suspensions, reactivations and request updates appear here." />
+      ) : (
+        <div className="card divide-y divide-gray-50">
+          {audit.map(a => (
+            <div key={a.id} className="p-3 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs">
+              <span className="text-gray-400 sm:w-40 shrink-0">{new Date(a.created_at).toLocaleString()}</span>
+              <span className="font-bold text-[#1c1c1c]">{a.action.replace("_", " ").replace(".", ": ")}</span>
+              <span className="text-gray-500 truncate">
+                {Object.entries(a.details?.changed || {}).map(([k, v]) => {
+                  const c = v as { from: unknown; to: unknown };
+                  return `${k.replace(/_/g, " ")}: ${JSON.stringify(c.from)} to ${JSON.stringify(c.to)}`;
+                }).join(", ")}
+              </span>
             </div>
           ))}
         </div>

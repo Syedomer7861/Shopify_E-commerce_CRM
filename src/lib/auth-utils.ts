@@ -37,6 +37,24 @@ export async function getAuthenticatedSession() {
 }
 
 /**
+ * Platform owner only, with a session that passed two-factor. Every
+ * owner-level API route calls this; the database checks the same thing
+ * (is_platform_owner_verified) for direct reads and writes.
+ */
+export async function requirePlatformOwner() {
+  const session = await getAuthenticatedSession();
+  if (session.errorResponse) return { ...session, profile: null };
+  if (!session.profile?.is_platform_admin) {
+    return { ...session, errorResponse: NextResponse.json({ error: "Forbidden: platform owner only" }, { status: 403 }) };
+  }
+  const { data: aal } = await session.supabase!.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal?.currentLevel !== "aal2") {
+    return { ...session, errorResponse: NextResponse.json({ error: "Two-factor sign-in required for owner actions" }, { status: 403 }) };
+  }
+  return session;
+}
+
+/**
  * Ensures the user has admin role.
  */
 export async function ensureAdmin() {

@@ -33,6 +33,7 @@ const GUARD = new RegExp([
   "requireMarketing",
   "requireWorkspaceAdmin",
   "ensureAdmin",
+  "requirePlatformOwner",
   "SHOPIFY_WEBHOOK_SECRET",   // webhook: HMAC verified instead of a session
   "SHIPROCKET_WEBHOOK_TOKEN",
 ].join("|"));

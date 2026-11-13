@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase";
 type Pending = { factorId: string; qr: string; secret: string };
 
 /** Turn two-factor (authenticator app) on or off for the signed-in user. */
-export function TwoFactorCard() {
+export function TwoFactorCard({ onEnabled }: { onEnabled?: () => void } = {}) {
   const [factorId, setFactorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<Pending | null>(null);
@@ -48,6 +48,7 @@ export function TwoFactorCard() {
     setPending(null);
     setCode("");
     refresh();
+    onEnabled?.();
   }
 
   async function turnOff() {
