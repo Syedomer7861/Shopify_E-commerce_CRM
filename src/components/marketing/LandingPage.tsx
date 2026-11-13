@@ -12,6 +12,7 @@ import { Float, Parallax, Reveal, Showcase, Stagger, StaggerItem, TiltIn, WordsI
 import { Counter, PinnedStory, Spotlight, Squiggle, Star, type StoryItem } from "@/components/site/Fx";
 import { PostCard } from "@/components/site/BlogView";
 import Visual, { DashboardMock } from "@/components/site/Visual";
+import { getSiteContent } from "@/lib/site-content-server";
 
 const ICONS: Record<string, LucideIcon> = {
   "shopify-order-management": ShoppingBag, "abandoned-cart-recovery": ShoppingCart, "shipping-rto-management": Truck,
@@ -91,7 +92,8 @@ const HOME_FAQS: [string, string][] = [
 
 const H2 = "font-display font-bold tracking-[-0.03em] text-[2rem] sm:text-4xl md:text-5xl leading-[1.06]";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const hero = await getSiteContent("home.hero");
   const features = getSection("features")!.pages;
   const solutions = getSection("solutions")!.pages;
   const featured = FEATURED.map(([slug, visual]) => ({ page: features.find((f) => f.slug === slug)!, visual }));
@@ -107,28 +109,27 @@ export default function LandingPage() {
         <Mesh />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-32 md:pt-40 text-center">
           <Reveal eager y={12}>
-            <Link href="/blog" className="group inline-flex items-center gap-2 pl-1.5 pr-3.5 py-1 rounded-full border border-black/10 bg-white/70 backdrop-blur text-[12px] font-medium hover:bg-white transition-colors">
+            <Link href={hero.badge_href || "/blog"} className="group inline-flex items-center gap-2 pl-1.5 pr-3.5 py-1 rounded-full border border-black/10 bg-white/70 backdrop-blur text-[12px] font-medium hover:bg-white transition-colors">
               <span className="rounded-full bg-[#111113] text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5">New</span>
-              <span className="text-left">{POSTS.length} playbooks for COD, RTO and WhatsApp</span>
+              <span className="text-left">{hero.badge || `${POSTS.length} playbooks for COD, RTO and WhatsApp`}</span>
               <ArrowRight className="w-3 h-3 flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </Reveal>
           <h1 className="font-display font-bold tracking-[-0.04em] text-[2.6rem] sm:text-6xl lg:text-[4.6rem] leading-[1.0] mt-7 max-w-5xl mx-auto">
-            <WordsIn text="Run every order, and the team behind it, from one place" accent="one place" />
+            <WordsIn text={hero.headline} accent={hero.accent && hero.headline.includes(hero.accent) ? hero.accent : undefined} />
           </h1>
           <Reveal eager delay={0.3} y={16}>
             <p className="text-[#3b3b3a] text-lg md:text-xl leading-relaxed mt-7 max-w-2xl mx-auto" data-speakable>
-              CodeCrest unifies Shopify orders, Shiprocket shipping, WhatsApp and calls with tasks, HR, approvals and
-              role-based access, so your team stops switching tabs and closes the loop on every order.
+              {hero.subheadline}
             </p>
           </Reveal>
           <Reveal eager delay={0.4} y={16}>
             <div className="relative flex flex-col sm:flex-row gap-3 mt-9 justify-center">
-              <Btn href="/contact" arrow>Talk to us</Btn>
-              <Btn href="/features" tone="outline">Explore the product</Btn>
+              <Btn href={hero.primary_href} arrow>{hero.primary_label}</Btn>
+              <Btn href={hero.secondary_href} tone="outline">{hero.secondary_label}</Btn>
               <Squiggle className="hidden lg:block absolute left-[calc(50%+15rem)] -top-16 w-24 text-[#111113]" />
             </div>
-            <p className="text-[var(--dim)] text-[13px] mt-5">Set up for you by our team &middot; Your own isolated organisation</p>
+            {hero.footnote && <p className="text-[var(--dim)] text-[13px] mt-5">{hero.footnote}</p>}
           </Reveal>
         </div>
 

@@ -5,6 +5,9 @@ import { Breadcrumbs, Eyebrow, siteMetadata } from "@/components/site/PageView";
 import { Reveal, Stagger, StaggerItem, WordsIn } from "@/components/site/Motion";
 import ContactForm from "@/components/site/ContactForm";
 
+// Owner-editable text (Super Admin > Content) is re-read at most every 5 minutes; publishing refreshes it at once.
+export const revalidate = 300;
+
 export const metadata = siteMetadata("/contact", "Talk to Us: Request Your Workspace",
   "Request a CodeCrest workspace. Tell us about your team and tools; we set up your organisation, connect Shopify, Shiprocket and WhatsApp, and hand over a working system.");
 

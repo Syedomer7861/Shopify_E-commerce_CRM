@@ -3,6 +3,7 @@ import { ArrowRight, ArrowUpRight, ChevronDown, Menu } from "lucide-react";
 import { SECTIONS, TOOLS, SITE_URL } from "@/content";
 import { MotionRoot, Reveal } from "./Motion";
 import { Magnetic } from "./Fx";
+import { getSiteContent } from "@/lib/site-content-server";
 
 // Header, footer and shared surfaces for every public marketing page.
 // Design system: warm paper background, near-black ink, and one signature
@@ -109,11 +110,18 @@ export function CtaBand({ title = "See it running on your own orders", text = "T
   );
 }
 
-export default function SiteShell({ children }: { children: React.ReactNode }) {
+export default async function SiteShell({ children }: { children: React.ReactNode }) {
+  const [bar, footer] = await Promise.all([getSiteContent("site.announcement"), getSiteContent("site.footer")]);
   return (
     <div className="site min-h-screen flex flex-col overflow-x-clip">
       <noscript><style>{`[data-reveal]{opacity:1!important;transform:none!important}`}</style></noscript>
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[70] focus:bg-white focus:px-3 focus:py-2 focus:rounded">Skip to content</a>
+
+      {bar.enabled && bar.text && (
+        <div className="relative z-[51] bg-[#111113] text-white text-center text-[13px] px-4 py-2">
+          {bar.href ? <Link href={bar.href} className="underline-offset-2 hover:underline">{bar.text} <ArrowRight className="inline w-3 h-3" /></Link> : bar.text}
+        </div>
+      )}
 
       <header className="sticky top-0 z-50 px-3 sm:px-4 pt-3">
         <div className="relative max-w-6xl mx-auto h-14 pl-3 pr-2 min-[360px]:pl-4 sm:pl-5 flex items-center justify-between gap-2 sm:gap-3">
@@ -181,7 +189,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-12 border-b border-white/10">
             <div>
               <Logo dark />
-              <p className="text-[14px] text-white/55 mt-4 leading-relaxed max-w-sm">The operations platform for e-commerce teams and the business behind them.</p>
+              <p className="text-[14px] text-white/55 mt-4 leading-relaxed max-w-sm">{footer.tagline}</p>
             </div>
             <Link href="/contact" className="group inline-flex items-center gap-2 font-display font-bold tracking-tight text-3xl md:text-4xl hover:text-[var(--lemon)] transition-colors">
               Talk to our team <ArrowUpRight className="w-7 h-7 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
