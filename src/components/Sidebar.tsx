@@ -548,6 +548,8 @@ export default function Sidebar() {
   // A role with a short main menu (a developer, a designer) has room on the
   // phone bar, so its modules sit there instead of hiding behind More.
   const moduleNav = visibleModules(profile).map(m => ({ key: m.key, label: m.label, href: m.href, icon: m.icon, badge: undefined as string | undefined, desktopOnly: baseNav.length > 4 }));
+  // The SaaS owner's console (every organisation). The page and its data refuse anyone without the flag; this only draws the link.
+  if (profile?.is_platform_admin) moduleNav.push({ key: "platform", label: "Platform", href: "/platform", icon: ShieldCheck, badge: undefined, desktopOnly: baseNav.length > 4 });
   const visibleNav: { key: string; label: string; href: string; icon: typeof LayoutDashboard; badge?: string; desktopOnly?: boolean }[] =
     [...baseNav, ...moduleNav];
   // For a user with an explicit module allowlist, also hide the Operations /
