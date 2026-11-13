@@ -4,6 +4,14 @@ import toast from "react-hot-toast";
 import { createClient } from "@/lib/supabase";
 import { money, day, type RecordsConfig, type RecordRow } from "@/components/records/RecordsModule";
 
+// Days since the lead came in. A "new" lead nobody has contacted for 2+ days is flagged.
+function leadAge(created: any, row: RecordRow) {
+  if (!created) return "—";
+  const days = Math.floor((Date.now() - new Date(created).getTime()) / 86_400_000);
+  const stale = row.status === "new" && days >= 2;
+  return <span className={stale ? "font-bold text-red-600" : "text-gray-500"}>{days}d{stale ? " · not contacted" : ""}</span>;
+}
+
 // Turns a qualified lead into a deal linked to it, then marks the lead converted.
 async function convertToDeal(lead: RecordRow, reload: () => void) {
   if (!window.confirm(`Create a deal from ${lead.name}?`)) return;
@@ -32,6 +40,7 @@ const leads: RecordsConfig = {
     { key: "phone", label: "Phone" },
     { key: "source", label: "Source" },
     { key: "est_value", label: "Est. value", format: money },
+    { key: "created_at", label: "Age", format: leadAge },
   ],
   statuses: ["new", "contacted", "qualified", "converted", "lost"],
   fields: [
