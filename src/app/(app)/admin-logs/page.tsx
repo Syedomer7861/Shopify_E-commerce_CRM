@@ -357,7 +357,7 @@ export default function AdminLogs() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button
+                      <button aria-label="Open"
                         onClick={() => setDetailsLog(log)}
                         className="p-2 hover:bg-[#1c1c1c] hover:text-[#fcfbf8] rounded-lg transition-all opacity-0 group-hover:opacity-100"
                       >

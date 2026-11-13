@@ -219,7 +219,7 @@ export function TodoSection() {
                   : "bg-white border-[#eceae4] hover:border-gray-300 hover:shadow-lg hover:shadow-gray-100"
               )}
             >
-              <button
+              <button aria-label="Mark done"
                 onClick={() => toggleTodo(todo.id, todo.is_completed)}
                 className={cn(
                   "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all",
@@ -238,7 +238,7 @@ export function TodoSection() {
                 {todo.text}
               </span>
 
-              <button
+              <button aria-label="Delete"
                 onClick={() => deleteTodo(todo.id)}
                 className="p-2 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
               >

@@ -405,7 +405,7 @@ export default function CustomersPage() {
                   <div className="flex items-center text-xs font-bold text-[#1c1c1c]">{c.total_orders} Orders</div>
                   <div className="flex items-center text-[10px] text-[#5f5f5d] font-bold">{c.last_order_date ? formatDate(c.last_order_date) : "—"}</div>
                   <div className="flex items-center gap-2">
-                    <a href={`tel:${c.phone}`} 
+                    <a aria-label="Call" href={`tel:${c.phone}`} 
                       className="w-7 h-7 rounded-lg bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">
                       <Phone className="w-3.5 h-3.5" />
                     </a>

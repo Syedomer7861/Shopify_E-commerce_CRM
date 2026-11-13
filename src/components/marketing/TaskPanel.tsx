@@ -337,14 +337,14 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                 Delete?
               </button>
             ) : (
-              <button
+              <button aria-label="Delete"
                 onClick={() => setConfirmDelete(true)}
                 className="w-8 h-8 rounded-lg hover:bg-rose-50 flex items-center justify-center text-[#5f5f5d] hover:text-rose-500"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
             )}
-            <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-[#f2efe8] flex items-center justify-center text-[#5f5f5d]">
+            <button onClick={onClose} aria-label="Close" className="w-8 h-8 rounded-lg hover:bg-[#f2efe8] flex items-center justify-center text-[#5f5f5d]">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -480,7 +480,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                         <span className="text-[#5f5f5d] truncate flex-1">
                           {e.user?.name || e.user?.email || ""}{e.note ? ` — ${e.note}` : ""}
                         </span>
-                        <button onClick={() => removeTimeEntry(e.id)} className="text-[#5f5f5d]/40 hover:text-rose-500 flex-shrink-0">
+                        <button aria-label="Delete" onClick={() => removeTimeEntry(e.id)} className="text-[#5f5f5d]/40 hover:text-rose-500 flex-shrink-0">
                           <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
@@ -600,7 +600,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                     placeholder="New subtask"
                     className="flex-1 text-xs font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-1.5"
                   />
-                  <button onClick={addSubtask} className="w-7 h-7 rounded-lg bg-[#1c1c1c] text-white flex items-center justify-center">
+                  <button onClick={addSubtask} aria-label="Add subtask" className="w-7 h-7 rounded-lg bg-[#1c1c1c] text-white flex items-center justify-center">
                     <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -614,11 +614,11 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                     <Paperclip className="w-3 h-3 text-[#5f5f5d] flex-shrink-0" />
                     <span className="font-medium text-[#1c1c1c] truncate flex-1">{a.file_name}</span>
                     {a.url && (
-                      <a href={a.url} target="_blank" rel="noreferrer" className="text-[#5f5f5d] hover:text-[#1c1c1c] flex-shrink-0">
+                      <a aria-label="Download" href={a.url} target="_blank" rel="noreferrer" className="text-[#5f5f5d] hover:text-[#1c1c1c] flex-shrink-0">
                         <Download className="w-3.5 h-3.5" />
                       </a>
                     )}
-                    <button onClick={() => removeAttachment(a.id)} className="text-[#5f5f5d] hover:text-rose-500 flex-shrink-0">
+                    <button aria-label="Remove" onClick={() => removeAttachment(a.id)} className="text-[#5f5f5d] hover:text-rose-500 flex-shrink-0">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -649,7 +649,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                       {LINK_LABEL[l.kind] ?? l.kind}
                     </span>
                     <span className="font-medium text-[#1c1c1c] truncate flex-1">{l.task?.title ?? "—"}</span>
-                    <button onClick={() => removeLink(l.id)} className="text-[#5f5f5d] hover:text-rose-500 flex-shrink-0">
+                    <button aria-label="Remove" onClick={() => removeLink(l.id)} className="text-[#5f5f5d] hover:text-rose-500 flex-shrink-0">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -676,7 +676,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                         <option key={s.id} value={s.id}>{s.title}</option>
                       ))}
                   </select>
-                  <button onClick={addLink} disabled={!linkTarget} className="w-7 h-7 rounded-lg bg-[#1c1c1c] text-white flex items-center justify-center flex-shrink-0 disabled:opacity-40">
+                  <button onClick={addLink} disabled={!linkTarget} aria-label="Add link" className="w-7 h-7 rounded-lg bg-[#1c1c1c] text-white flex items-center justify-center flex-shrink-0 disabled:opacity-40">
                     <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -727,7 +727,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                       </div>
                     )}
                   </div>
-                  <button onClick={postComment} className="w-9 h-9 rounded-lg bg-[#1c1c1c] text-white flex items-center justify-center flex-shrink-0">
+                  <button onClick={postComment} aria-label="Post comment" className="w-9 h-9 rounded-lg bg-[#1c1c1c] text-white flex items-center justify-center flex-shrink-0">
                     <Send className="w-4 h-4" />
                   </button>
                 </div>

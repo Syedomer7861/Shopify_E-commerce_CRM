@@ -29,11 +29,11 @@ export function Breadcrumbs({ trail, dark }: { trail: [string, string][]; dark?:
   return (
     <>
       <nav aria-label="Breadcrumb" className={`flex flex-wrap items-center gap-1 text-[12px] ${dark ? "text-white/50" : "text-[var(--dim)]"}`}>
-        <Link href="/" className="hover:underline">Home</Link>
+        <Link href="/" className="inline-block py-2 -my-2 hover:underline">Home</Link>
         {trail.map(([label, href], i) => (
           <span key={href} className="flex items-center gap-1">
             <ChevronRight className="w-3 h-3" />
-            {i === trail.length - 1 ? <span aria-current="page" className={dark ? "text-white" : "text-[#1c1c1c]"}>{label}</span> : <Link href={href} className="hover:underline">{label}</Link>}
+            {i === trail.length - 1 ? <span aria-current="page" className={dark ? "text-white" : "text-[#1c1c1c]"}>{label}</span> : <Link href={href} className="inline-block py-2 -my-2 hover:underline">{label}</Link>}
           </span>
         ))}
       </nav>

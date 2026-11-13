@@ -43,7 +43,7 @@ export function ChatWindow() {
         <div className="flex items-center gap-2.5 overflow-hidden">
           {activeChannel ? (
             <>
-              <button 
+              <button aria-label="Back" 
                 onClick={(e) => { e.stopPropagation(); setActiveChannel(null); }}
                 className="p-1 hover:bg-white/10 rounded-lg transition-colors"
               >
@@ -72,13 +72,13 @@ export function ChatWindow() {
         </div>
 
         <div className="flex items-center gap-1">
-          <button 
+          <button aria-label="Minimise" 
             onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}
             className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
           >
             <Minus className="w-4 h-4" />
           </button>
-          <button 
+          <button aria-label="Close" 
             onClick={(e) => { e.stopPropagation(); setIsChatOpen(false); }}
             className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
           >

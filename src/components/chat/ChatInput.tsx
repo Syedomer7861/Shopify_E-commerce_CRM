@@ -202,7 +202,7 @@ export function ChatInput() {
         />
 
         <div className="flex items-center gap-1 pb-1">
-          <button 
+          <button aria-label="Emoji" 
             onClick={() => setShowEmojis(!showEmojis)}
             className={cn(
               "p-2 rounded-lg transition-colors",
@@ -213,6 +213,7 @@ export function ChatInput() {
           </button>
           <button 
             onClick={handleSend}
+            aria-label="Send message"
             disabled={!content.trim() && !uploading}
             className={cn(
               "p-2.5 rounded-xl transition-all shadow-lg shadow-[#1c1c1c]/10",

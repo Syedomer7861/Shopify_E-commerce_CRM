@@ -183,7 +183,7 @@ export default function RolesPage() {
                     <Edit2 className="w-3 h-3" /> Edit
                   </button>
                   {!role.is_system && (
-                    <button onClick={() => handleDelete(role)} className="btn-secondary text-xs py-1.5 px-2.5 text-rose-500 hover:bg-rose-50">
+                    <button aria-label="Delete" onClick={() => handleDelete(role)} className="btn-secondary text-xs py-1.5 px-2.5 text-rose-500 hover:bg-rose-50">
                       <Trash2 className="w-3 h-3" />
                     </button>
                   )}

@@ -438,7 +438,7 @@ export function Pagination({
         Showing <span className="text-[#1c1c1c]">{(current - 1) * pageSize + 1}</span> to <span className="text-[#1c1c1c]">{Math.min(current * pageSize, total)}</span> of <span className="text-[#1c1c1c]">{total}</span> entries
       </p>
       <div className="flex items-center gap-2">
-        <button 
+        <button aria-label="Previous" 
           onClick={() => onChange(Math.max(1, current - 1))}
           disabled={current === 1}
           className="w-9 h-9 flex items-center justify-center bg-[#f7f4ed] border border-[#eceae4] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white disabled:opacity-20 transition-all shadow-sm active:scale-95"
@@ -492,7 +492,7 @@ export function Pagination({
           })()}
         </div>
 
-        <button 
+        <button aria-label="Next" 
           onClick={() => onChange(Math.min(totalPages, current + 1))}
           disabled={current === totalPages}
           className="w-9 h-9 flex items-center justify-center bg-[#f7f4ed] border border-[#eceae4] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white disabled:opacity-20 transition-all shadow-sm active:scale-95"

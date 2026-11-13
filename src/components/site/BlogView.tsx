@@ -32,6 +32,7 @@ export function PostCover({ post, className = "" }: { post: Post; className?: st
 }
 
 export function PostCard({ post, wide }: { post: Post; wide?: boolean }) {
+  const Heading = wide ? "h2" : "h3";
   return (
     <Link href={`/blog/${post.slug}`} className={`${CARD} w-full !p-0 overflow-hidden ${wide ? "md:!flex-row" : ""}`}>
       <PostCover post={post} className={wide ? "h-52 md:h-auto md:w-1/2 md:min-h-[20rem]" : "h-44"} />
@@ -40,7 +41,8 @@ export function PostCard({ post, wide }: { post: Post; wide?: boolean }) {
           <Tag category={post.category} />
           <span className="text-[12px] text-[var(--dim)] inline-flex items-center gap-1"><Clock className="w-3 h-3" />{readMins(post)} min read</span>
         </div>
-        <h3 className={`font-display font-semibold tracking-tight leading-snug mt-3.5 ${wide ? "text-2xl md:text-[2rem] md:leading-tight" : "text-lg"}`}>{post.title}</h3>
+        {/* The wide (featured) card sits straight under the page h1, so it is an h2; grid cards sit under a section h2. */}
+        <Heading className={`font-display font-semibold tracking-tight leading-snug mt-3.5 ${wide ? "text-2xl md:text-[2rem] md:leading-tight" : "text-lg"}`}>{post.title}</Heading>
         <p className={`text-[var(--dim)] leading-relaxed mt-2 ${wide ? "text-[15px]" : "text-[13.5px] line-clamp-3"} flex-1`}>{post.description}</p>
         <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold">Read article <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" /></span>
       </div>

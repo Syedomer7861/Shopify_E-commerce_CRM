@@ -277,7 +277,7 @@ export function ChannelList() {
           <div className="flex items-center justify-between px-3 mb-2">
             <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Channels</span>
             {isAdmin && (
-              <button onClick={() => setIsNewChatOpen(true)} className="p-1 hover:bg-[#eceae4] rounded transition-colors">
+              <button aria-label="Add" onClick={() => setIsNewChatOpen(true)} className="p-1 hover:bg-[#eceae4] rounded transition-colors">
                 <Plus className="w-3.5 h-3.5 text-[#5f5f5d]" />
               </button>
             )}
@@ -289,7 +289,7 @@ export function ChannelList() {
         <div className="space-y-1">
           <div className="flex items-center justify-between px-3 mb-2">
             <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Direct Messages</span>
-            <button onClick={() => setIsNewChatOpen(true)} className="p-1 hover:bg-[#eceae4] rounded transition-colors">
+            <button aria-label="Add member" onClick={() => setIsNewChatOpen(true)} className="p-1 hover:bg-[#eceae4] rounded transition-colors">
               <UserPlus className="w-3.5 h-3.5 text-[#5f5f5d]" />
             </button>
           </div>

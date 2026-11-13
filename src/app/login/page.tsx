@@ -84,7 +84,7 @@ export default function LoginPage() {
           <h1 className="text-3xl font-display text-[#1c1c1c] tracking-tight mb-2 font-black uppercase">CodeCrest</h1>
           <div className="flex items-center justify-center gap-2">
             <div className="h-px w-6 bg-[#1c1c1c]/10" />
-            <span className="text-[#1c1c1c]/40 text-[9px] font-black uppercase tracking-[0.3em]">Administrative Suite</span>
+            <span className="text-[#1c1c1c]/60 text-[10px] font-black uppercase tracking-[0.3em]">Administrative Suite</span>
             <div className="h-px w-6 bg-[#1c1c1c]/10" />
           </div>
         </div>
@@ -104,10 +104,15 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest ml-1">Email</label>
+              <label htmlFor="login-email" className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest ml-1">Email</label>
               <input
+                id="login-email"
                 type="email"
-                className="w-full h-14 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-5 text-[#1c1c1c] placeholder:text-[#1c1c1c]/20 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c]/20 transition-all text-sm font-medium"
+                autoComplete="username"
+                inputMode="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                className="w-full h-14 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-5 text-[#1c1c1c] placeholder:text-[#1c1c1c]/35 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/15 focus:border-[#1c1c1c]/40 transition-all text-sm font-medium"
                 placeholder="you@yourcompany.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -117,13 +122,17 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
-                <label className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">Password</label>
-                <button type="button" className="text-[10px] font-bold text-[#1c1c1c]/40 hover:text-[#1c1c1c] transition-colors">Recover</button>
+                <label htmlFor="login-password" className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">Password</label>
+                {/* Accounts are created and reset by each organisation's admin; there is no self-serve reset. */}
+                <button type="button" onClick={() => toast("Ask your organisation's admin to reset your password from the Team page.", { duration: 6000 })}
+                  className="text-[11px] font-bold text-[#1c1c1c]/70 hover:text-[#1c1c1c] underline-offset-2 hover:underline transition-colors py-2 -my-2">Forgot password?</button>
               </div>
               <div className="relative">
                 <input
+                  id="login-password"
                   type={show ? "text" : "password"}
-                  className="w-full h-14 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-5 pr-12 text-[#1c1c1c] placeholder:text-[#1c1c1c]/20 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c]/20 transition-all text-sm font-medium"
+                  autoComplete="current-password"
+                  className="w-full h-14 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-5 pr-12 text-[#1c1c1c] placeholder:text-[#1c1c1c]/35 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/15 focus:border-[#1c1c1c]/40 transition-all text-sm font-medium"
                   placeholder="••••••••"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
@@ -132,7 +141,9 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShow(s => !s)}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1c1c1c]/20 hover:text-[#1c1c1c] transition-colors"
+                  aria-label={show ? "Hide password" : "Show password"}
+                  aria-pressed={show}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-xl text-[#1c1c1c]/50 hover:text-[#1c1c1c] transition-colors"
                 >
                   {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -157,7 +168,7 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-8 text-center">
-          <a href="/contact" className="text-[10px] font-black text-[#1c1c1c]/40 hover:text-[#1c1c1c] uppercase tracking-widest transition-colors">
+          <a href="/contact" className="inline-block py-2 text-[11px] font-black text-[#1c1c1c]/70 hover:text-[#1c1c1c] uppercase tracking-widest transition-colors">
             Need a workspace? Contact us
           </a>
         </div>
@@ -165,11 +176,11 @@ export default function LoginPage() {
         {/* Footer Info */}
         <div className="mt-12 text-center">
           <div className="flex items-center justify-center gap-6 mb-4">
-            <span className="text-[9px] font-black text-[#1c1c1c]/20 uppercase tracking-[0.2em]">V_01</span>
+            <span className="text-[9px] font-black text-[#1c1c1c]/50 uppercase tracking-[0.2em]">V_01</span>
             <div className="w-1 h-1 rounded-full bg-[#1c1c1c]/10" />
-            <span className="text-[9px] font-black text-[#1c1c1c]/20 uppercase tracking-[0.2em]">Created By <a className="text-[9px] font-black text-[#1c1c1c]/20 uppercase tracking-[0.2em]" href="https://codecreststudio.vercel.app/">Codecrest_Studio</a></span>
+            <span className="text-[9px] font-black text-[#1c1c1c]/50 uppercase tracking-[0.2em]">Created By <a className="text-[9px] font-black text-[#1c1c1c]/50 uppercase tracking-[0.2em]" href="https://codecreststudio.vercel.app/">Codecrest_Studio</a></span>
           </div>
-          <p className="text-[9px] text-[#1c1c1c]/20 font-bold uppercase tracking-widest leading-relaxed">
+          <p className="text-[9px] text-[#1c1c1c]/50 font-bold uppercase tracking-widest leading-relaxed">
             &copy; 2026 CodeCrest Administrative Control
           </p>
         </div>

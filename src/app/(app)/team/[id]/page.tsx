@@ -117,7 +117,7 @@ export default function AgentDetailPage() {
     return (
         <div className="animate-fade-in p-6 lg:p-10 space-y-10 bg-[#fcfbf8] min-h-screen">
             <div className="flex items-center gap-4">
-                <button onClick={() => router.back()} className="p-2 rounded-full hover:bg-[#eceae4] transition-all">
+                <button aria-label="Back" onClick={() => router.back()} className="p-2 rounded-full hover:bg-[#eceae4] transition-all">
                     <ArrowLeft className="w-5 h-5 text-[#1c1c1c]" />
                 </button>
                 <div className="flex items-center gap-4">

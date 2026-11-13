@@ -176,10 +176,10 @@ export default function TemplateManager() {
                   {tpl.category}
                 </div>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => { setEditingTemplate(tpl); setFormData(tpl); setShowModal(true); }} className="p-1.5 hover:bg-[rgba(28,28,28,0.05)] rounded text-[#1c1c1c] transition-colors">
+                  <button aria-label="Edit" onClick={() => { setEditingTemplate(tpl); setFormData(tpl); setShowModal(true); }} className="p-1.5 hover:bg-[rgba(28,28,28,0.05)] rounded text-[#1c1c1c] transition-colors">
                     <Edit3 className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => handleDelete(tpl.id)} className="p-1.5 hover:bg-rose-50 rounded text-[#1c1c1c] hover:text-rose-600 transition-colors">
+                  <button aria-label="Delete" onClick={() => handleDelete(tpl.id)} className="p-1.5 hover:bg-rose-50 rounded text-[#1c1c1c] hover:text-rose-600 transition-colors">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>

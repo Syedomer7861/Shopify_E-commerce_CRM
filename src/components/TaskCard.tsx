@@ -1473,7 +1473,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
             {waFile && (
               <div className="flex items-center gap-2 px-2 py-1.5 rounded bg-blue-50 border border-blue-100 text-blue-700">
                 <span className="text-[10px] font-bold truncate max-w-[150px]">{waFile.name}</span>
-                <button 
+                <button aria-label="Remove" 
                   onClick={() => setWaFile(null)}
                   className="p-0.5 hover:bg-blue-100 rounded-full transition-colors"
                 >
@@ -1570,7 +1570,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
             {emailFile && (
               <div className="flex items-center gap-2 px-2 py-1.5 rounded bg-blue-50 border border-blue-100 text-blue-700">
                 <span className="text-[10px] font-bold truncate max-w-[150px]">{emailFile.name}</span>
-                <button 
+                <button aria-label="Remove" 
                   onClick={() => setEmailFile(null)}
                   className="p-0.5 hover:bg-blue-100 rounded-full transition-colors"
                 >

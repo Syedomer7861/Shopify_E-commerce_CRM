@@ -112,7 +112,7 @@ export default function SnippetsManager({ canManage }: { canManage: boolean }) {
                     {confirmDel === s.id ? (
                       <button onClick={() => remove(s.id)} className="text-[9px] font-black uppercase tracking-widest text-rose-500">Sure?</button>
                     ) : (
-                      <button onClick={() => setConfirmDel(s.id)} className="text-[#5f5f5d]/50 hover:text-rose-500">
+                      <button aria-label="Delete" onClick={() => setConfirmDel(s.id)} className="text-[#5f5f5d]/50 hover:text-rose-500">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}

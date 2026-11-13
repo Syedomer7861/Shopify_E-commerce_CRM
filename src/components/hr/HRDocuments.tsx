@@ -269,7 +269,7 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
                         <Download className="w-3.5 h-3.5" />
                       </a>
                     )}
-                    <button onClick={() => handleDeletePolicy(p.id)} className="text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
+                    <button aria-label="Delete" onClick={() => handleDeletePolicy(p.id)} className="text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>

@@ -2074,7 +2074,7 @@ export default function SettingsPage() {
                     <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Live Pipeline Monitoring</h4>
                     <p className="text-[10px] text-[#5f5f5d] mt-1 opacity-60 font-medium">Real-time visibility into administrative communication flows</p>
                   </div>
-                  <button onClick={fetchPipelineData} className="w-9 h-9 flex items-center justify-center hover:bg-[#eceae4] rounded-lg text-[#5f5f5d] transition-all">
+                  <button onClick={fetchPipelineData} aria-label="Refresh" title="Refresh" className="w-9 h-9 flex items-center justify-center hover:bg-[#eceae4] rounded-lg text-[#5f5f5d] transition-all">
                     <RefreshCw className={cn("w-3.5 h-3.5", fetchingPipeline && "animate-spin")} />
                   </button>
                 </div>
@@ -2893,7 +2893,7 @@ export default function SettingsPage() {
               {manualWaFile && (
                 <div className="text-[10px] bg-[#1c1c1c] text-[#f7f4ed] font-bold px-4 py-2 rounded-xl flex items-center gap-3 shadow-lg shadow-black/10">
                   <span className="truncate max-w-[180px]">{manualWaFile.name}</span>
-                  <button onClick={() => setManualWaFile(null)} className="w-5 h-5 flex items-center justify-center hover:bg-white/10 rounded-full"><X className="w-3 h-3" /></button>
+                  <button aria-label="Remove" onClick={() => setManualWaFile(null)} className="w-5 h-5 flex items-center justify-center hover:bg-white/10 rounded-full"><X className="w-3 h-3" /></button>
                 </div>
               )}
             </div>

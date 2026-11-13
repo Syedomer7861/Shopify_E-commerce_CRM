@@ -121,7 +121,7 @@ export default function GlobalSync() {
           <div className="glass-panel p-6 shadow-2xl border border-white/20 bg-white/90 backdrop-blur-xl rounded-3xl">
             <div className="flex items-center justify-between mb-4">
                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Sync Monitor</h4>
-               <button onClick={() => setSyncing(false)} className="text-gray-400 hover:text-[#1c1c1c]">
+               <button aria-label="Close" onClick={() => setSyncing(false)} className="text-gray-400 hover:text-[#1c1c1c]">
                  <X className="w-4 h-4" />
                </button>
             </div>

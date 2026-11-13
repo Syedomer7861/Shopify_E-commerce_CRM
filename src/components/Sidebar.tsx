@@ -1017,7 +1017,7 @@ export default function Sidebar() {
             <div className="text-[#1c1c1c] text-[11px] font-bold truncate capitalize leading-tight">{profile?.role || "User"}</div>
             <div className="text-[#5f5f5d] text-[10px] truncate opacity-80">{profile?.email || "loading..."}</div>
           </div>
-          <button onClick={handleLogout} className="w-7 h-7 rounded-md hover:bg-rose-50 flex items-center justify-center transition-all">
+          <button onClick={handleLogout} aria-label="Sign out" title="Sign out" className="w-7 h-7 rounded-md hover:bg-rose-50 flex items-center justify-center transition-all">
             <LogOut className="w-3.5 h-3.5 text-[#5f5f5d] hover:text-rose-500" />
           </button>
         </div>

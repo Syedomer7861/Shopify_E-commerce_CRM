@@ -50,11 +50,11 @@ html, body {
   }
   
   .input {
-    @apply w-full px-3 py-2 text-sm border border-[#eceae4] rounded-[6px] bg-[#f7f4ed] text-[#1c1c1c] placeholder-[#5f5f5d] focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all;
+    @apply w-full px-3 py-2 text-sm border border-[#eceae4] rounded-[6px] bg-[#f7f4ed] text-[#1c1c1c] placeholder-[#5f5f5d] focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/25 transition-all;
   }
   
   .select {
-    @apply w-full px-3 py-2 text-sm border border-[#eceae4] rounded-[6px] bg-[#f7f4ed] text-[#1c1c1c] focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all;
+    @apply w-full px-3 py-2 text-sm border border-[#eceae4] rounded-[6px] bg-[#f7f4ed] text-[#1c1c1c] focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/25 transition-all;
   }
   
   .badge {
@@ -198,4 +198,12 @@ h1, h2, h3, h4 {
 @keyframes beam { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
   [class*="animate-[marquee"], [class*="animate-[blob"], [class*="animate-[beam"] { animation: none !important; }
+}
+
+/* iPhone/iPad zoom the page into any field with text under 16px and stay zoomed
+   (bad in the installed app). iOS only, so desktop and Android keep the compact size. */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 1024px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { font-size: 16px !important; }
+  }
 }

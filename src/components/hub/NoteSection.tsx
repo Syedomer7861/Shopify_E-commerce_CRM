@@ -206,7 +206,7 @@ export function NoteSection() {
               <div className="absolute top-0 left-0 w-full h-1 bg-blue-400 opacity-20" />
               <div className="flex justify-between items-start mb-4">
                 <h4 className="text-sm font-black text-[#1c1c1c] truncate flex-1">{note.title}</h4>
-                <button
+                <button aria-label="Close"
                   onClick={() => deleteNote(note.id)}
                   className="p-1 text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
                 >

@@ -249,7 +249,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
         <div className="bg-white border border-[#eceae4] rounded-2xl">
           <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-[#eceae4]">
             <div className="flex items-center gap-1">
-              <button onClick={() => step(-1)} className="w-7 h-7 rounded-lg hover:bg-[#f2efe8] flex items-center justify-center text-[#5f5f5d]">
+              <button aria-label="Previous" onClick={() => step(-1)} className="w-7 h-7 rounded-lg hover:bg-[#f2efe8] flex items-center justify-center text-[#5f5f5d]">
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
@@ -258,7 +258,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
               >
                 Today
               </button>
-              <button onClick={() => step(1)} className="w-7 h-7 rounded-lg hover:bg-[#f2efe8] flex items-center justify-center text-[#5f5f5d]">
+              <button aria-label="Next" onClick={() => step(1)} className="w-7 h-7 rounded-lg hover:bg-[#f2efe8] flex items-center justify-center text-[#5f5f5d]">
                 <ChevronRight className="w-4 h-4" />
               </button>
               <span className="text-sm font-black uppercase tracking-widest text-[#1c1c1c] ml-2">{label}</span>
@@ -453,7 +453,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
               >
                 {statusMeta(selected.status)?.name ?? selected.status}
               </span>
-              <button onClick={() => setSelected(null)} className="text-[#5f5f5d]/50 hover:text-[#1c1c1c]">
+              <button aria-label="Close" onClick={() => setSelected(null)} className="text-[#5f5f5d]/50 hover:text-[#1c1c1c]">
                 <X className="w-4 h-4" />
               </button>
             </div>

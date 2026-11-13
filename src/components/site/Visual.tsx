@@ -71,7 +71,7 @@ function Chat() {
         <span className="ml-auto"><Pill c="bg-emerald-100 text-emerald-800">Online</Pill></span>
       </div>
       <div className="max-w-[78%] rounded-2xl rounded-tl-sm bg-[#f7f4ed] px-3.5 py-2.5 text-[12px] leading-relaxed">Hi! Your order is confirmed. Reply YES to confirm delivery to the address on file.</div>
-      <div className="max-w-[60%] ml-auto rounded-2xl rounded-tr-sm bg-emerald-500 text-white px-3.5 py-2.5 text-[12px]">YES, please deliver after 5pm</div>
+      <div className="max-w-[60%] ml-auto rounded-2xl rounded-tr-sm bg-emerald-700 text-white px-3.5 py-2.5 text-[12px]">YES, please deliver after 5pm</div>
       <div className="max-w-[78%] rounded-2xl rounded-tl-sm bg-[#f7f4ed] px-3.5 py-2.5 text-[12px] leading-relaxed">Done. We have added a delivery note for the courier.</div>
       <div className="flex items-center gap-2 pt-1">
         <span className="flex-1 rounded-full border border-[#eceae4] px-3 py-2 text-[11px] text-[#5f5f5d]">Choose a template&hellip;</span>
@@ -90,7 +90,7 @@ function Chart() {
           <div key={k} className="rounded-xl bg-[#f7f4ed] p-3">
             <div className="text-[10px] uppercase tracking-wider font-bold text-[#5f5f5d]">{k}</div>
             <div className="mt-2"><Bar w={`${70 - i * 12}%`} c="bg-[#1c1c1c]/25" /></div>
-            <div className={`text-[10px] font-semibold mt-2 text-emerald-600`}>{i === 1 ? "▼ improving" : "▲ improving"}</div>
+            <div className={`text-[10px] font-semibold mt-2 text-emerald-700`}>{i === 1 ? "▼ improving" : "▲ improving"}</div>
           </div>
         ))}
       </div>

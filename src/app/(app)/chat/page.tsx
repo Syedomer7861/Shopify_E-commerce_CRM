@@ -97,7 +97,7 @@ export default function ChatPage() {
       {/* Top Header */}
       <header className="h-16 border-b border-[#eceae4] bg-[#f8f7f4] flex items-center justify-between px-6 z-10">
         <div className="flex items-center gap-2 sm:gap-3">
-          <button 
+          <button aria-label="Back" 
             onClick={() => router.back()}
             className="lg:hidden p-2 -ml-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg"
           >
@@ -158,7 +158,7 @@ export default function ChatPage() {
             }
           </div>
 
-          <button 
+          <button aria-label="Search" 
             onClick={() => setIsSearchOpen(!isSearchOpen)}
             className={cn(
               "p-1.5 sm:p-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg transition-colors hidden sm:block",
@@ -167,7 +167,7 @@ export default function ChatPage() {
           >
             <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
-          <button 
+          <button aria-label="Details" 
             onClick={() => setShowRightPanel(!showRightPanel)}
             className={cn(
               "p-1.5 sm:p-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg transition-colors hidden lg:block",
@@ -177,7 +177,7 @@ export default function ChatPage() {
             <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
           <div className="w-[1px] h-4 bg-[#eceae4] mx-0.5 sm:mx-1" />
-          <button 
+          <button aria-label="Settings" 
             onClick={() => setShowSettings(true)}
             className="p-1.5 sm:p-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg transition-colors"
           >

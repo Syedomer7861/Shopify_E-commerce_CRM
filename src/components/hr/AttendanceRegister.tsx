@@ -292,9 +292,9 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
       {tab === "register" && (
         <div className="card overflow-hidden">
           <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 bg-[#fcfbf8]">
-            <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+            <button onClick={prevMonth} aria-label="Previous month" className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
             <h3 className="text-xs sm:text-sm font-black text-[#1c1c1c] uppercase tracking-widest">{monthName} {year}</h3>
-            <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors"><ChevronRight className="w-4 h-4" /></button>
+            <button onClick={nextMonth} aria-label="Next month" className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors"><ChevronRight className="w-4 h-4" /></button>
           </div>
 
           {/* Legend */}
@@ -446,7 +446,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full", h.type === "National" ? "bg-[#1c1c1c] text-white" : "bg-sky-100 text-sky-700")}>{h.type}</span>
-                    <button onClick={() => deleteHoliday(h.id)} className="text-rose-400 hover:text-rose-600 transition-colors">
+                    <button aria-label="Remove" onClick={() => deleteHoliday(h.id)} className="text-rose-400 hover:text-rose-600 transition-colors">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>

@@ -124,7 +124,7 @@ export default function GoalsModal({ open, spaceId, canManage, members, onClose 
                             Sure?
                           </button>
                         ) : (
-                          <button onClick={() => setConfirmDel(g.id)} className="text-[#5f5f5d]/40 hover:text-rose-500">
+                          <button aria-label="Delete" onClick={() => setConfirmDel(g.id)} className="text-[#5f5f5d]/40 hover:text-rose-500">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         )

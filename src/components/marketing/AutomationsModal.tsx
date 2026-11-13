@@ -149,7 +149,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
                 </div>
                 {!r.list_id && <div className="text-[9px] font-bold uppercase tracking-widest text-[#5f5f5d]/40 mt-0.5">All lists</div>}
               </div>
-              <button onClick={() => remove(r.id)} className="text-[#5f5f5d] hover:text-rose-500 flex-shrink-0">
+              <button aria-label="Delete" onClick={() => remove(r.id)} className="text-[#5f5f5d] hover:text-rose-500 flex-shrink-0">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
@@ -286,7 +286,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
               )}
 
               {actions.length > 1 && (
-                <button
+                <button aria-label="Delete"
                   onClick={() => setActions((prev) => prev.filter((_, j) => j !== i))}
                   className="text-[#5f5f5d] hover:text-rose-500 flex-shrink-0"
                 >

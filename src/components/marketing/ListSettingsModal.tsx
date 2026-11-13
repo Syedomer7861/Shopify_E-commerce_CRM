@@ -175,7 +175,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
                     <option key={t} value={t}>{t === "not_started" ? "to do" : t}</option>
                   ))}
                 </select>
-                <button onClick={() => removeStatus(i)} className="text-[#5f5f5d] hover:text-rose-500 flex-shrink-0">
+                <button aria-label="Delete" onClick={() => removeStatus(i)} className="text-[#5f5f5d] hover:text-rose-500 flex-shrink-0">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -212,7 +212,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
-                  <button
+                  <button aria-label="Delete"
                     onClick={() => setFields((prev) => prev.filter((_, j) => j !== i))}
                     className="text-[#5f5f5d] hover:text-rose-500 flex-shrink-0"
                   >

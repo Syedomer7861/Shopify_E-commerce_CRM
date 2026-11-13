@@ -198,10 +198,10 @@ export default async function SiteShell({ children }: { children: React.ReactNod
           <div className="pt-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-10">
             {NAV.filter((n) => n.items.length).map((n) => (
               <div key={n.href}>
-                <Link href={n.href} className="text-[11px] font-bold uppercase tracking-widest text-white/90 hover:text-[var(--lemon)] transition-colors">{n.label}</Link>
+                <Link href={n.href} className="inline-block py-1.5 -my-1.5 text-[11px] font-bold uppercase tracking-widest text-white/90 hover:text-[var(--lemon)] transition-colors">{n.label}</Link>
                 <ul className="mt-4 space-y-2.5">
                   {n.items.slice(0, 7).map((i) => (
-                    <li key={i.href}><Link href={i.href} className="text-[13px] text-white/50 hover:text-white transition-colors">{i.label}</Link></li>
+                    <li key={i.href}><Link href={i.href} className="inline-block py-1 -my-1 text-[13px] text-white/60 hover:text-white transition-colors">{i.label}</Link></li>
                   ))}
                   {n.items.length > 7 && <li><Link href={n.href} className="text-[13px] font-medium text-[var(--mint)]">View all</Link></li>}
                 </ul>
@@ -210,7 +210,7 @@ export default async function SiteShell({ children }: { children: React.ReactNod
           </div>
         </div>
         <div className="relative border-t border-white/10">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/45">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/60">
             <p>&copy; 2026 CodeCrest. All rights reserved.</p>
             <div className="flex items-center gap-5">
               <Link href="/blog" className="hover:text-white">Blog</Link>

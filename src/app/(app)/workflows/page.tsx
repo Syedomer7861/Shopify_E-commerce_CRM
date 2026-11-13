@@ -210,10 +210,10 @@ export default function WorkflowManager() {
                    {wf.is_active ? "Active" : "Paused"}
                  </button>
                  <div className="flex items-center gap-1">
-                   <button onClick={() => handleEdit(wf)} className="w-8 h-8 flex items-center justify-center hover:bg-[#eceae4] rounded-lg text-[#5f5f5d] transition-colors">
+                   <button aria-label="Edit" onClick={() => handleEdit(wf)} className="w-8 h-8 flex items-center justify-center hover:bg-[#eceae4] rounded-lg text-[#5f5f5d] transition-colors">
                      <Edit3 className="w-4 h-4" />
                    </button>
-                   <button onClick={() => handleDelete(wf.id)} className="w-8 h-8 flex items-center justify-center hover:bg-rose-50 rounded-lg text-[#5f5f5d] hover:text-rose-600 transition-colors">
+                   <button aria-label="Delete" onClick={() => handleDelete(wf.id)} className="w-8 h-8 flex items-center justify-center hover:bg-rose-50 rounded-lg text-[#5f5f5d] hover:text-rose-600 transition-colors">
                      <Trash2 className="w-4 h-4" />
                    </button>
                  </div>
@@ -302,7 +302,7 @@ export default function WorkflowManager() {
                   <div key={idx} className="p-4 rounded-xl border border-[#eceae4] bg-[#fcfbf8] relative group">
                     <div className="flex justify-between items-start mb-3">
                        <span className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-[0.2em]">{action.type.replace("_", " ")}</span>
-                       <button onClick={() => setFormData({ ...formData, actions: formData.actions.filter((_, i) => i !== idx) })} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                       <button aria-label="Delete" onClick={() => setFormData({ ...formData, actions: formData.actions.filter((_, i) => i !== idx) })} className="opacity-0 group-hover:opacity-100 transition-opacity">
                           <Trash2 className="w-3.5 h-3.5 text-rose-500" />
                        </button>
                     </div>

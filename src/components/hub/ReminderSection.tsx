@@ -266,7 +266,7 @@ export function ReminderSection() {
                         <div className="text-[9px] font-black text-rose-500 uppercase tracking-tighter bg-rose-50 px-2 py-1 rounded">Upcoming</div>
                      </div>
                   )}
-                  <button
+                  <button aria-label="Delete"
                     onClick={() => deleteReminder(reminder.id)}
                     className="p-2 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
                   >

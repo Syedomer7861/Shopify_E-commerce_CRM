@@ -487,7 +487,7 @@ export default function TeamPage() {
                   )}>
                     {p.role === 'hr' ? 'HR' : p.role === 'marketing' ? 'Workspace' : p.role}
                   </div>
-                  <button onClick={() => handleRemoveMember(p.id)} className="p-1.5 text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
+                  <button aria-label="Delete" onClick={() => handleRemoveMember(p.id)} className="p-1.5 text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>

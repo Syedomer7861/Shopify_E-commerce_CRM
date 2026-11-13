@@ -470,7 +470,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                                     placeholder="Enter Designation"
                                     autoFocus
                                   />
-                                  <button 
+                                  <button aria-label="Remove" 
                                     className="p-1 hover:bg-gray-100 rounded text-gray-400"
                                     onClick={() => setCustomDesig({ ...customDesig, edit: false })}
                                   >
@@ -507,7 +507,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                                     placeholder="Enter Dept Name"
                                     autoFocus
                                   />
-                                  <button 
+                                  <button aria-label="Remove" 
                                     className="p-1 hover:bg-gray-100 rounded text-gray-400"
                                     onClick={() => setCustomDept({ ...customDept, edit: false })}
                                   >
@@ -603,7 +603,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                                   setEditForm({...editForm, city: e.target.value});
                                 }} />
                                 {CITY_MAP[editForm.state] && (
-                                  <button className="p-1 hover:bg-gray-100 rounded" onClick={() => setCustomCity({ ...customCity, edit: false })}><X className="w-4 h-4" /></button>
+                                  <button aria-label="Close" className="p-1 hover:bg-gray-100 rounded" onClick={() => setCustomCity({ ...customCity, edit: false })}><X className="w-4 h-4" /></button>
                                 )}
                               </div>
                             )}
@@ -751,7 +751,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center">
               <h3 className="font-black text-[#1c1c1c] uppercase tracking-widest text-sm">Add New Employee</h3>
-              <button onClick={() => setShowAdd(false)}><X className="w-4 h-4 text-gray-400" /></button>
+              <button aria-label="Close" onClick={() => setShowAdd(false)}><X className="w-4 h-4 text-gray-400" /></button>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -798,7 +798,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                       }} 
                       autoFocus
                     />
-                    <button className="p-1 hover:bg-gray-100 rounded" onClick={() => setCustomDesig({ ...customDesig, add: false })}><X className="w-4 h-4" /></button>
+                    <button aria-label="Close" className="p-1 hover:bg-gray-100 rounded" onClick={() => setCustomDesig({ ...customDesig, add: false })}><X className="w-4 h-4" /></button>
                   </div>
                 )}
               </div>
@@ -825,7 +825,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                       }} 
                       autoFocus
                     />
-                    <button className="p-1 hover:bg-gray-100 rounded" onClick={() => setCustomDept({ ...customDept, add: false })}><X className="w-4 h-4" /></button>
+                    <button aria-label="Close" className="p-1 hover:bg-gray-100 rounded" onClick={() => setCustomDept({ ...customDept, add: false })}><X className="w-4 h-4" /></button>
                   </div>
                 )}
               </div>
@@ -863,7 +863,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                         setNewEmp({...newEmp, city: e.target.value});
                       }} />
                       {CITY_MAP[newEmp.state] && (
-                        <button className="p-1 hover:bg-gray-100 rounded" onClick={() => setCustomCity({ ...customCity, add: false })}><X className="w-4 h-4" /></button>
+                        <button aria-label="Close" className="p-1 hover:bg-gray-100 rounded" onClick={() => setCustomCity({ ...customCity, add: false })}><X className="w-4 h-4" /></button>
                       )}
                     </div>
                   )}

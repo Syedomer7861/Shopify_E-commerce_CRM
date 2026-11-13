@@ -226,16 +226,16 @@ export default function CalendarPage() {
 
             {/* Navigation */}
             <div className="flex items-center gap-1 bg-white/60 rounded-xl border border-gray-100 shadow-sm p-1">
-              <button onClick={prev} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <button onClick={prev} aria-label="Previous" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <span className="text-sm font-bold text-[#1c1c1c] min-w-[160px] text-center">{headerLabel}</span>
-              <button onClick={next} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <button onClick={next} aria-label="Next" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
-            <button onClick={() => fetchTasks()} className="p-2 hover:bg-gray-100 rounded-xl border border-gray-100 transition-colors">
+            <button aria-label="Refresh" onClick={() => fetchTasks()} className="p-2 hover:bg-gray-100 rounded-xl border border-gray-100 transition-colors">
               <RefreshCw className={cn("w-4 h-4 text-gray-400", loading && "animate-spin")} />
             </button>
           </div>
@@ -367,7 +367,7 @@ export default function CalendarPage() {
                     ` · ${selectedDayTasks.filter(t => t.status === "done").length} done`}
                 </div>
               </div>
-              <button
+              <button aria-label="Close"
                 onClick={() => setSelectedDay(null)}
                 className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 transition-colors"
               >

@@ -193,7 +193,7 @@ export default function SpaceSettingsModal({ open, space, members, canManage, on
                   >
                     {m.role === "owner" ? "Demote" : "Make owner"}
                   </button>
-                  <button onClick={() => removeMember(m.user_id)} className="text-[#5f5f5d] hover:text-rose-500 flex-shrink-0">
+                  <button aria-label="Delete" onClick={() => removeMember(m.user_id)} className="text-[#5f5f5d] hover:text-rose-500 flex-shrink-0">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </>
@@ -217,6 +217,7 @@ export default function SpaceSettingsModal({ open, space, members, canManage, on
               </select>
               <button
                 onClick={addMember}
+                aria-label="Add member"
                 disabled={!addPick}
                 className="w-9 h-9 rounded-lg bg-[#1c1c1c] text-white flex items-center justify-center flex-shrink-0 disabled:opacity-40"
               >

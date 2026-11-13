@@ -354,7 +354,8 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
             />
           </div>
           <button 
-            onClick={handleSend} 
+            onClick={handleSend}
+            aria-label="Send message" 
             disabled={!input.trim()}
             className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white p-2.5 rounded-full shadow-sm transition-all transform active:scale-95"
           >

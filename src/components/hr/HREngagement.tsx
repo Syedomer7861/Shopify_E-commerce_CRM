@@ -167,7 +167,7 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
                       </div>
                       <div className="flex gap-2">
                         <button onClick={saveReview} className="flex-1 btn-primary text-xs py-2 gap-1.5"><CheckCircle className="w-3 h-3" /> Save</button>
-                        <button onClick={() => setEditReview(null)} className="btn-secondary text-xs py-2 px-4"><X className="w-3 h-3" /></button>
+                        <button aria-label="Remove" onClick={() => setEditReview(null)} className="btn-secondary text-xs py-2 px-4"><X className="w-3 h-3" /></button>
                       </div>
                     </div>
                   ) : r.status === "Completed" ? (
