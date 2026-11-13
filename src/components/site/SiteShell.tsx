@@ -49,9 +49,9 @@ export const ORG_LD = {
 export function Mesh({ soft }: { soft?: boolean }) {
   return (
     <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none max-md:opacity-55">
-      <div className={`absolute -left-[12%] top-[8%] w-[38rem] h-[38rem] rounded-full bg-[#ff7a45] blur-[110px] animate-[blob_18s_ease-in-out_infinite] ${soft ? "opacity-25" : "opacity-50"}`} />
-      <div className={`absolute -left-[6%] top-[52%] w-[26rem] h-[26rem] rounded-full bg-[#ffe36e] blur-[100px] animate-[blob_22s_ease-in-out_infinite_reverse] ${soft ? "opacity-30" : "opacity-70"}`} />
-      <div className={`absolute -right-[10%] top-[38%] w-[34rem] h-[34rem] rounded-full bg-[#5fe39a] blur-[110px] animate-[blob_20s_ease-in-out_infinite] ${soft ? "opacity-25" : "opacity-55"}`} />
+      <div className={`absolute -left-[12%] top-[8%] w-[38rem] h-[38rem] rounded-full bg-[#ff7a45] blur-[110px] md:animate-[blob_18s_ease-in-out_infinite] md:will-change-transform ${soft ? "opacity-25" : "opacity-50"}`} />
+      <div className={`absolute -left-[6%] top-[52%] w-[26rem] h-[26rem] rounded-full bg-[#ffe36e] blur-[100px] md:animate-[blob_22s_ease-in-out_infinite_reverse] md:will-change-transform ${soft ? "opacity-30" : "opacity-70"}`} />
+      <div className={`absolute -right-[10%] top-[38%] w-[34rem] h-[34rem] rounded-full bg-[#5fe39a] blur-[110px] md:animate-[blob_20s_ease-in-out_infinite] md:will-change-transform ${soft ? "opacity-25" : "opacity-55"}`} />
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#f4f3ee] to-transparent" />
     </div>
   );
@@ -61,8 +61,8 @@ export function Mesh({ soft }: { soft?: boolean }) {
 export function DarkBackdrop() {
   return (
     <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
-      <div className="absolute -top-32 -left-20 w-[28rem] h-[28rem] rounded-full bg-[#ff7a45]/40 blur-[110px] animate-[blob_18s_ease-in-out_infinite]" />
-      <div className="absolute -bottom-40 -right-16 w-[30rem] h-[30rem] rounded-full bg-[#5fe39a]/35 blur-[110px] animate-[blob_22s_ease-in-out_infinite_reverse]" />
+      <div className="absolute -top-32 -left-20 w-[28rem] h-[28rem] rounded-full bg-[#ff7a45]/40 blur-[110px] md:animate-[blob_18s_ease-in-out_infinite] md:will-change-transform" />
+      <div className="absolute -bottom-40 -right-16 w-[30rem] h-[30rem] rounded-full bg-[#5fe39a]/35 blur-[110px] md:animate-[blob_22s_ease-in-out_infinite_reverse] md:will-change-transform" />
       <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "radial-gradient(#fff 1px, transparent 1px)", backgroundSize: "26px 26px" }} />
     </div>
   );

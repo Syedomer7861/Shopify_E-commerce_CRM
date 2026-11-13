@@ -11,11 +11,13 @@ import * as m from "motion/react-m";
 // used only where a section is pinned to scroll progress. Must render inside
 // MotionRoot (SiteShell).
 
-const EASE = [0.21, 0.47, 0.32, 0.98] as const;
-
-/** Enter transition for every public page (app/(site)/template.tsx). */
+/**
+ * Enter transition for every public page (app/(site)/template.tsx).
+ * Plain CSS (.rise), not Motion: a Motion fade is rendered as opacity 0 in the
+ * HTML, which kept the whole page blank until every script had loaded.
+ */
 export function PageTransition({ children }: { children: React.ReactNode }) {
-  return <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: EASE }}>{children}</m.div>;
+  return <div className="rise" style={{ ["--rise-y" as string]: "10px", animationDuration: "0.35s" }}>{children}</div>;
 }
 
 /** Pulls its child toward the pointer; springs back on leave. Mouse only. */

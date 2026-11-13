@@ -118,12 +118,12 @@ export default async function LandingPage() {
           <h1 className="font-display font-bold tracking-[-0.04em] text-[2.6rem] sm:text-6xl lg:text-[4.6rem] leading-[1.0] mt-7 max-w-5xl mx-auto">
             <WordsIn text={hero.headline} accent={hero.accent && hero.headline.includes(hero.accent) ? hero.accent : undefined} />
           </h1>
-          <Reveal eager delay={0.3} y={16}>
+          <Reveal eager delay={0.2} y={16}>
             <p className="text-[#3b3b3a] text-lg md:text-xl leading-relaxed mt-7 max-w-2xl mx-auto" data-speakable>
               {hero.subheadline}
             </p>
           </Reveal>
-          <Reveal eager delay={0.4} y={16}>
+          <Reveal eager delay={0.28} y={16}>
             <div className="relative flex flex-col sm:flex-row gap-3 mt-9 justify-center">
               <Btn href={hero.primary_href} arrow>{hero.primary_label}</Btn>
               <Btn href={hero.secondary_href} tone="outline">{hero.secondary_label}</Btn>

@@ -30,22 +30,22 @@ export function MotionRoot({ children }: { children: React.ReactNode }) {
  * (.rise in globals.css) so it is visible as soon as the HTML arrives, not
  * seconds later when the scripts have loaded on a slow phone.
  */
-export function Reveal({ children, className, delay = 0, y = 28, eager }: { children: React.ReactNode; className?: string; delay?: number; y?: number; eager?: boolean }) {
+export function Reveal({ children, className, delay = 0, y = 20, eager }: { children: React.ReactNode; className?: string; delay?: number; y?: number; eager?: boolean }) {
   if (eager) {
     return <div className={`rise ${className || ""}`} style={{ animationDelay: `${delay}s`, ["--rise-y" as string]: `${y}px` }}>{children}</div>;
   }
   return (
     <m.div data-reveal className={className} initial={{ opacity: 0, y }} whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "0px 0px -80px 0px" }} transition={{ duration: 0.7, delay, ease: EASE }}>
+      viewport={{ once: true, margin: "0px" }} transition={{ duration: 0.5, delay, ease: EASE }}>
       {children}
     </m.div>
   );
 }
 
 /** Grid/list whose children (StaggerItem) reveal one after another. */
-export function Stagger({ children, className, gap = 0.07 }: { children: React.ReactNode; className?: string; gap?: number }) {
+export function Stagger({ children, className, gap = 0.05 }: { children: React.ReactNode; className?: string; gap?: number }) {
   return (
-    <m.div className={className} initial="hidden" whileInView="show" viewport={{ once: true, margin: "0px 0px -60px 0px" }}
+    <m.div className={className} initial="hidden" whileInView="show" viewport={{ once: true, margin: "0px" }}
       variants={{ hidden: {}, show: { transition: { staggerChildren: gap } } }}>
       {children}
     </m.div>
@@ -55,7 +55,7 @@ export function Stagger({ children, className, gap = 0.07 }: { children: React.R
 export function StaggerItem({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <m.div data-reveal className={className}
-      variants={{ hidden: { opacity: 0, y: 22 }, show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE } } }}>
+      variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } } }}>
       {children}
     </m.div>
   );
@@ -70,7 +70,7 @@ export function WordsIn({ text, accent, className }: { text: string; accent?: st
         <span key={i} className="inline-block overflow-hidden align-bottom pb-[0.12em] -mb-[0.12em]">
           {/* CSS animation, not Motion: the headline is the first thing on screen and must not wait for scripts. */}
           <span className={`rise inline-block ${accent && accent.split(" ").includes(w.replace(/[.,]/g, "")) ? "font-accent text-grad pr-[0.06em]" : ""}`}
-            style={{ animationDelay: `${0.08 + i * 0.045}s`, ["--rise-y" as string]: "110%" }}>
+            style={{ animationDelay: `${0.05 + i * 0.03}s`, ["--rise-y" as string]: "110%" }}>
             {w}{i < words.length - 1 ? " " : ""}
           </span>
         </span>
