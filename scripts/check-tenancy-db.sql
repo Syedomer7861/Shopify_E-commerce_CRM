@@ -1,5 +1,6 @@
 -- Read-only tenant-isolation audit. Every row returned is a problem.
 -- Run: npm run check:tenancy-db   (uses the linked Supabase project, read-only)
+-- Keep in step with platform_security_overview() (migration 20261113n), which runs the same checks live.
 --
 -- 1. Table with org_id but row security off.
 SELECT 'rls_off' AS problem, c.relname AS tbl, NULL::text AS policy

@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Building2, Users, Tag, Ticket, Blocks, Flag, FileText, Mail, History, ShieldCheck, Megaphone, Wallet } from "lucide-react";
+import { LayoutDashboard, Building2, Users, Tag, Ticket, Blocks, Flag, FileText, Mail, History, ShieldCheck, Megaphone, Wallet, Shield } from "lucide-react";
 import { PageHeader, AccessDenied } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ const SECTIONS = [
   { href: "/superadmin/content", label: "Content", icon: FileText },
   { href: "/superadmin/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/superadmin/requests", label: "Requests", icon: Mail },
+  { href: "/superadmin/security", label: "Security", icon: Shield },
   { href: "/superadmin/activity", label: "Owner activity", icon: History },
 ];
 
