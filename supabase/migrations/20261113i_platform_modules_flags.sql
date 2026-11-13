@@ -178,7 +178,7 @@ BEGIN
     PERFORM public.platform_recompute_org_modules(o);
   END LOOP;
   PERFORM public.platform_audit('plans.modules', 'subscription_plans', p_plan::text,
-    jsonb_build_object('modules', CASE WHEN cardinality(clean) = 0 THEN 'all' ELSE to_jsonb(clean) END));
+    jsonb_build_object('modules', CASE WHEN cardinality(clean) = 0 THEN to_jsonb('all'::text) ELSE to_jsonb(clean) END));
 END $$;
 
 -- p_enabled NULL removes the override (back to the plan's rule).
