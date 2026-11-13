@@ -39,7 +39,17 @@ export const PERMISSION_MODULES: { key: string; label: string; group: string; ac
   { key: "audit", label: "Audit Log", group: "Administration", actions: ["view", "export"] },
 ];
 
-type WithGrants = Partial<Profile> & { role_grants?: Grants; org_disabled_modules?: string[] };
+type WithGrants = Partial<Profile> & { role_grants?: Grants; org_disabled_modules?: string[]; org_platform_blocked_modules?: string[] };
+
+/** Off for the whole org: switched off by its admin, or not available to it (plan or platform owner). */
+export function orgModuleOff(profile: Pick<WithGrants, "org_disabled_modules" | "org_platform_blocked_modules"> | null | undefined, module: string) {
+  return !!(profile?.org_disabled_modules?.includes(module) || profile?.org_platform_blocked_modules?.includes(module));
+}
+
+/** True when the platform owner has turned this feature flag on for the profile's org. */
+export function hasFlag(profile: Partial<Profile> | null | undefined, key: string) {
+  return !!profile?.org_feature_flags?.includes(key);
+}
 
 /**
  * The profile's scope for module.action, or null when not granted. Admins
@@ -48,7 +58,7 @@ type WithGrants = Partial<Profile> & { role_grants?: Grants; org_disabled_module
  */
 export function can(profile: WithGrants | null | undefined, module: string, action: Action): Scope | null {
   if (!profile || profile.is_active === false) return null;
-  if (profile.org_disabled_modules?.includes(module)) return null; // switched off for the whole org, admins included
+  if (orgModuleOff(profile, module)) return null; // off for the whole org, admins included
   if (profile.role === "admin") return "organisation";
   const scope = profile.role_grants?.[module]?.[action];
   return scope && SCOPES.includes(scope) ? scope : null;

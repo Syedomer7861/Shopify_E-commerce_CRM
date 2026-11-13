@@ -183,7 +183,12 @@ export default function OrganisationPage() {
               <h2 className="text-sm font-bold text-[#1c1c1c]">Modules &amp; security</h2>
               <p className="text-[11px] text-gray-400 mb-3">Switch a module off for the whole organisation - it closes for everyone, admins included, and its data is kept. <span className="font-bold text-gray-500">Sales &amp; call centre</span> covers the call queue, customers, orders, carts, campaigns, recordings and sales analytics: switch it off if your organisation doesn&apos;t sell to consumers.</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-                {SWITCHABLE_MODULES.map(m => (
+                {SWITCHABLE_MODULES.map(m => profile?.org_platform_blocked_modules?.includes(m.key) ? (
+                  <div key={m.key} className="flex items-center gap-2 p-2.5 rounded-lg border border-gray-100 bg-gray-50 text-[11px] text-gray-500" title="Not included in your plan. Contact us to add it.">
+                    <input type="checkbox" checked={false} disabled aria-label={`${m.label}: not in your plan`} />
+                    {m.label} <span className="ml-auto text-[9px] uppercase tracking-wider">Not in plan</span>
+                  </div>
+                ) : (
                   <label key={m.key} className="flex items-center gap-2 p-2.5 rounded-lg border border-gray-100 text-[11px] text-[#1c1c1c] cursor-pointer">
                     <input type="checkbox" checked={!off.includes(m.key)} onChange={() => setModulesOff(off.includes(m.key) ? off.filter(k => k !== m.key) : [...off, m.key])} />
                     {m.label}

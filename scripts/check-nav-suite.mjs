@@ -36,6 +36,10 @@ assert.deepStrictEqual(
   allowedNavModules({ role: "web_developer", permissions: { nav_modules: ["dashboard", "tasks", "orders", "chat"] }, ...off }),
   ["dashboard", "chat"], "personal list loses the suite pages");
 
+// Blocked by the platform owner (plan or override) closes the same pages.
+const blocked = allowedNavModules({ role: "admin", org_disabled_modules: [], org_platform_blocked_modules: ["commerce"] });
+assert.ok(Array.isArray(blocked) && COMMERCE_NAV.every(k => !blocked.includes(k)), "platform-blocked suite closes its pages");
+
 // Every suite key is a real page key, and the neutral menu holds none of them.
 for (const key of COMMERCE_NAV) assert.ok(ALL_NAV_MODULES.includes(key), `${key} is not a known page`);
 for (const key of NEUTRAL_NAV_MODULES) assert.ok(!COMMERCE_NAV.includes(key) && ALL_NAV_MODULES.includes(key), `${key} must be neutral`);

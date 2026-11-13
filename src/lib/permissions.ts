@@ -104,7 +104,9 @@ export const NEUTRAL_NAV_MODULES: readonly string[] = ["dashboard", "my-hub", "c
  */
 export function allowedNavModules(profile: Partial<Profile> | null | undefined): string[] | null {
   const base = roleNavModules(profile);
-  if (!profile?.org_disabled_modules?.includes(COMMERCE_SUITE)) return base;
+  // Off by the org's own switch or by the platform owner (plan / override); same rule as orgModuleOff in ./access.
+  const suiteOff = profile?.org_disabled_modules?.includes(COMMERCE_SUITE) || profile?.org_platform_blocked_modules?.includes(COMMERCE_SUITE);
+  if (!suiteOff) return base;
   return (base ?? ALL_NAV_MODULES).filter(key => !COMMERCE_NAV.includes(key));
 }
 

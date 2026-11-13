@@ -326,6 +326,9 @@ export interface Profile {
   role_home_widgets?: string[] | null;
   // organizations.disabled_modules / session_timeout_minutes (20261111g), via my_org_controls().
   org_disabled_modules?: string[];
+  // organizations.platform_blocked_modules and the org's feature flags (20261113i): set by the platform owner.
+  org_platform_blocked_modules?: string[];
+  org_feature_flags?: string[];
   org_session_timeout_minutes?: number | null;
   branch_id?: string | null;
   department_id?: string | null;

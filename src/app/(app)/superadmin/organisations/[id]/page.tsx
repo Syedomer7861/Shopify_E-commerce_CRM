@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { UsersTable } from "@/components/superadmin/UsersTable";
 import { SubscriptionPanel } from "@/components/superadmin/SubscriptionPanel";
+import { OrgModulesPanel } from "@/components/superadmin/OrgModulesPanel";
 
 type Org = {
   id: string; name: string; slug: string; plan: string | null; is_active: boolean; created_at: string;
@@ -124,17 +125,7 @@ export default function SuperAdminOrgDetail() {
 
       {tab === "users" && <UsersTable orgId={id} showOrg={false} />}
 
-      {tab === "modules" && (
-        <div className="card p-4 text-sm">
-          {org.disabled_modules?.length ? (
-            <>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Turned off by this organisation&apos;s admin</div>
-              <div className="flex flex-wrap gap-2">{org.disabled_modules.map(m => <span key={m} className="px-2 py-1 rounded-md bg-[#f7f4ed] text-xs">{m}</span>)}</div>
-            </>
-          ) : <p className="text-[#5f5f5d]">Every module is on.</p>}
-          <p className="text-xs text-[#5f5f5d] mt-4">Owner control of modules per plan comes with the module registry in a later phase.</p>
-        </div>
-      )}
+      {tab === "modules" && <OrgModulesPanel orgId={id} />}
 
       {tab === "activity" && (
         !audit ? <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>

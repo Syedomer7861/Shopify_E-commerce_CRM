@@ -51,6 +51,8 @@ async function fetchProfile(supabase: any, userId: string): Promise<Profile | nu
     }
     if (row) {
       profile.org_disabled_modules = row.disabled_modules || [];
+      profile.org_platform_blocked_modules = row.platform_blocked_modules || [];
+      profile.org_feature_flags = row.feature_flags || [];
       profile.org_session_timeout_minutes = row.session_timeout_minutes ?? null;
     }
   }
@@ -60,7 +62,10 @@ async function fetchProfile(supabase: any, userId: string): Promise<Profile | nu
 // loadProfile runs many times per page (sidebar, dashboard, guards), and org
 // controls change rarely - so one lookup per org per 5 minutes. A missing
 // function (pre-20261111g database) is cached the same way.
-type OrgControls = { disabled_modules: string[] | null; session_timeout_minutes: number | null };
+type OrgControls = {
+  disabled_modules: string[] | null; session_timeout_minutes: number | null;
+  platform_blocked_modules?: string[] | null; feature_flags?: string[] | null; // absent before 20261113i
+};
 const controlsCache = new Map<string, { at: number; row: OrgControls | null }>();
 const CONTROLS_TTL_MS = 5 * 60_000;
 

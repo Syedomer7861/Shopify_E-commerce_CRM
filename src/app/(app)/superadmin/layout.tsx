@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Building2, Users, Tag, Ticket, Mail, History, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Building2, Users, Tag, Ticket, Blocks, Flag, Mail, History, ShieldCheck } from "lucide-react";
 import { PageHeader, AccessDenied } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,8 @@ const SECTIONS = [
   { href: "/superadmin/users", label: "Users", icon: Users },
   { href: "/superadmin/plans", label: "Plans", icon: Tag },
   { href: "/superadmin/coupons", label: "Coupons", icon: Ticket },
+  { href: "/superadmin/modules", label: "Modules", icon: Blocks },
+  { href: "/superadmin/flags", label: "Flags", icon: Flag },
   { href: "/superadmin/requests", label: "Requests", icon: Mail },
   { href: "/superadmin/activity", label: "Owner activity", icon: History },
 ];
