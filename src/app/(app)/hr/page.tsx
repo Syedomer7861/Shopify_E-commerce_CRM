@@ -52,6 +52,7 @@ import PayrollRun from "@/components/hr/PayrollRun";
 import HRDocuments from "@/components/hr/HRDocuments";
 import Announcements from "@/components/hr/Announcements";
 import HREngagement from "@/components/hr/HREngagement";
+import WorkforceOverview from "@/components/hr/WorkforceOverview";
 import dynamic from "next/dynamic";
 const AgentIntelligence = dynamic(() => import("@/components/hr/AgentIntelligence"), { ssr: false });
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
@@ -263,7 +264,7 @@ function HRDashboardContent() {
 
       setData({
         members: filteredMembers,
-        leaves: hrData.leaves || [],
+        leaves: statusData.leaves || hrData.leaves || [],
         stats: statusData.stats || { totalBreak: 0, avgProductive: 0 },
         employees: hrData.employees || [],
         announcements: hrData.announcements || [],
@@ -319,7 +320,7 @@ function HRDashboardContent() {
       const channel = supabase
         .channel("hr-live")
         .on("postgres_changes", { event: "*", schema: "public", table: "agent_status_logs" }, fetchData)
-        .on("postgres_changes", { event: "*", schema: "public", table: "leave_requests" },    fetchData)
+        .on("postgres_changes", { event: "*", schema: "public", table: "leaves" }, fetchData)
         .subscribe();
 
       return () => {
@@ -413,6 +414,7 @@ function HRDashboardContent() {
 
       {activeTab === 'overview' && (
         <>
+          <WorkforceOverview employees={data.employees} leaves={data.leaves} attendance={data.attendance} holidays={data.holidays} payrollStatus={data.payrollStatus} payrollMonth={data.payrollMonth} />
           {/* Top Performance Ribbon */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <MetricCard label="Active Strength" value={onlineMembers.length} icon={UserCheck} sub={`${data.members.length} total profiles`} accent="text-emerald-600" />
