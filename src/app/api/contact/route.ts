@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { rateLimit } from "@/lib/rate-limit";
+import { AttributionSchema } from "@/lib/attribution";
 
 // Public, unauthenticated endpoint (the whole point - there's no org/session
 // yet). Service-role write only; no anon INSERT policy exists on
@@ -13,6 +14,8 @@ const ContactSchema = z.object({
   company: z.string().trim().max(200).optional(),
   phone: z.string().trim().max(50).optional(),
   message: z.string().trim().min(1).max(4000),
+  // Sent only after analytics consent; a malformed value is dropped, never blocks the request.
+  attribution: z.unknown().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -36,7 +39,13 @@ export async function POST(req: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
 
-  const { error } = await supabaseAdmin.from("contact_requests").insert(parsed.data);
+  const { attribution, ...fields } = parsed.data;
+  const touches = AttributionSchema.safeParse(attribution);
+  let { error } = await supabaseAdmin.from("contact_requests").insert(
+    touches.success ? { ...fields, first_touch: touches.data.first, last_touch: touches.data.last } : fields
+  );
+  // Attribution must never cost a lead: if its columns are missing or reject it, save the request without it.
+  if (error && touches.success) ({ error } = await supabaseAdmin.from("contact_requests").insert(fields));
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

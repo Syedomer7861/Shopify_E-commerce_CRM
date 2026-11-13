@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { PHProvider } from "./providers";
 import PostHogPageView from "./_components/PostHogPageView";
 import ServiceWorkerRegister from "./_components/ServiceWorkerRegister";
+import ConsentBanner from "./_components/ConsentBanner";
 
 // Self-hosted at build time: no request to Google, no render-blocking stylesheet chain.
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </PHProvider>
         <ServiceWorkerRegister />
+        <ConsentBanner />
         <Toaster
           position="bottom-right"
           toastOptions={{

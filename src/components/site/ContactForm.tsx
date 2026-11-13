@@ -3,6 +3,16 @@
 import { useState } from "react";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { ATTRIBUTION_KEY, AttributionSchema, readConsent } from "@/lib/attribution";
+
+// How the visitor found us, if they allowed analytics (see ConsentBanner). Otherwise nothing is sent.
+function storedAttribution() {
+  if (readConsent(document.cookie) !== "analytics") return undefined;
+  try {
+    const parsed = AttributionSchema.safeParse(JSON.parse(localStorage.getItem(ATTRIBUTION_KEY) || "null"));
+    return parsed.success ? parsed.data : undefined;
+  } catch { return undefined; }
+}
 
 // Workspace request form. Posts to /api/contact exactly as before; only the
 // presentation changed.
@@ -23,7 +33,7 @@ export default function ContactForm() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, attribution: storedAttribution() }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
