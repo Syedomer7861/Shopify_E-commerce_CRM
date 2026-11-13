@@ -25,7 +25,7 @@ JOIN pg_attribute a ON a.attrelid = c.oid AND a.attname = 'org_id' AND NOT a.att
 WHERE p.schemaname = 'public'
   AND p.permissive = 'PERMISSIVE'
   AND p.roles && ARRAY['public', 'anon', 'authenticated']::name[]
-  AND coalesce(p.qual, '') || coalesce(p.with_check, '') !~ '(current_org_id|org_id|is_platform_admin|can_reach|can_access_space|is_space_owner|auth\.uid\(\) = user_id|user_id = auth\.uid\(\))'
+  AND coalesce(p.qual, '') || coalesce(p.with_check, '') !~ '(current_org_id|org_id|is_platform_admin|is_platform_owner_verified|can_reach|can_access_space|is_space_owner|auth\.uid\(\) = user_id|user_id = auth\.uid\(\))'
 UNION ALL
 -- 4. Privileged function callable without signing in.
 SELECT 'anon_definer_fn', p.proname, NULL

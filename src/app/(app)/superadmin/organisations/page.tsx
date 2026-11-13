@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Building2, Loader2, Power, PowerOff } from "lucide-react";
 import toast from "react-hot-toast";
 import { PageHeader, EmptyState } from "@/components/ui";
@@ -92,7 +93,7 @@ export default function SuperAdminOrganisations() {
               {shown.map(o => (
                 <tr key={o.org_id} id={`org-${o.org_id}`} className={cn("border-b border-gray-50 last:border-0", focus === o.org_id && "bg-amber-50")}>
                   <td className="p-3">
-                    <div className="font-semibold text-[#1c1c1c]">{o.name}</div>
+                    <Link href={`/superadmin/organisations/${o.org_id}`} className="font-semibold text-[#1c1c1c] hover:underline">{o.name}</Link>
                     <div className="text-[11px] text-[#5f5f5d]">{o.slug} · since {new Date(o.created_at).toLocaleDateString()}{o.plan ? ` · ${o.plan}` : ""}</div>
                   </td>
                   <td className="p-3 text-xs text-[#5f5f5d]">{o.admin_email || "—"}</td>

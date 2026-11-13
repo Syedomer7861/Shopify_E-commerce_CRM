@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Building2, Mail, History, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Building2, Users, Mail, History, ShieldCheck } from "lucide-react";
 import { PageHeader, AccessDenied } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ import { TwoFactorCard } from "@/components/auth/TwoFactorCard";
 const SECTIONS = [
   { href: "/superadmin", label: "Overview", icon: LayoutDashboard },
   { href: "/superadmin/organisations", label: "Organisations", icon: Building2 },
+  { href: "/superadmin/users", label: "Users", icon: Users },
   { href: "/superadmin/requests", label: "Requests", icon: Mail },
   { href: "/superadmin/activity", label: "Owner activity", icon: History },
 ];

@@ -27,7 +27,7 @@ function Tile({ label, value, sub }: { label: string; value: string | number; su
 
 const HIT_ICON = { organisation: Building2, user: User, request: Mail } as const;
 const hitHref = (h: Hit) =>
-  h.kind === "organisation" ? `/superadmin/organisations?focus=${h.id}` : h.kind === "request" ? "/superadmin/requests" : null;
+  h.kind === "organisation" ? `/superadmin/organisations/${h.id}` : h.kind === "request" ? "/superadmin/requests" : "/superadmin/users";
 
 export default function SuperAdminOverview() {
   const supabase = useMemo(() => createClient(), []);
