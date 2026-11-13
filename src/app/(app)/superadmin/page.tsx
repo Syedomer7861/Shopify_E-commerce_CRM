@@ -1,276 +1,128 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
-import { Building2, Users, Loader2, Power, PowerOff, Mail, Phone, ShieldCheck, History } from "lucide-react";
-import { PageHeader, EmptyState, AccessDenied, Select } from "@/components/ui";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { Search, Loader2, Building2, User, Mail, RefreshCw } from "lucide-react";
+import { PageHeader } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
-import { cn } from "@/lib/utils";
-import toast from "react-hot-toast";
-import { useCurrentProfile } from "@/hooks/useCurrentProfile";
-import { TwoFactorCard } from "@/components/auth/TwoFactorCard";
 
-type AuditRow = { id: string; action: string; target_type: string | null; target_id: string | null; details: { changed?: Record<string, unknown> } | null; created_at: string };
-
-type OrgStat = {
-  org_id: string;
-  name: string;
-  slug: string;
-  plan: string;
-  is_active: boolean;
-  member_count: number;
-  created_at: string;
+type Overview = {
+  orgs_total: number; orgs_active: number; orgs_suspended: number; orgs_new_30d: number;
+  users_total: number; users_enabled: number; users_new_30d: number;
+  active_1d: number; active_7d: number; active_30d: number;
+  requests_new: number; requests_total: number; storage_bytes: number; generated_at: string;
 };
+type Hit = { kind: "organisation" | "user" | "request"; id: string; title: string; subtitle: string };
 
-type ContactRequest = {
-  id: string;
-  name: string;
-  email: string;
-  company: string | null;
-  phone: string | null;
-  message: string;
-  status: "new" | "contacted" | "provisioned" | "declined";
-  created_at: string;
-};
+const mb = (b: number) => (b >= 1e9 ? `${(b / 1e9).toFixed(2)} GB` : `${(b / 1e6).toFixed(1)} MB`);
 
-const STATUS_STYLE: Record<ContactRequest["status"], string> = {
-  new: "bg-amber-50 text-amber-700",
-  contacted: "bg-blue-50 text-blue-600",
-  provisioned: "bg-emerald-50 text-emerald-600",
-  declined: "bg-gray-100 text-gray-500",
-};
+function Tile({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+  return (
+    <div className="card p-4">
+      <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d]">{label}</div>
+      <div className="text-2xl font-bold text-[#1c1c1c] mt-1 tabular-nums">{value}</div>
+      {sub && <div className="text-[11px] text-[#5f5f5d] mt-1">{sub}</div>}
+    </div>
+  );
+}
 
-export default function PlatformAdminPage() {
-  const [loading, setLoading] = useState(true);
-  const [orgs, setOrgs] = useState<OrgStat[]>([]);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [requests, setRequests] = useState<ContactRequest[]>([]);
-  const [requestsLoading, setRequestsLoading] = useState(true);
-  const [requestBusyId, setRequestBusyId] = useState<string | null>(null);
-  const { profile: currentProfile, loading: profileLoading } = useCurrentProfile();
-  const supabase = createClient();
-  // Owner data needs a session that passed two-factor; the database enforces
-  // it too (is_platform_owner_verified), this only decides what to draw.
-  const [verified, setVerified] = useState<boolean | null>(null);
-  const [audit, setAudit] = useState<AuditRow[]>([]);
+const HIT_ICON = { organisation: Building2, user: User, request: Mail } as const;
+const hitHref = (h: Hit) =>
+  h.kind === "organisation" ? `/superadmin/organisations?focus=${h.id}` : h.kind === "request" ? "/superadmin/requests" : null;
 
-  const checkVerified = useCallback(async () => {
-    const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    setVerified(data?.currentLevel === "aal2");
+export default function SuperAdminOverview() {
+  const supabase = useMemo(() => createClient(), []);
+  const [data, setData] = useState<Overview | null>(null);
+  const [error, setError] = useState("");
+  const [q, setQ] = useState("");
+  const [hits, setHits] = useState<Hit[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  const load = useCallback(async () => {
+    setError("");
+    const { data: row, error: err } = await supabase.rpc("platform_overview");
+    if (err) setError(err.message);
+    else setData(row as Overview | null);
   }, [supabase]);
 
-  const fetchAudit = useCallback(async () => {
-    const { data } = await supabase.from("platform_audit_logs").select("*").order("created_at", { ascending: false }).limit(30);
-    setAudit((data || []) as AuditRow[]);
-  }, [supabase]);
-
-  const fetchOrgs = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await supabase.rpc("platform_admin_org_stats");
-    if (error) toast.error(error.message);
-    else setOrgs((data || []) as OrgStat[]);
-    setLoading(false);
-  }, [supabase]);
-
-  const fetchRequests = useCallback(async () => {
-    setRequestsLoading(true);
-    const { data, error } = await supabase
-      .from("contact_requests")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) toast.error(error.message);
-    else setRequests((data || []) as ContactRequest[]);
-    setRequestsLoading(false);
-  }, [supabase]);
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    if (!profileLoading && currentProfile?.is_platform_admin) checkVerified();
-  }, [profileLoading, currentProfile?.is_platform_admin, checkVerified]);
-
-  useEffect(() => {
-    if (verified) {
-      fetchOrgs();
-      fetchRequests();
-      fetchAudit();
-    }
-  }, [verified, fetchOrgs, fetchRequests, fetchAudit]);
-
-  async function updateRequestStatus(id: string, status: ContactRequest["status"]) {
-    setRequestBusyId(id);
-    const { error } = await supabase
-      .from("contact_requests")
-      .update({ status, reviewed_at: new Date().toISOString(), reviewed_by: currentProfile?.id })
-      .eq("id", id);
-    if (error) toast.error(error.message);
-    else { setRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r)); fetchAudit(); }
-    setRequestBusyId(null);
-  }
-
-  async function toggleActive(org: OrgStat) {
-    const next = !org.is_active;
-    if (!confirm(`${next ? "Reactivate" : "Suspend"} "${org.name}"? ${next ? "" : "Every member loses access to all org data immediately."}`)) return;
-    setBusyId(org.org_id);
-    const { error } = await supabase.from("organizations").update({ is_active: next }).eq("id", org.org_id);
-    if (error) toast.error(error.message);
-    else {
-      toast.success(next ? "Organization reactivated" : "Organization suspended");
-      setOrgs(prev => prev.map(o => o.org_id === org.org_id ? { ...o, is_active: next } : o));
-      fetchAudit();
-    }
-    setBusyId(null);
-  }
-
-  if (profileLoading) {
-    return <div className="py-12 text-center text-gray-400">Loading...</div>;
-  }
-
-  if (!currentProfile?.is_platform_admin) {
-    return <AccessDenied title="Platform Access Only" desc="This page is restricted to the platform's own super-admin account." />;
-  }
-
-  if (verified === null) {
-    return <div className="py-12 text-center text-gray-400">Loading...</div>;
-  }
-
-  if (!verified) {
-    return (
-      <div className="animate-fade-in max-w-md">
-        <PageHeader title="Super Admin" subtitle="Owner access needs two-factor sign-in." />
-        <div className="card p-4 mb-4 flex gap-3 text-xs text-[#5f5f5d]">
-          <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
-          <p>Set up two-factor below. Once it is on, this page opens. Your normal workspace is not affected. You can also manage it later in Settings, then Security.</p>
-        </div>
-        <TwoFactorCard onEnabled={checkVerified} />
-      </div>
-    );
-  }
+    const term = q.trim();
+    if (term.length < 2) { setHits([]); setSearching(false); return; }
+    setSearching(true);
+    const t = setTimeout(async () => {
+      const { data: rows } = await supabase.rpc("platform_search", { q: term });
+      setHits((rows || []) as Hit[]);
+      setSearching(false);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q, supabase]);
 
   return (
-    <div className="animate-fade-in">
+    <div>
       <PageHeader
         title="Super Admin"
-        subtitle="Every organization on this SaaS instance. Suspending one locks out all of its members immediately."
+        subtitle="Live numbers across every organisation on CodeCrest."
+        actions={<button onClick={load} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-[#eceae4]"><RefreshCw className="w-3.5 h-3.5" /> Refresh</button>}
       />
 
-      <div className="mb-10">
-        <h2 className="text-sm font-bold text-[#1c1c1c] mb-1 flex items-center gap-2">
-          <Mail className="w-4 h-4" /> Contact Requests
-        </h2>
-        <p className="text-[11px] text-gray-400 mb-4">
-          Submitted from the public /contact form - self-serve signup is off, so this is the only way in now.
-        </p>
-        {requestsLoading ? (
-          <div className="py-8 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
-        ) : requests.length === 0 ? (
-          <EmptyState icon={<Mail className="w-6 h-6" />} title="No requests yet" desc="Submissions from /contact land here." />
-        ) : (
-          <div className="space-y-3">
-            {requests.map(r => (
-              <div key={r.id} className="card p-4 flex flex-col sm:flex-row sm:items-start gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-bold text-[#1c1c1c]">{r.name}</span>
-                    {r.company && <span className="text-xs text-gray-400">&middot; {r.company}</span>}
-                    <span className={cn("text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full", STATUS_STYLE[r.status])}>
-                      {r.status}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
-                    <a href={`mailto:${r.email}`} className="flex items-center gap-1 hover:text-[#1c1c1c]"><Mail className="w-3 h-3" /> {r.email}</a>
-                    {r.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {r.phone}</span>}
-                    <span>{new Date(r.created_at).toLocaleDateString()}</span>
-                  </div>
-                  <p className="text-xs text-[#5f5f5d] mt-2 leading-relaxed">{r.message}</p>
+      <div className="relative mb-6">
+        <Search className="w-4 h-4 text-[#5f5f5d] absolute left-3 top-1/2 -translate-y-1/2" />
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search organisations, users, requests..."
+          className="w-full h-11 pl-9 pr-9 bg-white border border-[#eceae4] rounded-xl text-sm focus:outline-none focus:border-[#1c1c1c]/30" />
+        {searching && <Loader2 className="w-4 h-4 animate-spin text-[#5f5f5d] absolute right-3 top-1/2 -translate-y-1/2" />}
+        {q.trim().length >= 2 && !searching && (
+          <div className="absolute z-20 mt-1 w-full bg-white border border-[#eceae4] rounded-xl shadow-xl max-h-80 overflow-y-auto">
+            {hits.length === 0 ? <div className="p-4 text-xs text-[#5f5f5d]">Nothing matched.</div> : hits.map(h => {
+              const Icon = HIT_ICON[h.kind];
+              const href = hitHref(h);
+              const body = (
+                <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#f7f4ed]">
+                  <Icon className="w-3.5 h-3.5 text-[#5f5f5d] shrink-0" />
+                  <span className="text-sm font-semibold text-[#1c1c1c] truncate">{h.title}</span>
+                  <span className="text-[11px] text-[#5f5f5d] truncate">{h.subtitle}</span>
                 </div>
-                <div className="shrink-0 w-full sm:w-40">
-                  <Select
-                    value={r.status}
-                    onChange={v => updateRequestStatus(r.id, v as ContactRequest["status"])}
-                    disabled={requestBusyId === r.id}
-                    triggerClassName="text-xs"
-                    options={[
-                      { value: "new", label: "New" },
-                      { value: "contacted", label: "Contacted" },
-                      { value: "provisioned", label: "Provisioned" },
-                      { value: "declined", label: "Declined" },
-                    ]}
-                  />
-                </div>
-              </div>
-            ))}
+              );
+              return href ? <Link key={h.kind + h.id} href={href}>{body}</Link> : <div key={h.kind + h.id}>{body}</div>;
+            })}
           </div>
         )}
       </div>
 
-      <h2 className="text-sm font-bold text-[#1c1c1c] mb-4 flex items-center gap-2">
-        <Building2 className="w-4 h-4" /> Organizations
-      </h2>
-
-      {loading ? (
+      {error ? (
+        <div className="card p-4 text-sm text-red-600">Couldn&apos;t load numbers: {error}</div>
+      ) : !data ? (
         <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
-      ) : orgs.length === 0 ? (
-        <EmptyState icon={<Building2 className="w-6 h-6" />} title="No organizations yet" desc="Provision one via /api/signup once you've reviewed a request above." />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {orgs.map(org => (
-            <div key={org.org_id} className="card p-4 space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-sm font-bold text-[#1c1c1c]">{org.name}</div>
-                  <div className="text-[10px] text-gray-400 mt-0.5">{org.slug} &middot; {org.plan} plan</div>
-                </div>
-                <span className={cn(
-                  "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full",
-                  org.is_active ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"
-                )}>
-                  {org.is_active ? "Active" : "Suspended"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                <Users className="w-3.5 h-3.5" /> {org.member_count} member{org.member_count === 1 ? "" : "s"}
-              </div>
-              <button
-                onClick={() => toggleActive(org)}
-                disabled={busyId === org.org_id}
-                className={cn(
-                  "w-full flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg border transition-all",
-                  org.is_active
-                    ? "border-rose-100 text-rose-500 hover:bg-rose-50"
-                    : "border-emerald-100 text-emerald-600 hover:bg-emerald-50"
-                )}
-              >
-                {busyId === org.org_id ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : org.is_active ? (
-                  <><PowerOff className="w-3 h-3" /> Suspend</>
-                ) : (
-                  <><Power className="w-3 h-3" /> Reactivate</>
-                )}
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+        <>
+          <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-3">Organisations</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            <Tile label="Total" value={data.orgs_total} />
+            <Tile label="Active" value={data.orgs_active} />
+            <Tile label="Suspended" value={data.orgs_suspended} />
+            <Tile label="New, last 30 days" value={data.orgs_new_30d} />
+          </div>
 
-      <h2 className="text-sm font-bold text-[#1c1c1c] mt-10 mb-1 flex items-center gap-2">
-        <History className="w-4 h-4" /> Owner activity
-      </h2>
-      <p className="text-[11px] text-gray-400 mb-4">Every change made from this page. Permanent: nobody can edit or delete it.</p>
-      {audit.length === 0 ? (
-        <EmptyState icon={<History className="w-6 h-6" />} title="No owner actions yet" desc="Suspensions, reactivations and request updates appear here." />
-      ) : (
-        <div className="card divide-y divide-gray-50">
-          {audit.map(a => (
-            <div key={a.id} className="p-3 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs">
-              <span className="text-gray-400 sm:w-40 shrink-0">{new Date(a.created_at).toLocaleString()}</span>
-              <span className="font-bold text-[#1c1c1c]">{a.action.replace("_", " ").replace(".", ": ")}</span>
-              <span className="text-gray-500 truncate">
-                {Object.entries(a.details?.changed || {}).map(([k, v]) => {
-                  const c = v as { from: unknown; to: unknown };
-                  return `${k.replace(/_/g, " ")}: ${JSON.stringify(c.from)} to ${JSON.stringify(c.to)}`;
-                }).join(", ")}
-              </span>
-            </div>
-          ))}
-        </div>
+          <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-3">Users</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            <Tile label="Total accounts" value={data.users_total} sub={`${data.users_enabled} enabled`} />
+            <Tile label="Active today" value={data.active_1d} sub="Had the app open in the last 24 hours" />
+            <Tile label="Active, 7 days" value={data.active_7d} />
+            <Tile label="Active, 30 days" value={data.active_30d} sub={`${data.users_new_30d} new accounts in 30 days`} />
+          </div>
+
+          <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-3">Pipeline and platform</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            <Tile label="New requests" value={data.requests_new} sub={`${data.requests_total} received in total`} />
+            <Tile label="File storage" value={mb(data.storage_bytes)} sub="All organisations" />
+          </div>
+
+          <div className="card p-4 text-xs text-[#5f5f5d]">
+            <span className="font-semibold text-[#1c1c1c]">Not available yet:</span> revenue (MRR, ARR), churn, trial conversion, customer acquisition cost and lifetime value.
+            They need subscription billing (Razorpay) and campaign tracking, which come in later phases, and will be calculated from real records, never estimated.
+            <div className="mt-2 text-[10px]">Updated {new Date(data.generated_at).toLocaleString()}.</div>
+          </div>
+        </>
       )}
     </div>
   );
