@@ -11,7 +11,9 @@ import { RecordsModule, ModuleTabs, type RecordsConfig } from "./RecordsModule";
  */
 export function ModulePage({ title, subtitle, tabs }: { title: string; subtitle: string; tabs: { label: string; config: RecordsConfig }[] }) {
   const { profile, loading } = useCurrentProfile();
-  const [active, setActive] = useState<string | null>(null);
+  // ?tab=<table> opens that tab (global search links straight to it).
+  const [active, setActive] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("tab"));
 
   if (loading) return <div className="py-12 text-center text-gray-400">Loading...</div>;
   const allowed = tabs.filter(t => can(profile, t.config.module, "view") !== null);

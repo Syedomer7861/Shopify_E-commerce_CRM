@@ -42,6 +42,8 @@ export type RecordsConfig = {
   editable?: boolean;
   /** A second save button that runs something on the row just created (Field Visits: straight to check-in). */
   createAndAct?: { label: string; run: (row: RecordRow, reload: () => void) => void };
+  /** Before adding, warn if a row with the same value in any of these fields already exists (Leads: email, phone). */
+  dedupe?: string[];
 };
 
 const label = (s: string) => s.replace(/_/g, " ");
@@ -64,7 +66,9 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<RecordRow | null>(null);
-  const [query, setQuery] = useState("");
+  // ?q= pre-fills the search box (global search links here).
+  const [query, setQuery] = useState(() =>
+    typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("q") || "");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   const { table, module, noun, ownerCol } = config;
@@ -120,6 +124,21 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
       else { toast.success("Saved"); closeForm(); load(); }
       setSaving(false);
       return;
+    }
+    // ponytail: only finds duplicates among rows this user can see (row security);
+    // an org-wide check needs a server-side lookup.
+    const dupChecks = dataCol ? [] : (config.dedupe || [])
+      .map(k => [k, String(values[k] ?? "").replace(/[,()*%_\\"]/g, "").trim()] as const)
+      .filter(([, v]) => v.length >= 3)
+      .map(([k, v]) => `${k}.ilike.${v}`);
+    if (dupChecks.length) {
+      const { data: dup } = await supabase.from(table).select("*").or(dupChecks.join(",")).limit(1);
+      const hit = dup?.[0];
+      const name = hit && (hit.name || hit.title || hit.subject || hit.email || hit.phone);
+      if (hit && !window.confirm(`A ${noun} with the same details already exists${name ? `: ${name}` : ""}. Add anyway?`)) {
+        setSaving(false);
+        return;
+      }
     }
     const payload: Record<string, any> = { id: crypto.randomUUID(), [ownerCol]: profile.id, ...(filter || {}), ...(dataCol ? { [dataCol]: values } : values) };
     const { error } = await supabase.from(table).insert(payload);

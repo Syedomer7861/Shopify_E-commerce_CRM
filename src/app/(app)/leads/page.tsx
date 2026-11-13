@@ -1,9 +1,31 @@
 "use client";
 import { ModulePage } from "@/components/records/ModulePage";
-import { money, day, type RecordsConfig } from "@/components/records/RecordsModule";
+import toast from "react-hot-toast";
+import { createClient } from "@/lib/supabase";
+import { money, day, type RecordsConfig, type RecordRow } from "@/components/records/RecordsModule";
+
+// Turns a qualified lead into a deal linked to it, then marks the lead converted.
+async function convertToDeal(lead: RecordRow, reload: () => void) {
+  if (!window.confirm(`Create a deal from ${lead.name}?`)) return;
+  const supabase = createClient();
+  const { error } = await supabase.from("deals").insert({
+    id: crypto.randomUUID(), lead_id: lead.id, owner_id: lead.owner_id,
+    title: lead.company ? `${lead.company}: ${lead.name}` : lead.name,
+    value: lead.est_value ?? 0, status: "open",
+  });
+  if (error) return toast.error(error.message);
+  const { error: upd } = await supabase.from("leads").update({ status: "converted" }).eq("id", lead.id);
+  if (upd) toast.error(upd.message);
+  else toast.success("Deal created - see the Deals tab");
+  reload();
+}
 
 const leads: RecordsConfig = {
   table: "leads", module: "leads", noun: "lead", ownerCol: "owner_id", editable: true,
+  dedupe: ["email", "phone"],
+  rowActions: (row, reload) => row.status === "converted" || row.status === "lost" ? null : (
+    <button onClick={() => convertToDeal(row, reload)} className="px-2.5 py-1.5 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-bold">Convert to deal</button>
+  ),
   columns: [
     { key: "name", label: "Lead" },
     { key: "company", label: "Company" },

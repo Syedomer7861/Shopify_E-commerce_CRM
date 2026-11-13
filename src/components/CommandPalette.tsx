@@ -1,24 +1,79 @@
 "use client";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Search, User, Package, ListChecks, Loader2 } from "lucide-react";
+import { Search, User, Package, ListChecks, Loader2, Target, Handshake, LifeBuoy, FileText, Building2, Users, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { isTypingInField } from "@/lib/utils";
 
-// Global Cmd+K / Ctrl+K search - jump to any customer or order from
-// anywhere in the app, without hunting through pages. Task search reuses
-// the Tasks page's own robust search (customer/order/cart/UUID matching
-// already built there via ?id=) instead of duplicating that logic here.
+// Global Cmd+K / Ctrl+K search across every record type. Each query runs in
+// the browser under row security, so results are limited to the viewer's
+// organisation and to the records their role can see - a table they have no
+// access to simply returns nothing. Task search reuses the Tasks page's own
+// search via ?id=; record pages open on the right tab with ?tab= and ?q=.
 
-type CustomerResult = { id: string; name: string | null; email: string | null; phone: string | null };
-type OrderResult = { id: string; order_number: string | null; tracking_number: string | null; customer: { name: string | null } | null };
+type Row = Record<string, any>;
+type Source = {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+  table: string;
+  select: string;
+  cols: (q: string, isPhone: boolean) => string[];
+  title: (r: Row) => string;
+  sub: (r: Row) => string | null | undefined;
+  href: (r: Row, q: string) => string;
+};
+
+const recordLink = (path: string, tab: string, q: string) => `${path}?tab=${tab}&q=${encodeURIComponent(q)}`;
+
+const SOURCES: Source[] = [
+  {
+    key: "customers", label: "Customers", icon: User, table: "customers", select: "id, name, email, phone",
+    cols: (q, isPhone) => isPhone ? [`phone.eq.${q}`, `phone.ilike.%${q}%`] : [`name.ilike.%${q}%`, `email.ilike.%${q}%`],
+    title: r => r.name || r.email || "Unnamed", sub: r => r.phone || r.email, href: r => `/customers/${r.id}`,
+  },
+  {
+    key: "orders", label: "Orders", icon: Package, table: "orders", select: "id, order_number, tracking_number, customer:customers(name)",
+    cols: q => [`order_number.ilike.%${q}%`, `tracking_number.ilike.%${q}%`],
+    title: r => `#${r.order_number || r.tracking_number}`, sub: r => r.customer?.name, href: r => `/orders?id=${r.id}`,
+  },
+  {
+    key: "leads", label: "Leads", icon: Target, table: "leads", select: "id, name, company, phone, status",
+    cols: q => [`name.ilike.%${q}%`, `company.ilike.%${q}%`, `phone.ilike.%${q}%`, `email.ilike.%${q}%`],
+    title: r => r.name, sub: r => [r.company, r.status].filter(Boolean).join(" · "), href: (r, q) => recordLink("/leads", "leads", r.name || q),
+  },
+  {
+    key: "deals", label: "Deals", icon: Handshake, table: "deals", select: "id, title, status",
+    cols: q => [`title.ilike.%${q}%`],
+    title: r => r.title, sub: r => r.status, href: (r, q) => recordLink("/leads", "deals", r.title || q),
+  },
+  {
+    key: "tickets", label: "Tickets", icon: LifeBuoy, table: "tickets", select: "id, subject, status",
+    cols: q => [`subject.ilike.%${q}%`],
+    title: r => r.subject, sub: r => r.status, href: (r, q) => recordLink("/service-desk", "tickets", r.subject || q),
+  },
+  {
+    key: "invoices", label: "Invoices", icon: FileText, table: "invoices", select: "id, number, status",
+    cols: q => [`number.ilike.%${q}%`],
+    title: r => r.number, sub: r => r.status, href: (r, q) => recordLink("/finance", "invoices", r.number || q),
+  },
+  {
+    key: "vendors", label: "Vendors", icon: Building2, table: "vendors", select: "id, name",
+    cols: q => [`name.ilike.%${q}%`],
+    title: r => r.name, sub: () => null, href: (r, q) => recordLink("/finance", "vendors", r.name || q),
+  },
+  {
+    key: "people", label: "Team", icon: Users, table: "profiles", select: "id, name, email, role",
+    cols: q => [`name.ilike.%${q}%`, `email.ilike.%${q}%`],
+    title: r => r.name || r.email, sub: r => r.role, href: () => "/team",
+  },
+];
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [customers, setCustomers] = useState<CustomerResult[]>([]);
-  const [orders, setOrders] = useState<OrderResult[]>([]);
+  const [results, setResults] = useState<Record<string, Row[]>>({});
   const inputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -42,44 +97,32 @@ export function CommandPalette() {
   useEffect(() => {
     if (open) {
       setQuery("");
-      setCustomers([]);
-      setOrders([]);
+      setResults({});
       // Wait a tick for the input to mount before focusing.
       setTimeout(() => inputRef.current?.focus(), 0);
     }
   }, [open]);
 
   const runSearch = useCallback(async (q: string) => {
-    const cleanQ = q.trim().replace(/^#/, "");
+    // Characters that are filter syntax in the query string are dropped, so a
+    // search term can only ever be a search term.
+    const cleanQ = q.trim().replace(/^#/, "").replace(/[,()*%\\"]/g, " ").trim();
     if (cleanQ.length < 2) {
-      setCustomers([]);
-      setOrders([]);
+      setResults({});
       setLoading(false);
       return;
     }
     const isPhone = /^\d{7,15}$/.test(cleanQ.replace(/\s/g, ""));
-    try {
-      const [customerRes, orderRes] = await Promise.all([
-        supabase
-          .from("customers")
-          .select("id, name, email, phone")
-          .or(isPhone
-            ? `phone.eq.${cleanQ},phone.ilike.%${cleanQ}%`
-            : `name.ilike.%${cleanQ}%,email.ilike.%${cleanQ}%`)
-          .limit(5),
-        supabase
-          .from("orders")
-          .select("id, order_number, tracking_number, customer:customers(name)")
-          .or(`order_number.ilike.%${cleanQ}%,tracking_number.ilike.%${cleanQ}%`)
-          .limit(5),
-      ]);
-      setCustomers((customerRes.data as any) || []);
-      setOrders((orderRes.data as any) || []);
-    } catch (err) {
-      console.error("Command palette search failed:", err);
-    } finally {
-      setLoading(false);
-    }
+    const settled = await Promise.allSettled(SOURCES.map(s =>
+      supabase.from(s.table).select(s.select).or(s.cols(cleanQ, isPhone).join(",")).limit(5)
+    ));
+    const next: Record<string, Row[]> = {};
+    settled.forEach((r, i) => {
+      // A table the viewer can't read (or a module not set up) just contributes nothing.
+      if (r.status === "fulfilled" && !r.value.error) next[SOURCES[i].key] = (r.value.data as unknown as Row[]) || [];
+    });
+    setResults(next);
+    setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
@@ -95,7 +138,8 @@ export function CommandPalette() {
   }, [router]);
 
   const cleanQuery = query.trim();
-  const hasResults = customers.length > 0 || orders.length > 0;
+  const groups = SOURCES.filter(s => results[s.key]?.length);
+  const first = groups[0];
 
   // Discoverable entry point - most users won't know the Cmd+K shortcut
   // exists otherwise. Kept self-contained here rather than wired into
@@ -124,12 +168,11 @@ export function CommandPalette() {
             onChange={e => setQuery(e.target.value)}
             onKeyDown={e => {
               if (e.key === "Enter" && cleanQuery.length >= 2) {
-                if (customers[0]) goTo(`/customers/${customers[0].id}`);
-                else if (orders[0]) goTo(`/orders?id=${orders[0].id}`);
+                if (first) goTo(first.href(results[first.key][0], cleanQuery));
                 else goTo(`/tasks?id=${encodeURIComponent(cleanQuery)}`);
               }
             }}
-            placeholder="Search customers, orders, tasks..."
+            placeholder="Search customers, orders, leads, deals, tickets, invoices, people..."
             className="flex-1 bg-transparent outline-none text-sm font-medium text-[#1c1c1c] placeholder:text-[#1c1c1c]/30"
           />
           <kbd className="text-[9px] font-black text-[#5f5f5d] bg-[#eceae4] px-1.5 py-0.5 rounded uppercase tracking-widest">Esc</kbd>
@@ -138,37 +181,22 @@ export function CommandPalette() {
         <div className="max-h-[50vh] overflow-y-auto">
           {cleanQuery.length < 2 ? (
             <div className="p-8 text-center text-[#5f5f5d] text-xs font-medium">Type at least 2 characters to search.</div>
-          ) : !loading && !hasResults ? (
-            <div className="p-8 text-center text-[#5f5f5d] text-xs font-medium">No customers or orders matched.</div>
+          ) : !loading && groups.length === 0 ? (
+            <div className="p-8 text-center text-[#5f5f5d] text-xs font-medium">Nothing matched.</div>
           ) : (
-            <>
-              {customers.length > 0 && (
-                <div className="py-2">
-                  <div className="px-5 pb-1 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/60">Customers</div>
-                  {customers.map(c => (
-                    <button key={c.id} onClick={() => goTo(`/customers/${c.id}`)}
-                      className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-[#eceae4]/50 transition-colors text-left">
-                      <User className="w-3.5 h-3.5 text-[#5f5f5d] shrink-0" />
-                      <span className="text-sm font-bold text-[#1c1c1c] truncate">{c.name || c.email || "Unnamed"}</span>
-                      <span className="text-[10px] text-[#5f5f5d] truncate">{c.phone || c.email}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-              {orders.length > 0 && (
-                <div className="py-2 border-t border-[#eceae4]">
-                  <div className="px-5 pb-1 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/60">Orders</div>
-                  {orders.map(o => (
-                    <button key={o.id} onClick={() => goTo(`/orders?id=${o.id}`)}
-                      className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-[#eceae4]/50 transition-colors text-left">
-                      <Package className="w-3.5 h-3.5 text-[#5f5f5d] shrink-0" />
-                      <span className="text-sm font-bold text-[#1c1c1c] truncate">#{o.order_number || o.tracking_number}</span>
-                      <span className="text-[10px] text-[#5f5f5d] truncate">{o.customer?.name}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
+            groups.map((s, gi) => (
+              <div key={s.key} className={`py-2 ${gi ? "border-t border-[#eceae4]" : ""}`}>
+                <div className="px-5 pb-1 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/60">{s.label}</div>
+                {results[s.key].map(r => (
+                  <button key={r.id} onClick={() => goTo(s.href(r, cleanQuery))}
+                    className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-[#eceae4]/50 transition-colors text-left">
+                    <s.icon className="w-3.5 h-3.5 text-[#5f5f5d] shrink-0" />
+                    <span className="text-sm font-bold text-[#1c1c1c] truncate">{s.title(r) || "Untitled"}</span>
+                    <span className="text-[10px] text-[#5f5f5d] truncate">{s.sub(r)}</span>
+                  </button>
+                ))}
+              </div>
+            ))
           )}
           {cleanQuery.length >= 2 && (
             <button onClick={() => goTo(`/tasks?id=${encodeURIComponent(cleanQuery)}`)}

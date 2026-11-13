@@ -27,7 +27,7 @@ const expenses: RecordsConfig = {
 };
 
 const vendors: RecordsConfig = {
-  table: "vendors", module: "vendors", noun: "vendor", ownerCol: "created_by", ownerLabel: "Added by", editable: true,
+  table: "vendors", module: "vendors", noun: "vendor", ownerCol: "created_by", ownerLabel: "Added by", editable: true, dedupe: ["name"],
   columns: [
     { key: "name", label: "Vendor" },
     { key: "contact_name", label: "Contact" },
