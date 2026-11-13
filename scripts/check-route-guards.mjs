@@ -22,6 +22,7 @@ const ALLOWED_PUBLIC = new Set([
   "auth/google/route.ts",        // starts the OAuth redirect
   "auth/google/callback/route.ts", // OAuth callback, validated by state/code
   "contact/route.ts",            // public lead form; no session to require - rate-limited instead
+  "billing/signup/route.ts",     // public self-serve signup; off without Razorpay keys, rate-limited, org created on hold
 ]);
 
 // Any one of these inside a handler body counts as a guard.
@@ -36,6 +37,8 @@ const GUARD = new RegExp([
   "requirePlatformOwner",
   "SHOPIFY_WEBHOOK_SECRET",   // webhook: HMAC verified instead of a session
   "SHIPROCKET_WEBHOOK_TOKEN",
+  "billingSession",           // signed-in user + org, read server-side
+  "verifyWebhookSignature",   // Razorpay webhook: HMAC verified
 ].join("|"));
 
 // A handler that just hands off to a sibling verb inherits that verb's guard.

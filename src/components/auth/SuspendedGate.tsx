@@ -13,8 +13,14 @@ export function SuspendedGate() {
   const [suspended, setSuspended] = useState(false);
 
   useEffect(() => {
-    createClient().rpc("my_org_is_active").then(({ data, error }) => {
+    const db = createClient();
+    db.rpc("my_org_is_active").then(({ data, error }) => {
       if (!error && data === false) setSuspended(true);
+    });
+    // A workspace waiting on (or locked for) payment goes to /billing.
+    // Errors (e.g. before the billing migration exists) are ignored.
+    db.rpc("my_org_billing").then(({ data, error }) => {
+      if (!error && (data as { hold?: boolean } | null)?.hold === true) window.location.replace("/billing");
     });
   }, []);
 
