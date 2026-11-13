@@ -9,7 +9,7 @@ import { formatMinor } from "@/lib/money";
 type Sub = {
   id: string; status: "trialing" | "active" | "cancelled"; billing_cycle: "monthly" | "yearly"; currency: string;
   list_price_minor: number; discount_minor: number; price_minor: number; trial_ends_at: string | null;
-  current_period_start: string; current_period_end: string; created_at: string; cancelled_at: string | null; cancel_reason: string | null;
+  current_period_start: string; current_period_end: string; created_at: string; source: "manual" | "razorpay"; cancelled_at: string | null; cancel_reason: string | null;
   plan_version: { version: number; plan: { name: string; code: string } | null } | null;
 };
 type Option = { id: string; label: string; trial_days: number };
@@ -17,7 +17,7 @@ type Option = { id: string; label: string; trial_days: number };
 const input = "h-9 px-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString() : "—");
 
-/** One organisation's subscription: current, history, assign, cancel. Manual only until Razorpay (Phase 4b). */
+/** One organisation's subscription: current, history, assign, cancel. Self-serve (Razorpay) ones have their auto-debit stopped first. */
 export function SubscriptionPanel({ orgId }: { orgId: string }) {
   const supabase = useMemo(() => createClient(), []);
   const [subs, setSubs] = useState<Sub[] | null>(null);
@@ -50,14 +50,26 @@ export function SubscriptionPanel({ orgId }: { orgId: string }) {
   useEffect(() => { load(); }, [load]);
 
   const current = subs?.find(s => s.status !== "cancelled");
+
+  /** Stops a self-serve subscription's Razorpay auto-debit. False if the owner should not continue. */
+  async function stopAutoDebit(sub: Sub) {
+    if (sub.source !== "razorpay") return true;
+    const res = await fetch("/api/superadmin/billing/stop-autodebit", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subscriptionId: sub.id }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) { toast.error(d.error || "Could not stop auto-debit"); return false; }
+    return true;
+  }
   const history = subs?.filter(s => s !== current) || [];
 
   async function assign() {
     if (!form.version) return toast.error("Pick a plan");
     const trial = form.trial === "" ? null : Number(form.trial);
     if (trial != null && !(Number.isInteger(trial) && trial >= 0 && trial <= 365)) return toast.error("Trial must be 0 to 365 days");
-    if (!window.confirm(current ? "Replace the current subscription? It will be cancelled." : "Put this organisation on the selected plan?")) return;
+    if (!window.confirm(current ? `Replace the current subscription? It will be cancelled${current.source === "razorpay" ? " and its Razorpay auto-debit stopped" : ""}.` : "Put this organisation on the selected plan?")) return;
     setBusy(true);
+    if (current && !(await stopAutoDebit(current))) { setBusy(false); return; }
     const { error } = await supabase.rpc("platform_assign_subscription", {
       p_org: orgId, p_version: form.version, p_cycle: form.cycle, p_trial_days: trial, p_coupon: form.coupon || null, p_notes: form.notes,
     });
@@ -70,12 +82,16 @@ export function SubscriptionPanel({ orgId }: { orgId: string }) {
 
   async function cancel() {
     if (!current) return;
-    const reason = window.prompt("Reason for cancelling (kept in the record):");
+    const reason = window.prompt(current.source === "razorpay"
+      ? "This stops the customer's Razorpay auto-debit now and pauses their workspace. Reason (kept in the record):"
+      : "Reason for cancelling (kept in the record):");
     if (reason === null) return;
     setBusy(true);
+    if (!(await stopAutoDebit(current))) { setBusy(false); return; }
     const { error } = await supabase.rpc("platform_cancel_subscription", { p_subscription: current.id, p_reason: reason });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    // Razorpay's "cancelled" webhook can close a self-serve row first; that is not a failure.
+    if (error && !(current.source === "razorpay" && error.code === "P0002")) return toast.error(error.message);
     toast.success("Subscription cancelled");
     load();
   }
@@ -91,7 +107,7 @@ export function SubscriptionPanel({ orgId }: { orgId: string }) {
         <div className="flex flex-wrap items-start gap-4">
           <div className="flex-1 min-w-0 text-sm">
             <div className="font-bold text-[#1c1c1c]">
-              {current.plan_version?.plan?.name} <span className="font-normal text-xs text-[#5f5f5d]">v{current.plan_version?.version} · {current.billing_cycle}</span>
+              {current.plan_version?.plan?.name} <span className="font-normal text-xs text-[#5f5f5d]">v{current.plan_version?.version} · {current.billing_cycle}{current.source === "razorpay" ? " · Razorpay auto-pay" : ""}</span>
             </div>
             <div className="text-xs text-[#5f5f5d] mt-1">
               {formatMinor(current.price_minor, current.currency)} per {current.billing_cycle === "monthly" ? "month" : "year"}
