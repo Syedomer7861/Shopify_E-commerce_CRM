@@ -12,6 +12,7 @@ import { ModuleGuard } from "@/components/ModuleGuard";
 import { MfaGate } from "@/components/auth/MfaChallenge";
 import { SuspendedGate } from "@/components/auth/SuspendedGate";
 import { ProfileProvider } from "@/hooks/useCurrentProfile";
+import { PlatformNotices } from "@/components/PlatformNotices";
 import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
@@ -39,6 +40,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </Suspense>
         <main id="main-application-content" className="flex-1 overflow-y-auto pb-20 lg:pb-0">
           <div className={cn(isChatPage ? "" : "max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6")}>
+            {!isChatPage && <PlatformNotices />}
             <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 animate-spin text-[#1c1c1c]" /></div>}>
               {children}
             </Suspense>
