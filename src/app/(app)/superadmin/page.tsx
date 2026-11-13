@@ -106,7 +106,7 @@ export default function PlatformAdminPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader
-        title="Platform Admin"
+        title="Super Admin"
         subtitle="Every organization on this SaaS instance. Suspending one locks out all of its members immediately."
       />
 

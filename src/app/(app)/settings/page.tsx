@@ -11,6 +11,7 @@ import { AccessDenied } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission, isAdmin } from "@/lib/permissions";
 import { logAuditEvent } from "@/lib/audit";
+import { TwoFactorCard } from "@/components/auth/TwoFactorCard";
 import { Settings, ProductOverride } from "@/types";
 
 interface PipelineItem {
@@ -32,7 +33,7 @@ interface PipelineState {
   waiting: PipelineItem[];
 }
 
-type Tab = "general" | "telephony" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database";
+type Tab = "general" | "security" | "telephony" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -1116,6 +1117,7 @@ export default function SettingsPage() {
       <div className="flex border-b border-[#eceae4] mb-8 gap-0 overflow-x-auto scroller-hide">
         {[
           { key: "general", label: "Preferences", icon: Sliders },
+          { key: "security", label: "Security", icon: ShieldCheck },
           { key: "telephony", label: "Telephony", icon: Smartphone },
           { key: "notifications", label: "WhatsApp Hub", icon: Bell },
           { key: "email", label: "Email API", icon: Mail },
@@ -3038,6 +3040,13 @@ export default function SettingsPage() {
         </div>
       )}
 
+
+      {/* SECURITY: personal sign-in protection for the signed-in admin */}
+      {tab === "security" && (
+        <div className="space-y-6">
+          <TwoFactorCard />
+        </div>
+      )}
 
       {/* DANGER ZONE */}
       {tab === "database" && (

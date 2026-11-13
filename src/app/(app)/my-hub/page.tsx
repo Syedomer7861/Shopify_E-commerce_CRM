@@ -13,6 +13,7 @@ import { ReminderSection } from "@/components/hub/ReminderSection";
 import { AssignedTasksPanel } from "@/components/dashboard/AssignedTasksPanel";
 import LivePulseFeed from "@/components/LivePulseFeed";
 import { TwoFactorCard } from "@/components/auth/TwoFactorCard";
+import { isAdmin } from "@/lib/permissions";
 import { isDemoMode as checkDemoMode } from "@/lib/demo";
 
 export default function MyHubPage() {
@@ -105,7 +106,8 @@ export default function MyHubPage() {
             workspace page, not an ops-monitoring one, so match that gate
             instead of showing every agent's/webhook's activity to everyone. */}
         <div className="space-y-6">
-          <TwoFactorCard />
+          {/* Admins manage this under Settings → Security; staff can't open Settings. */}
+          {profile && !isAdmin(profile) && <TwoFactorCard />}
           {profile?.role === "admin" && (
             <div className="hidden lg:block">
                <LivePulseFeed />

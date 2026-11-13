@@ -32,6 +32,10 @@ const nextConfig = {
       { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] },
     ];
   },
+  // The owner area moved from /platform to /superadmin; old links and bookmarks still work.
+  async redirects() {
+    return [{ source: "/platform", destination: "/superadmin", permanent: true }];
+  },
 };
 
 module.exports = nextConfig;
