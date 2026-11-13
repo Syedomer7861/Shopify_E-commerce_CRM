@@ -2,6 +2,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { ModulePage } from "@/components/records/ModulePage";
+import { FieldOverview } from "@/components/records/DeptOverviews";
 import type { RecordsConfig, RecordRow } from "@/components/records/RecordsModule";
 import { CheckInCapture, type CheckInProof } from "@/components/field/CheckInCapture";
 import { Modal } from "@/components/ui";
@@ -109,6 +110,7 @@ export default function FieldVisitsPage() {
       <ModulePage
         title="Field Visits"
         subtitle="Add a visit, then tap Check in on site: it takes a live photo and your current location together. Log the outcome when you leave."
+        overview={<FieldOverview />}
         tabs={[{ label: "Visits", config: visits }]}
       />
       <CheckInCapture open={!!checkingIn} visiting={checkingIn?.row.party_name || ""} onClose={() => setCheckingIn(null)} onCapture={saveCheckIn} />

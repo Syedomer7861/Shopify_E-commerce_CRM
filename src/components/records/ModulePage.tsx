@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { PageHeader, AccessDenied } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { can } from "@/lib/access";
@@ -9,7 +9,7 @@ import { RecordsModule, ModuleTabs, type RecordsConfig } from "./RecordsModule";
  * A whole module page from config: one tab per table the viewer may see.
  * Used by Finance, Service Desk, Leads & Deals and Field Visits.
  */
-export function ModulePage({ title, subtitle, tabs }: { title: string; subtitle: string; tabs: { label: string; config: RecordsConfig }[] }) {
+export function ModulePage({ title, subtitle, tabs, overview }: { title: string; subtitle: string; tabs: { label: string; config: RecordsConfig }[]; overview?: ReactNode }) {
   const { profile, loading } = useCurrentProfile();
   // ?tab=<table> opens that tab (global search links straight to it).
   const [active, setActive] = useState<string | null>(() =>
@@ -25,6 +25,7 @@ export function ModulePage({ title, subtitle, tabs }: { title: string; subtitle:
   return (
     <div className="animate-fade-in">
       <PageHeader title={title} subtitle={subtitle} />
+      {overview}
       <ModuleTabs tabs={allowed.map(t => ({ key: t.config.table, label: t.label }))} active={current.config.table} onChange={setActive} />
       <RecordsModule key={current.config.table} config={current.config} profile={profile} />
     </div>

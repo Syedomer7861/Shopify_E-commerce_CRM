@@ -1,7 +1,8 @@
 "use client";
 import { useMemo } from "react";
 import Link from "next/link";
-import { ArrowUpRight, CalendarClock, CalendarDays, PartyPopper, UserPlus, Users, Wallet } from "lucide-react";
+import { ArrowUpRight, CalendarClock, CalendarDays, PartyPopper, Wallet } from "lucide-react";
+import { Kpi, cardTitle, rupees, shortDay } from "@/components/overview/Cards";
 import { Avatar } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import {
@@ -18,23 +19,8 @@ type Props = {
   payrollMonth: string;
 };
 
-const rupees = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
-const short = (d: string) => new Date(`${d}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-const title = "text-xs font-black text-[#1c1c1c] uppercase tracking-widest";
-
-function Kpi({ label, value, sub, icon: Icon, href }: { label: string; value: number | string; sub: string; icon: React.ElementType; href?: string }) {
-  const body = (
-    <div className="card p-5 h-full hover:border-[#1c1c1c]/20 transition-colors">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-bold text-gray-500">{label}</span>
-        {href ? <ArrowUpRight className="w-3.5 h-3.5 text-gray-400" /> : <Icon className="w-3.5 h-3.5 text-gray-400" />}
-      </div>
-      <div className="text-3xl font-black text-[#1c1c1c] tabular-nums mt-3">{value}</div>
-      <div className="text-[11px] text-gray-400 mt-1">{sub}</div>
-    </div>
-  );
-  return href ? <Link href={href}>{body}</Link> : body;
-}
+const title = cardTitle;
+const short = shortDay;
 
 export default function WorkforceOverview({ employees, leaves, attendance, holidays, payrollStatus, payrollMonth }: Props) {
   const today = useMemo(() => new Date(), []);
@@ -57,11 +43,11 @@ export default function WorkforceOverview({ employees, leaves, attendance, holid
   return (
     <div className="space-y-6 mb-8">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Kpi label="Total employees" value={v.k.total} icon={Users} sub={`${v.k.newHires} joined in the last 30 days`} href="/hr?tab=employees" />
-        <Kpi label="New hires" value={v.k.newHires} icon={UserPlus}
+        <Kpi label="Total employees" value={v.k.total} sub={`${v.k.newHires} joined in the last 30 days`} href="/hr?tab=employees" />
+        <Kpi label="New hires" value={v.k.newHires}
           sub={hireDelta === 0 ? "Same as the 30 days before" : `${hireDelta > 0 ? "+" : ""}${hireDelta} vs the 30 days before`} />
-        <Kpi label="On leave today" value={v.k.onLeaveToday} icon={CalendarDays} sub="Approved leave covering today" />
-        <Kpi label="Pending leave requests" value={v.k.pendingLeaves} icon={CalendarClock} sub="Waiting for a decision" href="/hr?tab=leaves" />
+        <Kpi label="On leave today" value={v.k.onLeaveToday} sub="Approved leave covering today" />
+        <Kpi label="Pending leave requests" value={v.k.pendingLeaves} sub="Waiting for a decision" href="/hr?tab=leaves" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">

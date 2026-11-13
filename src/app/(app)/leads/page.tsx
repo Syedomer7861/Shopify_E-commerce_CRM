@@ -1,5 +1,6 @@
 "use client";
 import { ModulePage } from "@/components/records/ModulePage";
+import { SalesOverview } from "@/components/records/DeptOverviews";
 import toast from "react-hot-toast";
 import { createClient } from "@/lib/supabase";
 import { money, day, type RecordsConfig, type RecordRow } from "@/components/records/RecordsModule";
@@ -85,6 +86,7 @@ export default function LeadsPage() {
     <ModulePage
       title="Leads & Deals"
       subtitle="You see your own pipeline; managers see their team's. Separate from the customer call queue."
+      overview={<SalesOverview />}
       tabs={[{ label: "Leads", config: leads }, { label: "Deals", config: deals }]}
     />
   );

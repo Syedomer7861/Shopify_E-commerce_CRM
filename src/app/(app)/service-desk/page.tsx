@@ -1,6 +1,7 @@
 "use client";
 import toast from "react-hot-toast";
 import { ModulePage } from "@/components/records/ModulePage";
+import { ServiceDeskOverview } from "@/components/records/DeptOverviews";
 import type { RecordsConfig, RecordRow } from "@/components/records/RecordsModule";
 import { createClient } from "@/lib/supabase";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
@@ -55,6 +56,7 @@ export default function ServiceDeskPage() {
     <ModulePage
       title="Service Desk"
       subtitle="Raise a request to IT, HR, Finance or Facilities. Urgent 4h, high 8h, normal 24h, low 72h."
+      overview={<ServiceDeskOverview />}
       tabs={[{ label: "Tickets", config: tickets }]}
     />
   );

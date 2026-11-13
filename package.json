@@ -9,7 +9,7 @@
     "build": "node scripts/check-route-guards.mjs && next build",
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "verify": "node scripts/check-route-guards.mjs && node scripts/check-tenant-isolation.mjs && node scripts/check-chat-bus.mjs && node scripts/check-rate-limit.mjs && node scripts/check-attendance-engine.mjs && node scripts/check-phone-utils.mjs && node scripts/check-order-dedup.mjs && node scripts/check-hr-benchmark.mjs && node scripts/check-revenue-attribution.mjs && node scripts/check-unmask-safety.mjs && node scripts/check-shiprocket-status-mapping.mjs && node scripts/check-nav-suite.mjs && node scripts/check-money.mjs && node scripts/check-site-content.mjs && node scripts/check-attribution.mjs && node scripts/check-revenue.mjs && node scripts/check-hr-workforce.mjs",
+    "verify": "node scripts/check-route-guards.mjs && node scripts/check-tenant-isolation.mjs && node scripts/check-chat-bus.mjs && node scripts/check-rate-limit.mjs && node scripts/check-attendance-engine.mjs && node scripts/check-phone-utils.mjs && node scripts/check-order-dedup.mjs && node scripts/check-hr-benchmark.mjs && node scripts/check-revenue-attribution.mjs && node scripts/check-unmask-safety.mjs && node scripts/check-shiprocket-status-mapping.mjs && node scripts/check-nav-suite.mjs && node scripts/check-money.mjs && node scripts/check-site-content.mjs && node scripts/check-attribution.mjs && node scripts/check-revenue.mjs && node scripts/check-hr-workforce.mjs && node scripts/check-dept-overview.mjs",
     "check:tenancy-db": "npx supabase@3.1.0 db query --remote --read-only -f scripts/check-tenancy-db.sql"
   },
   "dependencies": {

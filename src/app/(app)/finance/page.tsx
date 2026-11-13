@@ -1,5 +1,6 @@
 "use client";
 import { ModulePage } from "@/components/records/ModulePage";
+import { FinanceOverview } from "@/components/records/DeptOverviews";
 import { money, day, type RecordsConfig } from "@/components/records/RecordsModule";
 
 const daysFromNow = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
@@ -79,6 +80,7 @@ export default function FinancePage() {
     <ModulePage
       title="Finance"
       subtitle="Expense claims go to the claimant's manager for approval. Vendors and invoices are kept by the finance team."
+      overview={<FinanceOverview />}
       tabs={[{ label: "Expense claims", config: expenses }, { label: "Invoices", config: invoices }, { label: "Vendors", config: vendors }]}
     />
   );
