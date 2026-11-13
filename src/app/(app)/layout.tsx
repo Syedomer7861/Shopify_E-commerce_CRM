@@ -9,6 +9,7 @@ import { AdminNotifier } from "@/components/AdminNotifier";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ModuleGuard } from "@/components/ModuleGuard";
+import { MfaGate } from "@/components/auth/MfaChallenge";
 import { ProfileProvider } from "@/hooks/useCurrentProfile";
 import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-[#f8f7f4]">
         <AgentHeartbeat />
         <ModuleGuard />
+        <MfaGate />
         <AdminNotifier />
         <CommandPalette />
         <NotificationBell />

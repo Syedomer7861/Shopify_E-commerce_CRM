@@ -5,12 +5,14 @@ import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import { sendAdminNotification } from "@/lib/notifications";
+import { MfaChallenge, needsSecondFactor } from "@/components/auth/MfaChallenge";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [mfaUserId, setMfaUserId] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -29,10 +31,20 @@ export default function LoginPage() {
       return;
     }
 
+    // Two-factor on: ask for the code before anything else loads.
+    if (await needsSecondFactor().catch(() => false)) {
+      setLoading(false);
+      setMfaUserId(data.user.id);
+      return;
+    }
+    await finishLogin(data.user.id);
+  }
+
+  async function finishLogin(userId: string) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role, is_demo")
-      .eq("id", data.user.id)
+      .eq("id", userId)
       .single();
 
     if (profile?.is_demo) {
@@ -79,6 +91,12 @@ export default function LoginPage() {
 
         {/* Login Card */}
         <div className="bg-white rounded-[2rem] p-10 border border-[#eceae4] shadow-[0_20px_50px_rgba(28,28,28,0.05)] relative overflow-hidden animate-slide-up">
+          {mfaUserId ? (
+            <MfaChallenge
+              onDone={() => finishLogin(mfaUserId)}
+              onCancel={async () => { await supabase.auth.signOut(); setMfaUserId(null); setPassword(""); }}
+            />
+          ) : (<>
           <div className="mb-10">
             <h2 className="text-xl font-bold text-[#1c1c1c] mb-1">Welcome Back</h2>
             <p className="text-[#5f5f5d] text-[11px] font-medium uppercase tracking-wider">Sign in to your account</p>
@@ -135,7 +153,7 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
+          </>)}
         </div>
 
         <div className="mt-8 text-center">

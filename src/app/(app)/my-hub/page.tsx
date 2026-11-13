@@ -12,6 +12,7 @@ import { NoteSection } from "@/components/hub/NoteSection";
 import { ReminderSection } from "@/components/hub/ReminderSection";
 import { AssignedTasksPanel } from "@/components/dashboard/AssignedTasksPanel";
 import LivePulseFeed from "@/components/LivePulseFeed";
+import { TwoFactorCard } from "@/components/auth/TwoFactorCard";
 import { isDemoMode as checkDemoMode } from "@/lib/demo";
 
 export default function MyHubPage() {
@@ -103,11 +104,14 @@ export default function MyHubPage() {
             component Dashboard restricts to admin only. This is a personal
             workspace page, not an ops-monitoring one, so match that gate
             instead of showing every agent's/webhook's activity to everyone. */}
-        {profile?.role === "admin" && (
-          <div className="hidden lg:block">
-             <LivePulseFeed />
-          </div>
-        )}
+        <div className="space-y-6">
+          <TwoFactorCard />
+          {profile?.role === "admin" && (
+            <div className="hidden lg:block">
+               <LivePulseFeed />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
