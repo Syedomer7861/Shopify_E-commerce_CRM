@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { UsersTable } from "@/components/superadmin/UsersTable";
+import { SubscriptionPanel } from "@/components/superadmin/SubscriptionPanel";
 
 type Org = {
   id: string; name: string; slug: string; plan: string | null; is_active: boolean; created_at: string;
@@ -94,6 +95,7 @@ export default function SuperAdminOrgDetail() {
 
       {tab === "overview" && (
         <div className="grid lg:grid-cols-2 gap-4">
+          <div className="lg:col-span-2"><SubscriptionPanel orgId={id} /></div>
           <div className="card p-4 grid grid-cols-2 gap-4 content-start">
             <Fact label="Plan" value={org.plan || "None set"} />
             <Fact label="Status" value={org.is_active ? "Active" : "Suspended"} />

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Search, Loader2, Building2, User, Mail, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
+import { formatMinor } from "@/lib/money";
 
 type Overview = {
   orgs_total: number; orgs_active: number; orgs_suspended: number; orgs_new_30d: number;
@@ -11,6 +12,7 @@ type Overview = {
   active_1d: number; active_7d: number; active_30d: number;
   requests_new: number; requests_total: number; storage_bytes: number; generated_at: string;
 };
+type Revenue = { currency: string; active_subscriptions: number; trialing: number; contracted_mrr_minor: number };
 type Hit = { kind: "organisation" | "user" | "request"; id: string; title: string; subtitle: string };
 
 const mb = (b: number) => (b >= 1e9 ? `${(b / 1e9).toFixed(2)} GB` : `${(b / 1e6).toFixed(1)} MB`);
@@ -32,6 +34,7 @@ const hitHref = (h: Hit) =>
 export default function SuperAdminOverview() {
   const supabase = useMemo(() => createClient(), []);
   const [data, setData] = useState<Overview | null>(null);
+  const [revenue, setRevenue] = useState<Revenue[]>([]);
   const [error, setError] = useState("");
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<Hit[]>([]);
@@ -42,6 +45,8 @@ export default function SuperAdminOverview() {
     const { data: row, error: err } = await supabase.rpc("platform_overview");
     if (err) setError(err.message);
     else setData(row as Overview | null);
+    const { data: rev } = await supabase.rpc("platform_revenue_summary");
+    setRevenue((rev || []) as Revenue[]);
   }, [supabase]);
 
   useEffect(() => { load(); }, [load]);
@@ -117,9 +122,17 @@ export default function SuperAdminOverview() {
             <Tile label="File storage" value={mb(data.storage_bytes)} sub="All organisations" />
           </div>
 
+          <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-3">Subscriptions</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            {revenue.length === 0 ? <Tile label="Paid subscriptions" value={0} sub="Assign plans from an organisation's page" /> : revenue.map(r => (
+              <Tile key={r.currency} label={`Contracted MRR (${r.currency})`} value={formatMinor(r.contracted_mrr_minor, r.currency)}
+                sub={`${r.active_subscriptions} paid, ${r.trialing} on trial. What organisations signed up for, not payments received.`} />
+            ))}
+          </div>
+
           <div className="card p-4 text-xs text-[#5f5f5d]">
-            <span className="font-semibold text-[#1c1c1c]">Not available yet:</span> revenue (MRR, ARR), churn, trial conversion, customer acquisition cost and lifetime value.
-            They need subscription billing (Razorpay) and campaign tracking, which come in later phases, and will be calculated from real records, never estimated.
+            <span className="font-semibold text-[#1c1c1c]">Not available yet:</span> payments received, churn, trial conversion, customer acquisition cost and lifetime value.
+            They need Razorpay payments and campaign tracking, which come in later phases, and will be calculated from real records, never estimated.
             <div className="mt-2 text-[10px]">Updated {new Date(data.generated_at).toLocaleString()}.</div>
           </div>
         </>

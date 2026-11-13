@@ -13,7 +13,7 @@ const describe = (a: AuditRow) => {
   const changed = a.details?.changed;
   if (changed) return Object.entries(changed).map(([k, c]) => `${k.replace(/_/g, " ")}: ${JSON.stringify(c.from)} to ${JSON.stringify(c.to)}`).join(", ");
   const { name, slug } = (a.details || {}) as { name?: string; slug?: string };
-  return [name, slug].filter(Boolean).join(" · ");
+  return [name, slug].filter(Boolean).join(" · ") || Object.entries(a.details || {}).filter(([, v]) => v != null).map(([k, v]) => `${k.replace(/_/g, " ")}: ${typeof v === "string" ? v : JSON.stringify(v)}`).join(", ");
 };
 
 export default function SuperAdminActivity() {
