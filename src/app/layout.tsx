@@ -1,10 +1,16 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, Outfit, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { Suspense } from "react";
 import { PHProvider } from "./providers";
 import PostHogPageView from "./_components/PostHogPageView";
 import ServiceWorkerRegister from "./_components/ServiceWorkerRegister";
+
+// Self-hosted at build time: no request to Google, no render-blocking stylesheet chain.
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit", display: "swap" });
+const instrument = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-instrument", display: "swap", preload: false });
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://cureforever-crm.vercel.app";
 const SITE_TITLE = "CodeCrest CRM — Shopify & Shiprocket Order Management";
@@ -51,7 +57,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${outfit.variable} ${instrument.variable}`}>
       <body suppressHydrationWarning className="antialiased" style={{ background: '#f7f4ed' }}>
         <PHProvider>
           <Suspense fallback={null}>

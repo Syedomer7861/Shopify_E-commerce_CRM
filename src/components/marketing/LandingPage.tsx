@@ -106,7 +106,7 @@ export default function LandingPage() {
       <section className="relative overflow-hidden">
         <Mesh />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-32 md:pt-40 text-center">
-          <Reveal y={12}>
+          <Reveal eager y={12}>
             <Link href="/blog" className="group inline-flex items-center gap-2 pl-1.5 pr-3.5 py-1 rounded-full border border-black/10 bg-white/70 backdrop-blur text-[12px] font-medium hover:bg-white transition-colors">
               <span className="rounded-full bg-[#111113] text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5">New</span>
               <span className="text-left">{POSTS.length} playbooks for COD, RTO and WhatsApp</span>
@@ -116,13 +116,13 @@ export default function LandingPage() {
           <h1 className="font-display font-bold tracking-[-0.04em] text-[2.6rem] sm:text-6xl lg:text-[4.6rem] leading-[1.0] mt-7 max-w-5xl mx-auto">
             <WordsIn text="Run every order, and the team behind it, from one place" accent="one place" />
           </h1>
-          <Reveal delay={0.3} y={16}>
+          <Reveal eager delay={0.3} y={16}>
             <p className="text-[#3b3b3a] text-lg md:text-xl leading-relaxed mt-7 max-w-2xl mx-auto" data-speakable>
               CodeCrest unifies Shopify orders, Shiprocket shipping, WhatsApp and calls with tasks, HR, approvals and
               role-based access, so your team stops switching tabs and closes the loop on every order.
             </p>
           </Reveal>
-          <Reveal delay={0.4} y={16}>
+          <Reveal eager delay={0.4} y={16}>
             <div className="relative flex flex-col sm:flex-row gap-3 mt-9 justify-center">
               <Btn href="/contact" arrow>Talk to us</Btn>
               <Btn href="/features" tone="outline">Explore the product</Btn>

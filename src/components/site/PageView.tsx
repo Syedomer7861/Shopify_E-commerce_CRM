@@ -59,8 +59,8 @@ export function PageHero({ trail, eyebrow, title, answer, visual, children, meta
           <h1 className={`font-display font-bold tracking-[-0.035em] text-[2.2rem] sm:text-5xl lg:text-[3.5rem] leading-[1.04] ${eyebrow ? "mt-5" : "mt-8"}`}>
             <WordsIn text={title} />
           </h1>
-          {answer && <Reveal delay={0.25} y={16}><p className={`text-[17px] md:text-lg text-[#3b3b3a] leading-relaxed mt-6 max-w-2xl ${visual ? "" : "mx-auto"}`} data-speakable>{answer}</p></Reveal>}
-          {children && <Reveal delay={0.35} y={16}><div className={`mt-9 flex flex-col sm:flex-row gap-3 ${visual ? "" : "justify-center"}`}>{children}</div></Reveal>}
+          {answer && <Reveal eager delay={0.25} y={16}><p className={`text-[17px] md:text-lg text-[#3b3b3a] leading-relaxed mt-6 max-w-2xl ${visual ? "" : "mx-auto"}`} data-speakable>{answer}</p></Reveal>}
+          {children && <Reveal eager delay={0.35} y={16}><div className={`mt-9 flex flex-col sm:flex-row gap-3 ${visual ? "" : "justify-center"}`}>{children}</div></Reveal>}
           {meta && <div className="mt-7 text-[12.5px] text-[var(--dim)]">{meta}</div>}
         </div>
         {visual && <TiltIn className="min-w-0"><Visual kind={visual} bezel /></TiltIn>}

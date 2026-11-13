@@ -5,8 +5,6 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { animate, useInView, useMotionValue, useReducedMotion, useSpring } from "motion/react";
 import * as m from "motion/react-m";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 // Interactive effects for the public site. Motion handles component-level
 // interaction (magnetic, tilt, counters, drawn strokes); GSAP ScrollTrigger is
@@ -112,17 +110,25 @@ export function PinnedStory({ items, children }: { items: StoryItem[]; children:
   const [pinned, setPinned] = useState(false);
 
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-    const mm = gsap.matchMedia();
-    mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () => {
+    // Phones never pin, so they never download the scroll library.
+    if (!window.matchMedia("(min-width: 1024px) and (prefers-reduced-motion: no-preference)").matches) return;
+    let revert = () => {};
+    let cancelled = false;
+    Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(([{ default: gsap }, { ScrollTrigger }]) => {
+      if (cancelled) return;
+      gsap.registerPlugin(ScrollTrigger);
+      const mm = gsap.matchMedia();
+      revert = () => mm.revert();
+      mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () => {
       setPinned(true);
       const st = ScrollTrigger.create({
         trigger: root.current, start: "top top+=64", end: `+=${items.length * 460}`, pin: true, scrub: true,
         onUpdate: (self) => setActive(Math.min(items.length - 1, Math.floor(self.progress * items.length))),
       });
       return () => { st.kill(); setPinned(false); };
-    });
-    return () => mm.revert();
+      });
+    }).catch(() => { /* the unpinned list is the fallback and is already on screen */ });
+    return () => { cancelled = true; revert(); };
   }, [items.length]);
 
   return (

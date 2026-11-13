@@ -60,9 +60,27 @@ export async function middleware(request: NextRequest) {
   // dozens of them per page load. Those read the session from the cookie; a
   // real navigation still revalidates with Supabase.
   const isPrefetch = request.headers.get('next-router-prefetch') === '1'
-  const user = isPrefetch
-    ? (await supabase.auth.getSession()).data.session?.user ?? null
-    : (await supabase.auth.getUser()).data.user
+  // A real navigation verifies the token's signature here, against the
+  // project's public signing key (cached), with no call to the auth server -
+  // that call crossed to another region and delayed every page. getClaims()
+  // falls back to getUser() by itself if the project ever uses a shared
+  // secret, so the session is verified either way.
+  let user: { id: string } | null = null
+  if (isPrefetch) {
+    const id = (await supabase.auth.getSession()).data.session?.user?.id
+    user = id ? { id } : null
+  } else {
+    let id: string | undefined
+    try {
+      id = (await supabase.auth.getClaims()).data?.claims?.sub
+    } catch {
+      // Signing key unreachable or token unreadable: decided by the auth server below.
+    }
+    // Never sign someone out because local verification couldn't decide: ask
+    // the auth server, exactly as before. With no session this returns at once.
+    if (!id) id = (await supabase.auth.getUser()).data.user?.id
+    user = id ? { id } : null
+  }
 
   // Protect all routes except login, api, and static files
   const isLoginPage = request.nextUrl.pathname.startsWith('/login')

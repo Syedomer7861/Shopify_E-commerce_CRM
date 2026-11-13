@@ -24,8 +24,16 @@ export function MotionRoot({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Fade + rise when scrolled into view (once). */
-export function Reveal({ children, className, delay = 0, y = 28 }: { children: React.ReactNode; className?: string; delay?: number; y?: number }) {
+/**
+ * Fade + rise when scrolled into view (once).
+ * `eager` is for content on the first screen: it animates with plain CSS
+ * (.rise in globals.css) so it is visible as soon as the HTML arrives, not
+ * seconds later when the scripts have loaded on a slow phone.
+ */
+export function Reveal({ children, className, delay = 0, y = 28, eager }: { children: React.ReactNode; className?: string; delay?: number; y?: number; eager?: boolean }) {
+  if (eager) {
+    return <div className={`rise ${className || ""}`} style={{ animationDelay: `${delay}s`, ["--rise-y" as string]: `${y}px` }}>{children}</div>;
+  }
   return (
     <m.div data-reveal className={className} initial={{ opacity: 0, y }} whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "0px 0px -80px 0px" }} transition={{ duration: 0.7, delay, ease: EASE }}>
@@ -60,10 +68,11 @@ export function WordsIn({ text, accent, className }: { text: string; accent?: st
     <span className={className}>
       {words.map((w, i) => (
         <span key={i} className="inline-block overflow-hidden align-bottom pb-[0.12em] -mb-[0.12em]">
-          <m.span data-reveal className={`inline-block ${accent && accent.split(" ").includes(w.replace(/[.,]/g, "")) ? "font-accent text-grad pr-[0.06em]" : ""}`}
-            initial={{ y: "110%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.75, delay: 0.08 + i * 0.045, ease: EASE }}>
+          {/* CSS animation, not Motion: the headline is the first thing on screen and must not wait for scripts. */}
+          <span className={`rise inline-block ${accent && accent.split(" ").includes(w.replace(/[.,]/g, "")) ? "font-accent text-grad pr-[0.06em]" : ""}`}
+            style={{ animationDelay: `${0.08 + i * 0.045}s`, ["--rise-y" as string]: "110%" }}>
             {w}{i < words.length - 1 ? " " : ""}
-          </m.span>
+          </span>
         </span>
       ))}
     </span>
