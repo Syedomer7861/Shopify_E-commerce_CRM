@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { getGmailClient } from "@/lib/gmail";
+import { ensureAdmin } from "@/lib/auth-utils";
 
 export async function GET() {
+  // Only an organisation admin connects a mailbox; the callback stores the token against their organisation.
+  const { errorResponse } = await ensureAdmin();
+  if (errorResponse) return errorResponse;
+
   try {
     const oauth2Client = await getGmailClient();
     
