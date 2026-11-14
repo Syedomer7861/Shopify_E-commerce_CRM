@@ -126,7 +126,7 @@ export default function SuperAdminPlans() {
           })}
         </div>
       )}
-      <p className="text-[11px] text-[#5f5f5d] mt-4">&quot;Public&quot; marks a plan for the pricing page once that page reads from here (a later phase). Nothing is charged until Razorpay is connected.</p>
+      <p className="text-[11px] text-[#5f5f5d] mt-4">&quot;Public&quot; plans with a price show on /pricing and can be bought by sign-up. Card text and comparison rows are in Pricing page; modules per plan are in Modules.</p>
     </div>
   );
 }

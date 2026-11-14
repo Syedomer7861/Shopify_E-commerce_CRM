@@ -3,15 +3,18 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase";
 import type { Cycle, PublicPlan } from "@/lib/billing-server";
-import { PlanPicker, priceOf } from "@/components/billing/PlanPicker";
+import { PlanPicker } from "@/components/billing/PlanPicker";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 
 const input = "w-full h-12 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-4 text-sm text-[#1c1c1c] placeholder:text-[#1c1c1c]/35 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/15 focus:border-[#1c1c1c]/40";
 const label = "text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest ml-1";
 
-export default function SignupForm({ plans }: { plans: PublicPlan[] }) {
-  const firstCycle: Cycle = plans.some((p) => p.monthly > 0) ? "monthly" : "yearly";
-  const [cycle, setCycle] = useState<Cycle>(firstCycle);
-  const [versionId, setVersionId] = useState(plans.find((p) => priceOf(p, firstCycle) > 0)!.versionId);
+export default function SignupForm({ plans, initialVersionId, initialCycle, googleEnabled }: {
+  plans: PublicPlan[]; initialVersionId: string; initialCycle: Cycle; googleEnabled: boolean;
+}) {
+  const [cycle, setCycle] = useState<Cycle>(initialCycle);
+  const [versionId, setVersionId] = useState(initialVersionId);
+  const planCode = plans.find((p) => p.versionId === versionId)?.code ?? "";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -40,10 +43,18 @@ export default function SignupForm({ plans }: { plans: PublicPlan[] }) {
         <div className="text-center mb-8">
           <img src="/logo-mark.png" alt="" className="w-12 h-12 rounded-full mx-auto mb-4" />
           <h1 className="text-2xl font-black text-[#1c1c1c] tracking-tight">Start your CodeCrest workspace</h1>
-          <p className="text-sm text-[#5f5f5d] mt-2">Pick a plan, create your admin account, then set up auto-pay.</p>
+          <p className="text-sm text-[#5f5f5d] mt-2">Create your admin account, then set up auto-pay. <a href="/pricing" className="underline underline-offset-2">Compare plans</a></p>
         </div>
         <form onSubmit={submit} className="bg-white rounded-[2rem] p-6 sm:p-8 border border-[#eceae4] space-y-6">
           <PlanPicker plans={plans} versionId={versionId} cycle={cycle} onChange={(v, c) => { setVersionId(v); setCycle(c); }} />
+          {googleEnabled && (
+            <div className="space-y-4">
+              <GoogleButton label="Sign up with Google" next={`/billing?plan=${encodeURIComponent(planCode)}&cycle=${cycle}`} />
+              <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[#1c1c1c]/40">
+                <div className="h-px flex-1 bg-[#eceae4]" />or with email<div className="h-px flex-1 bg-[#eceae4]" />
+              </div>
+            </div>
+          )}
           <div className="grid gap-4">
             <div className="space-y-2">
               <label htmlFor="su-org" className={label}>Company name</label>

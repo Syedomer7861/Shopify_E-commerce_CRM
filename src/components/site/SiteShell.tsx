@@ -21,9 +21,10 @@ const NAV: NavItem[] = [
   })),
   { label: "Free Tools", href: "/tools", items: TOOLS.map((t) => ({ href: `/tools/${t.slug}`, label: t.name })) },
   { label: "Blog", href: "/blog", items: [] },
+  { label: "Pricing", href: "/pricing", items: [] },
 ];
-// Compare stays in the footer and the Resources menu; the header has room for six.
-const HEADER_NAV = NAV.filter((n) => n.href !== "/compare");
+// Compare stays in the footer and the Resources menu; Blog stays in the footer.
+const HEADER_NAV = NAV.filter((n) => n.href !== "/compare" && n.href !== "/blog");
 
 function Logo({ small, dark }: { small?: boolean; dark?: boolean }) {
   return (
@@ -103,7 +104,7 @@ export function CtaBand({ title = "See it running on your own orders", text = "T
               <Btn href="/contact" tone="light" arrow>Talk to us</Btn>
               <Btn href="/features" tone="outline-dark">Explore the product</Btn>
             </div>
-            <p className="text-white/40 text-[13px] mt-6">Set up for you by our team &middot; No self-serve signup to figure out</p>
+            <p className="text-white/40 text-[13px] mt-6">{razorpayEnabled() ? <>Or <Link href="/pricing" className="underline underline-offset-2 hover:text-white">see plans and start a free trial</Link></> : "Set up for you by our team"}</p>
           </div>
         </div>
       </Reveal>
@@ -132,7 +133,7 @@ export default async function SiteShell({ children }: { children: React.ReactNod
               trap the fixed mobile menu inside this 56px pill. */}
           <div aria-hidden className="absolute inset-0 -z-10 rounded-full border border-black/[0.07] bg-white/75 backdrop-blur-xl shadow-[0_8px_30px_rgba(17,17,19,0.06)]" />
           <Logo />
-          <nav aria-label="Main" className="hidden lg:flex items-center">
+          <nav aria-label="Main" className="hidden xl:flex items-center">
             {HEADER_NAV.map((n) => (
               <div key={n.href} className="relative group">
                 <Link href={n.href} className="flex items-center gap-1 px-3 py-2 text-[13.5px] font-medium whitespace-nowrap text-[#111113]/70 hover:text-[#111113] transition-colors">
@@ -158,11 +159,11 @@ export default async function SiteShell({ children }: { children: React.ReactNod
           </nav>
           <div className="flex items-center gap-1">
             <Link href="/login" className="hidden sm:inline-flex px-3 py-2 text-[13.5px] font-medium text-[#111113]/70 hover:text-[#111113] whitespace-nowrap transition-colors">Sign in</Link>
-            {signupOpen && <Link href="/signup" className="hidden sm:inline-flex px-3 py-2 text-[13.5px] font-semibold text-[#111113] hover:underline underline-offset-4 whitespace-nowrap">Sign up</Link>}
+            {signupOpen && <Link href="/pricing" className="hidden sm:inline-flex px-3 py-2 text-[13.5px] font-semibold text-[#111113] hover:underline underline-offset-4 whitespace-nowrap">Sign up</Link>}
             <Link href="/contact" className="group inline-flex items-center gap-1.5 rounded-full bg-[#111113] text-white px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap hover:bg-black transition-colors">
               Talk to us <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
-            <details className="lg:hidden">
+            <details className="xl:hidden">
               <summary className="list-none cursor-pointer w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 [&::-webkit-details-marker]:hidden" aria-label="Menu"><Menu className="w-5 h-5" /></summary>
               <nav aria-label="Mobile" className="fixed inset-x-3 top-[4.75rem] bottom-3 overflow-y-auto overscroll-contain rounded-3xl bg-white border border-black/[0.07] shadow-2xl shadow-black/15 px-5 py-3">
                 {NAV.map((n) => n.items.length ? (
@@ -175,7 +176,7 @@ export default async function SiteShell({ children }: { children: React.ReactNod
                   </details>
                 ) : <Link key={n.href} href={n.href} className="block py-4 font-display font-semibold text-lg border-b border-[var(--line)]">{n.label}</Link>)}
                 <Link href="/login" className="block py-4 font-display font-semibold text-lg">Sign in</Link>
-                {signupOpen && <Link href="/signup" className="block py-4 font-display font-semibold text-lg border-t border-[var(--line)]">Sign up</Link>}
+                {signupOpen && <Link href="/pricing" className="block py-4 font-display font-semibold text-lg border-t border-[var(--line)]">Sign up</Link>}
                 <Link href="/contact" className="mt-2 mb-3 flex items-center justify-center gap-2 rounded-full bg-[#111113] text-white py-3.5 text-sm font-semibold">Talk to us <ArrowRight className="w-4 h-4" /></Link>
               </nav>
             </details>
@@ -218,6 +219,7 @@ export default async function SiteShell({ children }: { children: React.ReactNod
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/60">
             <p>&copy; 2026 CodeCrest. All rights reserved.</p>
             <div className="flex items-center gap-5">
+              <Link href="/pricing" className="hover:text-white">Pricing</Link>
               <Link href="/blog" className="hover:text-white">Blog</Link>
               <Link href="/resources/faq" className="hover:text-white">FAQ</Link>
               <Link href="/contact" className="hover:text-white">Contact</Link>

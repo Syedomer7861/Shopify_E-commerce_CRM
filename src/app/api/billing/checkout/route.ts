@@ -5,7 +5,10 @@ import { billingSession, ensureRazorpayPlan, publicPlans } from "@/lib/billing-s
 import { totalCount } from "@/lib/billing";
 import { rateLimit } from "@/lib/rate-limit";
 
-const Schema = z.object({ versionId: z.string().uuid(), cycle: z.enum(["monthly", "yearly"]) });
+const Schema = z.object({
+  versionId: z.string().uuid(), cycle: z.enum(["monthly", "yearly"]),
+  orgName: z.string().trim().min(2).max(120).optional(),
+});
 
 /** Org admin starts an auto-debit subscription; the browser then opens Razorpay Checkout with it. */
 export async function POST(req: NextRequest) {
@@ -24,12 +27,19 @@ export async function POST(req: NextRequest) {
   if (!plan || amount <= 0) return NextResponse.json({ error: "That plan is not available." }, { status: 400 });
 
   const [{ data: org }, { data: live }, { count: pastSubs }] = await Promise.all([
-    s.admin.from("organizations").select("name, billing_hold").eq("id", s.orgId).single(),
+    s.admin.from("organizations").select("name, billing_hold, billing_state").eq("id", s.orgId).single(),
     s.admin.from("org_subscriptions").select("id").eq("org_id", s.orgId).eq("source", "razorpay").neq("status", "cancelled").maybeSingle(),
     s.admin.from("org_subscriptions").select("id", { count: "exact", head: true }).eq("org_id", s.orgId),
   ]);
   if (live && !org?.billing_hold) {
     return NextResponse.json({ error: "You already have an active subscription. Cancel it before switching plans." }, { status: 409 });
+  }
+
+  // A workspace that has never paid (e.g. created by Google sign-up) names itself here.
+  let orgName = org?.name ?? "";
+  if (parsed.data.orgName && org?.billing_hold && org.billing_state === "pending" && parsed.data.orgName !== orgName) {
+    const { error: renameError } = await s.admin.from("organizations").update({ name: parsed.data.orgName }).eq("id", s.orgId);
+    if (!renameError) orgName = parsed.data.orgName;
   }
 
   // One free trial per organisation: none if it ever had a subscription.
@@ -48,7 +58,7 @@ export async function POST(req: NextRequest) {
     });
     if (error) throw new Error(error.message);
     return NextResponse.json({
-      keyId: process.env.RAZORPAY_KEY_ID, subscriptionId: sub.id, orgName: org?.name ?? "", email: s.user.email ?? "",
+      keyId: process.env.RAZORPAY_KEY_ID, subscriptionId: sub.id, orgName, email: s.user.email ?? "",
       planName: plan.name, trialDays,
     });
   } catch (err) {

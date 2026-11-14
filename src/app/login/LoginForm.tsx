@@ -6,8 +6,9 @@ import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import { sendAdminNotification } from "@/lib/notifications";
 import { MfaChallenge, needsSecondFactor } from "@/components/auth/MfaChallenge";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 
-export default function LoginPage() {
+export default function LoginForm({ googleEnabled, signupOpen, googleError }: { googleEnabled: boolean; signupOpen: boolean; googleError: boolean }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
@@ -164,12 +165,21 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+          {googleEnabled && (
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[#1c1c1c]/40">
+                <div className="h-px flex-1 bg-[#eceae4]" />or<div className="h-px flex-1 bg-[#eceae4]" />
+              </div>
+              <GoogleButton />
+              {googleError && <p role="alert" className="text-xs text-red-700 text-center">Google sign-in did not complete. Please try again.</p>}
+            </div>
+          )}
           </>)}
         </div>
 
         <div className="mt-8 text-center">
-          <a href="/contact" className="inline-block py-2 text-[11px] font-black text-[#1c1c1c]/70 hover:text-[#1c1c1c] uppercase tracking-widest transition-colors">
-            Need a workspace? Contact us
+          <a href={signupOpen ? "/pricing" : "/contact"} className="inline-block py-2 text-[11px] font-black text-[#1c1c1c]/70 hover:text-[#1c1c1c] uppercase tracking-widest transition-colors">
+            {signupOpen ? "New here? See plans and sign up" : "Need a workspace? Contact us"}
           </a>
         </div>
 

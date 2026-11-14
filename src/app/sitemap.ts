@@ -8,6 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     entry("/", 1),
     entry("/contact", 0.6),
+    entry("/pricing", 0.8),
     ...SECTIONS.map((s) => entry(`/${s.key}`, 0.8)),
     entry("/tools", 0.8),
     ...allPages().map((p) => entry(p.href, 0.7)),

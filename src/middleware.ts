@@ -99,7 +99,7 @@ export async function middleware(request: NextRequest) {
   // page could never actually be seen.
   const isRootPage = request.nextUrl.pathname === '/'
   // Public marketing sections (src/app/(site)). Static content, no data.
-  const isSitePage = ['features', 'solutions', 'integrations', 'compare', 'resources', 'tools', 'blog']
+  const isSitePage = ['features', 'solutions', 'integrations', 'compare', 'resources', 'tools', 'blog', 'pricing']
     .includes(request.nextUrl.pathname.split('/')[1])
 
   // Demo mode is a real login (see login/page.tsx): the demo cookie is only set

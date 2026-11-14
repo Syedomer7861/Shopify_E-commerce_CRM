@@ -45,14 +45,19 @@ export default function BillingPage() {
   const [cycle, setCycle] = useState<Cycle>("monthly");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [orgName, setOrgName] = useState("");
 
   const load = useCallback(async () => {
     const res = await fetch("/api/billing/status", { cache: "no-store" }).catch(() => null);
     if (!res?.ok) { setLoadError("Could not load billing. Please refresh."); return; }
     const data: Status = await res.json();
     setS(data);
-    const want = data.plans.find((p) => p.code === data.picked?.code && priceOf(p, data.picked!.cycle) > 0);
-    const c = want ? data.picked!.cycle : data.plans.some((p) => p.monthly > 0) ? "monthly" : "yearly";
+    setOrgName(data.orgName);
+    // A plan chosen on /pricing (Google sign-up) wins over the stored pick.
+    const q = new URLSearchParams(window.location.search);
+    const picked = q.get("plan") ? { code: q.get("plan"), cycle: (q.get("cycle") === "yearly" ? "yearly" : "monthly") as Cycle } : data.picked;
+    const want = data.plans.find((p) => p.code === picked?.code && priceOf(p, picked!.cycle) > 0);
+    const c = want ? picked!.cycle : data.plans.some((p) => p.monthly > 0) ? "monthly" : "yearly";
     setCycle(c);
     setVersionId(want?.versionId ?? data.plans.find((p) => priceOf(p, c) > 0)?.versionId ?? "");
   }, []);
@@ -61,7 +66,7 @@ export default function BillingPage() {
   async function pay() {
     setBusy(true); setMsg("");
     try {
-      const res = await fetch("/api/billing/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ versionId, cycle }) });
+      const res = await fetch("/api/billing/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ versionId, cycle, orgName: orgName.trim() }) });
       const ck = await res.json();
       if (!res.ok) throw new Error(ck.error || "Could not start the payment.");
       await loadCheckout();
@@ -152,7 +157,14 @@ export default function BillingPage() {
       ) : (
         <>
           <PlanPicker plans={s.plans} versionId={versionId} cycle={cycle} onChange={(v, c) => { setVersionId(v); setCycle(c); }} />
-          <button onClick={pay} disabled={busy || !versionId}
+          {s.state === "pending" && (
+            <label className="block space-y-2">
+              <span className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest ml-1">Company name</span>
+              <input value={orgName} onChange={(e) => setOrgName(e.target.value)} maxLength={120} autoComplete="organization"
+                className="w-full h-12 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-4 text-sm text-[#1c1c1c] focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/15" />
+            </label>
+          )}
+          <button onClick={pay} disabled={busy || !versionId || (s.state === "pending" && orgName.trim().length < 2)}
             className="w-full h-12 bg-[#1c1c1c] text-[#f7f4ed] font-black uppercase tracking-widest text-xs rounded-2xl disabled:opacity-50">
             {busy ? "Opening payment…" : "Set up auto-pay"}
           </button>
