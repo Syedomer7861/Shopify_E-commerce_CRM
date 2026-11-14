@@ -26,12 +26,6 @@ export type RecordsConfig = {
   /** When set, `status` is editable inline by anyone who can edit the row. */
   statuses?: string[];
   rowActions?: (row: RecordRow, reload: () => void) => ReactNode;
-  /**
-   * Example rows drawn while the table is still empty, so a new team can see
-   * what the module is for. Never written to the database, never exported,
-   * and gone as soon as the first real record exists.
-   */
-  samples?: Record<string, any>[];
   /** Rows are limited to these column values, and new rows are created with them (Apps: one module's records). */
   filter?: Record<string, string>;
   /** Field values live inside this JSON column instead of in columns of their own (Apps). */
@@ -48,6 +42,10 @@ export type RecordsConfig = {
 
 const label = (s: string) => s.replace(/_/g, " ");
 export const money = (v: any) => (v === null || v === undefined || v === "" ? "—" : `₹${Number(v).toLocaleString("en-IN")}`);
+/** Prefix for workspace-defined custom fields, flattened onto each row as `cf:<key>`. */
+const CF = "cf:";
+type FieldDef = { key: string; label: string; field_type: RecordField["type"]; options: string[]; required: boolean; show_in_list: boolean };
+
 export const day = (v: any) => (v ? new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "—");
 
 /**
@@ -70,6 +68,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   const [query, setQuery] = useState(() =>
     typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("q") || "");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [defs, setDefs] = useState<FieldDef[]>([]);
 
   const { table, module, noun, ownerCol } = config;
   const { access, dataCol, filter } = config;
@@ -80,18 +79,32 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   const canExport = access ? access.export : can(profile, module, "export") !== null;
   const filterKey = JSON.stringify(filter || {});
   const personKeys = useMemo(() => new Set(config.fields.filter(f => f.type === "person").map(f => f.key)), [config.fields]);
+  // Built-in fields first, then the workspace's own (Settings > Custom fields).
+  const fields = useMemo<RecordField[]>(() => [...config.fields, ...defs.map(d => ({
+    key: CF + d.key, label: d.label, required: d.required, type: d.field_type, options: d.options,
+  }))], [config.fields, defs]);
+  const columns = useMemo(() => [...config.columns, ...defs.filter(d => d.show_in_list).map(d => ({
+    key: CF + d.key, label: d.label, format: d.field_type === "date" ? day : undefined,
+  }))], [config.columns, defs]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [list, team] = await Promise.all([
+    const [list, team, cf] = await Promise.all([
       supabase.from(table).select("*").match(JSON.parse(filterKey)).order("created_at", { ascending: false }).limit(200),
       supabase.from("profiles").select("id,name"),
+      dataCol ? Promise.resolve({ data: [] as FieldDef[] })
+        : supabase.from("custom_field_defs").select("key,label,field_type,options,required,show_in_list").eq("entity", table).eq("is_active", true).order("sort_order").order("created_at"),
     ]);
+    setDefs((cf.data || []) as FieldDef[]);
     if (list.error) setNotReady(true);
     else {
       setNotReady(false);
       // Real columns win over a same-named key inside the JSON column.
-      setRows((list.data as RecordRow[]).map(r => (dataCol ? { ...(r[dataCol] || {}), ...r } : r)));
+      setRows((list.data as RecordRow[]).map(r => {
+        if (dataCol) return { ...(r[dataCol] || {}), ...r };
+        const flat = Object.fromEntries(Object.entries(r.custom_fields || {}).map(([k, v]) => [CF + k, v]));
+        return { ...r, ...flat };
+      }));
     }
     setPeople(Object.fromEntries((team.data || []).map((p: any) => [p.id, p.name || "Unnamed"])));
     setLoading(false);
@@ -106,16 +119,21 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   }, []);
 
   async function create(thenAct = false) {
-    const missing = config.fields.find(f => f.required && !form[f.key]?.trim());
+    const missing = fields.find(f => f.required && !form[f.key]?.trim());
     if (missing) return toast.error(`${missing.label} is required`);
     setSaving(true);
     // The id is made here rather than read back: INSERT ... RETURNING can be refused by the SELECT policy even when the insert is allowed.
     const values: Record<string, any> = {};
-    for (const f of config.fields) {
+    const custom: Record<string, any> = {};
+    for (const f of fields) {
       const v = form[f.key]?.trim();
-      if (v) values[f.key] = f.type === "number" ? Number(v) : v;
-      else if (editing) values[f.key] = null; // a cleared field must overwrite the old value
+      const isCustom = f.key.startsWith(CF);
+      const target = isCustom ? custom : values;
+      const key = isCustom ? f.key.slice(CF.length) : f.key;
+      if (v) target[key] = f.type === "number" ? Number(v) : v;
+      else if (editing) target[key] = null; // a cleared field must overwrite the old value
     }
+    if (Object.keys(custom).length) values.custom_fields = { ...(editing?.custom_fields || {}), ...custom };
     if (editing) {
       // Fields the definition no longer lists stay in the JSON untouched.
       const change = dataCol ? { [dataCol]: { ...(editing[dataCol] || {}), ...values } } : values;
@@ -154,7 +172,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
 
   function openEdit(row: RecordRow) {
     const next: Record<string, string> = {};
-    for (const f of config.fields) {
+    for (const f of fields) {
       const v = row[f.key];
       if (v === null || v === undefined) continue;
       next[f.key] = f.type === "date" ? String(v).slice(0, 10) : f.type === "datetime-local" ? String(v).slice(0, 16) : String(v);
@@ -176,9 +194,10 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   }
 
   function exportCsv() {
-    const keys = [...config.columns.map(c => c.key), "status", ownerCol, "created_at"].filter((k, i, a) => a.indexOf(k) === i);
+    const keys = [...columns.map(c => c.key), "status", ownerCol, "created_at"].filter((k, i, a) => a.indexOf(k) === i);
     const cell = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const csv = [keys.join(","), ...rows.map(r => keys.map(k => cell(k === ownerCol || personKeys.has(k) ? people[r[k]] ?? r[k] : r[k])).join(","))].join("\n");
+    const head = keys.map(k => columns.find(c => c.key === k)?.label ?? k);
+    const csv = [head.join(","), ...rows.map(r => keys.map(k => cell(k === ownerCol || personKeys.has(k) ? people[r[k]] ?? r[k] : r[k])).join(","))].join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     a.download = `${table}.csv`;
@@ -186,13 +205,12 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
     URL.revokeObjectURL(a.href);
   }
 
-  const isSample = rows.length === 0 && !!config.samples?.length;
-  const all: RecordRow[] = isSample ? config.samples!.map((s, i) => ({ ...s, id: "sample-" + i })) : rows;
+  const all = rows;
   const statusCounts = all.reduce<Record<string, number>>((acc, r) => { const s = r.status || "—"; acc[s] = (acc[s] || 0) + 1; return acc; }, {});
   const needle = query.trim().toLowerCase();
   const shown = all.filter(r =>
     (!statusFilter || (r.status || "—") === statusFilter) &&
-    (!needle || [...config.columns.map(c => (personKeys.has(c.key) ? people[r[c.key]] : r[c.key])), people[r[ownerCol]], r.status]
+    (!needle || [...columns.map(c => (personKeys.has(c.key) ? people[r[c.key]] : r[c.key])), people[r[ownerCol]], r.status]
       .some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(needle))));
 
   if (loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
@@ -200,7 +218,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
     return (
       <div className="card p-5 flex items-start gap-3 text-sm text-amber-700 bg-amber-50 border-amber-100">
         <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-        <div>This module isn&apos;t set up on this database yet. Run <code>supabase/APPLY_PHASES_1_TO_7.sql</code> in the SQL Editor, then reload.</div>
+        <div>This list couldn&apos;t be loaded. Reload the page; if it keeps happening, contact support.</div>
       </div>
     );
   }
@@ -222,12 +240,6 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
         )}
       </div>
 
-      {isSample && (
-        <div className="mb-3 rounded-lg border border-dashed border-[#d9d5ca] bg-[#f7f4ed] px-3 py-2 text-[11px] text-[#5f5f5d]">
-          <span className="font-bold text-[#1c1c1c]">Sample data.</span> These rows are examples to show how this module works. They are not saved{canCreate ? " and disappear when you add your first " + noun + "." : "."}
-        </div>
-      )}
-
       {Object.keys(statusCounts).length > 1 && (
         <div className="flex gap-1.5 mb-3 overflow-x-auto scrollbar-hide">
           {[[null, all.length] as const, ...Object.entries(statusCounts)].map(([s, n]) => (
@@ -248,7 +260,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
           <table className="w-full text-xs min-w-[640px]">
             <thead>
               <tr className="text-left text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-100">
-                {config.columns.map(c => <th key={c.key} className="p-3">{c.label}</th>)}
+                {columns.map(c => <th key={c.key} className="p-3">{c.label}</th>)}
                 <th className="p-3">Status</th>
                 <th className="p-3">{config.ownerLabel || "Owner"}</th>
                 <th className="p-3" />
@@ -256,25 +268,25 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
             </thead>
             <tbody>
               {shown.map(row => (
-                <tr key={row.id} className={"border-b border-gray-50 last:border-0" + (isSample ? " opacity-70" : "")}>
-                  {config.columns.map(c => (
+                <tr key={row.id} className="border-b border-gray-50 last:border-0">
+                  {columns.map(c => (
                     <td key={c.key} className="p-3 text-[#1c1c1c]">{c.format ? c.format(row[c.key], row) : personKeys.has(c.key) ? (people[row[c.key]] || "—") : (row[c.key] ?? "—")}</td>
                   ))}
                   <td className="p-2 min-w-[130px]">
-                    {config.statuses && !isSample && canEditRow(row) ? (
+                    {config.statuses && canEditRow(row) ? (
                       <Select value={row.status} onChange={v => setStatus(row, v)} triggerClassName="text-xs capitalize"
                         options={config.statuses.map(s => ({ value: s, label: label(s) }))} />
                     ) : (
                       <span className="px-2 py-0.5 rounded-full bg-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-600">{label(row.status || "—")}</span>
                     )}
                   </td>
-                  <td className="p-3 text-gray-500">{isSample ? "Sample" : people[row[ownerCol]] || "—"}</td>
+                  <td className="p-3 text-gray-500">{people[row[ownerCol]] || "—"}</td>
                   <td className="p-3 text-right whitespace-nowrap sticky right-0 bg-[#f7f4ed]">
-                    {!isSample && config.rowActions?.(row, load)}
-                    {config.editable && !isSample && canEditRow(row) && (
+                    {config.rowActions?.(row, load)}
+                    {config.editable && canEditRow(row) && (
                       <button onClick={() => openEdit(row)} aria-label={`Edit ${noun}`} className="text-gray-400 hover:text-[#1c1c1c] ml-2 align-middle"><Pencil className="w-3.5 h-3.5" /></button>
                     )}
-                    {canDelete && !isSample && (
+                    {canDelete && (
                       <button onClick={() => remove(row)} aria-label={`Delete ${noun}`} className="text-gray-300 hover:text-rose-500 ml-2 align-middle"><Trash2 className="w-3.5 h-3.5" /></button>
                     )}
                   </td>
@@ -295,8 +307,8 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
           </div>
         }>
         <div className="space-y-3">
-          {config.fields.map(f => {
-            const id = `${table}-${f.key}`;
+          {fields.map(f => {
+            const id = `${table}-${f.key.replace(CF, "cf-")}`;
             const set = (v: string) => setForm(prev => ({ ...prev, [f.key]: v }));
             return (
               <div key={f.key}>

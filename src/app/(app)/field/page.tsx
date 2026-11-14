@@ -90,11 +90,6 @@ export default function FieldVisitsPage() {
       { key: "purpose", label: "Purpose" },
       { key: "planned_at", label: "Planned for", type: "datetime-local" },
     ],
-    samples: [
-      { party_name: "Sharma Medical Store", purpose: "Monthly stock review", planned_at: hoursFromNow(-26), check_in_at: hoursFromNow(-26), outcome: "Reorder placed for next week", status: "completed" },
-      { party_name: "GreenLeaf Wellness Clinic", purpose: "Product demo", planned_at: hoursFromNow(-2), check_in_at: hoursFromNow(-2), status: "checked_in" },
-      { party_name: "Apex Distributors", purpose: "Payment follow-up", planned_at: hoursFromNow(22), status: "planned" },
-    ],
     // On site already: save the visit and go straight to the camera.
     createAndAct: { label: "Save & check in now (photo + location)", run: (row, reload) => setCheckingIn({ row, reload }) },
     rowActions: (row, reload) => {

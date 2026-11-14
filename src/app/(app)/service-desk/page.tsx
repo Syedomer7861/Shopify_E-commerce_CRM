@@ -41,11 +41,6 @@ export default function ServiceDeskPage() {
       { key: "priority", label: "Priority", type: "select", options: ["low", "normal", "high", "urgent"] },
       { key: "description", label: "Details", type: "textarea" },
     ],
-    samples: [
-      { subject: "Laptop won't connect to office Wi-Fi", category: "IT", priority: "high", sla_due_at: new Date(Date.now() + 4 * 3_600_000).toISOString(), status: "in_progress" },
-      { subject: "Salary slip for last month", category: "HR", priority: "normal", sla_due_at: new Date(Date.now() + 30 * 3_600_000).toISOString(), status: "open" },
-      { subject: "Reimbursement not credited", category: "Finance", priority: "normal", sla_due_at: new Date(Date.now() - 20 * 3_600_000).toISOString(), status: "resolved" },
-    ],
     rowActions: (row, reload) =>
       row.assignee_id === profile?.id ? <span className="text-[10px] font-bold text-emerald-600">Yours</span>
       : canAssign && !row.assignee_id ? <button onClick={() => take(row, reload)} className="text-[10px] font-bold underline text-[#1c1c1c]">Take</button>
