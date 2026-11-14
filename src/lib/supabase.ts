@@ -85,8 +85,10 @@ export const createServerClient = () => {
       }
     )
   } catch (error) {
-    // If cookies() fails, we are in a CRON job or background task.
-    // Fallback to the Admin/Service Role client to allow the task to run.
+    // If cookies() fails we are outside any request (a script or detached
+    // background work), so there is no user to scope to. Falls back to the
+    // service-role client; logged so an accidental use is visible.
+    console.warn("[supabase] createServerClient without a request - using service role");
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing for background task.");
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireInternal } from "@/lib/auth-utils";
+import { memberScope } from "@/lib/auth-utils";
 import { getServiceSupabase } from "@/lib/supabase";
 import { generateAiText } from "@/lib/ai";
 
@@ -11,8 +11,8 @@ import { generateAiText } from "@/lib/ai";
  * local template fallback for that case, so this route doesn't duplicate it.
  */
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
-  if (unauthorized) return unauthorized;
+  const scope = await memberScope(req);
+  if (scope.error) return scope.error;
 
   const supabase = getServiceSupabase(req);
   // sentiment/is_urgent aren't real tasks columns (no migration ever added
@@ -28,8 +28,9 @@ export async function POST(req: NextRequest) {
   try {
     const { data: task, error: taskErr } = await supabase
       .from("tasks")
-      .select("task_type, metadata, customer:customers!inner(name, segment), order:orders(order_number, total_price, delivery_status, line_items)")
+      .select("org_id, task_type, metadata, customer:customers!inner(name, segment), order:orders(order_number, total_price, delivery_status, line_items)")
       .eq("id", taskId)
+      .eq(scope.orgId ? "org_id" : "id", scope.orgId ?? taskId)
       .maybeSingle();
 
     if (taskErr) throw new Error(`Task lookup failed: ${taskErr.message}`);
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     const product = order?.line_items?.[0]?.name || "your order";
     const aiCache = task.metadata?.ai_cache || {};
 
-    if (mode === "upsell") return await handleUpsell(supabase, taskId, task.metadata, aiCache, order, product);
+    if (mode === "upsell") return await handleUpsell(supabase, taskId, task.org_id, task.metadata, aiCache, order, product);
 
     // Battle script is cached per (task, agent) - the greeting names the
     // calling agent, so a cached script only reuses cleanly for the same
@@ -86,7 +87,7 @@ ${typeof rtoProbability === "number" ? `RTO risk: ${rtoProbability}%` : ""}
   }
 }
 
-async function handleUpsell(supabase: any, taskId: string, taskMetadata: any, aiCache: any, order: any, currentProduct: string) {
+async function handleUpsell(supabase: any, taskId: string, orgId: string, taskMetadata: any, aiCache: any, order: any, currentProduct: string) {
   // Unlike battle_script, upsell picks aren't tied to a specific agent -
   // the same task always gets the same real product-pairing answer, so
   // this is safe to reuse for any agent who reopens the task.
@@ -97,6 +98,7 @@ async function handleUpsell(supabase: any, taskId: string, taskMetadata: any, ai
   const { data: catalog } = await supabase
     .from("product_catalog")
     .select("name, price, description, tags, product_type")
+    .eq("org_id", orgId)
     .eq("active", true)
     .not("price", "is", null)
     .order("name")

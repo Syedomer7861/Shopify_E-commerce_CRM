@@ -5,7 +5,7 @@ import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings"
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { normalizePhone } from "@/lib/phone-utils";
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
-import { requireInternal } from "@/lib/auth-utils";
+import { requireInternal, hasInternalSecret } from "@/lib/auth-utils";
 import { makeDeadline } from "@/lib/sync-logic";
 import { mapShiprocketStatus } from "@/lib/shiprocket-status";
 
@@ -136,8 +136,7 @@ export async function POST(req: NextRequest) {
 
   const supabase = getServiceSupabase(req);
 
-  const authHeader = req.headers.get("x-sync-secret");
-  const isInternal = authHeader === process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const isInternal = hasInternalSecret(req);
 
   const report = {
     orders_processed: 0,

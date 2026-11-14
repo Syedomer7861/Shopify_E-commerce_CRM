@@ -98,11 +98,18 @@ export function safeEqual(a?: string | null, b?: string | null) {
 
 /** Secrets a trusted internal caller (Vercel cron, chat/wa daemon) may present. */
 function internalSecrets(): string[] {
-  return [
-    process.env.CRON_SECRET,
-    process.env.SYNC_SECRET,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-  ].filter(Boolean) as string[];
+  return [process.env.CRON_SECRET, process.env.SYNC_SECRET].filter(Boolean) as string[];
+}
+
+// ponytail: legacy - the chat/wa daemons used to send the service-role key
+// as their secret. They now send SYNC_SECRET / CRON_SECRET; this fallback
+// stays only until every running daemon is restarted, and logs when used.
+// Delete it once "[auth] service-role key used" stops appearing in logs.
+function legacyServiceKeyUsed(supplied: string[]) {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key || !supplied.some((s) => safeEqual(s, key))) return false;
+  console.warn("[auth] service-role key used as an HTTP credential - restart the chat/wa daemon with SYNC_SECRET or CRON_SECRET set");
+  return true;
 }
 
 /** True when the request carries a known internal secret. */
@@ -118,7 +125,7 @@ export function hasInternalSecret(req: NextRequest | Request) {
 
   if (!supplied.length) return false;
   const known = internalSecrets();
-  return supplied.some((s) => known.some((k) => safeEqual(s, k)));
+  return supplied.some((s) => known.some((k) => safeEqual(s, k))) || legacyServiceKeyUsed(supplied);
 }
 
 /**
@@ -193,6 +200,24 @@ export async function privilegedScope(
   }
   if (!profile.org_id) return { error: NextResponse.json({ error: "No workspace" }, { status: 403 }) };
   return { error: null, orgId: profile.org_id };
+}
+
+/**
+ * Any signed-in member, limited to their own workspace; an internal caller
+ * (secret) is not limited. For service-key routes that look rows up by an id
+ * the caller sends - without this, any member could read another workspace's
+ * row by guessing or reusing its id.
+ */
+export async function memberScope(
+  req: NextRequest | Request
+): Promise<{ error: NextResponse } | { error: null; orgId: string | null }> {
+  if (hasInternalSecret(req)) return { error: null, orgId: null };
+  const session = await getAuthenticatedSession();
+  if (session.errorResponse) return { error: session.errorResponse };
+  if (!session.profile?.org_id || session.profile.is_active === false) {
+    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+  }
+  return { error: null, orgId: session.profile.org_id };
 }
 
 /**

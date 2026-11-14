@@ -1,17 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireInternal } from "@/lib/auth-utils";
+import { hasInternalSecret } from "@/lib/auth-utils";
 import { createAdminClient } from "@/lib/supabase";
 
 // POST /api/tasks/bulk-done
 // Marks all "overdue" tasks (past due_date, not done/cancelled) as done
 export async function POST(req: Request) {
-  const unauthorized = await requireInternal(req);
-  if (unauthorized) return unauthorized;
-
-  const secret = req.headers.get("x-admin-secret");
-  if (secret !== process.env.SYNC_SECRET && secret !== process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Platform-wide (every workspace's overdue tasks): internal secret only.
+  if (!hasInternalSecret(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const supabase = createAdminClient();
   const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD

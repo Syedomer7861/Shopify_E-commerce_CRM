@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireInternal } from "@/lib/auth-utils";
+import { memberScope } from "@/lib/auth-utils";
 import { getServiceSupabase } from "@/lib/supabase";
 import { generateAiText } from "@/lib/ai";
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
-  if (unauthorized) return unauthorized;
+  const scope = await memberScope(req);
+  if (scope.error) return scope.error;
 
   const supabase = getServiceSupabase(req);
   const { customerId, lastMessage, taskType } = await req.json();
@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
       .from("customers")
       .select("name, segment, total_orders, rto_count, notes, custom_meta, orders(order_number, total_price, delivery_status, line_items)")
       .eq("id", customerId)
+      .eq(scope.orgId ? "org_id" : "id", scope.orgId ?? customerId)
       .maybeSingle();
 
     if (!customer) throw new Error("Customer not found");

@@ -364,7 +364,8 @@ async function runBackgroundSync() {
     timestamp: new Date().toISOString()
   });
 
-  const syncSecret = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Narrow shared secret, never the service-role key (that one can read every table).
+  const syncSecret = process.env.SYNC_SECRET || process.env.CRON_SECRET || "";
   const baseUrl = process.env.SYNC_BASE_URL || "http://localhost:3000";
 
   try {

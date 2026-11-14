@@ -196,7 +196,7 @@ function initClient() {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-sync-secret": process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+                    "x-sync-secret": process.env.SYNC_SECRET || process.env.CRON_SECRET || ""
                 },
                 body: JSON.stringify(payload)
             });
@@ -364,7 +364,7 @@ app.listen(PORT, "0.0.0.0", () => {
 });
 
 // ── Backup Daemon (Daily at 3 AM) ──────────────────────────────────────────────
-const BACKUP_SECRET = process.env.BACKUP_SECRET || process.env.SYNC_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+const BACKUP_SECRET = process.env.BACKUP_SECRET || process.env.SYNC_SECRET || process.env.CRON_SECRET;
 if (!BACKUP_SECRET) console.warn("⚠️  BACKUP_SECRET/SYNC_SECRET unset - backup sync calls will be rejected.");
 const BACKUP_BASE_URL = process.env.SYNC_BASE_URL || "http://127.0.0.1:3000";
 const BACKUP_URL = BACKUP_BASE_URL + "/api/backup";
