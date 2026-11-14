@@ -11,6 +11,9 @@ import { analyzeRTORisk } from "@/lib/risk-engine";
 import crypto from "crypto";
 import { safeEqual, isSecretConfigured, webhookStrict } from "@/lib/auth-utils";
 
+/** topic prefix on webhook_logs rows kept unprocessed for replay (see replay/route.ts). */
+const HELD_PREFIX = "held:";
+
 export async function POST(req: NextRequest) {
   const limited = await rateLimit(req, "webhook-shopify", 300, 60000);
   if (limited) return limited;
@@ -67,8 +70,24 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
     } else if (webhookStrict()) {
-      console.error("🚨 Shopify Webhook: rejected - SHOPIFY_WEBHOOK_SECRET is unset or still the placeholder.");
-      return NextResponse.json({ error: "Webhook secret not configured" }, { status: 503 });
+      // No secret to verify against. Refusing loses the event once Shopify
+      // stops retrying, so keep it UNPROCESSED with its signature instead;
+      // /api/webhooks/shopify/replay verifies and processes it once a secret
+      // is set. Nothing here touches orders or customers.
+      // Only what looks like Shopify, and not huge: the free database is small.
+      if (!hmac || !topic || rawBody.length > 512_000) {
+        return NextResponse.json({ error: "Webhook secret not configured" }, { status: 503 });
+      }
+      console.error("🚨 Shopify Webhook: no secret configured - payload held unprocessed for replay.");
+      const { error: holdError } = await supabase.from("webhook_logs").insert({
+        org_id: orgId,
+        source: "shopify",
+        topic: `${HELD_PREFIX}${topic || "unknown"}`,
+        status: "skipped",
+        payload: { raw: rawBody, hmac, shop: shopDomain, webhook_id: req.headers.get("x-shopify-webhook-id") },
+      });
+      if (holdError) return NextResponse.json({ error: "Webhook secret not configured" }, { status: 503 });
+      return NextResponse.json({ held: true }, { status: 202 });
     } else {
       console.warn("🚨 Shopify Webhook: SHOPIFY_WEBHOOK_SECRET is unset or still the placeholder - payload accepted UNVERIFIED. Set the real secret from the Shopify admin, then WEBHOOK_STRICT=true.");
     }

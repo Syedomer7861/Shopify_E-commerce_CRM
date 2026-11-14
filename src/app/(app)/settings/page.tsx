@@ -2456,6 +2456,28 @@ export default function SettingsPage() {
                   className="input font-mono text-[10px] bg-[#fcfbf8]" 
                 />
                 <p className="text-[9px] text-[#5f5f5d] mt-2 leading-relaxed opacity-50">Used to authenticate event payloads. Found in <strong>Notifications &gt; Webhooks</strong>.</p>
+                {/* Webhooks that arrived while no secret was set are held unprocessed; this verifies and processes them. Save the secret first. */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      let total = 0;
+                      for (let i = 0; i < 50; i++) {
+                        const res = await fetch("/api/webhooks/shopify/replay", { method: "POST" });
+                        const body = await res.json();
+                        if (!res.ok) throw new Error(body.error || "Replay failed");
+                        total += body.replayed;
+                        if (!body.remaining) break;
+                      }
+                      toast.success(total ? `Processed ${total} held Shopify webhooks` : "No held Shopify webhooks");
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : "Replay failed");
+                    }
+                  }}
+                  className="mt-3 text-[10px] font-bold uppercase tracking-widest underline opacity-70 hover:opacity-100"
+                >
+                  Process held webhooks
+                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
