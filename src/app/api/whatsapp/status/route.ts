@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requirePrivileged } from "@/lib/auth-utils";
+import { privilegedScope } from "@/lib/auth-utils";
 export const dynamic = "force-dynamic";
 import { createAdminClient } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
-  const unauthorized = await requirePrivileged(req);
-  if (unauthorized) return unauthorized;
+  const scope = await privilegedScope(req);
+  if (scope.error) return scope.error;
 
   const supabase = createAdminClient();
 
@@ -14,11 +14,15 @@ export async function GET(req: NextRequest) {
   // no org filter would error outright once a 2nd org's settings row
   // exists (more than one row).
   const { getDefaultOrgId } = await import("@/lib/server-settings");
-  const orgId = await getDefaultOrgId();
+  const defaultOrgId = await getDefaultOrgId();
+  const orgId = scope.orgId ?? defaultOrgId;
   // Get Bridge URL: env var takes priority (always correct for local dev),
   // then settings DB (for production where Tailscale URL may be set)
   const { data: settings } = await supabase.from("settings").select("whatsapp_bridge_url").eq("org_id", orgId).maybeSingle();
-  const bridgeUrl = settings?.whatsapp_bridge_url || process.env.WHATSAPP_BRIDGE_URL || "http://127.0.0.1:3001";
+  // The env bridge is the seed workspace's phone; never report it to another workspace.
+  const envBridge = orgId === defaultOrgId ? process.env.WHATSAPP_BRIDGE_URL || "http://127.0.0.1:3001" : null;
+  const bridgeUrl = settings?.whatsapp_bridge_url || envBridge;
+  if (!bridgeUrl) return NextResponse.json({ ok: false, ready: false, state: "DISCONNECTED", error: "No WhatsApp bridge is set up for this workspace." });
 
   try {
     const res = await fetch(`${bridgeUrl}/status`, {

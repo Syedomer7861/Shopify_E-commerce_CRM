@@ -1,3 +1,4 @@
+import { orQuote } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { getServiceSupabase } from "@/lib/supabase";
@@ -307,7 +308,7 @@ export async function POST(req: NextRequest) {
             const { data: existingSrOrder } = await supabase
               .from("orders")
               .select("id, source")
-              .or(`shopify_order_id.eq.${orderId},order_number.eq.${orderNumberStr}`)
+              .or(`shopify_order_id.eq.${orQuote(orderId)},order_number.eq.${orQuote(orderNumberStr)}`)
               .eq("org_id", orgId)
               .maybeSingle();
 

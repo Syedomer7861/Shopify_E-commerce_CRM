@@ -1,3 +1,4 @@
+import { orQuote } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
@@ -27,10 +28,10 @@ export async function GET(req: NextRequest) {
   if (rto === "true") query = query.eq("rto_flag", true);
   if (search) {
     // Basic search on common fields
-    query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%,shopify_customer_id.ilike.%${search}%`);
+    query = query.or(`name.ilike.${orQuote(`%${search}%`)},phone.ilike.${orQuote(`%${search}%`)},email.ilike.${orQuote(`%${search}%`)},shopify_customer_id.ilike.${orQuote(`%${search}%`)}`);
     
     // 2. Check if search might be an Order ID
-    const { data: orderCustomers } = await supabase.from("orders").select("customer_id").or(`order_number.ilike.%${search}%,shopify_order_id.ilike.%${search}%`);
+    const { data: orderCustomers } = await supabase.from("orders").select("customer_id").or(`order_number.ilike.${orQuote(`%${search}%`)},shopify_order_id.ilike.${orQuote(`%${search}%`)}`);
     
     // 3. Check if search might be a Cart Token
     const { data: cartCustomers } = await supabase.from("abandoned_carts").select("customer_id").ilike("cart_token", `%${search}%`);

@@ -55,8 +55,8 @@ export default function ImportPage() {
     const reader = new FileReader();
     reader.onload = async (e) => {
       const buffer = e.target?.result;
-      const XLSX = await import("xlsx");
-      const workbook = XLSX.read(buffer, { type: "array" });
+      const XLSX = await import("@/lib/sheets");
+      const workbook = await XLSX.read(buffer, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const fileHeaders = (XLSX.utils.sheet_to_json(sheet, { header: 1 })[0] as string[]) || [];
       let rawRows = XLSX.utils.sheet_to_json(sheet, { raw: false, defval: "" });

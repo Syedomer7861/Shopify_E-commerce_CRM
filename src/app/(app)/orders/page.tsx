@@ -9,7 +9,7 @@ const ShiprocketOrderView = dynamic(() => import("@/components/ShiprocketOrderVi
   loading: () => <div className="p-8 text-center"><RefreshCw className="w-6 h-6 animate-spin mx-auto text-gray-300" /></div>
 });
 import { createClient } from "@/lib/supabase";
-import { cn, formatDate, formatCurrency } from "@/lib/utils";
+import { cn, formatDate, formatCurrency, orQuote } from "@/lib/utils";
 import type { Order, DeliveryStatus, Customer } from "@/types";
 import toast from "react-hot-toast";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
@@ -102,7 +102,7 @@ export default function OrdersPage() {
 
       let customerQuery = supabase.from("customers").select("id");
       if (isPhone) {
-        customerQuery = customerQuery.or(`phone.eq.${cleanSearch},phone.ilike.%${cleanSearch}%`);
+        customerQuery = customerQuery.or(`phone.eq.${orQuote(cleanSearch)},phone.ilike.${orQuote(`%${cleanSearch}%`)}`);
       } else {
         customerQuery = customerQuery.ilike("name", `%${cleanSearch}%`);
       }
@@ -285,7 +285,7 @@ export default function OrdersPage() {
 
         let customerQuery = supabase.from("customers").select("id");
         if (isPhone) {
-          customerQuery = customerQuery.or(`phone.eq.${cleanSearch},phone.ilike.%${cleanSearch}%`);
+          customerQuery = customerQuery.or(`phone.eq.${orQuote(cleanSearch)},phone.ilike.${orQuote(`%${cleanSearch}%`)}`);
         } else {
           customerQuery = customerQuery.ilike("name", `%${cleanSearch}%`);
         }
@@ -294,9 +294,9 @@ export default function OrdersPage() {
         const customerIds = customers?.map(c => c.id) || [];
 
         if (customerIds.length > 0) {
-          query = query.or(`order_number.ilike.%${cleanSearch}%,tracking_number.ilike.%${cleanSearch}%,customer_id.in.(${customerIds.join(",")})`);
+          query = query.or(`order_number.ilike.${orQuote(`%${cleanSearch}%`)},tracking_number.ilike.${orQuote(`%${cleanSearch}%`)},customer_id.in.(${customerIds.join(",")})`);
         } else {
-          query = query.or(`order_number.ilike.%${cleanSearch}%,tracking_number.ilike.%${cleanSearch}%`);
+          query = query.or(`order_number.ilike.${orQuote(`%${cleanSearch}%`)},tracking_number.ilike.${orQuote(`%${cleanSearch}%`)}`);
         }
       }
 

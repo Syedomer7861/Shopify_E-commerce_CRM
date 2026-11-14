@@ -539,12 +539,12 @@ export default function PerformancePage() {
         if (ledgerRows.length > 0) combined.push(["DAILY ATTENDANCE LEDGER"], EXPORT_HEADERS, ...ledgerRows, []);
         if (tasksWorkedRows.length > 0) combined.push(["TASKS WORKED"], TASKS_WORKED_HEADERS, ...tasksWorkedRows, []);
         if (activityRows.length > 0) combined.push(["RECENT ACTIVITY"], ACTIVITY_HEADERS, ...activityRows);
-        const XLSX = await import("xlsx");
+        const XLSX = await import("@/lib/sheets");
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(combined), "Report");
-        XLSX.writeFile(wb, `${filename}.csv`, { bookType: "csv" });
+        await XLSX.writeFile(wb, `${filename}.csv`, { bookType: "csv" });
       } else {
-        const XLSX = await import("xlsx");
+        const XLSX = await import("@/lib/sheets");
         const wb = XLSX.utils.book_new();
         const summarySheet = XLSX.utils.aoa_to_sheet([["Metric", "Value"], ...summaryRows]);
         summarySheet["!cols"] = [{ wch: 20 }, { wch: 30 }];
@@ -578,7 +578,7 @@ export default function PerformancePage() {
           XLSX.utils.book_append_sheet(wb, activitySheet, "Recent Activity");
         }
 
-        XLSX.writeFile(wb, `${filename}.xlsx`);
+        await XLSX.writeFile(wb, `${filename}.xlsx`);
       }
       toast.success(`Exported ${exportFormat.toUpperCase()}`);
       setShowExport(false);

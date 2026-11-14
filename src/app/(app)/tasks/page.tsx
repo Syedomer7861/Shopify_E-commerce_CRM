@@ -22,7 +22,7 @@ import { PageHeader, EmptyState, TaskTypeBadge, Pagination, Modal, Select } from
 import TaskCard from "@/components/TaskCard";
 import { createClient } from "@/lib/supabase";
 import { sendAdminNotification } from "@/lib/notifications";
-import { cn, toDbDateString } from "@/lib/utils";
+import { cn, toDbDateString, orQuote } from "@/lib/utils";
 import type { Task, Customer, Order, TaskType, TaskStatus } from "@/types";
 import toast from "react-hot-toast";
 import { logAuditEvent } from "@/lib/audit";
@@ -221,14 +221,14 @@ export default function TasksPage() {
       const [customersRes, ordersRes, cartsRes] = await Promise.all([
         supabase.from("customers")
           .select("id")
-          .or(`name.ilike.%${cleanSearch}%,phone.ilike.%${cleanSearch}%,shopify_customer_id.ilike.%${cleanSearch}%,email.ilike.%${cleanSearch}%`)
+          .or(`name.ilike.${orQuote(`%${cleanSearch}%`)},phone.ilike.${orQuote(`%${cleanSearch}%`)},shopify_customer_id.ilike.${orQuote(`%${cleanSearch}%`)},email.ilike.${orQuote(`%${cleanSearch}%`)}`)
           .limit(100),
         supabase.from("orders")
           .select("id")
-          .or(`order_number.ilike.%${cleanSearch}%,shopify_order_id.ilike.%${cleanSearch}%,tracking_number.ilike.%${cleanSearch}%`),
+          .or(`order_number.ilike.${orQuote(`%${cleanSearch}%`)},shopify_order_id.ilike.${orQuote(`%${cleanSearch}%`)},tracking_number.ilike.${orQuote(`%${cleanSearch}%`)}`),
         supabase.from("abandoned_carts")
           .select("id")
-          .or(`cart_token.ilike.%${cleanSearch}%,phone.ilike.%${cleanSearch}%`)
+          .or(`cart_token.ilike.${orQuote(`%${cleanSearch}%`)},phone.ilike.${orQuote(`%${cleanSearch}%`)}`)
       ]);
 
       matchingCustomerIds = (customersRes.data || []).map((c) => c.id);

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
-import { cn } from "@/lib/utils";
+import { cn, orQuote } from "@/lib/utils";
 import { AccessDenied } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
@@ -90,7 +90,7 @@ export default function AbandonedCartsPage() {
         const { data: matchingCustomers } = await supabase
           .from("customers")
           .select("id")
-          .or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
+          .or(`name.ilike.${orQuote(`%${search}%`)},phone.ilike.${orQuote(`%${search}%`)}`);
 
         const customerIds = (matchingCustomers || []).map(c => c.id);
 

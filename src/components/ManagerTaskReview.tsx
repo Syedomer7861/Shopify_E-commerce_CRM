@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { Avatar, TaskTypeBadge, Modal, Pagination } from "./ui";
-import { cn, formatDate, timeAgo, getTaskProductName } from "@/lib/utils";
+import { cn, formatDate, timeAgo, getTaskProductName, orQuote } from "@/lib/utils";
 import ShiprocketOrderView from "./ShiprocketOrderView";
 import NDRActionModal from "./NDRActionModal";
 import toast from "react-hot-toast";
@@ -126,7 +126,7 @@ export default function ManagerTaskReview() {
       if (dateTo) query = query.lte("completed_at", `${dateTo}T23:59:59`);
 
       if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`, { foreignTable: 'customers' });
+        query = query.or(`name.ilike.${orQuote(`%${searchTerm}%`)},phone.ilike.${orQuote(`%${searchTerm}%`)}`, { foreignTable: 'customers' });
       }
 
       const from = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -203,13 +203,13 @@ export default function ManagerTaskReview() {
         const { data: matchedCustomers } = await supabase
           .from("customers")
           .select("id")
-          .or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
+          .or(`name.ilike.${orQuote(`%${searchTerm}%`)},phone.ilike.${orQuote(`%${searchTerm}%`)}`);
         
         const cIds = matchedCustomers?.map(c => c.id) || [];
         if (cIds.length > 0) {
-          query = query.or(`order_number.ilike.%${searchTerm}%,tracking_number.ilike.%${searchTerm}%,customer_id.in.(${cIds.join(',')})`);
+          query = query.or(`order_number.ilike.${orQuote(`%${searchTerm}%`)},tracking_number.ilike.${orQuote(`%${searchTerm}%`)},customer_id.in.(${cIds.join(',')})`);
         } else {
-          query = query.or(`order_number.ilike.%${searchTerm}%,tracking_number.ilike.%${searchTerm}%`);
+          query = query.or(`order_number.ilike.${orQuote(`%${searchTerm}%`)},tracking_number.ilike.${orQuote(`%${searchTerm}%`)}`);
         }
       }
 

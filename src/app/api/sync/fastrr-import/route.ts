@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { TaskType } from "@/types";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
-import { requirePrivileged } from "@/lib/auth-utils";
+import { privilegedScope } from "@/lib/auth-utils";
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requirePrivileged(req, ["can_import"]);
-  if (unauthorized) return unauthorized;
+  const scope = await privilegedScope(req, ["can_import"]);
+  if (scope.error) return scope.error;
 
   const supabase = createAdminClient();
 
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     // to the seed org - same as the other single-bridge/single-org
     // internal tools (WhatsApp bridge, system-health).
     const { getDefaultOrgId } = await import("@/lib/server-settings");
-    const orgId = await getDefaultOrgId();
+    const orgId = scope.orgId ?? await getDefaultOrgId();
     if (!orgId) {
       return NextResponse.json({ error: "Could not resolve an organization" }, { status: 500 });
     }

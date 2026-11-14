@@ -1,3 +1,4 @@
+import { orQuote } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireMarketing } from "@/lib/marketing-auth";
@@ -78,7 +79,7 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
     .from("mkt_task_links")
     .delete()
     .eq("id", linkId)
-    .or(`task_id.eq.${params.id},target_task_id.eq.${params.id}`);
+    .or(`task_id.eq.${orQuote(params.id)},target_task_id.eq.${orQuote(params.id)}`);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

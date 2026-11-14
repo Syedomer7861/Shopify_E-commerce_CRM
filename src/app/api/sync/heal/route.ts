@@ -3,7 +3,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { normalizePhone } from "@/lib/phone-utils";
-import { requireInternal, hasInternalSecret, getAuthenticatedSession } from "@/lib/auth-utils";
+import { privilegedScope } from "@/lib/auth-utils";
 import { makeDeadline } from "@/lib/sync-logic";
 import { isSuspectOrderId, findMergeCandidate } from "@/lib/order-dedup";
 
@@ -27,24 +27,21 @@ export async function POST(req: NextRequest) {
   const limited = await rateLimit(req, "sync", 5, 60000);
   if (limited) return limited;
 
-  const unauthorized = await requireInternal(req);
-  if (unauthorized) return unauthorized;
+  // Merges and permanently deletes duplicate rows: admins only, and only in
+  // their own workspace (any workspace's admin used to heal every workspace).
+  const scope = await privilegedScope(req);
+  if (scope.error) return scope.error;
 
   // requireInternal only checks "logged in or has a cron secret" - this
   // route merges and permanently deletes duplicate customer rows, so a
   // browser-session caller must additionally be admin (matching the
   // customers page's own bulk-delete gate, which is admin-only). Cron/sync
   // secret callers skip this since there's no profile to check.
-  if (!hasInternalSecret(req)) {
-    const { profile } = await getAuthenticatedSession();
-    if (profile?.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
-    }
-  }
-
   const supabase = createAdminClient();
 
-  const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+  const { data: orgs } = scope.orgId
+    ? { data: [{ id: scope.orgId }] }
+    : await supabase.from("organizations").select("id").eq("is_active", true);
   const reports = [];
   for (const org of orgs ?? []) {
     reports.push({ orgId: org.id, ...(await healOrg(supabase, org.id)) });

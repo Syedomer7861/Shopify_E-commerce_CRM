@@ -1,3 +1,4 @@
+import { orQuote } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
@@ -378,7 +379,7 @@ export async function POST(req: NextRequest) {
         const { data: existingOrder } = await supabase
           .from("orders")
           .select("id, source, delivery_status, custom_meta")
-          .or(`shopify_order_id.eq.${orderIdentifier},order_number.eq.${orderIdentifier}`)
+          .or(`shopify_order_id.eq.${orQuote(orderIdentifier)},order_number.eq.${orQuote(orderIdentifier)}`)
           .eq("org_id", orgId)
           .maybeSingle();
 
@@ -555,7 +556,7 @@ export async function POST(req: NextRequest) {
       // Search by ANY identifier we have (shopify_order_id or order_number)
       const { data: existingOrd } = await supabase.from("orders")
         .select("id, delivery_status")
-        .or(`shopify_order_id.eq.${identifierStr},order_number.eq.${identifierStr}`)
+        .or(`shopify_order_id.eq.${orQuote(identifierStr)},order_number.eq.${orQuote(identifierStr)}`)
         .eq("org_id", orgId)
         .maybeSingle();
 
@@ -621,7 +622,7 @@ export async function POST(req: NextRequest) {
 
         const { data: orders } = await supabase.from("orders")
           .select("id, line_items, shopify_order_id, order_number, customer_id")
-          .or(`shopify_order_id.eq.${identifierStr},order_number.eq.${identifierStr}`)
+          .or(`shopify_order_id.eq.${orQuote(identifierStr)},order_number.eq.${orQuote(identifierStr)}`)
           .eq("org_id", orgId)
           .limit(1);
 

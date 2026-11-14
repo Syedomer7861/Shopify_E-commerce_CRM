@@ -11,7 +11,7 @@ const AddCustomerModal = dynamic(() => import("@/components/AddCustomerModal").t
   loading: () => <div className="p-8 text-center"><RefreshCw className="w-6 h-6 animate-spin mx-auto text-gray-300" /></div>
 });
 import { createClient } from "@/lib/supabase";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDate, orQuote } from "@/lib/utils";
 import type { Customer, CustomerSegment } from "@/types";
 import toast from "react-hot-toast";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
@@ -87,7 +87,7 @@ export default function CustomersPage() {
       const { data: matchingOrders } = await supabase
         .from("orders")
         .select("customer_id")
-        .or(`order_number.ilike.%${cleanSearch}%,tracking_number.ilike.%${cleanSearch}%`);
+        .or(`order_number.ilike.${orQuote(`%${cleanSearch}%`)},tracking_number.ilike.${orQuote(`%${cleanSearch}%`)}`);
 
       const customerIdsFromOrders = (matchingOrders || []).map(o => o.customer_id);
 

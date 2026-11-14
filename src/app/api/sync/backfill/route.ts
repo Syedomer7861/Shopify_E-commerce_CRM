@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
-import { requirePrivileged } from "@/lib/auth-utils";
+import { privilegedScope } from "@/lib/auth-utils";
 import { getDefaultOrgId, getShiprocketToken as getOrgShiprocketToken } from "@/lib/server-settings";
 
 const supabase = createAdminClient();
@@ -49,8 +49,8 @@ export async function POST(req: NextRequest) {
   const limited = await rateLimit(req, "sync", 5, 60000);
   if (limited) return limited;
 
-  const unauthorized = await requirePrivileged(req);
-  if (unauthorized) return unauthorized;
+  const scope = await privilegedScope(req);
+  if (scope.error) return scope.error;
 
   let unmasked = 0;
   let skipped = 0;
@@ -61,7 +61,9 @@ export async function POST(req: NextRequest) {
   try {
     // Caller may target a specific org (?org_id=...); otherwise the seed
     // org, same default every other internal/cron route falls back to.
-    const orgId = req.nextUrl.searchParams.get("org_id") || await getDefaultOrgId();
+    // A workspace admin always backfills their own workspace; only an
+    // internal caller may pick one with ?org_id.
+    const orgId = scope.orgId ?? (req.nextUrl.searchParams.get("org_id") || await getDefaultOrgId());
     if (!orgId) throw new Error("Could not resolve an organization to backfill");
 
     // Get all masked customers

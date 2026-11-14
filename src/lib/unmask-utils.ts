@@ -1,3 +1,4 @@
+import { orQuote } from "@/lib/utils";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { fetchUnmaskedFromShopify } from "./shopify-unmask";
 import { normalizePhone } from "./phone-utils";
@@ -73,7 +74,7 @@ export async function resolveUnmaskedPhone(
     let logsQuery = supabase
       .from("webhook_logs")
       .select("payload")
-      .or(`payload->>order_id.eq.${orderId},payload->>channel_order_id.eq.${orderId}`);
+      .or(`payload->>order_id.eq.${orQuote(orderId)},payload->>channel_order_id.eq.${orQuote(orderId)}`);
     if (orgId) logsQuery = logsQuery.eq("org_id", orgId);
     const { data: logs } = await logsQuery.order("created_at", { ascending: false });
 

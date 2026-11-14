@@ -1,3 +1,4 @@
+import { orQuote } from "@/lib/utils";
 /**
  * WhatsApp messaging via Meta Cloud API (Primary) and Local Bridge (Fallback)
  */
@@ -38,7 +39,7 @@ async function saveMessageToHistory({
   const cleanedPhone = phone.replace(/[^0-9]/g, "").replace(/^91/, "");
   let customerQuery = supabase.from("customers")
     .select("id")
-    .or(`phone.ilike.%${cleanedPhone}%,alt_phone.ilike.%${cleanedPhone}%`);
+    .or(`phone.ilike.${orQuote(`%${cleanedPhone}%`)},alt_phone.ilike.${orQuote(`%${cleanedPhone}%`)}`);
   if (orgId) customerQuery = customerQuery.eq("org_id", orgId);
   const { data: customer } = await customerQuery.single();
 

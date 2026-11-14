@@ -167,3 +167,12 @@ export function analyzeSentiment(text: string): "positive" | "negative" | "neutr
   if (score < 0) return "negative";
   return "neutral";
 }
+
+/**
+ * Quote a value for a PostgREST `.or()` filter. Without it, a comma, bracket
+ * or dot in user search text (or a webhook id) splits or rewrites the filter.
+ * `%` stays a wildcard inside the quotes, so ilike searches keep working.
+ */
+export function orQuote(value: unknown) {
+  return `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}

@@ -1,3 +1,4 @@
+import { orQuote } from "@/lib/utils";
 import { getSystemSettings, getShopifyAccessToken, getShiprocketToken } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
 import { resolveUnmaskedPhone } from "./unmask-utils";
@@ -245,7 +246,7 @@ export async function syncShopifyData(
           const { data: existingOrder } = await supabase
             .from("orders")
             .select("id, delivery_status, source, shopify_order_id")
-            .or(`shopify_order_id.eq.${shopifyId},order_number.eq.${orderNumber}`)
+            .or(`shopify_order_id.eq.${orQuote(shopifyId)},order_number.eq.${orQuote(orderNumber)}`)
             .eq("org_id", resolvedOrgId)
             .maybeSingle();
 
@@ -594,7 +595,7 @@ export async function syncShiprocketData(supabase: any, send: (data: any) => voi
           const { data: existingSrOrder } = await supabase
             .from("orders")
             .select("id, source")
-            .or(`shopify_order_id.eq.${orderId},order_number.eq.${orderNumber}`)
+            .or(`shopify_order_id.eq.${orQuote(orderId)},order_number.eq.${orQuote(orderNumber)}`)
             .eq("org_id", resolvedOrgId)
             .maybeSingle();
 

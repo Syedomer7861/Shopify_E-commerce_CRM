@@ -1002,8 +1002,8 @@ export default function SettingsPage() {
     reader.onload = async (evt) => {
       try {
         const bstr = evt.target?.result;
-        const XLSX = await import("xlsx");
-        const wb = XLSX.read(bstr, { type: 'binary' });
+        const XLSX = await import("@/lib/sheets");
+        const wb = await XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
         const data = XLSX.utils.sheet_to_json(ws);
@@ -1052,11 +1052,11 @@ export default function SettingsPage() {
         "Is Priority": "FALSE"
       }
     ];
-    const XLSX = await import("xlsx");
+    const XLSX = await import("@/lib/sheets");
     const ws = XLSX.utils.json_to_sheet(template);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Overrides");
-    XLSX.writeFile(wb, "codecrest_override_template.xlsx");
+    await XLSX.writeFile(wb, "codecrest_override_template.xlsx");
     toast.success("Template Downloaded!");
   };
 
@@ -2733,8 +2733,8 @@ export default function SettingsPage() {
                                 reader.onload = async (evt) => {
                                 try {
                                     const data = evt.target?.result;
-                                    const XLSX = await import("xlsx");
-                                    const workbook = XLSX.read(data, { type: 'binary' });
+                                    const XLSX = await import("@/lib/sheets");
+                                    const workbook = await XLSX.read(data, { type: 'binary' });
                                     const sheetName = workbook.SheetNames[0];
                                     const sheet = workbook.Sheets[sheetName];
                                     const rows = XLSX.utils.sheet_to_json(sheet);

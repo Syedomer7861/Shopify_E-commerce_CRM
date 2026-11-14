@@ -1,3 +1,4 @@
+import { orQuote } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireMarketing } from "@/lib/marketing-auth";
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
 
   const listId = new URL(req.url).searchParams.get("list_id");
   let query = supabase!.from("mkt_automations").select("*").order("created_at", { ascending: false });
-  if (listId) query = query.or(`list_id.is.null,list_id.eq.${listId}`);
+  if (listId) query = query.or(`list_id.is.null,list_id.eq.${orQuote(listId)}`);
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

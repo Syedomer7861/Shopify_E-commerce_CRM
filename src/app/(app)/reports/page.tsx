@@ -880,7 +880,7 @@ export default function ReportsPage() {
       const { data: allAB } = await supabase.from("abandoned_carts").select("total_price, recovery_status, abandoned_at, customer:customers(name, phone)").order("abandoned_at", { ascending: false });
       const { data: allWorkflows } = await supabase.from("workflow_instances").select("order_id, created_at, workflows(name), customers(name, phone)").not("order_id", "is", null);
 
-      const XLSX = await import("xlsx");
+      const XLSX = await import("@/lib/sheets");
       const wb = XLSX.utils.book_new();
       
       const custHeaders = ["Name", "Phone", "Email", "Segment", "Total Spent", "State", "Orders"];
@@ -910,9 +910,9 @@ export default function ReportsPage() {
 
       const filename = `CodeCrest_Master_Data_${format(new Date(), "yyyy-MM-dd")}.${masterExportOptions.format}`;
       if (masterExportOptions.destination === "download") {
-        XLSX.writeFile(wb, filename);
+        await XLSX.writeFile(wb, filename);
       } else {
-        const wbout = XLSX.write(wb, { bookType: masterExportOptions.format as any, type: "array" });
+        const wbout = await XLSX.write(wb, { bookType: masterExportOptions.format as any, type: "array" });
         await exportToWhatsApp(new Blob([wbout]), filename);
       }
       setShowMasterExport(false);
@@ -993,7 +993,7 @@ export default function ReportsPage() {
           await generatePDFReport();
           return;
       }
-      const XLSX = await import("xlsx");
+      const XLSX = await import("@/lib/sheets");
       const wb = XLSX.utils.book_new();
       const filename = `CodeCrest_Advanced_${dateRange.start}_to_${dateRange.end}.${exportOptions.format}`;
 
@@ -1049,9 +1049,9 @@ export default function ReportsPage() {
       }
       
       if (exportOptions.destination === "download") {
-        XLSX.writeFile(wb, filename);
+        await XLSX.writeFile(wb, filename);
       } else {
-        const wbout = XLSX.write(wb, { bookType: exportOptions.format as any, type: "array" });
+        const wbout = await XLSX.write(wb, { bookType: exportOptions.format as any, type: "array" });
         await exportToWhatsApp(new Blob([wbout]), filename);
       }
       setShowAdvancedExport(false);

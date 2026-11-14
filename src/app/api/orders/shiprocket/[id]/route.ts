@@ -1,3 +1,4 @@
+import { orQuote } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
@@ -66,7 +67,7 @@ export async function GET(req: NextRequest,
       console.log(`[Shiprocket API] Direct lookup for ${cleanId} failed, checking Local DB for mapping...`);
       
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
-      let localQuery = supabase.from("orders").select("*, customer:customers(*)").or(`shopify_order_id.eq.${cleanId},order_number.eq.${cleanId},tracking_number.eq.${cleanId}${isUuid ? `,id.eq.${cleanId}` : ""}`);
+      let localQuery = supabase.from("orders").select("*, customer:customers(*)").or(`shopify_order_id.eq.${orQuote(cleanId)},order_number.eq.${orQuote(cleanId)},tracking_number.eq.${orQuote(cleanId)}${isUuid ? `,id.eq.${cleanId}` : ""}`);
       const { data: localData } = await localQuery.maybeSingle();
 
       const searchTerms: string[] = [cleanId];
