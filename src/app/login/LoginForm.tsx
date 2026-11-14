@@ -73,6 +73,10 @@ export default function LoginForm({ googleEnabled, signupOpen, googleError }: { 
       <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none"
         style={{ backgroundImage: `radial-gradient(#1c1c1c 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
 
+      <a href="/" className="absolute z-20 left-4 top-[calc(1rem+env(safe-area-inset-top))] inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#1c1c1c]/10 bg-white/70 text-[11px] font-black text-[#1c1c1c]/70 hover:text-[#1c1c1c] hover:bg-white uppercase tracking-widest transition-colors">
+        <span aria-hidden="true">&larr;</span> Home
+      </a>
+
       <div className="w-full max-w-[420px] relative z-10">
         {/* Logo Section */}
         <div className="text-center mb-12 animate-fade-in">
