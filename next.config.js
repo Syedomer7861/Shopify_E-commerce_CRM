@@ -26,7 +26,10 @@ const nextConfig = {
   },
   async headers() {
     return [
-      { source: "/:path*", headers: securityHeaders },
+      // Everything except public web forms (/f/<id>) refuses to be framed.
+      { source: "/((?!f/).*)", headers: securityHeaders },
+      // Public web forms are made to be embedded on customers' own sites.
+      { source: "/f/:path*", headers: [...securityHeaders.filter((h) => h.key !== "X-Frame-Options"), { key: "Content-Security-Policy", value: "frame-ancestors *" }] },
       // The service worker must be revalidated on every load so a fix reaches
       // installed apps at once instead of after a cached copy expires.
       { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] },
