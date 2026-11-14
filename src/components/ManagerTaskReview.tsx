@@ -15,16 +15,20 @@ import toast from "react-hot-toast";
 import type { Task, Customer, Order, AbandonedCart } from "@/types";
 import { SEGMENT_CONFIG } from "@/lib/utils";
 import { sendUserNotification } from "@/lib/notifications";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 
 export default function ManagerTaskReview() {
   const supabase = useMemo(() => createClient(), []);
+  const { profile: me } = useCurrentProfile();
+  const myId = me?.id;
+  const myFirstName = (me?.name || "").trim().split(/\s+/)[0];
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<any[]>([]);
   const [ndrOrders, setNdrOrders] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<'audit' | 'ndr'>('audit');
   const [searchTerm, setSearchTerm] = useState("");
   const [agentFilter, setAgentFilter] = useState("all");
-  const [uzmaOnly, setUzmaOnly] = useState(false);
+  const [mineOnly, setMineOnly] = useState(false);
   const [typeFilter, setTypeFilter] = useState("all");
   const [outcomeFilter, setOutcomeFilter] = useState("all");
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -118,6 +122,7 @@ export default function ManagerTaskReview() {
         .eq("is_processed_by_manager", false);
 
       if (agentFilter !== "all") query = query.eq("assigned_to", agentFilter);
+      if (mineOnly && myId) query = query.eq("assigned_to", myId);
       if (typeFilter !== "all") query = query.eq("task_type", typeFilter);
       if (outcomeFilter !== "all") query = query.eq("call_logs.outcome", outcomeFilter);
       if (segmentFilter !== "all") query = query.filter("customer.segment", "eq", segmentFilter);
@@ -138,12 +143,7 @@ export default function ManagerTaskReview() {
 
       if (error) throw error;
       
-      let finalData = (data || []) as any[];
-      if (uzmaOnly) {
-        finalData = finalData.filter(t => t.assigned_profile?.name?.toLowerCase().includes("uzma"));
-      }
-
-      setTasks(finalData);
+      setTasks((data || []) as any[]);
       setTotalTasksCount(count || 0);
     } catch (err: any) {
       toast.error("Failed to load review queue");
@@ -151,7 +151,7 @@ export default function ManagerTaskReview() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, agentFilter, typeFilter, outcomeFilter, uzmaOnly, searchTerm, segmentFilter, minPriority, dateFrom, dateTo, supabase, tasks.length]);
+  }, [currentPage, agentFilter, typeFilter, outcomeFilter, mineOnly, myId, searchTerm, segmentFilter, minPriority, dateFrom, dateTo, supabase, tasks.length]);
 
   const fetchNdrOrders = useCallback(async (silent = false) => {
     const isDemo = isDemoMode();
@@ -245,11 +245,11 @@ export default function ManagerTaskReview() {
   useEffect(() => {
     if (viewMode === 'audit') fetchTasks();
     else fetchNdrOrders();
-  }, [currentPage, agentFilter, uzmaOnly, typeFilter, outcomeFilter, viewMode, searchTerm, segmentFilter, minPriority, dateFrom, dateTo, deliveryStatusFilter, courierFilter, fetchTasks, fetchNdrOrders]);
+  }, [currentPage, agentFilter, mineOnly, typeFilter, outcomeFilter, viewMode, searchTerm, segmentFilter, minPriority, dateFrom, dateTo, deliveryStatusFilter, courierFilter, fetchTasks, fetchNdrOrders]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [agentFilter, uzmaOnly, typeFilter, outcomeFilter, viewMode, searchTerm, segmentFilter, minPriority, dateFrom, dateTo, deliveryStatusFilter, courierFilter]);
+  }, [agentFilter, mineOnly, typeFilter, outcomeFilter, viewMode, searchTerm, segmentFilter, minPriority, dateFrom, dateTo, deliveryStatusFilter, courierFilter]);
 
   const handleProcess = async (taskId: string, action: 'approved' | 'rejected' | 'shiprocket_updated') => {
     setProcessing(taskId);
@@ -474,13 +474,13 @@ export default function ManagerTaskReview() {
           <>
             <div className="flex flex-wrap items-center gap-3 bg-[#eceae4]/40 p-2 rounded-xl border border-[#eceae4]">
               <button 
-                onClick={() => setUzmaOnly(!uzmaOnly)}
+                onClick={() => setMineOnly(!mineOnly)}
                 className={cn(
                   "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border",
-                  uzmaOnly ? "bg-[#1c1c1c] text-[#f7f4ed] border-[#1c1c1c]" : "bg-[#f7f4ed] text-[#5f5f5d]/60 border-[#eceae4] hover:border-[#1c1c1c]/40"
+                  mineOnly ? "bg-[#1c1c1c] text-[#f7f4ed] border-[#1c1c1c]" : "bg-[#f7f4ed] text-[#5f5f5d]/60 border-[#eceae4] hover:border-[#1c1c1c]/40"
                 )}
               >
-                Uzma&rsquo;s Work Only
+                {myFirstName ? `${myFirstName}’s work only` : "My work only"}
               </button>
 <CheckCircle className="w-3.5 h-3.5 text-[#5f5f5d]/40" />
               <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f7f4ed] rounded-lg border border-[#eceae4]">
@@ -525,11 +525,11 @@ export default function ManagerTaskReview() {
                 </select>
               </div>
 
-              {(agentFilter !== 'all' || uzmaOnly || typeFilter !== 'all' || outcomeFilter !== 'all') && (
+              {(agentFilter !== 'all' || mineOnly || typeFilter !== 'all' || outcomeFilter !== 'all') && (
                 <button
                   onClick={() => {
                     setAgentFilter('all');
-                    setUzmaOnly(false);
+                    setMineOnly(false);
                     setTypeFilter('all');
                     setOutcomeFilter('all');
                   }}
