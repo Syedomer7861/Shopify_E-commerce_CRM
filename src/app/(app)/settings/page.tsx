@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CheckCircle2, WifiOff, ShoppingBag, Zap, Mail, Check, ShieldCheck, ListPlus, FileInput } from "lucide-react";
+import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CheckCircle2, WifiOff, ShoppingBag, Zap, Mail, Check, ShieldCheck, ListPlus, FileInput, KeyRound } from "lucide-react";
 import { PageHeader, Modal, SyncProgressBar } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn, toDbDateString } from "@/lib/utils";
@@ -14,6 +14,7 @@ import { logAuditEvent } from "@/lib/audit";
 import { TwoFactorCard } from "@/components/auth/TwoFactorCard";
 import { CustomFieldsManager } from "@/components/settings/CustomFieldsManager";
 import { WebFormsManager } from "@/components/settings/WebFormsManager";
+import { ApiWebhooksManager } from "@/components/settings/ApiWebhooksManager";
 import { Settings, ProductOverride } from "@/types";
 
 interface PipelineItem {
@@ -35,7 +36,7 @@ interface PipelineState {
   waiting: PipelineItem[];
 }
 
-type Tab = "general" | "fields" | "forms" | "security" | "telephony" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database";
+type Tab = "general" | "fields" | "forms" | "api" | "security" | "telephony" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -1121,6 +1122,7 @@ export default function SettingsPage() {
           { key: "general", label: "Preferences", icon: Sliders },
           { key: "fields", label: "Custom Fields", icon: ListPlus },
           { key: "forms", label: "Web Forms", icon: FileInput },
+          { key: "api", label: "API & Webhooks", icon: KeyRound },
           { key: "security", label: "Security", icon: ShieldCheck },
           { key: "telephony", label: "Telephony", icon: Smartphone },
           { key: "notifications", label: "WhatsApp Hub", icon: Bell },
@@ -1141,6 +1143,7 @@ export default function SettingsPage() {
 
       {tab === "fields" && <CustomFieldsManager canEdit={isAdmin(profile)} />}
       {tab === "forms" && <WebFormsManager />}
+      {tab === "api" && <ApiWebhooksManager />}
 
       {/* GENERAL */}
       {tab === "general" && (
