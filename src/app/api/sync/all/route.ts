@@ -36,7 +36,7 @@ function mapShiprocketStatus(status: string | number | null | undefined) {
 }
 
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
-import { requireInternal } from "@/lib/auth-utils";
+import { memberScope } from "@/lib/auth-utils";
 
 export async function GET(req: NextRequest) {
   // Delegates to POST, which applies the rate limit. Counting here too would
@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
   const limited = await rateLimit(req, "sync", 5, 60000);
   if (limited) return limited;
 
-  const unauthorized = await requireInternal(req);
-  if (unauthorized) return unauthorized;
+  const scope = await memberScope(req);
+  if (scope.error) return scope.error;
 
   const { stream, send, close } = createSyncStream();
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
@@ -489,7 +489,10 @@ export async function POST(req: NextRequest) {
 
   const runSync = async () => {
     try {
-      const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+      // A member syncs only their own workspace; the cron (internal) syncs all.
+      const { data: orgs } = scope.orgId
+        ? { data: [{ id: scope.orgId }] }
+        : await supabase.from("organizations").select("id").eq("is_active", true);
       const orgIds = (orgs || []).map((o: any) => o.id);
 
       const combinedReport = {
@@ -525,7 +528,10 @@ export async function POST(req: NextRequest) {
 
       // Trigger them in parallel but don't wait for them to finish before responding
       // This allows the UI to stop "Refreshing..." as soon as the database is updated
-      Promise.all([
+      // Those crons run every workspace, so only the scheduler (internal)
+      // fires them here; a member's Sync Now must not trigger other
+      // workspaces' customer messages. The daily cron still sends them.
+      if (!scope.orgId) Promise.all([
         fetch(`${baseUrl}/api/cron/recovery-reminder`, { headers: internalHeaders, cache: 'no-store' }).catch(() => null),
         fetch(`${baseUrl}/api/cron/reorder-reminder`, { headers: internalHeaders, cache: 'no-store' }).catch(() => null),
         fetch(`${baseUrl}/api/cron/review-reminder`, { headers: internalHeaders, cache: 'no-store' }).catch(() => null)

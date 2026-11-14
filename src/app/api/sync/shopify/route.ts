@@ -16,7 +16,7 @@ const SYNC_BUDGET_MS = 40_000;
 
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
 import { syncShopifyData, syncReviewTasks } from "@/lib/sync-logic";
-import { requireInternal } from "@/lib/auth-utils";
+import { memberScope } from "@/lib/auth-utils";
 
 export async function GET(req: NextRequest) {
   // Delegates to POST, which applies the rate limit. Counting here too would
@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
   const limited = await rateLimit(req, "sync", 5, 60000);
   if (limited) return limited;
 
-  const unauthorized = await requireInternal(req);
-  if (unauthorized) return unauthorized;
+  const scope = await memberScope(req);
+  if (scope.error) return scope.error;
 
   const { stream, send, close } = createSyncStream();
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
   // with nothing configured just throws inside syncShopifyData and is
   // skipped rather than aborting every other org's sync.
   const getActiveOrgIds = async () => {
+    if (scope.orgId) return [scope.orgId]; // member: own workspace only
     const { data } = await supabase.from("organizations").select("id").eq("is_active", true);
     return (data || []).map((o: any) => o.id);
   };

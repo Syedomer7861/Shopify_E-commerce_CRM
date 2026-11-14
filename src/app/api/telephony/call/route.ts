@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
-import { requireInternal } from "@/lib/auth-utils";
+import { getAuthenticatedSession, hasInternalSecret } from "@/lib/auth-utils";
 import { createAdminClient } from "@/lib/supabase";
 
 // Every raw_call_logs row inserted here used to omit agent_id entirely, and
@@ -32,8 +32,19 @@ export async function POST(req: Request) {
   const limited = await rateLimit(req, "outbound-call", 30, 60000);
   if (limited) return limited;
 
-  const unauthorized = await requireInternal(req);
-  if (unauthorized) return unauthorized;
+  // The caller's own profile decides the org (whose telephony credentials
+  // dial) and the agent. Before, a cookie session was never resolved, so the
+  // org fell back to the seed workspace or to any workspace's first agent.
+  const internal = hasInternalSecret(req);
+  let caller: { id: string; org_id: string } | null = null;
+  if (!internal) {
+    const session = await getAuthenticatedSession();
+    if (session.errorResponse) return session.errorResponse;
+    if (!session.profile?.org_id || session.profile.is_active === false) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+    caller = { id: session.profile.id, org_id: session.profile.org_id };
+  }
 
   try {
     const { customerPhone, taskId, agentPhoneOverride } = await req.json();
@@ -57,47 +68,15 @@ export async function POST(req: Request) {
 
     const supabase = createAdminClient();
 
-    // 2. Resolve Agent Phone Number, identity, and org (telephony
-    // settings are per-org - the agent's own profile tells us which).
-    let agentPhone = agentPhoneOverride;
-    let agentId: string | null = null;
-    let agentOrgId: string | null = null;
+    // 2. Agent phone: the number typed in the call modal, else the caller's
+    // profile phone. Org is always the caller's own (internal callers: seed org).
+    let agentPhone: string | null = agentPhoneOverride || null;
+    const agentId: string | null = caller?.id ?? null;
+    let agentOrgId: string | null = caller?.org_id ?? null;
 
-    if (!agentPhone) {
-      // In a real session, we can verify the agent using user token
-      // For now, let's try to get current user from session
-      const authHeader = req.headers.get("Authorization");
-      let userId: string | null = null;
-
-      if (authHeader?.startsWith("Bearer ")) {
-        const token = authHeader.substring(7);
-        const { data: { user } } = await supabase.auth.getUser(token);
-        userId = user?.id || null;
-      }
-
-      if (!userId) {
-        // Fallback: check session from cookies or headers
-        // Since we are server-side, let's query the last active profile or default to caller setting
-        const { data: lastProfile } = await supabase
-          .from("profiles")
-          .select("id, phone, org_id")
-          .eq("role", "agent")
-          .eq("is_active", true)
-          .limit(1)
-          .maybeSingle();
-        agentPhone = lastProfile?.phone;
-        agentId = lastProfile?.id || null;
-        agentOrgId = lastProfile?.org_id || null;
-      } else {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("id, phone, org_id")
-          .eq("id", userId)
-          .maybeSingle();
-        agentPhone = profile?.phone;
-        agentId = profile?.id || null;
-        agentOrgId = profile?.org_id || null;
-      }
+    if (!agentPhone && caller) {
+      const { data: profile } = await supabase.from("profiles").select("phone").eq("id", caller.id).maybeSingle();
+      agentPhone = profile?.phone ?? null;
     }
 
     if (!agentPhone) {
@@ -107,9 +86,6 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    // agentPhoneOverride skips agent resolution above, so it never
-    // resolved an org either - fall back to the seed org in that case
-    // (today's only path; this override is an internal/legacy option).
     if (!agentOrgId) {
       const { getDefaultOrgId } = await import("@/lib/server-settings");
       agentOrgId = await getDefaultOrgId();

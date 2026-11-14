@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireInternal } from "@/lib/auth-utils";
+import { requireOwnerOrInternal } from "@/lib/auth-utils";
 import { getServiceSupabase } from "@/lib/supabase";
 import { refreshProductCatalog } from "@/lib/product-catalog";
 
@@ -10,7 +10,7 @@ import { refreshProductCatalog } from "@/lib/product-catalog";
 const SCHEDULED_DAYS = [1, 11, 21];
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
+  const unauthorized = await requireOwnerOrInternal(req);
   if (unauthorized) return unauthorized;
 
   const force = req.nextUrl.searchParams.get("force") === "true";

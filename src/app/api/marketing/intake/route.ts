@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/marketing/intake — anyone signed in can file a request
 export async function POST(req: NextRequest) {
-  const { errorResponse, user, supabase } = await getAuthenticatedSession();
+  const { errorResponse, user, profile, supabase } = await getAuthenticatedSession();
   if (errorResponse) return errorResponse;
 
   let raw: unknown;
@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
       .from("profiles")
       .select("id")
       .eq("is_active", true)
+      .eq("org_id", profile?.org_id ?? "")
       .or("role.eq.marketing,role.eq.admin");
     await Promise.allSettled(
       (staff ?? []).map((s: any) =>

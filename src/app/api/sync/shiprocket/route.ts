@@ -5,7 +5,7 @@ import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings"
 import { resolveUnmaskedPhone } from "@/lib/unmask-utils";
 import { normalizePhone } from "@/lib/phone-utils";
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
-import { requireInternal, hasInternalSecret } from "@/lib/auth-utils";
+import { memberScope, hasInternalSecret } from "@/lib/auth-utils";
 import { makeDeadline } from "@/lib/sync-logic";
 import { mapShiprocketStatus } from "@/lib/shiprocket-status";
 
@@ -128,8 +128,8 @@ export async function POST(req: NextRequest) {
   const limited = await rateLimit(req, "sync", 5, 60000);
   if (limited) return limited;
 
-  const unauthorized = await requireInternal(req);
-  if (unauthorized) return unauthorized;
+  const scope = await memberScope(req);
+  if (scope.error) return scope.error;
 
   const { stream, send, close } = createSyncStream();
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
       // what matters here is that every write below is actually stamped
       // and scoped, so running it can't corrupt a different org's data.
       const { getDefaultOrgId } = await import("@/lib/server-settings");
-      const orgId = await getDefaultOrgId();
+      const orgId = scope.orgId ?? await getDefaultOrgId();
       const settings = await getSystemSettings(supabase, orgId || undefined);
 
       if (!settings?.shiprocket_email || !settings?.shiprocket_password) {

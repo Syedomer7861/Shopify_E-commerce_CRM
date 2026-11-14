@@ -59,11 +59,11 @@ function extractPhone(sr: any): string | null {
 }
 
 import { createSyncStream, syncHeaders } from "@/lib/sync-stream";
-import { requireInternal } from "@/lib/auth-utils";
+import { memberScope } from "@/lib/auth-utils";
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requireInternal(req);
-  if (unauthorized) return unauthorized;
+  const scope = await memberScope(req);
+  if (scope.error) return scope.error;
 
   const { stream, send, close } = createSyncStream();
   const streaming = req.nextUrl.searchParams.get("stream") === "true";
@@ -94,10 +94,14 @@ export async function POST(req: NextRequest) {
       if (customerId) {
           const { data: target } = await supabase.from("customers").select("org_id").eq("id", customerId).maybeSingle();
           orgId = target?.org_id;
-          query = supabase.from("customers").select("id, phone, name, email").eq("id", customerId);
+          if (!orgId || (scope.orgId && orgId !== scope.orgId)) {
+            send({ error: "Customer not found" });
+            return close();
+          }
+          query = supabase.from("customers").select("id, phone, name, email").eq("id", customerId).eq("org_id", orgId);
       } else {
           const { getDefaultOrgId } = await import("@/lib/server-settings");
-          orgId = await getDefaultOrgId() || undefined;
+          orgId = scope.orgId ?? (await getDefaultOrgId()) ?? undefined;
           query = supabase.from("customers").select("id, phone, name, email").or('phone.ilike.%x%,phone.ilike.%_SR_%').eq("org_id", orgId).limit(100);
       }
 
