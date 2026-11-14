@@ -85,16 +85,15 @@ export const createServerClient = () => {
       }
     )
   } catch (error) {
-    // If cookies() fails we are outside any request (a script or detached
-    // background work), so there is no user to scope to. Falls back to the
-    // service-role client; logged so an accidental use is visible.
-    console.warn("[supabase] createServerClient without a request - using service role");
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing for background task.");
-
+    // SEC-05: outside any request there is no user to scope to. This used to
+    // hand out the service-role key, so any caller that lost its request
+    // context silently bypassed RLS. Now it gets a session-less anon client:
+    // RLS refuses its reads and writes (fails closed). Code that truly needs
+    // service role must ask for createAdminClient()/getServiceSupabase().
+    console.error("[supabase] createServerClient without a request - anon client, RLS applies");
     return createSupabaseClient(
       supabaseUrl,
-      serviceKey,
+      supabaseAnonKey,
       {
         auth: {
           persistSession: false,
