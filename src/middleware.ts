@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { checkRateLimit, clientKey } from '@/lib/rate-limit'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -80,6 +81,21 @@ export async function middleware(request: NextRequest) {
     // the auth server, exactly as before. With no session this returns at once.
     if (!id) id = (await supabase.auth.getUser()).data.user?.id
     user = id ? { id } : null
+  }
+
+  // SEC-07: blanket ceiling on API writes, per user (or per IP when signed
+  // out). Routes with their own tighter limit keep it; webhooks are skipped
+  // (they carry their own limits and arrive from a few shared provider IPs).
+  // ponytail: per-instance memory, so the real ceiling is N instances x limit.
+  // Move to the shared Redis count if one client ever spreads across instances.
+  const path = request.nextUrl.pathname
+  if (path.startsWith('/api/') && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)
+      && !path.startsWith('/api/webhooks/') && path !== '/api/calls/webhook') {
+    const key = clientKey(request, user ? `api-write:${user.id}` : 'api-write:anon')
+    const hit = checkRateLimit(key, user ? 240 : 60, 60_000)
+    if (!hit.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(hit.retryAfterSeconds) } })
+    }
   }
 
   // Protect all routes except login, api, and static files
