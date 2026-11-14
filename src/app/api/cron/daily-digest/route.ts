@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
-import { requirePrivileged } from "@/lib/auth-utils";
+import { privilegedScope } from "@/lib/auth-utils";
 
 function getSupabase() {
   return createAdminClient();
 }
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
-  if (unauthorized) return unauthorized;
+  const scope = await privilegedScope(req, ["manage_automations"]);
+  if (scope.error) return scope.error;
 
   const supabase = getSupabase();
 
-  const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+  let orgQuery = supabase.from("organizations").select("id").eq("is_active", true);
+  if (scope.orgId) orgQuery = orgQuery.eq("id", scope.orgId);
+  const { data: orgs } = await orgQuery;
   const force = req.nextUrl.searchParams.get("force") === "true";
   const results = [];
   for (const org of orgs ?? []) {

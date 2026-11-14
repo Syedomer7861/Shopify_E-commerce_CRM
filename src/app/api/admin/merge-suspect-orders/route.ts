@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requirePrivileged } from "@/lib/auth-utils";
+import { requireOwnerOrInternal } from "@/lib/auth-utils";
 import { createAdminClient } from "@/lib/supabase";
 import { isSuspectOrderId, findMergeCandidate, type DedupOrder } from "@/lib/order-dedup";
 
@@ -19,7 +19,7 @@ export const maxDuration = 60;
 const BATCH_LIMIT = 50; // customers per call, not orders - each pulls its full order list
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requirePrivileged(req);
+  const unauthorized = await requireOwnerOrInternal(req);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();

@@ -73,7 +73,7 @@ export const NAV_MODULE_GROUPS: Record<string, readonly string[]> = {
   ],
   "Operations": [
     "floor", "reports", "abandoned-carts", "admin-logs", "recordings",
-    "import", "campaigns", "templates", "workflows", "system-health", "settings",
+    "import", "campaigns", "templates", "workflows", "settings",
   ],
   "Management": ["team", "roles", "organisation", "hr", "manager"],
 };

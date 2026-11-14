@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requirePrivileged } from "@/lib/auth-utils";
+import { requireOwnerOrInternal } from "@/lib/auth-utils";
 import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings, getShopifyAccessToken } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
@@ -7,7 +7,7 @@ import { isPhoneMasked } from "@/lib/utils";
 import { normalizePhone } from "@/lib/phone-utils";
 
 export async function GET(req: NextRequest) {
-  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
+  const unauthorized = await requireOwnerOrInternal(req);
   if (unauthorized) return unauthorized;
 
   // CRON Security Check

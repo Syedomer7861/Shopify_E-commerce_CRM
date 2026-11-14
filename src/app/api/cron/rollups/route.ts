@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { requirePrivileged } from "@/lib/auth-utils";
+import { requireOwnerOrInternal } from "@/lib/auth-utils";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -10,7 +10,7 @@ export const maxDuration = 60;
 // Actions daily group). A trailing window - not just yesterday - so late
 // webhook updates that flip an old order's delivery_status get picked up.
 export async function POST(req: NextRequest) {
-  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
+  const unauthorized = await requireOwnerOrInternal(req);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();

@@ -46,7 +46,7 @@ const adminNav = [
   { label: "Team",        href: "/team",        icon: Shield,     permission: "manage_team" },
   { label: "Roles",       href: "/roles",       icon: UserCheck,  permission: "manage_team" },
   { label: "Organisation", href: "/organisation", icon: Users,    permission: "manage_team" },
-  { label: "System Health", href: "/system-health", icon: Activity, permission: "manage_team" },
+  { label: "System Health", href: "/system-health", icon: Activity, permission: "manage_team", ownerOnly: true },
   { label: "Settings",    href: "/settings",    icon: Settings,   permission: "manage_team" },
 ];
 
@@ -700,6 +700,7 @@ export default function Sidebar() {
             {adminNav.map((item) => {
               const { label, href, icon: Icon, permission } = item;
               if (label === "Alert Logs" && !adminUser) return null;
+              if ("ownerOnly" in item && !profile?.is_platform_admin) return null;
               if (permission && !hasPermission(profile, permission as any)) return null;
               if (modBlocked(href.slice(1))) return null;
               const active = path === href || (href !== "/" && path.startsWith(href));
@@ -821,6 +822,7 @@ export default function Sidebar() {
                 <div className="grid grid-cols-1 gap-1 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                   {adminNav.map(item => {
                     if (item.label === "Alert Logs" && !adminUser) return null;
+                    if ("ownerOnly" in item && !profile?.is_platform_admin) return null;
                     if (item.permission && !hasPermission(profile, item.permission as any)) return null;
                     if (modBlocked(item.href.slice(1))) return null;
                     return (

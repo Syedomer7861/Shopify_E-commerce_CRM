@@ -4,7 +4,7 @@ import { getTaskProductName } from "@/lib/utils";
 import { getSystemSettings } from "@/lib/server-settings";
 import { sendGmail } from "@/lib/gmail";
 import { personaliseTemplate, getTemplateVariables } from "@/lib/whatsapp";
-import { requirePrivileged } from "@/lib/auth-utils";
+import { privilegedScope } from "@/lib/auth-utils";
 
 function getSupabase() {
   return createAdminClient();
@@ -17,17 +17,19 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
-  if (unauthorized) return unauthorized;
+  const scope = await privilegedScope(req, ["manage_automations"]);
+  if (scope.error) return scope.error;
 
-  return processRequest(req);
+  return processRequest(req, scope.orgId);
 }
 
-async function processRequest(req: NextRequest) {
+async function processRequest(req: NextRequest, onlyOrg: string | null = null) {
   const supabase = getSupabase();
 
   try {
-    const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+    let orgQuery = supabase.from("organizations").select("id").eq("is_active", true);
+    if (onlyOrg) orgQuery = orgQuery.eq("id", onlyOrg);
+    const { data: orgs } = await orgQuery;
     let waSentCount = 0;
     let emailSentCount = 0;
     let totalTasks = 0;

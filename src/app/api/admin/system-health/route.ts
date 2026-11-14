@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ensureAdmin } from "@/lib/auth-utils";
+import { requirePlatformOwner } from "@/lib/auth-utils";
 import { getSystemSettings, getShiprocketToken, getShopifyAccessToken } from "@/lib/server-settings";
 
 type CheckStatus = "ok" | "error" | "not_configured" | "stale" | "info";
@@ -29,7 +29,7 @@ async function timed<T>(fn: () => Promise<T>): Promise<{ result?: T; error?: any
  * inspects real data (webhook_logs, env presence). No invented percentages.
  */
 export async function GET() {
-  const { errorResponse, supabase } = await ensureAdmin();
+  const { errorResponse, supabase } = await requirePlatformOwner();
   if (errorResponse) return errorResponse;
 
   const checks: Check[] = [];

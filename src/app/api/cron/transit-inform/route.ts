@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { WorkflowEngine } from "@/lib/workflow-engine";
 import { assignTaskOwner, calculateTaskPriority } from "@/lib/task-engine";
-import { requirePrivileged } from "@/lib/auth-utils";
+import { requireOwnerOrInternal } from "@/lib/auth-utils";
 
 /**
  * Transit Inform Cron
  * Proactively flags shipments stuck in transit for 48+ hours.
  */
 export async function POST(req: NextRequest) {
-  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
+  const unauthorized = await requireOwnerOrInternal(req);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();

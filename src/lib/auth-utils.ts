@@ -170,6 +170,42 @@ export async function requirePrivileged(
 }
 
 /**
+ * Like requirePrivileged, but also says which workspaces the caller may run a
+ * job for: the scheduler (internal secret) runs every workspace; a person
+ * clicking "run now" runs only their own.
+ */
+export async function privilegedScope(
+  req: NextRequest | Request,
+  anyOf: (keyof UserPermissions)[] = []
+): Promise<{ error: NextResponse } | { error: null; orgId: string | null }> {
+  if (hasInternalSecret(req)) return { error: null, orgId: null };
+  let profile = null;
+  try {
+    const supabase = createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) profile = await loadProfile(supabase, user.id);
+  } catch {
+    // No cookie context - anonymous.
+  }
+  if (!profile) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  if (!(isAdmin(profile) || anyOf.some((p) => hasPermission(profile, p)))) {
+    return { error: NextResponse.json({ error: "Forbidden: you don't have permission to run this" }, { status: 403 }) };
+  }
+  if (!profile.org_id) return { error: NextResponse.json({ error: "No workspace" }, { status: 403 }) };
+  return { error: null, orgId: profile.org_id };
+}
+
+/**
+ * Platform-wide repair tools touch every workspace with the service key, so a
+ * workspace admin must never reach them: internal secret or verified owner only.
+ */
+export async function requireOwnerOrInternal(req: NextRequest | Request): Promise<NextResponse | null> {
+  if (hasInternalSecret(req)) return null;
+  const owner = await requirePlatformOwner();
+  return owner.errorResponse ?? null;
+}
+
+/**
  * Webhook secrets that ship as defaults and must never count as configured.
  */
 // Values that have appeared in the repo or the settings UI as examples. A

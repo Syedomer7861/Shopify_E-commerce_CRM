@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { requirePrivileged } from "@/lib/auth-utils";
+import { requireOwnerOrInternal } from "@/lib/auth-utils";
 
 // Scheduler entry point for the platform engine. All three jobs are SQL
 // functions (20261111d/e/f) executable by the service role only:
@@ -11,7 +11,7 @@ import { requirePrivileged } from "@/lib/auth-utils";
 const JOBS = ["process_workflow_events", "run_work_escalations", "run_sla_checks"] as const;
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
+  const unauthorized = await requireOwnerOrInternal(req);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();

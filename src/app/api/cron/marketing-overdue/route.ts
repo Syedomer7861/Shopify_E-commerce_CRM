@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { requirePrivileged } from "@/lib/auth-utils";
+import { requireOwnerOrInternal } from "@/lib/auth-utils";
 import { notifyUser, notifyAdmin } from "@/lib/notifications-server";
 
 // Daily nudge for workspace tasks that blew past their due date and aren't
@@ -12,7 +12,7 @@ import { notifyUser, notifyAdmin } from "@/lib/notifications-server";
 const ESCALATE_AFTER_DAYS = 2;
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
+  const unauthorized = await requireOwnerOrInternal(req);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();

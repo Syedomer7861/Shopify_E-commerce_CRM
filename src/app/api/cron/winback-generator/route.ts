@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { assignTaskOwner } from "@/lib/task-engine";
-import { requirePrivileged } from "@/lib/auth-utils";
+import { requireOwnerOrInternal } from "@/lib/auth-utils";
 
 // Split out of /api/cron/task-generator - see the comment at the top of
 // that route for why. Creates a win_back task for customers dormant 60+
@@ -14,7 +14,7 @@ export const maxDuration = 60;
 const BATCH_LIMIT = 50;
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requirePrivileged(req, ["manage_automations"]);
+  const unauthorized = await requireOwnerOrInternal(req);
   if (unauthorized) return unauthorized;
 
   const supabase = createAdminClient();

@@ -1130,7 +1130,7 @@ export default function SettingsPage() {
           { key: "overrides", label: "Product Rules", icon: Package },
           { key: "shopify", label: "Shopify API", icon: ShoppingBag },
           { key: "shiprocket", label: "Logistics", icon: Package },
-          { key: "database", label: "System Health", icon: Database },
+          { key: "database", label: "Danger Zone", icon: Database },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key as Tab)}
             className={cn("flex items-center gap-2.5 px-6 py-3.5 text-[10px] font-bold uppercase tracking-[0.2em] border-b-2 transition-all whitespace-nowrap",

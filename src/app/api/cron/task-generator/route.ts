@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getSystemSettings } from "@/lib/server-settings";
 import { assignTaskOwner, calculateTaskPriority, insertTasksIgnoringDuplicates } from "@/lib/task-engine";
-import { requirePrivileged } from "@/lib/auth-utils";
+import { privilegedScope } from "@/lib/auth-utils";
 
 // Vercel Hobby caps functions at 60s; a higher value fails the deploy.
 // On Pro this can go to 300. The syncs are incremental, so a cut-off run
@@ -35,8 +35,8 @@ function getSupabase() {
 }
 
 export async function POST(req: NextRequest) {
-  const unauthorized = await requirePrivileged(req, ["manage_automations", "can_import"]);
-  if (unauthorized) return unauthorized;
+  const scope = await privilegedScope(req, ["manage_automations", "can_import"]);
+  if (scope.error) return scope.error;
 
   const supabase = getSupabase();
   // Ops/testing escape hatch: process exactly one order by id instead of
@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
       .from("orders")
       .select("id, customer_id, org_id, delivered_at, line_items, delivery_status, customer:customers(rto_flag, segment)")
       .eq("id", onlyOrderId)
+      .eq(scope.orgId ? "org_id" : "id", scope.orgId ?? onlyOrderId)
       .in("delivery_status", ["delivered", "Delivered"])
       .not("delivered_at", "is", null);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -57,7 +58,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
   }
 
-  const { data: orgs } = await supabase.from("organizations").select("id").eq("is_active", true);
+  let orgQuery = supabase.from("organizations").select("id").eq("is_active", true);
+  if (scope.orgId) orgQuery = orgQuery.eq("id", scope.orgId);
+  const { data: orgs } = await orgQuery;
   let generated = 0, checked = 0, skipped = 0;
   for (const org of orgs ?? []) {
     // orders_needing_review_tasks (migrations/20260827e_task_backlog_rpcs.sql,

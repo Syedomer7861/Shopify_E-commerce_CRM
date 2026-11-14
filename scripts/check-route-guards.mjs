@@ -36,6 +36,8 @@ const GUARD = new RegExp([
   "requireWorkspaceAdmin",
   "ensureAdmin",
   "requirePlatformOwner",
+  "requireOwnerOrInternal",   // internal secret or verified platform owner
+  "privilegedScope",          // requirePrivileged + caller's own workspace
   "SHOPIFY_WEBHOOK_SECRET",   // webhook: HMAC verified instead of a session
   "SHIPROCKET_WEBHOOK_TOKEN",
   "billingSession",           // signed-in user + org, read server-side

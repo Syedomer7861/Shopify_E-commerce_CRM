@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { PageHeader, AccessDenied } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
-import { isAdmin } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
@@ -75,12 +74,12 @@ export default function SystemHealthPage() {
 
   useEffect(() => {
     if (profileLoading) return;
-    if (!isAdmin(profile)) { setLoading(false); return; }
+    if (!profile?.is_platform_admin) { setLoading(false); return; }
     runCheck();
   }, [profileLoading, profile, runCheck]);
 
   useEffect(() => {
-    if (!autoRefresh || isDemoMode || !isAdmin(profile)) return;
+    if (!autoRefresh || isDemoMode || !profile?.is_platform_admin) return;
     const id = setInterval(() => {
       if (typeof document !== "undefined" && document.hidden) return;
       runCheck(true);
@@ -128,8 +127,8 @@ export default function SystemHealthPage() {
   }
 
   if (profileLoading) return <div className="py-12 text-center text-gray-400">Loading...</div>;
-  if (!isAdmin(profile)) {
-    return <AccessDenied title="System Health Locked" desc="Only administrators can view infrastructure and integration status." />;
+  if (!profile?.is_platform_admin) {
+    return <AccessDenied title="System Health Locked" desc="Platform status is visible to the platform owner only." />;
   }
 
   return (
