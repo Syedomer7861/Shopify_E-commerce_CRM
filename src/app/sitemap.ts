@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { CONTENT_UPDATED, SECTIONS, SITE_URL, TOOLS, allPages } from "@/content";
 import { POSTS } from "@/content/blog";
+import { LEGAL_DOCS } from "@/content/legal";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const entry = (path: string, priority: number): MetadataRoute.Sitemap[number] =>
@@ -15,5 +16,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...TOOLS.map((t) => entry(`/tools/${t.slug}`, 0.7)),
     entry("/blog", 0.8),
     ...POSTS.map((p) => ({ ...entry(`/blog/${p.slug}`, 0.6), lastModified: p.date })),
+    ...LEGAL_DOCS.map((d) => ({ ...entry(`/legal/${d.slug}`, 0.3), lastModified: d.updated })),
   ];
 }

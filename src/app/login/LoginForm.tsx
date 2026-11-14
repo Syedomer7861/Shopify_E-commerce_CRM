@@ -188,16 +188,18 @@ export default function LoginForm({ googleEnabled, signupOpen, googleError }: { 
         </div>
 
         {/* Footer Info */}
-        <div className="mt-12 text-center">
-          <div className="flex items-center justify-center gap-6 mb-4">
-            <span className="text-[9px] font-black text-[#1c1c1c]/50 uppercase tracking-[0.2em]">V_01</span>
-            <div className="w-1 h-1 rounded-full bg-[#1c1c1c]/10" />
-            <span className="text-[9px] font-black text-[#1c1c1c]/50 uppercase tracking-[0.2em]">Created By <a className="text-[9px] font-black text-[#1c1c1c]/50 uppercase tracking-[0.2em]" href="https://codecreststudio.vercel.app/">Codecrest_Studio</a></span>
-          </div>
-          <p className="text-[9px] text-[#1c1c1c]/50 font-bold uppercase tracking-widest leading-relaxed">
-            &copy; 2026 CodeCrest Administrative Control
+        <footer className="mt-12 text-center">
+          <p className="text-[12px] text-[#1c1c1c]/60 leading-relaxed">
+            Orders, customers and your team, in one secure workspace.
           </p>
-        </div>
+          <nav aria-label="Legal" className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[12px] font-semibold text-[#1c1c1c]/70">
+            <a href="/legal/privacy" className="py-1 hover:text-[#1c1c1c] hover:underline">Privacy</a>
+            <a href="/legal/terms" className="py-1 hover:text-[#1c1c1c] hover:underline">Terms</a>
+            <a href="/legal/dpdp" className="py-1 hover:text-[#1c1c1c] hover:underline">DPDP rights</a>
+            <a href="/contact" className="py-1 hover:text-[#1c1c1c] hover:underline">Contact</a>
+          </nav>
+          <p className="mt-3 text-[11px] text-[#1c1c1c]/50">&copy; {new Date().getFullYear()} CodeCrest. All rights reserved.</p>
+        </footer>
       </div>
     </div>
   );

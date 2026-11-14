@@ -38,7 +38,8 @@ export default function ConsentBanner() {
   return (
     <div role="dialog" aria-label="Cookie choice" className="fixed bottom-4 left-4 right-4 sm:right-auto sm:max-w-sm z-[60] rounded-2xl border border-[#eceae4] bg-white p-4 shadow-xl text-[13px] text-[#3b3b3a]">
       <p className="leading-relaxed">
-        We use essential cookies to keep you signed in. With your OK we also use analytics cookies to see which pages help and where visitors come from.
+        We use essential cookies to keep you signed in. With your OK we also use analytics cookies to see which pages help and where visitors come from.{" "}
+        <a href="/legal/privacy#cookies-and-analytics" className="underline underline-offset-2 hover:text-[#111113]">Privacy Policy</a>
       </p>
       <div className="flex gap-2 mt-3">
         <button onClick={() => choose("analytics")} className="flex-1 rounded-full bg-[#111113] text-white px-4 py-2 font-semibold">Allow analytics</button>

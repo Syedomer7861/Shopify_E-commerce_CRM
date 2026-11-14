@@ -54,7 +54,7 @@ export function mergeTouch(stored: unknown, touch: Touch): Attribution {
 
 // Same public sections as src/middleware.ts. Touches are only recorded here:
 // inside the app, a referrer is a sign-in redirect, not a marketing source.
-const PUBLIC_SECTIONS = ["features", "solutions", "integrations", "compare", "resources", "tools", "blog", "contact"];
+const PUBLIC_SECTIONS = ["features", "solutions", "integrations", "compare", "resources", "tools", "blog", "contact", "legal"];
 export function isPublicPath(pathname: string): boolean {
   return pathname === "/" || PUBLIC_SECTIONS.includes(pathname.split("/")[1]);
 }

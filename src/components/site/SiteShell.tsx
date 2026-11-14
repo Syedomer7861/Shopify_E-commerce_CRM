@@ -218,11 +218,14 @@ export default async function SiteShell({ children }: { children: React.ReactNod
         <div className="relative border-t border-white/10">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/60">
             <p>&copy; 2026 CodeCrest. All rights reserved.</p>
-            <div className="flex items-center gap-5">
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
               <Link href="/pricing" className="hover:text-white">Pricing</Link>
               <Link href="/blog" className="hover:text-white">Blog</Link>
               <Link href="/resources/faq" className="hover:text-white">FAQ</Link>
               <Link href="/contact" className="hover:text-white">Contact</Link>
+              <Link href="/legal/privacy" className="hover:text-white">Privacy</Link>
+              <Link href="/legal/terms" className="hover:text-white">Terms</Link>
+              <Link href="/legal/dpdp" className="hover:text-white">DPDP</Link>
               <Link href="/login" className="hover:text-white">Sign in</Link>
             </div>
           </div>
