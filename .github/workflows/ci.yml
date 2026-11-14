@@ -1,0 +1,34 @@
+name: CI
+
+# Runs the same gate used before every commit: types, lint, and the verify
+# suite (route guards, tenancy, money, billing, ...). No secrets needed:
+# checks that need a live database skip themselves when env is absent.
+# The live DB probes (check:tenancy-db, check:tenancy-writes) run by hand
+# against production and are not part of CI.
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit -p .
+      - run: npx next lint --quiet
+      - run: npm run verify
