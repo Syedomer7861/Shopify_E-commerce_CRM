@@ -85,3 +85,6 @@ ruvector.db
 
 # Compiled output from scripts/check-*.mjs
 node_modules/.cache/crm-checks/
+
+# Google OAuth client downloads (secrets)
+client_secret_*.json
