@@ -3029,7 +3029,7 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
                 {[
                   { label: "Review Latency", value: o.review_offset_days },
                   { label: "Reorder Trigger", value: o.reorder_offset_days },
@@ -3145,7 +3145,7 @@ export default function SettingsPage() {
             </select>
           </div>
 
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Review</label>
               <input type="number" className="input text-[10px] font-bold bg-[#fcfbf8] h-12 text-center" value={newOverride.review_offset_days} onChange={e => setNewOverride({ ...newOverride, review_offset_days: +e.target.value })} />

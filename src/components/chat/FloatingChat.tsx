@@ -10,7 +10,8 @@ export function FloatingChat() {
   const { unreadCount, isChatOpen, setIsChatOpen } = useChat();
 
   return (
-    <div className="fixed right-0 top-1/2 -translate-y-1/2 z-[100] group">
+    // Hidden on phones: it covered page content, and Chat is already in the left rail.
+    <div className="hidden lg:block fixed right-0 top-1/2 -translate-y-1/2 z-[100] group">
       <button 
         onClick={() => setIsChatOpen(!isChatOpen)}
         className={cn(

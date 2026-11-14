@@ -386,21 +386,22 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
             </div>
             <div className="text-xs text-gray-400 mt-1">Customer since {formatDate(customer.created_at)}</div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full lg:w-auto">
+          </div>
+          {/* Stats sit beside the info row on desktop and below it on phones (they used to be nested inside it, squeezing the name column). */}
+          <div className="grid grid-cols-3 gap-2 md:gap-3 w-full lg:w-auto">
             {[
               { label: "Total Orders", value: orders.length || 0 },
               { label: "Total Spent", value: formatCurrency(totalSpent) },
               { label: "RTO Count", value: customer.rto_count },
             ].map(s => (
-              <div key={s.label} className="text-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-100/50">
-                <div className="text-lg font-bold text-[#1c1c1c]">{s.value}</div>
-                <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-1">{s.label}</div>
+              <div key={s.label} className="text-center bg-gray-50 rounded-xl px-2 md:px-4 py-3 border border-gray-100/50 min-w-0">
+                <div className="text-base md:text-lg font-bold text-[#1c1c1c] truncate">{s.value}</div>
+                <div className="text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-widest text-gray-400 mt-1">{s.label}</div>
               </div>
             ))}
           </div>
         </div>
       </div>
-    </div>
 
       {/* Customer Details Card */}
       {(customer.address || customer.city || customer.state || customer.zip) && (

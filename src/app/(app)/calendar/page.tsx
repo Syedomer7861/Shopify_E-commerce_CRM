@@ -273,7 +273,7 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex gap-4 overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-y-auto lg:overflow-hidden min-h-0">
         {/* ── Main calendar ────────────────────────────────────────────────────── */}
         <div className={cn("flex flex-col bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden transition-all duration-300",
           selectedDay ? "flex-[3]" : "flex-1")}>
@@ -355,7 +355,7 @@ export default function CalendarPage() {
 
         {/* ── Day detail panel ──────────────────────────────────────────────────── */}
         {selectedDay && (
-          <div className="w-[340px] flex-shrink-0 bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden flex flex-col animate-in slide-in-from-right-4 duration-300">
+          <div className="w-full lg:w-[340px] flex-shrink-0 bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden flex flex-col animate-in slide-in-from-right-4 duration-300">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
               <div>
                 <div className="text-xs font-black text-[#1c1c1c]">
