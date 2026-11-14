@@ -1,4 +1,4 @@
-import { CheckCircle2, IndianRupee, LifeBuoy, Target, MapPin, GitBranch, Blocks, ConciergeBell, type LucideIcon } from "lucide-react";
+import { CheckCircle2, IndianRupee, LifeBuoy, Target, MapPin, GitBranch, Blocks, ConciergeBell, FileText, type LucideIcon } from "lucide-react";
 import type { Profile } from "@/types";
 import { can } from "./access";
 
@@ -16,6 +16,7 @@ export const APP_MODULES: AppModule[] = [
   { key: "finance", label: "Finance", href: "/finance", icon: IndianRupee, perms: ["expenses", "vendors", "invoices"], blurb: "Expense claims, vendors, invoices" },
   { key: "service-desk", label: "Service Desk", href: "/service-desk", icon: LifeBuoy, perms: ["tickets"], blurb: "Internal tickets with SLA clocks" },
   { key: "leads", label: "Leads & Deals", href: "/leads", icon: Target, perms: ["leads", "deals"], blurb: "Pipeline from first contact to won" },
+  { key: "quotes", label: "Quotes", href: "/quotes", icon: FileText, perms: ["deals"], blurb: "Price offers with GST, into invoices" },
   { key: "field", label: "Field Visits", href: "/field", icon: MapPin, perms: ["visits"], blurb: "Planned visits and check-ins" },
   { key: "rules", label: "Rules", href: "/workflows/rules", icon: GitBranch, perms: ["workflows"], blurb: "When X happens, do Y" },
   // No perms: open to every member. What each person sees inside is decided per app (migration 20261113a).
