@@ -74,7 +74,9 @@ export async function POST(req: NextRequest) {
     email,
     password,
     email_confirm: true,
-    user_metadata: { name, role: "admin", org_id: org.id },
+    // app_metadata is what the profile trigger trusts; user_metadata keeps the
+    // previous trigger working until migration 20261114b is applied.
+    user_metadata: { name, role: "admin", org_id: org.id }, app_metadata: { role: "admin", org_id: org.id },
   });
   if (userError || !created.user) {
     // Roll back the org so a failed signup doesn't leave an orphaned, empty one behind.

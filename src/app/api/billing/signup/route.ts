@@ -52,7 +52,9 @@ export async function POST(req: NextRequest) {
   }
 
   const { data: created, error: userError } = await admin.auth.admin.createUser({
-    email, password, email_confirm: true, user_metadata: { name, role: "admin", org_id: org.id },
+    email, password, email_confirm: true, // app_metadata is what the profile trigger trusts; user_metadata keeps the
+    // previous trigger working until migration 20261114b is applied.
+    user_metadata: { name, role: "admin", org_id: org.id }, app_metadata: { role: "admin", org_id: org.id },
   });
   if (userError || !created.user) {
     await admin.from("organizations").delete().eq("id", org.id);

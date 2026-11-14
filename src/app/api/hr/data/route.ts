@@ -199,12 +199,14 @@ export async function POST(req: NextRequest) {
   // employee profile. The HR Dashboard itself is admin/hr only, so enforce
   // that here too.
   let currentUserId: string | null = null;
+  let currentOrgId: string | null = null;
   if (!hasInternalSecret(req)) {
     const { profile } = await getAuthenticatedSession();
     if (profile?.role !== "admin" && profile?.role !== "hr") {
       return NextResponse.json({ error: "Forbidden: Admin or HR access required" }, { status: 403 });
     }
     currentUserId = profile?.id || null;
+    currentOrgId = (profile as { org_id?: string } | null)?.org_id || null;
   }
 
   const supabase = createServerClient();
@@ -345,6 +347,9 @@ export async function POST(req: NextRequest) {
       // failed outright, and Delete Employee silently never revoked the
       // ex-employee's real login (the error was caught and only logged).
       const adminAuth = createAdminClient();
+      // Employee logins are created and removed with the service key, so they
+      // must be pinned to the caller's own organisation explicitly.
+      if (!currentOrgId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
       if (action === "insert") {
         const { email, name, role, designation, ...profileData } = data;
@@ -367,6 +372,7 @@ export async function POST(req: NextRequest) {
             email,
             password: process.env.HR_EMPLOYEE_DEFAULT_KEY || ["Welcome", "@", "123"].join(""),
             email_confirm: true,
+            app_metadata: { org_id: currentOrgId, role: ["admin", "agent", "manager", "hr"].includes(role) ? role : "agent" },
             user_metadata: {
               name,
               role: role || "agent",
@@ -433,6 +439,7 @@ export async function POST(req: NextRequest) {
               role: ["admin", "agent", "manager", "hr"].includes(role) ? role : "agent",
               designation: designation || "Agent",
               ...profileData,
+              org_id: currentOrgId,
               is_active: true,
             },
             { onConflict: "id" }
@@ -462,8 +469,11 @@ export async function POST(req: NextRequest) {
         const { id } = data;
         
         // 1. Delete from profiles to hide from CRM immediately
-        const { error: profileError } = await supabase.from("profiles").delete().eq("id", id);
+        // RLS limits this to the caller's organisation; only remove the
+        // login if a profile there was actually deleted.
+        const { data: removed, error: profileError } = await supabase.from("profiles").delete().eq("id", id).eq("org_id", currentOrgId).select("id");
         if (profileError) throw profileError;
+        if (!removed?.length) return NextResponse.json({ error: "Employee not found" }, { status: 404 });
 
         // 2. Delete Auth User to revoke access permanently
         const { error: authError } = await adminAuth.auth.admin.deleteUser(id);
