@@ -33,6 +33,24 @@ export function CustomFieldsManager({ canEdit }: { canEdit: boolean }) {
   const [options, setOptions] = useState("");
   const [required, setRequired] = useState(false);
   const [inList, setInList] = useState(false);
+  const [templates, setTemplates] = useState<{ code: string; name: string; description: string }[]>([]);
+  const [template, setTemplate] = useState("");
+
+  useEffect(() => {
+    supabase.from("industry_templates").select("code,name,description").order("sort_order")
+      .then(({ data }) => setTemplates((data || []) as { code: string; name: string; description: string }[]));
+  }, [supabase]);
+
+  async function applyTemplate() {
+    const t = templates.find(x => x.code === template);
+    if (!t || !window.confirm(`Add the ${t.name} fields to your records? Fields you already have are kept as they are.`)) return;
+    setBusy(true);
+    const { data, error } = await supabase.rpc("apply_industry_template", { p_code: t.code });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success(data ? `${data} field(s) added` : "You already have all of these fields");
+    load();
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,6 +91,18 @@ export function CustomFieldsManager({ canEdit }: { canEdit: boolean }) {
         <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2">Custom fields</h3>
         <p className="text-xs text-[#5f5f5d]">Add your own fields to records. They appear in the add and edit forms, and in the list if you choose.</p>
       </div>
+      {canEdit && templates.length > 0 && (
+        <div className="flex flex-wrap items-end gap-2 rounded-lg bg-[#f7f4ed] p-3">
+          <label className="text-[10px] text-[#5f5f5d] flex-1 min-w-[200px]">Start from your industry<br />
+            <select className={cn(input, "w-full")} value={template} onChange={e => setTemplate(e.target.value)}>
+              <option value="">Choose an industry</option>
+              {templates.map(t => <option key={t.code} value={t.code}>{t.name}</option>)}
+            </select>
+          </label>
+          <button onClick={applyTemplate} disabled={busy || !template} className="text-xs font-semibold px-3 h-9 rounded-lg border border-[#1c1c1c] disabled:opacity-40">Apply template</button>
+          {template && <p className="w-full text-[11px] text-[#5f5f5d]">{templates.find(t => t.code === template)?.description}</p>}
+        </div>
+      )}
       <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
         {ENTITIES.map(([k, l]) => (
           <button key={k} onClick={() => setEntity(k)} aria-pressed={entity === k}
