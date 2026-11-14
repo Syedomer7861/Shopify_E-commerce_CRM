@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Avatar, SegmentBadge, DeliveryBadge, TaskTypeBadge, TaskStatusBadge, Modal, Pagination } from "@/components/ui";
 import ShiprocketOrderView from "@/components/ShiprocketOrderView";
 import { createClient } from "@/lib/supabase";
-import { cn, formatDate, formatDateTime, timeAgo, formatCurrency } from "@/lib/utils";
+import { cn, formatDate, formatDateTime, timeAgo, formatCurrency, orQuote } from "@/lib/utils";
 import toast from "react-hot-toast";
 import type { Customer, Order, Task, CallLog, AuditLog, RawCallLog } from "@/types";
 import { logAuditEvent } from "@/lib/audit";
@@ -76,6 +76,9 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
     const { data: auditData } = await supabase
       .from("audit_logs")
       .select("*")
+      // This customer's rows only: the old unfiltered fetch pulled the
+      // workspace's latest 200 rows and missed anything older.
+      .or(`entity_id.eq.${orQuote(id)},metadata->>customerId.eq.${orQuote(id)}`)
       .order("created_at", { ascending: false })
       .limit(200);
 
