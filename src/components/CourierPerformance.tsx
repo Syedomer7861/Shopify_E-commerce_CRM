@@ -333,15 +333,15 @@ export default function LogisticsPulse() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Courier Bar Chart */}
-        <div className="card p-8 space-y-8 bg-[#f7f4ed] border border-[#eceae4] rounded-[32px] shadow-sm">
-          <div className="flex items-center justify-between">
+        <div className="card p-5 sm:p-8 space-y-8 bg-[#f7f4ed] border border-[#eceae4] rounded-[32px] shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 className="text-[11px] font-black text-[#1c1c1c] flex items-center gap-3 uppercase tracking-[0.2em]">
               <div className="p-2 bg-[#eceae4] rounded-xl">
                 <Truck className="w-4 h-4 text-[#1c1c1c]/40" />
               </div>
               Courier Performance Audit
             </h3>
-            <div className="flex gap-6">
+            <div className="flex gap-4 sm:gap-6">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                 <span className="text-[9px] font-black text-[#5f5f5d]/40 uppercase tracking-widest">High</span>
@@ -355,14 +355,14 @@ export default function LogisticsPulse() {
 
           <div className="w-full" style={{ height: `${Math.min(560, Math.max(300, couriers.length * 44))}px` }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={couriers} layout="vertical" margin={{ left: 20, right: 40, top: 0, bottom: 0 }}>
+              <BarChart data={couriers} layout="vertical" margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#eceae4" />
                 <XAxis type="number" hide />
                 <YAxis
                   dataKey="name"
                   type="category"
                   tick={{ fontSize: 10, fontWeight: 900, fill: '#1c1c1c', letterSpacing: '0.05em' }}
-                  width={130}
+                  width={100}
                   interval={0}
                   axisLine={false}
                   tickLine={false}

@@ -192,12 +192,12 @@ export default function CalendarPage() {
     : `${format(startOfWeekFn(currentDate), "d MMM")} – ${format(endOfWeekFn(currentDate), "d MMM yyyy")}`;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)] overflow-hidden animate-fade-in">
+    <div className="flex flex-col lg:h-[calc(100vh-2rem)] lg:overflow-hidden animate-fade-in">
       <PageHeader
         title="Orchestration Calendar"
         subtitle="Live task schedule — click any day to drill down"
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Today button */}
             <button
               onClick={() => { setCurrentDate(new Date()); setSelectedDay(new Date()); }}
@@ -229,7 +229,7 @@ export default function CalendarPage() {
               <button onClick={prev} aria-label="Previous" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-sm font-bold text-[#1c1c1c] min-w-[160px] text-center">{headerLabel}</span>
+              <span className="text-sm font-bold text-[#1c1c1c] min-w-[110px] lg:min-w-[160px] text-center">{headerLabel}</span>
               <button onClick={next} aria-label="Next" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -273,9 +273,9 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-y-auto lg:overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:overflow-hidden min-h-0">
         {/* ── Main calendar ────────────────────────────────────────────────────── */}
-        <div className={cn("flex flex-col bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden transition-all duration-300",
+        <div className={cn("flex flex-col min-h-[460px] lg:min-h-0 bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden transition-all duration-300",
           selectedDay ? "flex-[3]" : "flex-1")}>
 
           {/* Day headers */}

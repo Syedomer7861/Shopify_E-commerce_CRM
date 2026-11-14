@@ -200,7 +200,7 @@ export function NotificationBell() {
   if (!userId) return null;
 
   return (
-    <div ref={containerRef} className="fixed top-4 right-4 lg:top-6 lg:right-6 z-40">
+    <div ref={containerRef} className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-2.5 lg:bottom-auto lg:left-auto lg:top-6 lg:right-6 z-[60] lg:z-40">
       <button
         onClick={() => setOpen(o => !o)}
         aria-label="Notifications"
@@ -215,7 +215,7 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 max-w-[90vw] bg-[#f7f4ed] rounded-2xl shadow-2xl border border-[#eceae4] overflow-hidden animate-slide-up">
+        <div className="absolute left-0 bottom-full mb-2 lg:left-auto lg:bottom-auto lg:mb-0 lg:right-0 lg:mt-2 w-80 max-w-[calc(100vw-1.5rem)] bg-[#f7f4ed] rounded-2xl shadow-2xl border border-[#eceae4] overflow-hidden animate-slide-up">
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#eceae4]">
             <h3 className="text-xs font-black uppercase tracking-widest text-[#1c1c1c]">Notifications</h3>
             {unreadCount > 0 && (

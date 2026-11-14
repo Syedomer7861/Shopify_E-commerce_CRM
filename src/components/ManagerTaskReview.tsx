@@ -355,8 +355,8 @@ export default function ManagerTaskReview() {
           </button>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="relative group">
+        <div className="flex items-center gap-3 sm:gap-4 w-full lg:w-auto">
+          <div className="relative group flex-1 min-w-0 lg:flex-none">
             <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#5f5f5d]/40 group-focus-within:text-[#1c1c1c] transition-colors" />
             <input 
               type="text" 
@@ -366,7 +366,7 @@ export default function ManagerTaskReview() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="flex flex-col items-end gap-1 mr-2">
+          <div className="hidden sm:flex flex-col items-end gap-1 mr-2">
             <span className="text-[8px] font-black text-[#5f5f5d]/40 uppercase tracking-[0.2em]">Live Pulse</span>
             <span className="text-[10px] font-bold text-[#5f5f5d] tabular-nums">
               {mounted ? lastUpdated : "--:--:--"}
@@ -570,17 +570,17 @@ export default function ManagerTaskReview() {
                         selectedTask?.id === t.id ? "border-[#1c1c1c] bg-[#eceae4]/60 ring-1 ring-[#1c1c1c]/10" : "bg-[#f7f4ed] border-transparent"
                       )}
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4">
+                        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                           <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">
                             {t.customer?.name?.charAt(0) || "C"}
                           </div>
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <h4 className="text-sm font-black text-[#1c1c1c]">{t.customer?.name}</h4>
                               <TaskTypeBadge type={t.task_type} />
                             </div>
-                            <div className="flex items-center gap-3 mt-1">
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
                               <span className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
                                 <User className="w-3 h-3" />
                                 {t.assigned_profile?.name || "Unknown Agent"}
@@ -593,7 +593,7 @@ export default function ManagerTaskReview() {
                             </div>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="pl-14 sm:pl-0 sm:text-right">
                           <span className="badge bg-[#f7f4ed] border-[#eceae4] text-[10px] font-black text-[#5f5f5d] uppercase tracking-tight">
                             {t.call_logs?.[0]?.outcome?.replace(/_/g, ' ') || "RESOLVED"}
                           </span>
@@ -610,7 +610,7 @@ export default function ManagerTaskReview() {
                         </p>
                       </div>
                       
-                      <div className="mt-4 pt-4 border-t border-[#eceae4]/60 flex items-center justify-between">
+                      <div className="mt-4 pt-4 border-t border-[#eceae4]/60 flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2 text-[10px] font-bold text-[#5f5f5d]/60">
                           <ShoppingBag className="w-3 h-3" />
                           {getTaskProductName(t)}

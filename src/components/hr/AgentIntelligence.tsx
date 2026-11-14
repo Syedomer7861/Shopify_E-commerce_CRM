@@ -150,7 +150,7 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
   return (
     <div className="space-y-8 pb-20 animate-in fade-in duration-700">
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#fcfbf8] p-6 rounded-3xl border border-gray-100 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#fcfbf8] p-4 sm:p-6 rounded-3xl border border-gray-100 shadow-sm">
         <div className="space-y-1">
           <h2 className="text-xl font-black text-[#1c1c1c] tracking-tight flex items-center gap-3">
             <div className="w-10 h-10 bg-[#1c1c1c] text-white rounded-2xl flex items-center justify-center shadow-lg">
@@ -162,17 +162,17 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-white p-1 rounded-xl border border-gray-100 shadow-inner">
+          <div className="flex w-full sm:w-auto min-w-0 bg-white p-1 rounded-xl border border-gray-100 shadow-inner">
             <input 
               type="date" 
-              className="text-[10px] font-black uppercase tracking-wider px-3 py-2 border-none focus:ring-0 bg-transparent"
+              className="flex-1 min-w-0 text-[10px] font-black uppercase tracking-wider px-2 sm:px-3 py-2 border-none focus:ring-0 bg-transparent"
               value={dateRange.start}
               onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
             />
             <div className="w-[1px] bg-gray-100 my-2" />
             <input 
               type="date" 
-              className="text-[10px] font-black uppercase tracking-wider px-3 py-2 border-none focus:ring-0 bg-transparent"
+              className="flex-1 min-w-0 text-[10px] font-black uppercase tracking-wider px-2 sm:px-3 py-2 border-none focus:ring-0 bg-transparent"
               value={dateRange.end}
               onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
             />

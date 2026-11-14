@@ -1034,10 +1034,10 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         open={showDetail} 
         onClose={() => setShowDetail(false)} 
         title={(
-          <div className="flex items-center gap-6 flex-wrap">
+          <div className="flex items-center gap-3 md:gap-6 flex-wrap">
             <span className="font-bold">Task Details — {task.customer.name}</span>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center bg-gray-100 p-0.5 rounded-lg">
+            <div className="flex flex-wrap items-center gap-3 md:gap-4">
+              <div className="flex items-center bg-gray-100 p-0.5 rounded-lg [&>button]:whitespace-nowrap">
                  <button 
                    onClick={() => setActiveTab('details')}
                    className={cn(
@@ -1059,7 +1059,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
               </div>
 
               {!isDone && (
-                <div className="flex items-center gap-2 border-l pl-4 border-gray-200">
+                <div className="flex flex-wrap items-center gap-2 md:border-l md:pl-4 border-gray-200 [&>button]:whitespace-nowrap">
                   {task.task_type === 'manager_audit' ? (
                     <>
                       <button onClick={(e) => handleManagerAction(e, 'rejected')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f7f4ed] border border-rose-100 text-rose-500 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm">
