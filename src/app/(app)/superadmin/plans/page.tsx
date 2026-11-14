@@ -8,10 +8,34 @@ import { cn } from "@/lib/utils";
 import { formatMinor, toMinor } from "@/lib/money";
 
 type Version = { id: string; plan_id: string; version: number; currency: string; price_monthly_minor: number; price_yearly_minor: number; trial_days: number; published_at: string };
-type Plan = { id: string; code: string; name: string; description: string; is_public: boolean; is_active: boolean; sort_order: number };
+type Plan = { id: string; code: string; name: string; description: string; is_public: boolean; is_active: boolean; sort_order: number; max_users: number | null };
 
 const input = "h-9 px-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 const btn = "inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-[#1c1c1c] text-white disabled:opacity-50";
+
+function SeatLimit({ plan, onDone }: { plan: Plan; onDone: () => void }) {
+  const supabase = useMemo(() => createClient(), []);
+  const [value, setValue] = useState(plan.max_users == null ? "" : String(plan.max_users));
+  const [busy, setBusy] = useState(false);
+  async function save() {
+    const n = value.trim() === "" ? null : Number(value);
+    if (n !== null && (!Number.isInteger(n) || n < 1 || n > 100000)) return toast.error("Seats must be a whole number from 1, or empty for unlimited");
+    setBusy(true);
+    const { error } = await supabase.rpc("platform_set_plan_limits", { p_plan: plan.id, p_max_users: n });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success(`${plan.name}: ${n == null ? "unlimited" : n} team members`);
+    onDone();
+  }
+  return (
+    <label className="text-[10px] text-[#5f5f5d]">Team members (empty = unlimited)<br />
+      <span className="inline-flex gap-1">
+        <input className={cn(input, "w-24")} value={value} onChange={e => setValue(e.target.value)} inputMode="numeric" placeholder="Unlimited" />
+        <button onClick={save} disabled={busy} className="text-xs font-semibold px-2 rounded-lg border border-[#eceae4] disabled:opacity-50">Save</button>
+      </span>
+    </label>
+  );
+}
 
 function PriceForm({ plan, onDone }: { plan: Plan; onDone: () => void }) {
   const supabase = useMemo(() => createClient(), []);
@@ -120,6 +144,7 @@ export default function SuperAdminPlans() {
                     <input type="checkbox" checked={p.is_active} disabled={busy} onChange={e => save(p, { is_active: e.target.checked })} /> Can be sold
                   </label>
                 </div>
+                <div className="mt-3"><SeatLimit plan={p} onDone={load} /></div>
                 <PriceForm plan={p} onDone={load} />
               </div>
             );

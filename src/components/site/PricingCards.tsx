@@ -53,16 +53,14 @@ export default function PricingCards({ plans, signupOpen }: { plans: PricingPlan
                 {href === "/contact" ? "Talk to us" : p.trialDays > 0 ? "Start free trial" : "Get started"}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-              {p.highlights.length > 0 && (
-                <ul className="mt-7 space-y-3 text-[14px]">
-                  {p.highlights.map((h) => (
+              <ul className="mt-7 space-y-3 text-[14px]">
+                  {[p.maxUsers == null ? "Unlimited team members" : `Up to ${p.maxUsers} team members`, ...p.highlights].map((h) => (
                     <li key={h} className="flex gap-2.5">
                       <Check className={`w-4 h-4 mt-0.5 shrink-0 ${p.featured ? "text-[var(--mint)]" : "text-emerald-600"}`} aria-hidden />
                       <span className={p.featured ? "text-white/85" : ""}>{h}</span>
                     </li>
                   ))}
-                </ul>
-              )}
+              </ul>
             </div>
           );
         })}

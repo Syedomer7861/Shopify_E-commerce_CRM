@@ -1,5 +1,6 @@
 "use server";
 import { createServerClient, createAdminClient } from "@/lib/supabase";
+import { seatLimitError } from "@/lib/seats";
 import type { UserPermissions } from "@/types";
 import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
 
@@ -59,6 +60,8 @@ export async function createTeamMemberServer({
 
   try {
     const cleanEmail = email.toLowerCase().trim();
+    const seatError = await seatLimitError(supabaseAdmin, orgId);
+    if (seatError) return { success: false, error: seatError };
 
     // 1. Create the login. app_metadata (settable only with the service key)
     // tells the profile trigger which organisation this person joins.

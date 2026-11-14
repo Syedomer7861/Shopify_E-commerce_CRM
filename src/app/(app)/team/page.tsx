@@ -53,6 +53,8 @@ export default function TeamPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  // Seats from the plan (null limit = unlimited). Enforced by the database.
+  const [seats, setSeats] = useState<{ limit: number | null; used: number } | null>(null);
 
   // New user state
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,6 +65,11 @@ export default function TeamPage() {
   const { profile: currentProfile, loading: profileLoading } = useCurrentProfile();
 
   const supabase = createClient();
+  const loadSeats = useCallback(() => {
+    supabase.rpc("my_seat_status").then(({ data }) => setSeats((data as { limit: number | null; used: number } | null) ?? null));
+  }, [supabase]);
+  useEffect(() => { loadSeats(); }, [loadSeats, profiles]);
+  const seatsFull = seats?.limit != null && seats.used >= seats.limit;
 
   const fetchProfiles = useCallback(async () => {
     const isDemo = isDemoMode();
@@ -348,9 +355,11 @@ export default function TeamPage() {
     <div className="animate-fade-in">
       <PageHeader 
         title="Team Management" 
-        subtitle={`${profiles.filter(p => p.is_active).length} active members`}
+        subtitle={seats?.limit != null
+          ? `${seats.used} of ${seats.limit} team members on your plan${seatsFull ? " — deactivate someone or upgrade to add more" : ""}`
+          : `${profiles.filter(p => p.is_active).length} active members`}
         actions={
-          <button onClick={() => setAddModal(true)} className="btn-primary gap-2">
+          <button onClick={() => setAddModal(true)} disabled={seatsFull} title={seatsFull ? "All seats on your plan are in use" : undefined} className="btn-primary gap-2 disabled:opacity-50">
             <UserPlus className="w-4 h-4" /> Add Member
           </button>
         }

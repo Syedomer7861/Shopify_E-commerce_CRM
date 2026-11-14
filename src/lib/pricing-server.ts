@@ -2,7 +2,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase";
 import { publicPlans, type PublicPlan } from "@/lib/billing-server";
 
-export type PricingPlan = PublicPlan & { highlights: string[]; featured: boolean };
+export type PricingPlan = PublicPlan & { highlights: string[]; featured: boolean; maxUsers: number | null };
 export type CompareRow = { label: string; hint?: string; cells: Record<string, string> }; // plan code -> 'yes' | 'no' | text
 export type CompareSection = { title: string; rows: CompareRow[] };
 
@@ -14,6 +14,8 @@ export type CompareSection = { title: string; rows: CompareRow[] };
  * Optional parts fall back to empty, so a missing column or table never
  * breaks the page.
  */
+export const seatsLabel = (n: number | null) => (n == null ? "Unlimited" : `Up to ${n}`);
+
 export async function loadPricing(): Promise<{ plans: PricingPlan[]; sections: CompareSection[] }> {
   const base = await publicPlans().catch(() => [] as PublicPlan[]);
   if (base.length === 0) return { plans: [], sections: [] };
@@ -21,16 +23,17 @@ export async function loadPricing(): Promise<{ plans: PricingPlan[]; sections: C
   const codes = base.map((p) => p.code);
 
   const [extra, modules, planModules, rows] = await Promise.all([
-    admin.from("subscription_plans").select("id, code, highlights, is_featured").in("code", codes),
+    admin.from("subscription_plans").select("id, code, highlights, is_featured, max_users").in("code", codes),
     admin.from("platform_modules").select("key, name, description").eq("is_available", true).order("sort_order"),
     admin.from("plan_modules").select("plan_id, module_key"),
     admin.from("platform_pricing_rows").select("section, label, plan_values").order("sort_order").order("label"),
   ]);
 
-  const byCode = new Map(((extra.data || []) as { id: string; code: string; highlights?: string[]; is_featured?: boolean }[]).map((r) => [r.code, r]));
-  const plans = base.map((p) => ({ ...p, highlights: byCode.get(p.code)?.highlights ?? [], featured: !!byCode.get(p.code)?.is_featured }));
+  const byCode = new Map(((extra.data || []) as { id: string; code: string; highlights?: string[]; is_featured?: boolean; max_users?: number | null }[]).map((r) => [r.code, r]));
+  const plans = base.map((p) => ({ ...p, highlights: byCode.get(p.code)?.highlights ?? [], featured: !!byCode.get(p.code)?.is_featured, maxUsers: byCode.get(p.code)?.max_users ?? null }));
 
-  const sections: CompareSection[] = [];
+  // Seats come from the same column the database enforces (max_users).
+  const sections: CompareSection[] = [{ title: "Plan details", rows: [{ label: "Team members", cells: Object.fromEntries(plans.map((p) => [p.code, seatsLabel(p.maxUsers)])) }] }];
   const mods = (modules.data || []) as { key: string; name: string; description: string }[];
   if (mods.length) {
     const pm = (planModules.data || []) as { plan_id: string; module_key: string }[];

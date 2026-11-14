@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { UsersTable } from "@/components/superadmin/UsersTable";
 import { SubscriptionPanel } from "@/components/superadmin/SubscriptionPanel";
 import { OrgModulesPanel } from "@/components/superadmin/OrgModulesPanel";
+import { SeatOverridePanel } from "@/components/superadmin/SeatOverridePanel";
 
 type Org = {
   id: string; name: string; slug: string; plan: string | null; is_active: boolean; created_at: string;
@@ -102,6 +103,7 @@ export default function SuperAdminOrgDetail() {
             <Fact label="Status" value={org.is_active ? "Active" : "Suspended"} />
             <Fact label="Session timeout" value={org.session_timeout_minutes ? `${org.session_timeout_minutes} min` : "Off"} />
             <Fact label="Modules off" value={org.disabled_modules?.length || 0} />
+            <SeatOverridePanel orgId={id} />
             <div className="col-span-2 border-t border-[#eceae4] pt-3">
               <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Records</div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

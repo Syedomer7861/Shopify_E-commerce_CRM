@@ -8,7 +8,8 @@
 --      Premium   Rs 9,999/mo  Rs 99,990/yr
 -- 2. Module matrix (plan_modules). Before this, no rows = every plan had all.
 --    No workspace was subscribed when written, so nobody loses a module.
--- 3. Card text (description, highlights) and comparison rows.
+-- 3. Card text (description, highlights) and comparison rows. Seat counts
+--    are not typed here: the page shows subscription_plans.max_users (20261114e).
 --
 -- Written as direct DML because platform_* owner functions need an aal2
 -- browser session. Everything stays editable afterwards in Super Admin.
@@ -54,20 +55,19 @@ SELECT p.id, m.key
 -- 3a. Card text.
 UPDATE subscription_plans SET is_featured = (code = 'standard') WHERE code IN ('basic','standard','premium');
 UPDATE subscription_plans SET description = 'For small teams getting their sales and service in one place.',
-  highlights = ARRAY['Up to 5 team members','Leads, deals and pipeline','Service desk tickets','Approvals','Projects, tasks and HR','Email support']
+  highlights = ARRAY['Leads, deals and pipeline','Service desk tickets','Approvals','Projects, tasks and HR','Email support']
  WHERE code = 'basic';
 UPDATE subscription_plans SET description = 'For growing teams that sell, ship and work in the field.',
-  highlights = ARRAY['Up to 25 team members','Everything in Basic','Sales and call centre: Shopify orders, WhatsApp, shipping','Field visits with check-in','Expenses and GST invoices','Priority email and chat support']
+  highlights = ARRAY['Everything in Basic','Sales and call centre: Shopify orders, WhatsApp, shipping','Field visits with check-in','Expenses and GST invoices','Priority email and chat support']
  WHERE code = 'standard';
 UPDATE subscription_plans SET description = 'For larger organisations running every department on one platform.',
-  highlights = ARRAY['Up to 75 team members','Everything in Standard','Vendors and purchasing','Guided onboarding and data import','Phone support with named contact']
+  highlights = ARRAY['Everything in Standard','Vendors and purchasing','Guided onboarding and data import','Phone support with named contact']
  WHERE code = 'premium';
 
 -- 3b. Comparison rows (owner can edit or delete in Super Admin > Pricing page).
 INSERT INTO platform_pricing_rows (section, label, plan_values, sort_order)
 SELECT v.section, v.label, v.vals::jsonb, v.sort
   FROM (VALUES
-    ('Plan details', 'Team members', '{"basic":"Up to 5","standard":"Up to 25","premium":"Up to 75"}', 10),
     ('Plan details', 'Free trial', '{"basic":"14 days","standard":"14 days","premium":"14 days"}', 20),
     ('Plan details', 'Support', '{"basic":"Email","standard":"Email and chat","premium":"Phone, named contact"}', 30),
     ('Plan details', 'Guided onboarding and data import', '{"basic":"no","standard":"no","premium":"yes"}', 40),

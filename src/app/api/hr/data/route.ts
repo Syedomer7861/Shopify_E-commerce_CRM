@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { seatLimitError } from "@/lib/seats";
 import { requireInternal, hasInternalSecret, getAuthenticatedSession } from "@/lib/auth-utils";
 import { createServerClient, createAdminClient } from "@/lib/supabase";
 import { computeAutoAttendance } from "@/lib/attendance-engine";
@@ -355,6 +356,8 @@ export async function POST(req: NextRequest) {
         const { email, name, role, designation, ...profileData } = data;
 
         let authUserId: string | null = null;
+        const seatError = await seatLimitError(adminAuth, currentOrgId);
+        if (seatError) return NextResponse.json({ error: seatError }, { status: 409 });
 
         // ── Step 1: Check if auth user already exists ────────────────
         const { data: existingUsers } = await adminAuth.auth.admin.listUsers({ perPage: 1000 });
@@ -370,7 +373,9 @@ export async function POST(req: NextRequest) {
           // ── Step 2: Create new auth user ─────────────────────────────
           const { data: authData, error: authError } = await adminAuth.auth.admin.createUser({
             email,
-            password: process.env.HR_EMPLOYEE_DEFAULT_KEY || ["Welcome", "@", "123"].join(""),
+            // No guessable fallback: without a configured default the login gets a
+            // random password and the admin sets one from Team > Reset password.
+            password: process.env.HR_EMPLOYEE_DEFAULT_KEY || `${crypto.randomUUID()}Aa1!`,
             email_confirm: true,
             app_metadata: { org_id: currentOrgId, role: ["admin", "agent", "manager", "hr"].includes(role) ? role : "agent" },
             user_metadata: {
@@ -400,8 +405,8 @@ export async function POST(req: NextRequest) {
               } else {
                 // Trigger rolled back the transaction — auth user was never committed
                 return NextResponse.json(
-                  { error: `Supabase trigger error. Run this SQL in the Supabase dashboard: DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users; DROP FUNCTION IF EXISTS handle_new_user();` },
-                  { status: 500 }
+                  { error: "Could not create the login. If your plan's team-member limit is reached, deactivate a member or upgrade; otherwise try again." },
+                  { status: 409 }
                 );
               }
             } else if (
