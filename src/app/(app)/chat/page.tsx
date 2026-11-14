@@ -93,7 +93,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="fixed inset-0 lg:left-64 bottom-16 lg:bottom-0 flex flex-col bg-white overflow-hidden">
+    <div className="fixed inset-0 left-16 lg:left-64 flex flex-col bg-white overflow-hidden">
       {/* Top Header */}
       <header className="h-16 border-b border-[#eceae4] bg-[#f8f7f4] flex items-center justify-between px-6 z-10">
         <div className="flex items-center gap-2 sm:gap-3">

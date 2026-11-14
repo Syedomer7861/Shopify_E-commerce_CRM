@@ -35,10 +35,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <CommandPalette />
         <NotificationBell />
         <KeyboardShortcutsHelp />
-        <Suspense fallback={<div className="w-64 bg-[#f7f4ed] animate-pulse" />}>
+        <Suspense fallback={<div className="fixed lg:static left-0 top-0 w-16 lg:w-64 h-screen bg-[#f7f4ed] animate-pulse" />}>
           <Sidebar />
         </Suspense>
-        <main id="main-application-content" className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+        <main id="main-application-content" className="flex-1 overflow-y-auto pl-16 lg:pl-0">
           <div className={cn(isChatPage ? "" : "max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6")}>
             {!isChatPage && <PlatformNotices />}
             <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 animate-spin text-[#1c1c1c]" /></div>}>

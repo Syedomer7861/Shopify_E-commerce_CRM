@@ -1090,7 +1090,7 @@ export default function TasksPage() {
       {/* Floating Bulk Action Bar - admin/manager only, mirrors the pattern
           already used on Customers and Orders pages. */}
       {canBulkManage && selectedIds.length > 0 && (
-        <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-40 animate-slide-up w-[calc(100%-2rem)] md:w-auto">
+        <div className="fixed bottom-6 left-[calc(50%+2rem)] lg:left-1/2 -translate-x-1/2 z-40 animate-slide-up w-[calc(100%-6rem)] md:w-auto">
           <div className="bg-[#1c1c1c] text-white flex flex-wrap items-center gap-3 md:gap-4 px-4 md:px-6 py-3 rounded-2xl shadow-2xl min-w-0 md:min-w-[480px]">
             <div className="flex items-center gap-2 md:gap-3 border-r border-white/10 pr-3 md:pr-4">
               <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#f7f4ed] text-[#1c1c1c] flex items-center justify-center text-[9px] md:text-[10px] font-bold">

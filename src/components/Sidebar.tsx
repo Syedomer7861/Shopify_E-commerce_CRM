@@ -14,8 +14,8 @@ import { cn, toDbDateString } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
 
-import { DEFAULT_PERMISSIONS, hasPermission, isAdmin, isWorkspaceAdmin, allowedNavModules } from "@/lib/permissions";
-import { loadProfile } from "@/lib/profile-loader";
+import { hasPermission, isAdmin, isWorkspaceAdmin, allowedNavModules } from "@/lib/permissions";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { visibleModules } from "@/lib/modules";
 import { sendAdminNotification } from "@/lib/notifications";
 import { Modal } from "./ui";
@@ -80,7 +80,6 @@ export default function Sidebar() {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [mounted, setMounted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const profileFetching = useRef(false);
   const [counts, setCounts] = useState({ due: 0, overdue: 0 });
   const [timers, setTimers] = useState({ workMs: 0, breakMs: 0 });
   const [showStatusModal, setShowStatusModal] = useState<{ id: string, label: string } | null>(null);
@@ -127,13 +126,21 @@ export default function Sidebar() {
       fourDaysAgoDate.setDate(new Date().getDate() - 4);
       const fourDaysAgo = toDbDateString(fourDaysAgoDate);
 
-      let dueQuery = supabase.from("tasks")
-        .select("*, customer:customers!inner(id, segment)", { count: "exact", head: true })
+      // The customer join is only needed to filter an agent by segment. It
+      // made each count ~100 ms (customers' row rules checked per task)
+      // against ~2 ms without; a plain customer_id check keeps the same rows.
+      const bySegment = role === "agent" && (activeProfile as any)?.assigned_segments?.length > 0;
+      const select = bySegment ? "id, customer:customers!inner(id, segment)" : "id";
+      const base = () => {
+        const q = supabase.from("tasks").select(select, { count: "exact", head: true });
+        return bySegment ? q : q.not("customer_id", "is", null);
+      };
+
+      let dueQuery = base()
         .eq("due_date", today)
         .not("status", "in", '("done","cancelled","skipped")');
-      
-      let overdueQuery = supabase.from("tasks")
-        .select("*, customer:customers!inner(id, segment)", { count: "exact", head: true })
+
+      let overdueQuery = base()
         .lt("due_date", today)
         .gte("due_date", fourDaysAgo)
         .not("status", "in", '("done","cancelled","skipped")');
@@ -186,65 +193,31 @@ export default function Sidebar() {
     }
   }, [supabase]);
 
-  const fetchProfile = useCallback(async () => {
-    // Mount and the INITIAL_SESSION auth event both land here at once; one run
-    // is enough, the second only repeated every query below.
-    if (profileFetching.current) return;
-    profileFetching.current = true;
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
-
-      // Demo presenter view. Requires a real demo login - the cookie alone is
-      // not enough, or anyone could hand themselves a manager-role profile.
-      const isDemo = isDemoMode();
-      if (isDemo) {
-        const demoProfile: Profile = {
-          id: "demo-presenter-id",
-          email: "demo@presentation.com",
-          name: "Demo Presenter",
-          role: "admin",
-          is_active: true,
-          permissions: DEFAULT_PERMISSIONS,
-          created_at: new Date().toISOString()
-        } as any;
-        setProfile(demoProfile);
-        import("@/lib/mockData").then((m) =>
-          setSpaces(m.MOCK_WORKSPACE.spaces.map((s: any) => ({ id: s.id, name: s.name, color: s.color })))
-        );
-        return;
-      }
-      
-      const user = session.user;
-      // Keeps its own copy (shift status is updated locally below), but reads
-      // it through the same loader as everything else.
-      const profile: Profile = (await loadProfile(supabase, user.id)) || {
-        id: user.id,
-        email: user.email!,
-        role: "agent",
-        org_id: "",
-        permissions: DEFAULT_PERMISSIONS,
-        is_active: true,
-        created_at: new Date().toISOString()
-      };
-
-      setProfile(profile);
-      fetchTaskCounts(user.id, profile.role, profile);
-      fetchTodayAttendance(user.id);
-
-      // Workspace Spaces the user can see (RLS returns only accessible rows).
-      supabase
-        .from("mkt_spaces")
-        .select("id, name, color")
-        .eq("archived", false)
-        .order("position", { ascending: true })
-        .then(({ data }) => setSpaces((data as any[]) ?? []));
-    } catch (err) {
-      console.error("fetchProfile error:", err);
-    } finally {
-      profileFetching.current = false;
+  // The profile comes from ProfileProvider: one load for the whole app. This
+  // used to run its own session + profile + role queries on every app open,
+  // a second copy of work the provider had already done. A local copy stays
+  // because shift status is updated optimistically below; the provider only
+  // publishes a new object when the profile content really changes.
+  const { profile: sharedProfile } = useCurrentProfile();
+  useEffect(() => {
+    if (!sharedProfile) return;
+    setProfile(sharedProfile);
+    if (sharedProfile.id === "demo-presenter-id") {
+      import("@/lib/mockData").then((m) =>
+        setSpaces(m.MOCK_WORKSPACE.spaces.map((s: any) => ({ id: s.id, name: s.name, color: s.color })))
+      );
+      return;
     }
-  }, [supabase, fetchTaskCounts, fetchTodayAttendance]);
+    fetchTaskCounts(sharedProfile.id, sharedProfile.role, sharedProfile);
+    fetchTodayAttendance(sharedProfile.id);
+    // Workspace Spaces the user can see (RLS returns only accessible rows).
+    supabase
+      .from("mkt_spaces")
+      .select("id, name, color")
+      .eq("archived", false)
+      .order("position", { ascending: true })
+      .then(({ data }) => setSpaces((data as any[]) ?? []));
+  }, [sharedProfile, supabase, fetchTaskCounts, fetchTodayAttendance]);
 
   useEffect(() => {
     setMounted(true);
@@ -272,26 +245,6 @@ export default function Sidebar() {
     return () => clearInterval(interval);
   }, [profile?.status]);
 
-  useEffect(() => {
-    fetchProfile();
-
-    // supabase.auth.getSession() inside fetchProfile reads the session from
-    // local storage without waiting for it to hydrate. On a fresh page
-    // load it can race and return null even though the user genuinely has
-    // a valid session - middleware already verified that server-side with
-    // getUser() before this page was allowed to render at all. When that
-    // race is lost, this one-shot call was the only trigger, so `profile`
-    // stayed null forever: the sidebar showing "User" / "loading..."
-    // permanently, with no error and no retry. onAuthStateChange fires
-    // reliably once the client actually resolves the session (including
-    // on initial load, via INITIAL_SESSION), so it re-runs fetchProfile
-    // when that resolution lands after the first attempt already missed it.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) fetchProfile();
-    });
-
-    return () => subscription.unsubscribe();
-  }, [fetchProfile, supabase]);
 
   const fetchMyLeaves = useCallback(async () => {
     if (!profile) return;
@@ -558,8 +511,9 @@ export default function Sidebar() {
   const modBlocked = (key: string) => !!allowedModules && !allowedModules.includes(key);
 
   return (
-    <aside className="w-full lg:w-64 lg:min-w-[256px] h-16 lg:h-screen bg-[#f7f4ed] flex flex-row lg:flex-col border-t lg:border-r border-[#eceae4] fixed bottom-0 lg:relative z-50 transition-all duration-300">
-      <div className="px-4 lg:px-6 py-4 lg:py-10 border-r lg:border-b border-[#eceae4]/50 flex items-center lg:block flex-shrink-0 bg-white lg:bg-transparent">
+    // Phones: a slim icon rail on the left (was a bottom bar that sat over content). Desktop unchanged.
+    <aside className="w-16 lg:w-64 lg:min-w-[256px] h-[100dvh] lg:h-screen bg-[#f7f4ed] flex flex-col border-r border-[#eceae4] fixed left-0 top-0 lg:relative z-50 pb-[env(safe-area-inset-bottom)] lg:pb-0">
+      <div className="px-0 lg:px-6 py-3 lg:py-10 border-b border-[#eceae4]/50 flex justify-center lg:block flex-shrink-0 bg-white lg:bg-transparent">
         <div className="flex items-center gap-2 lg:gap-3">
           <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full overflow-hidden flex-shrink-0 shadow-lg shadow-[#1c1c1c]/10">
             <img src="/logo-mark.png" alt="CodeCrest" className="w-full h-full object-cover" />
@@ -575,7 +529,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 px-2 lg:px-4 py-1.5 lg:py-8 space-y-0 lg:space-y-1.5 overflow-x-auto lg:overflow-y-auto flex flex-row lg:flex-col items-center lg:items-stretch gap-1.5 lg:gap-0 scrollbar-hide">
+      <nav className="flex-1 px-1 lg:px-4 py-2 lg:py-8 space-y-0 lg:space-y-1.5 overflow-y-auto overflow-x-hidden flex flex-col items-center lg:items-stretch gap-1 lg:gap-0 scrollbar-hide">
         <div className="hidden lg:block text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3">Main Menu</div>
         
         {/* Core Mobile Navigation - Primary Items */}
@@ -586,13 +540,13 @@ export default function Sidebar() {
           return (
             <Link key={href} href={href} className={cn(
               desktopOnly ? "hidden lg:flex" : "flex",
-              "flex-col lg:flex-row items-center gap-0.5 lg:gap-3 px-2.5 lg:px-4 py-1 lg:py-2.5 rounded-xl lg:rounded-lg text-[9px] lg:text-sm font-bold lg:font-medium transition-all duration-200 group relative whitespace-nowrap min-w-[56px] lg:min-w-0 flex-shrink-0",
+              "flex-col lg:flex-row items-center gap-0.5 lg:gap-3 px-1 lg:px-4 py-1.5 lg:py-2.5 rounded-xl lg:rounded-lg text-[9px] lg:text-sm font-bold lg:font-medium transition-all duration-200 group relative whitespace-nowrap w-14 lg:w-auto flex-shrink-0",
               active 
                 ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" 
                 : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
             )}>
               <Icon className={cn("w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0 transition-transform group-hover:scale-105", active ? "text-[#fcfbf8]" : "text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]")} />
-              <span className="lg:inline flex-1">{label}</span>
+              <span className="lg:inline flex-1 max-w-full truncate lg:overflow-visible">{label}</span>
               {badgeValue > 0 && (
                 <span className={cn(
                   "text-[7px] lg:text-[10px] font-bold px-1 lg:px-1.5 py-0.5 rounded-full min-w-[14px] lg:min-w-[20px] text-center absolute top-0.5 right-0.5 lg:static", 
@@ -608,7 +562,7 @@ export default function Sidebar() {
         {/* Mobile 'More' Button */}
         <button 
           onClick={() => setShowMoreMenu(true)}
-          className="lg:hidden flex flex-shrink-0 flex-col items-center gap-0.5 px-3 py-1 text-[#5f5f5d] hover:text-[#1c1c1c] rounded-xl font-bold text-[9px] whitespace-nowrap"
+          className="lg:hidden flex flex-shrink-0 flex-col items-center gap-0.5 w-14 py-1.5 text-[#5f5f5d] hover:text-[#1c1c1c] rounded-xl font-bold text-[9px] whitespace-nowrap"
         >
           <div className="w-4 h-4 flex items-center justify-center">
             <Settings className="w-4 h-4 text-[#5f5f5d]/60" />
