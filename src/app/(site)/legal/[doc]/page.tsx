@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { LEGAL_DOCS, getLegalDoc, type LegalBlock } from "@/content/legal";
+import { GRIEVANCE_OFFICER, LEGAL_DOCS, getLegalDoc, type LegalBlock } from "@/content/legal";
 import { PageHero, fmtDate, siteMetadata, slugify } from "@/components/site/PageView";
 
 // Static legal pages. Only the documents in src/content/legal.ts exist.
@@ -12,10 +12,13 @@ export function generateMetadata({ params }: { params: { doc: string } }) {
   return d ? siteMetadata(`/legal/${d.slug}`, d.title, d.summary) : {};
 }
 
-// "/contact" inside the text becomes a link; everything else is plain text.
+// "/contact" and the Grievance Officer's email inside the text become links.
+const LINKS: Record<string, string> = { "/contact": "/contact", [GRIEVANCE_OFFICER.email]: `mailto:${GRIEVANCE_OFFICER.email}` };
+const LINK_RE = new RegExp(`(${Object.keys(LINKS).map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`);
 function Text({ s }: { s: string }) {
-  const parts = s.split("/contact");
-  return <>{parts.map((p, i) => <span key={i}>{i > 0 && <Link href="/contact" className="underline underline-offset-2">/contact</Link>}{p}</span>)}</>;
+  return <>{s.split(LINK_RE).map((p, i) => LINKS[p]
+    ? <a key={i} href={LINKS[p]} className="underline underline-offset-2 break-all">{p}</a>
+    : <span key={i}>{p}</span>)}</>;
 }
 
 function Block({ b }: { b: LegalBlock }) {

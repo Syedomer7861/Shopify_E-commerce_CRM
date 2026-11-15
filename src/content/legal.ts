@@ -3,9 +3,8 @@
 // actually calls, the retention numbers are the ones the jobs enforce. When a
 // provider, data type or retention job changes, update this file with it.
 //
-// Deliberately absent until the owner supplies them: registered company name,
-// postal address and a named Grievance Officer. Requests go through the
-// contact form, which is a real, monitored channel.
+// Operator and Grievance Officer as given by the owner on 2026-11-15. No
+// postal address is published: the owner has none to give yet.
 
 export type LegalBlock = string | string[]; // paragraph, or bullet list
 export type LegalSection = { heading: string; body: LegalBlock[] };
@@ -13,7 +12,10 @@ export type LegalDoc = { slug: string; title: string; summary: string; updated: 
 
 export const LEGAL_UPDATED = "2026-11-15";
 
-const CONTACT = "Use the form at /contact and choose the subject that fits. We reply from a real inbox and keep a record of every request.";
+export const OPERATOR = "CodeCrest Studio";
+export const GRIEVANCE_OFFICER = { name: "Syed Omer", email: "codecreststudio@gmail.com" };
+
+const CONTACT = `Email our Grievance Officer, ${GRIEVANCE_OFFICER.name}, at ${GRIEVANCE_OFFICER.email}, or use the form at /contact. We keep a record of every request.`;
 
 const PROCESSORS: string[] = [
   "Supabase: database, sign-in and file storage. Data is stored in the Sydney, Australia region.",
@@ -36,7 +38,7 @@ export const LEGAL_DOCS: LegalDoc[] = [
       {
         heading: "Who we are and what this covers",
         body: [
-          "CodeCrest is an operations platform for e-commerce teams: orders, customers, calling and WhatsApp follow-ups, shipping, tasks and team management. This policy covers our website, the CodeCrest application and the people who use them.",
+          `CodeCrest is run by ${OPERATOR}. It is an operations platform for e-commerce teams: orders, customers, calling and WhatsApp follow-ups, shipping, tasks and team management. This policy covers our website, the CodeCrest application and the people who use them.`,
           "Two kinds of data pass through CodeCrest, and our role differs for each:",
           [
             "Your account and our website: your name, email, sign-in details, billing and messages you send us. For this data we decide how it is used, so we are responsible for it.",
@@ -135,7 +137,7 @@ export const LEGAL_DOCS: LegalDoc[] = [
       {
         heading: "Agreement",
         body: [
-          "These terms apply when an organisation opens a CodeCrest workspace and when anyone signs in to one. By using CodeCrest you agree to them. If you accept them for an organisation, you confirm you are allowed to do so.",
+          `These terms are between ${OPERATOR} ("we") and the organisations and people who use CodeCrest. They apply when an organisation opens a CodeCrest workspace and when anyone signs in to one. By using CodeCrest you agree to them. If you accept them for an organisation, you confirm you are allowed to do so.`,
         ],
       },
       {
@@ -223,7 +225,7 @@ export const LEGAL_DOCS: LegalDoc[] = [
         body: [
           "India's Digital Personal Data Protection Act, 2023 (DPDP Act) and the DPDP Rules, 2025 set how digital personal data may be used and give people rights over it.",
           [
-            "For your CodeCrest account, our website and our contact form, CodeCrest is the Data Fiduciary: we decide why and how that data is used.",
+            `For your CodeCrest account, our website and our contact form, ${OPERATOR} is the Data Fiduciary: we decide why and how that data is used.`,
             "For the business data an organisation keeps in its workspace (its customers, orders, calls and staff records), that organisation is the Data Fiduciary and CodeCrest is its Data Processor. We act only on its instructions.",
           ],
         ],
@@ -243,7 +245,7 @@ export const LEGAL_DOCS: LegalDoc[] = [
       {
         heading: "How to make a request",
         body: [
-          "Send your request through the form at /contact. Tell us what you want and which email you use with CodeCrest so we can find your data. We may ask you to confirm your identity before acting, to make sure we do not give your data to someone else.",
+          `Email our Grievance Officer, ${GRIEVANCE_OFFICER.name}, at ${GRIEVANCE_OFFICER.email}, or send your request through the form at /contact. Tell us what you want and which email you use with CodeCrest so we can find your data. We may ask you to confirm your identity before acting, to make sure we do not give your data to someone else.`,
           "If your data was added by an organisation that uses CodeCrest (for example, you are one of its customers), we will pass your request to that organisation, because it decides on its own data, and help it respond.",
           "We respond to grievances within the time the DPDP Rules allow, which is at most 90 days, and aim to be much quicker.",
         ],
