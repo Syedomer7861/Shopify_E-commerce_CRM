@@ -21,33 +21,43 @@ import { sendAdminNotification } from "@/lib/notifications";
 import { Modal } from "./ui";
 import { useChat } from "@/context/ChatContext";
 
-const nav = [
-  { key: "dashboard",   label: "Dashboard",   href: "/dashboard",  icon: LayoutDashboard },
-  { key: "tasks",       label: "Tasks",       href: "/tasks",       icon: CheckSquare,   badge: "taskCount" },
-  { key: "chat",        label: "Chat",        href: "/chat",        icon: MessageSquare, badge: "chatUnread" },
-  { key: "my-hub",      label: "My Hub",      href: "/my-hub",      icon: Sparkles },
-  { key: "customers",   label: "Customers",   href: "/customers",   icon: Users },
-  { key: "orders",      label: "Orders",      href: "/orders",      icon: ShoppingBag },
-  { key: "calendar",    label: "Calendar",    href: "/calendar",    icon: Calendar },
-  { key: "performance", label: "Performance", href: "/performance",  icon: TrendingUp },
-  { key: "request-creative", label: "Request Creative", href: "/workspace/request", icon: Megaphone },
+// Main menu, drawn in these groups (phones: a thin divider between groups).
+const NAV_GROUPS = [
+  { key: "work", label: "My work" },
+  { key: "sales", label: "Customers & sales" },
+  { key: "apps", label: "Apps" },
+] as const;
+type NavGroup = (typeof NAV_GROUPS)[number]["key"];
+
+const nav: { key: string; label: string; href: string; icon: typeof LayoutDashboard; badge?: string; group: NavGroup }[] = [
+  { key: "dashboard",   label: "Dashboard",   href: "/dashboard",  icon: LayoutDashboard, group: "work" },
+  { key: "tasks",       label: "Tasks",       href: "/tasks",       icon: CheckSquare,   badge: "taskCount", group: "work" },
+  { key: "chat",        label: "Chat",        href: "/chat",        icon: MessageSquare, badge: "chatUnread", group: "work" },
+  { key: "calendar",    label: "Calendar",    href: "/calendar",    icon: Calendar, group: "work" },
+  { key: "my-hub",      label: "My Hub",      href: "/my-hub",      icon: Sparkles, group: "work" },
+  { key: "customers",   label: "Customers",   href: "/customers",   icon: Users, group: "sales" },
+  { key: "orders",      label: "Orders",      href: "/orders",      icon: ShoppingBag, group: "sales" },
+  { key: "performance", label: "Performance", href: "/performance",  icon: TrendingUp, group: "sales" },
+  { key: "request-creative", label: "Request Creative", href: "/workspace/request", icon: Megaphone, group: "apps" },
 ];
 
-const adminNav = [
-  { label: "Live Floor",  href: "/floor",       icon: Activity,    permission: "manage_team" },
-  { label: "Analytics",   href: "/reports",     icon: BarChart2, permission: "view_analytics" },
-  { label: "Abandoned Carts", href: "/abandoned-carts", icon: ShoppingCart, permission: "view_analytics" },
-  { label: "Alert Logs",  href: "/admin-logs",  icon: ShieldCheck, permission: "view_analytics" },
-  { label: "Recordings",  href: "/recordings",  icon: Headphones,  permission: "view_analytics" },
-  { label: "Import",      href: "/import",      icon: Upload,    permission: "can_import" },
-  { label: "Campaigns",   href: "/campaigns",   icon: Megaphone,  permission: "manage_team" },
-  { label: "Templates",   href: "/templates",   icon: Sparkles,   permission: "manage_team" },
-  { label: "Workflows",   href: "/workflows",   icon: Zap,        permission: "manage_team" },
-  { label: "Team",        href: "/team",        icon: Shield,     permission: "manage_team" },
-  { label: "Roles",       href: "/roles",       icon: UserCheck,  permission: "manage_team" },
-  { label: "Organisation", href: "/organisation", icon: Users,    permission: "manage_team" },
-  { label: "System Health", href: "/system-health", icon: Activity, permission: "manage_team", ownerOnly: true },
-  { label: "Settings",    href: "/settings",    icon: Settings,   permission: "manage_team" },
+// Operations, split into sub-groups in this order.
+const ADMIN_GROUPS = ["Insights", "Growth", "Admin"] as const;
+const adminNav: { label: string; href: string; icon: typeof LayoutDashboard; permission: string; group: (typeof ADMIN_GROUPS)[number]; ownerOnly?: boolean }[] = [
+  { label: "Live Floor",  href: "/floor",       icon: Activity,    permission: "manage_team", group: "Insights" },
+  { label: "Analytics",   href: "/reports",     icon: BarChart2, permission: "view_analytics", group: "Insights" },
+  { label: "Abandoned Carts", href: "/abandoned-carts", icon: ShoppingCart, permission: "view_analytics", group: "Insights" },
+  { label: "Alert Logs",  href: "/admin-logs",  icon: ShieldCheck, permission: "view_analytics", group: "Insights" },
+  { label: "Recordings",  href: "/recordings",  icon: Headphones,  permission: "view_analytics", group: "Insights" },
+  { label: "Import",      href: "/import",      icon: Upload,    permission: "can_import", group: "Growth" },
+  { label: "Campaigns",   href: "/campaigns",   icon: Megaphone,  permission: "manage_team", group: "Growth" },
+  { label: "Templates",   href: "/templates",   icon: Sparkles,   permission: "manage_team", group: "Growth" },
+  { label: "Workflows",   href: "/workflows",   icon: Zap,        permission: "manage_team", group: "Growth" },
+  { label: "Team",        href: "/team",        icon: Shield,     permission: "manage_team", group: "Admin" },
+  { label: "Roles",       href: "/roles",       icon: UserCheck,  permission: "manage_team", group: "Admin" },
+  { label: "Organisation", href: "/organisation", icon: Users,    permission: "manage_team", group: "Admin" },
+  { label: "System Health", href: "/system-health", icon: Activity, permission: "manage_team", ownerOnly: true, group: "Admin" },
+  { label: "Settings",    href: "/settings",    icon: Settings,   permission: "manage_team", group: "Admin" },
 ];
 
 const hrNav = [
@@ -500,15 +510,23 @@ export default function Sidebar() {
   const baseNav = allowedModules ? nav.filter(n => allowedModules.includes(n.key)) : nav;
   // A role with a short main menu (a developer, a designer) has room on the
   // phone bar, so its modules sit there instead of hiding behind More.
-  const moduleNav = visibleModules(profile).map(m => ({ key: m.key, label: m.label, href: m.href, icon: m.icon, badge: undefined as string | undefined, desktopOnly: baseNav.length > 4 }));
+  const moduleNav = visibleModules(profile).map(m => ({ key: m.key, label: m.label, href: m.href, icon: m.icon, badge: undefined as string | undefined, desktopOnly: baseNav.length > 4, group: "apps" as NavGroup }));
   // The SaaS owner's console (every organisation). The page and its data refuse anyone without the flag; this only draws the link.
-  if (profile?.is_platform_admin) moduleNav.push({ key: "superadmin", label: "Super Admin", href: "/superadmin", icon: ShieldCheck, badge: undefined, desktopOnly: baseNav.length > 4 });
-  const visibleNav: { key: string; label: string; href: string; icon: typeof LayoutDashboard; badge?: string; desktopOnly?: boolean }[] =
+  if (profile?.is_platform_admin) moduleNav.push({ key: "superadmin", label: "Super Admin", href: "/superadmin", icon: ShieldCheck, badge: undefined, desktopOnly: baseNav.length > 4, group: "apps" });
+  const visibleNav: { key: string; label: string; href: string; icon: typeof LayoutDashboard; badge?: string; desktopOnly?: boolean; group: NavGroup }[] =
     [...baseNav, ...moduleNav];
+  const navGroups = NAV_GROUPS.map(g => ({ ...g, items: visibleNav.filter(n => n.group === g.key) })).filter(g => g.items.length > 0);
   // For a user with an explicit module allowlist, also hide the Operations /
   // Management / Human Capital links they aren't allowed. null allowlist
   // (every normal user) -> never blocks anything.
   const modBlocked = (key: string) => !!allowedModules && !allowedModules.includes(key);
+  // One rule for who sees an Operations link (desktop list and the phone More menu).
+  const canSeeAdmin = (item: (typeof adminNav)[number]) =>
+    !(item.label === "Alert Logs" && !adminUser) &&
+    !(item.ownerOnly && !profile?.is_platform_admin) &&
+    !(item.permission && !hasPermission(profile, item.permission as any)) &&
+    !modBlocked(item.href.slice(1));
+  const adminGroups = ADMIN_GROUPS.map(g => ({ label: g, items: adminNav.filter(i => i.group === g && canSeeAdmin(i)) })).filter(g => g.items.length > 0);
 
   return (
     // Phones: a slim icon rail on the left (was a bottom bar that sat over content). Desktop unchanged.
@@ -530,10 +548,12 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-1 lg:px-4 py-2 lg:py-8 space-y-0 lg:space-y-1.5 overflow-y-auto overflow-x-hidden flex flex-col items-center lg:items-stretch gap-1 lg:gap-0 scrollbar-hide">
-        <div className="hidden lg:block text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3">Main Menu</div>
-        
-        {/* Core Mobile Navigation - Primary Items */}
-        {visibleNav.map(({ label, href, icon: Icon, badge, desktopOnly }) => {
+        {navGroups.map((g, gi) => (
+          <div key={g.key} className="contents lg:flex lg:flex-col lg:gap-0.5">
+            {/* Desktop: a small group label. Phones: a thin divider, only where the group has an item shown on phones. */}
+            <div className={cn("hidden lg:block text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-2", gi > 0 && "pt-6")}>{g.label}</div>
+            {gi > 0 && g.items.some(i => !i.desktopOnly) && <div aria-hidden className="lg:hidden w-8 h-px bg-[#1c1c1c]/10 my-1.5 flex-shrink-0" />}
+        {g.items.map(({ label, href, icon: Icon, badge, desktopOnly }) => {
           const active = path === href || (href !== "/" && path.startsWith(href));
           const badgeValue = badge === "taskCount" ? totalTasks : (badge === "chatUnread" ? unreadCount : 0);
 
@@ -558,8 +578,11 @@ export default function Sidebar() {
             </Link>
           );
         })}
+          </div>
+        ))}
 
         {/* Mobile 'More' Button */}
+        <div aria-hidden className="lg:hidden w-8 h-px bg-[#1c1c1c]/10 my-1.5 flex-shrink-0" />
         <button 
           onClick={() => setShowMoreMenu(true)}
           className="lg:hidden flex flex-shrink-0 flex-col items-center gap-0.5 w-14 py-1.5 text-[#5f5f5d] hover:text-[#1c1c1c] rounded-xl font-bold text-[9px] whitespace-nowrap"
@@ -650,13 +673,11 @@ export default function Sidebar() {
               </>
             )}
 
-            <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Operations</div>
-            {adminNav.map((item) => {
-              const { label, href, icon: Icon, permission } = item;
-              if (label === "Alert Logs" && !adminUser) return null;
-              if ("ownerOnly" in item && !profile?.is_platform_admin) return null;
-              if (permission && !hasPermission(profile, permission as any)) return null;
-              if (modBlocked(href.slice(1))) return null;
+            {adminGroups.map(g => (
+              <div key={g.label} className="flex flex-col gap-0.5">
+            <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-2 pt-6">{g.label}</div>
+            {g.items.map((item) => {
+              const { label, href, icon: Icon } = item;
               const active = path === href || (href !== "/" && path.startsWith(href));
               return (
                 <Link key={href} href={href} className={cn(
@@ -668,6 +689,8 @@ export default function Sidebar() {
                 </Link>
               );
             })}
+              </div>
+            ))}
           </div>
         )}
       </nav>
@@ -771,22 +794,18 @@ export default function Sidebar() {
                 </div>
               )}
 
-              <div className="space-y-2">
-                <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Operations</h4>
-                <div className="grid grid-cols-1 gap-1 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                  {adminNav.map(item => {
-                    if (item.label === "Alert Logs" && !adminUser) return null;
-                    if ("ownerOnly" in item && !profile?.is_platform_admin) return null;
-                    if (item.permission && !hasPermission(profile, item.permission as any)) return null;
-                    if (modBlocked(item.href.slice(1))) return null;
-                    return (
-                      <Link key={item.label} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
-                        <item.icon className="w-4 h-4 text-[#5f5f5d]" /> {item.label}
-                      </Link>
-                    );
-                  })}
+              {adminGroups.map(g => (
+              <div key={g.label} className="space-y-2">
+                <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">{g.label}</h4>
+                <div className="grid grid-cols-2 gap-1">
+                  {g.items.map(item => (
+                    <Link key={item.label} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c] min-w-0">
+                      <item.icon className="w-4 h-4 text-[#5f5f5d] flex-shrink-0" /> <span className="truncate">{item.label}</span>
+                    </Link>
+                  ))}
                 </div>
               </div>
+              ))}
            </div>
 
            <div className="pt-4 border-t border-[#eceae4]">
