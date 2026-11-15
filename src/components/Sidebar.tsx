@@ -706,7 +706,7 @@ export default function Sidebar() {
       <button
         onClick={() => setShowMoreMenu(true)}
         aria-label="Profile, shift and menu"
-        className="lg:hidden flex flex-col items-center gap-1 py-2.5 border-t border-[#eceae4] flex-shrink-0"
+        className="lg:hidden flex flex-col items-center gap-1 py-2.5 mb-[4.25rem] border-t border-[#eceae4] flex-shrink-0"
       >
         <span className="relative w-8 h-8 rounded-full bg-[#1c1c1c] flex items-center justify-center text-[#fcfbf8] text-[10px] font-bold">
           {initials}
