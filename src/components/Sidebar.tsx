@@ -92,6 +92,8 @@ export default function Sidebar() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [counts, setCounts] = useState({ due: 0, overdue: 0 });
   const [timers, setTimers] = useState({ workMs: 0, breakMs: 0 });
+  // Time of today's first attendance entry (the shift start / login time).
+  const [shiftStart, setShiftStart] = useState<Date | null>(null);
   const [showStatusModal, setShowStatusModal] = useState<{ id: string, label: string } | null>(null);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [myLeaves, setMyLeaves] = useState<any[]>([]);
@@ -182,6 +184,7 @@ export default function Sidebar() {
         .order("created_at", { ascending: true });
 
       if (!data || data.length === 0) return;
+      setShiftStart(new Date(data[0].created_at));
 
       let workMs = 0;
       let breakMs = 0;
@@ -528,6 +531,10 @@ export default function Sidebar() {
     !modBlocked(item.href.slice(1));
   const adminGroups = ADMIN_GROUPS.map(g => ({ label: g, items: adminNav.filter(i => i.group === g && canSeeAdmin(i)) })).filter(g => g.items.length > 0);
 
+  const initials = profile?.name ? profile.name.substring(0, 2).toUpperCase() : (profile?.email ? profile.email.substring(0, 2).toUpperCase() : "??");
+  const statusDot = ({ online: "bg-emerald-500", meeting: "bg-sky-500", training: "bg-sky-500", break: "bg-amber-500", lunch: "bg-amber-500", away: "bg-orange-500" } as Record<string, string>)[profile?.status || ""] || "bg-gray-400";
+  const shiftStartLabel = shiftStart && mounted ? shiftStart.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "--:--";
+
   return (
     // Phones: a slim icon rail on the left (was a bottom bar that sat over content). Desktop unchanged.
     <aside className="w-16 lg:w-64 lg:min-w-[256px] h-[100dvh] lg:h-screen bg-[#f7f4ed] flex flex-col border-r border-[#eceae4] fixed left-0 top-0 lg:relative z-50 pb-[env(safe-area-inset-bottom)] lg:pb-0">
@@ -695,9 +702,61 @@ export default function Sidebar() {
         )}
       </nav>
 
+      {/* Phone rail footer: who is signed in, shift status and today's productive time. Tap for the full menu. */}
+      <button
+        onClick={() => setShowMoreMenu(true)}
+        aria-label="Profile, shift and menu"
+        className="lg:hidden flex flex-col items-center gap-1 py-2.5 border-t border-[#eceae4] flex-shrink-0"
+      >
+        <span className="relative w-8 h-8 rounded-full bg-[#1c1c1c] flex items-center justify-center text-[#fcfbf8] text-[10px] font-bold">
+          {initials}
+          <span className={cn("absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#f7f4ed]", statusDot)} />
+        </span>
+        <span className="text-[9px] font-bold text-[#1c1c1c] tabular-nums">{formatDuration(timers.workMs).slice(0, 5)}</span>
+      </button>
+
       {/* Mobile More Menu Modal */}
       <Modal open={showMoreMenu} onClose={() => setShowMoreMenu(false)} title="Quick Actions & Menus">
         <div className="space-y-6 pb-8">
+           {/* Profile */}
+           <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-[#eceae4]">
+             <span className="relative w-10 h-10 rounded-full bg-[#1c1c1c] flex items-center justify-center text-[#fcfbf8] text-xs font-bold flex-shrink-0">
+               {initials}
+               <span className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white", statusDot)} />
+             </span>
+             <div className="flex-1 min-w-0">
+               <div className="text-sm font-bold text-[#1c1c1c] truncate">{profile?.name || profile?.email || "Loading..."}</div>
+               <div className="text-[11px] text-[#5f5f5d] truncate"><span className="capitalize">{profile?.role || "User"}</span>{profile?.email && profile?.name ? ` · ${profile.email}` : ""}</div>
+             </div>
+           </div>
+
+           {/* Today's shift */}
+           <div>
+              <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-2 px-1">Today&apos;s Shift</label>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="p-3 rounded-xl bg-white border border-[#eceae4]">
+                  <div className="text-[9px] font-bold uppercase tracking-widest text-[#5f5f5d]/70">Logged in</div>
+                  <div className="text-sm font-bold text-[#1c1c1c] tabular-nums mt-0.5">{shiftStartLabel}</div>
+                </div>
+                <div className="p-3 rounded-xl bg-white border border-[#eceae4]">
+                  <div className="text-[9px] font-bold uppercase tracking-widest text-[#5f5f5d]/70">Productive</div>
+                  <div className="text-sm font-bold text-[#1c1c1c] tabular-nums mt-0.5">{formatDuration(timers.workMs)}</div>
+                </div>
+                <div className="p-3 rounded-xl bg-white border border-[#eceae4]">
+                  <div className="text-[9px] font-bold uppercase tracking-widest text-[#5f5f5d]/70">Break</div>
+                  <div className="text-sm font-bold text-amber-700 tabular-nums mt-0.5">{formatDuration(timers.breakMs)}</div>
+                </div>
+              </div>
+              {profile?.role !== "admin" && profile?.role !== "hr" && (
+                <button
+                  onClick={() => { setShowMoreMenu(false); setShowLeaveModal(true); }}
+                  className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#eceae4] bg-white text-[#1c1c1c] text-[11px] font-bold uppercase tracking-widest hover:bg-gray-50"
+                >
+                  <Calendar className="w-3.5 h-3.5" /> Request Leave
+                </button>
+              )}
+           </div>
+
            {/* Mobile Status Picker */}
            <div>
               <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-2 px-1">Shift Status</label>
@@ -739,7 +798,7 @@ export default function Sidebar() {
                   <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Business</h4>
                   <div className="grid grid-cols-2 gap-1">
                     {moduleNav.map(item => (
-                      <Link key={item.key} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                      <Link key={item.key} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c] min-w-0">
                         <item.icon className="w-4 h-4 text-[#5f5f5d]" /> {item.label}
                       </Link>
                     ))}
@@ -816,45 +875,7 @@ export default function Sidebar() {
         </div>
       </Modal>
 
-      <div className="hidden lg:block px-4 py-6 border-t border-[#eceae4]/50 bg-[rgba(28,28,28,0.01)]">
-        <div className="mb-4 px-2">
-          <label className="text-[9px] font-bold text-[#5f5f5d]/60 uppercase tracking-widest block mb-1.5">Shift Status</label>
-          <div className="relative">
-            <select
-              value={profile?.status || "offline"}
-              onChange={async (e) => {
-                if (!profile) return;
-                const newStatus = e.target.value;
-                const statusObj = [
-                  { id: "online", label: "Online" },
-                  { id: "meeting", label: "Meeting" },
-                  { id: "break", label: "Break" },
-                  { id: "lunch", label: "Lunch" },
-                  { id: "away", label: "Away" },
-                  { id: "offline", label: "Offline" }
-                ].find(s => s.id === newStatus);
-
-                if (["break", "away", "meeting"].includes(newStatus)) {
-                  setShowStatusModal({ id: newStatus, label: statusObj?.label || newStatus });
-                  return;
-                }
-                updateStatus(newStatus);
-              }}
-              className="w-full appearance-none bg-[#f7f4ed] border border-[#eceae4] text-[#1c1c1c] text-xs font-bold py-2.5 pl-3 pr-8 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1c1c1c] focus:border-[#1c1c1c] shadow-sm transition-all"
-            >
-              <option value="online">⚡ Online</option>
-              <option value="meeting">👥 Meeting</option>
-              <option value="break">☕ Break</option>
-              <option value="lunch">🍱 Lunch</option>
-              <option value="away">🚶 Away</option>
-              <option value="offline">💤 Offline</option>
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5f5f5d]/60">
-              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-            </div>
-          </div>
-        </div>
-
+      {/* Popups shared by desktop and phone. Kept outside the desktop-only footer so they open on phones. */}
         <Modal 
           open={!!showStatusModal} 
           onClose={() => setShowStatusModal(null)} 
@@ -882,16 +903,6 @@ export default function Sidebar() {
             </div>
           </div>
         </Modal>
-
-        {profile?.role !== 'admin' && profile?.role !== 'hr' && (
-           <button 
-             onClick={() => setShowLeaveModal(true)}
-             className="w-full flex items-center justify-center gap-2 py-2 mb-4 rounded-lg border border-[#eceae4] text-[#5f5f5d] text-[10px] font-bold uppercase tracking-widest hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
-           >
-             <Calendar className="w-3 h-3" /> Request Leave
-           </button>
-        )}
-
         <Modal 
           open={showLeaveModal} 
           onClose={() => setShowLeaveModal(false)} 
@@ -967,8 +978,62 @@ export default function Sidebar() {
            </div>
         </Modal>
 
+      <div className="hidden lg:block px-4 py-6 border-t border-[#eceae4]/50 bg-[rgba(28,28,28,0.01)]">
+        <div className="mb-4 px-2">
+          <label className="text-[9px] font-bold text-[#5f5f5d]/60 uppercase tracking-widest block mb-1.5">Shift Status</label>
+          <div className="relative">
+            <select
+              value={profile?.status || "offline"}
+              onChange={async (e) => {
+                if (!profile) return;
+                const newStatus = e.target.value;
+                const statusObj = [
+                  { id: "online", label: "Online" },
+                  { id: "meeting", label: "Meeting" },
+                  { id: "break", label: "Break" },
+                  { id: "lunch", label: "Lunch" },
+                  { id: "away", label: "Away" },
+                  { id: "offline", label: "Offline" }
+                ].find(s => s.id === newStatus);
+
+                if (["break", "away", "meeting"].includes(newStatus)) {
+                  setShowStatusModal({ id: newStatus, label: statusObj?.label || newStatus });
+                  return;
+                }
+                updateStatus(newStatus);
+              }}
+              className="w-full appearance-none bg-[#f7f4ed] border border-[#eceae4] text-[#1c1c1c] text-xs font-bold py-2.5 pl-3 pr-8 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1c1c1c] focus:border-[#1c1c1c] shadow-sm transition-all"
+            >
+              <option value="online">⚡ Online</option>
+              <option value="meeting">👥 Meeting</option>
+              <option value="break">☕ Break</option>
+              <option value="lunch">🍱 Lunch</option>
+              <option value="away">🚶 Away</option>
+              <option value="offline">💤 Offline</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5f5f5d]/60">
+              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+            </div>
+          </div>
+        </div>
+
+
+        {profile?.role !== 'admin' && profile?.role !== 'hr' && (
+           <button 
+             onClick={() => setShowLeaveModal(true)}
+             className="w-full flex items-center justify-center gap-2 py-2 mb-4 rounded-lg border border-[#eceae4] text-[#5f5f5d] text-[10px] font-bold uppercase tracking-widest hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
+           >
+             <Calendar className="w-3 h-3" /> Request Leave
+           </button>
+        )}
+
+
         <div className="flex items-center justify-between px-2 mb-4">
             <div className="flex flex-col">
+                <span className="text-[9px] text-[#5f5f5d] uppercase font-bold tracking-widest opacity-60">Logged in</span>
+                <span className="text-xs font-bold text-[#1c1c1c]">{shiftStartLabel}</span>
+            </div>
+            <div className="flex flex-col items-center">
                 <span className="text-[9px] text-[#5f5f5d] uppercase font-bold tracking-widest opacity-60">Productive</span>
                 <span className="text-xs font-bold text-[#1c1c1c]">{formatDuration(timers.workMs)}</span>
             </div>
@@ -986,10 +1051,10 @@ export default function Sidebar() {
 
         <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#f7f4ed] border border-[#eceae4] group">
           <div className="w-8 h-8 rounded-full bg-[#1c1c1c] flex items-center justify-center text-[#fcfbf8] text-[10px] font-bold flex-shrink-0">
-            {profile?.name ? profile.name.substring(0, 2).toUpperCase() : (profile?.email ? profile.email.substring(0, 2).toUpperCase() : "??")}
+            {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[#1c1c1c] text-[11px] font-bold truncate capitalize leading-tight">{profile?.role || "User"}</div>
+            <div className="text-[#1c1c1c] text-[11px] font-bold truncate leading-tight">{profile?.name || <span className="capitalize">{profile?.role || "User"}</span>}</div>
             <div className="text-[#5f5f5d] text-[10px] truncate opacity-80">{profile?.email || "loading..."}</div>
           </div>
           <button onClick={handleLogout} aria-label="Sign out" title="Sign out" className="w-7 h-7 rounded-md hover:bg-rose-50 flex items-center justify-center transition-all">
