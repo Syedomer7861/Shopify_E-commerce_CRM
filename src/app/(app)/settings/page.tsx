@@ -110,7 +110,7 @@ export default function SettingsPage() {
     final_offset_days: 30,
     inactive_threshold_days: 45,
     whatsapp_enabled: false,
-    whatsapp_bridge_url: "http://localhost:3001",
+    whatsapp_bridge_url: "",
     whatsapp_review_template: "",
     whatsapp_reorder_template: "",
     whatsapp_recovery_template: "",
@@ -343,7 +343,10 @@ export default function SettingsPage() {
     try {
       const res = await fetch("/api/whatsapp/status");
       const data = await res.json();
-      if (!data.ready) {
+      // The hosted bridge returns the QR image in /status; an own wa_server.js
+      // only flags "pending" and serves the image from /qr-data. Polling never
+      // starts a session - only the Connect button does.
+      if (!data.ready && data.qr === "pending") {
         try {
           const qrRes = await fetch("/api/whatsapp/qr");
           const qrData = await qrRes.json();
@@ -352,12 +355,28 @@ export default function SettingsPage() {
           setWaStatus({ ...data, qr: null });
         }
       } else {
-        setWaStatus({ ...data, qr: null });
+        setWaStatus({ ...data, qr: data.ready ? null : data.qr || null });
       }
     } catch (err) {
       setWaStatus({ state: "DISCONNECTED", qr: null });
     }
   }, []);
+
+  const [waBusy, setWaBusy] = useState(false);
+  const waAction = async (path: "restart" | "logout") => {
+    if (path === "logout" && !confirm("Unlink this WhatsApp number from the CRM? Automated WhatsApp messages stop until you scan again.")) return;
+    setWaBusy(true);
+    try {
+      const res = await fetch(`/api/whatsapp/${path}`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) toast.error(data.error || "WhatsApp bridge did not respond");
+      // A new session needs a moment to produce its first QR.
+      if (path === "restart") await new Promise((r) => setTimeout(r, 2500));
+      await fetchStatus();
+    } finally {
+      setWaBusy(false);
+    }
+  };
 
   const fetchMaskedCount = useCallback(async () => {
     try {
@@ -1705,7 +1724,7 @@ export default function SettingsPage() {
                     <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Authenticating Bridge</h3>
                   </div>
                   <div className="p-10 text-center bg-[#eceae4]/10">
-                    <p className="text-xs text-[#5f5f5d] mb-8 font-medium max-w-xs mx-auto leading-relaxed">Securely link your WhatsApp instance by scanning the cryptographic token below.</p>
+                    <p className="text-xs text-[#5f5f5d] mb-8 font-medium max-w-xs mx-auto leading-relaxed">On your phone open WhatsApp, go to Settings, Linked devices, Link a device, and scan this code. It refreshes every few seconds.</p>
                     <div className="inline-block p-6 bg-white rounded-3xl shadow-2xl border border-[#eceae4] relative group">
                         <Image 
                           src={waStatus.qr} 
@@ -1732,7 +1751,7 @@ export default function SettingsPage() {
                 <summary className="px-6 py-4 text-[10px] font-bold text-[#5f5f5d] cursor-pointer hover:text-[#1c1c1c] transition-colors flex items-center justify-between uppercase tracking-widest list-none">
                   <div className="flex items-center gap-3">
                     <RefreshCw className="w-3.5 h-3.5" />
-                    <span>WhatsApp Bridge (Local)</span>
+                    <span>Own bridge server (optional)</span>
                   </div>
                   <span className="text-[9px] bg-[#eceae4] text-[#1c1c1c] px-2 py-0.5 rounded-lg tracking-widest">v2.0</span>
                 </summary>
@@ -1748,8 +1767,7 @@ export default function SettingsPage() {
                   ) : (
                     <div className="p-4 text-center text-[11px] text-[#5f5f5d] leading-relaxed">
                       <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Not Connected</p>
-                      {/* The QR comes from the bridge program (npm run wa); without it there is nothing to scan. */}
-                      <p className="mt-2">{waStatus.error || "Bridge is starting. The QR code will appear in a few seconds."} The QR code to scan shows above once the bridge program is running and reachable at the URL below.</p>
+                      {waStatus.error && <p className="mt-2">{waStatus.error}</p>}
                     </div>
                   )}
                   
@@ -1759,9 +1777,10 @@ export default function SettingsPage() {
                       type="text" 
                       value={settings.whatsapp_bridge_url || ""} 
                       onChange={e => setSettings({ ...settings, whatsapp_bridge_url: e.target.value })}
-                      placeholder="http://localhost:3001"
+                      placeholder="Leave blank to use the CodeCrest hosted connection"
                       className="input font-mono text-[10px] h-10 bg-[#fcfbf8]" 
                     />
+                    <p className="text-[10px] text-[#5f5f5d] mt-2 leading-relaxed">Only for teams running their own bridge server. Leave blank and use Connect WhatsApp to link by QR code, or use the Meta API above.</p>
                   </div>
                 </div>
               </details>
@@ -1802,9 +1821,13 @@ export default function SettingsPage() {
                       )}>{waStatus.ready ? "Authenticated" : waStatus.state?.replace("_", " ") || "INITIALISING"}</span>
                     </span>
                   </div>
-                  {!waStatus.ready && (
-                     <button onClick={fetchStatus} className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] hover:text-[#1c1c1c] transition-colors flex items-center gap-2">
-                        <RefreshCw className={cn("w-3.5 h-3.5", saving && "animate-spin")} /> Re-run Scan
+                  {waStatus.ready ? (
+                     <button onClick={() => waAction("logout")} disabled={waBusy} className="text-[10px] font-bold uppercase tracking-widest text-rose-600 hover:text-rose-700 transition-colors disabled:opacity-50">
+                        Disconnect
+                     </button>
+                  ) : (
+                     <button onClick={() => waAction("restart")} disabled={waBusy} className="text-[10px] font-bold uppercase tracking-widest rounded-full bg-[#1c1c1c] text-white px-4 py-2 hover:bg-black transition-colors flex items-center gap-2 disabled:opacity-50">
+                        <QrCode className={cn("w-3.5 h-3.5", waBusy && "animate-pulse")} /> {waStatus.qr ? "New QR code" : "Connect WhatsApp"}
                      </button>
                   )}
                 </div>

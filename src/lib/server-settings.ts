@@ -1,3 +1,5 @@
+import { createHmac } from "node:crypto";
+
 /** @deprecated settings is now one row per org (org_id), not a single fixed row. Kept only so nothing crashes on an old import. */
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -61,15 +63,36 @@ export async function getBridgeOwnerOrgId(): Promise<string | null> {
 }
 
 /**
- * Bridge URL an org may send through: its own whatsapp_bridge_url, or the
- * env bridge only when it owns that bridge. Any other org gets null, so its
- * customers are never messaged from another tenant's number.
+ * This org's base path on the CodeCrest-hosted multi-org bridge (bridge/),
+ * or null when it isn't configured. The path carries
+ * HMAC(WHATSAPP_HOSTED_BRIDGE_SECRET, orgId), so only this server can build
+ * it and it only ever reaches that org's WhatsApp session. Server-only: the
+ * URL is a credential and must never be sent to the browser.
+ */
+export function hostedBridgeUrl(orgId: string): string | null {
+  const base = process.env.WHATSAPP_HOSTED_BRIDGE_URL;
+  const secret = process.env.WHATSAPP_HOSTED_BRIDGE_SECRET;
+  if (!base || !secret) return null;
+  const token = createHmac("sha256", secret).update(orgId).digest("hex");
+  return `${base.replace(/\/+$/, "")}/orgs/${orgId}/${token}`;
+}
+
+const LOOPBACK = /^https?:\/\/(localhost|127\.|\[::1\])/i;
+
+/**
+ * Bridge URL an org may send through, in order: its own whatsapp_bridge_url;
+ * the env bridge only when it owns that bridge; else its own session on the
+ * hosted bridge. Never another org's bridge, so its customers are never
+ * messaged from another tenant's number.
  */
 export async function bridgeUrlFor(settings: { org_id?: string | null; whatsapp_bridge_url?: string | null } | null | undefined): Promise<string | null> {
-  if (settings?.whatsapp_bridge_url) return settings.whatsapp_bridge_url;
+  const own = settings?.whatsapp_bridge_url;
+  // A loopback URL (the old form default) is unreachable from the deployed app.
+  if (own && !(process.env.VERCEL && LOOPBACK.test(own))) return own;
+  if (!settings?.org_id) return null;
   const env = process.env.WHATSAPP_BRIDGE_URL;
-  if (!env || !settings?.org_id) return null;
-  return settings.org_id === (await getBridgeOwnerOrgId()) ? env : null;
+  if (env && settings.org_id === (await getBridgeOwnerOrgId())) return env;
+  return hostedBridgeUrl(settings.org_id);
 }
 
 async function resolveSessionOrgId(supabase: any): Promise<string | null> {

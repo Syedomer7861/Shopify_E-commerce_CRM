@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePrivileged } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
-import { getSystemSettings } from "@/lib/server-settings";
+import { bridgeUrlFor, getSystemSettings } from "@/lib/server-settings";
 import { logServerAuditEvent } from "@/lib/audit";
 
 function getSupabase() {
@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
     if (tErr || !task) throw tErr || new Error("Task not found");
 
     const settings = await getSystemSettings(supabase);
-    if (!settings?.whatsapp_bridge_url) throw new Error("WhatsApp bridge not configured");
+    const bridgeUrl = await bridgeUrlFor(settings);
+    if (!bridgeUrl) throw new Error("WhatsApp bridge not configured");
 
     const customer = task.customer;
     const order = task.order;
@@ -69,7 +70,6 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Send via Bridge
-    const bridgeUrl = settings.whatsapp_bridge_url;
     const res = await fetch(`${bridgeUrl}/send`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
