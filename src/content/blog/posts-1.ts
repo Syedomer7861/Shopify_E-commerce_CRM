@@ -103,7 +103,7 @@ export const posts1: Post[] = [
         h: "How CodeCrest helps with RTO",
         p: [
           "CodeCrest is an operations platform for Indian D2C teams on Shopify. It syncs your Shopify orders and creates a verification task for each COD order before it ships. Shipment status comes in from Shiprocket, and a failed delivery attempt becomes a follow-up task for an agent while a re-attempt is still possible.",
-          "Agents call or send WhatsApp messages from the task, and every contact is logged on the customer record. Reports show RTO by state and payment mode so you can see where returns come from. There is no self-serve signup. The CodeCrest team onboards each store and sets up the queues with you.",
+          "Agents call or send WhatsApp messages from the task, and every contact is logged on the customer record. Reports show RTO by state and payment mode so you can see where returns come from. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -208,7 +208,7 @@ export const posts1: Post[] = [
         h: "How CodeCrest helps you act on RTO reasons",
         p: [
           "CodeCrest gives each of these fixes a queue. Shopify orders sync in, and every COD order gets a verification task so intent and address are confirmed before dispatch. Agents work from a script, call through connected telephony or send a WhatsApp template from the store's own number, and close the task with an outcome.",
-          "Shipment status arrives from Shiprocket. A failed delivery creates a follow-up task with the courier's reason attached, so the agent knows what to ask. Reports break RTO down by state and payment mode. CodeCrest is set up for each store by the CodeCrest team. There is no self-serve signup.",
+          "Shipment status arrives from Shiprocket. A failed delivery creates a follow-up task with the courier's reason attached, so the agent knows what to ask. Reports break RTO down by state and payment mode. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -433,7 +433,7 @@ export const posts1: Post[] = [
         h: "How CodeCrest supports COD confirmation calls",
         p: [
           "CodeCrest creates a verification task for each COD order that syncs from Shopify, so agents open a queue instead of a spreadsheet. With Exotel or Twilio connected, they call in one click from the task, and the call is logged on the customer's timeline with its duration and outcome. Recordings are available to roles allowed to hear them.",
-          "The first confirmation message can go out on WhatsApp from the store's own linked number using a template. Agents close each task with an outcome, and overdue tasks escalate to a manager. Those outcomes feed the reports without anyone compiling a sheet. CodeCrest onboards each team directly. There is no self-serve signup.",
+          "The first confirmation message can go out on WhatsApp from the store's own WhatsApp Business number using a template. Agents close each task with an outcome, and overdue tasks escalate to a manager. Those outcomes feed the reports without anyone compiling a sheet. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -533,8 +533,8 @@ export const posts1: Post[] = [
       {
         h: "How CodeCrest helps convert COD to prepaid",
         p: [
-          "CodeCrest puts the prepaid offer inside the confirmation step. COD orders from Shopify land in a verification queue, and agents can send a WhatsApp template from the store's own linked number or call through connected telephony from the same task. Your template can carry the payment link your store already uses.",
-          "Each task closes with a recorded outcome, so the results of these conversations can be counted without a separate sheet, and every message and call sits on the customer's timeline. CodeCrest does not process payments. It organises the follow-up around them. Teams are onboarded by CodeCrest, with no self-serve signup.",
+          "CodeCrest puts the prepaid offer inside the confirmation step. COD orders from Shopify land in a verification queue, and agents can send a WhatsApp template from the store's own WhatsApp Business number or call through connected telephony from the same task. Your template can carry the payment link your store already uses.",
+          "Each task closes with a recorded outcome, so the results of these conversations can be counted without a separate sheet, and every message and call sits on the customer's timeline. CodeCrest does not process payments. It organises the follow-up around them. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -638,7 +638,7 @@ export const posts1: Post[] = [
         h: "How CodeCrest helps stop fake COD orders",
         p: [
           "CodeCrest syncs Shopify orders and creates a verification task for every COD order before it ships. Phone numbers are normalised and duplicate orders are detected on the way in, and each customer's orders, calls and messages sit on one record. Risk is scored so that orders such as high-value COD or customers with past refusals are verified first.",
-          "Agents confirm by WhatsApp template from the store's own linked number or by a logged call, and close the task with an outcome. Unreachable customers drop out of the active queue instead of being forgotten. CodeCrest does not change your Shopify checkout. It manages what happens after the order. Stores are onboarded by the CodeCrest team.",
+          "Agents confirm by WhatsApp template from the store's own WhatsApp Business number or by a logged call, and close the task with an outcome. Unreachable customers drop out of the active queue instead of being forgotten. CodeCrest does not change your Shopify checkout. It manages what happens after the order. Stores are onboarded by the CodeCrest team.",
         ],
       },
     ],
@@ -741,7 +741,7 @@ export const posts1: Post[] = [
       {
         h: "How CodeCrest helps with address verification",
         p: [
-          "CodeCrest places address checking inside the COD verification task that is created for each Shopify COD order. The agent sees the order, the customer's history and the address on one screen, calls through connected telephony or sends a WhatsApp template from the store's linked number, and records the outcome. Notes stay on the customer record.",
+          "CodeCrest places address checking inside the COD verification task that is created for each Shopify COD order. The agent sees the order, the customer's history and the address on one screen, calls through connected telephony or sends a WhatsApp template from the store's WhatsApp Business number, and records the outcome. Notes stay on the customer record.",
           "After dispatch, shipment status syncs from Shiprocket. A failed attempt becomes a follow-up task carrying the courier's reason, so an address problem reaches an agent the same day. CodeCrest does not validate addresses against a postal database. It gives your team the queue, the contact tools and the history to fix them. Onboarding is handled by CodeCrest.",
         ],
       },
@@ -845,7 +845,7 @@ export const posts1: Post[] = [
         h: "How CodeCrest fits with partial COD",
         p: [
           "CodeCrest does not collect payments or change your checkout. It helps with the conversations around partial COD. COD orders from Shopify get a verification task, and the queue is ordered by value, risk and age, so the orders where an advance matters most are handled first. Agents call or message from the task.",
-          "A WhatsApp template sent from the store's own linked number can carry your payment link and the wording you have approved. Calls made through Exotel or Twilio are logged on the customer's timeline, so there is a record of what was agreed. Each team is onboarded by CodeCrest. There is no self-serve signup.",
+          "A WhatsApp template sent from the store's own WhatsApp Business number can carry your payment link and the wording you have approved. Calls made through Exotel or Twilio are logged on the customer's timeline, so there is a record of what was agreed. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -950,7 +950,7 @@ export const posts1: Post[] = [
         h: "How CodeCrest helps with COD reconciliation",
         p: [
           "CodeCrest is not accounting software and does not read remittance statements or bank entries. What it provides is a clean first record. Orders sync from Shopify with their payment mode, shipment status and AWB come in from Shiprocket, and returned shipments are tracked through to origin, so delivered COD orders are easy to list.",
-          "You can filter orders by status, payment mode and date and export them to Excel, which gives you the expected side of the reconciliation without manual copying. Follow-ups on gaps can be tracked as tasks with an owner and a due date. The CodeCrest team onboards each store. There is no self-serve signup.",
+          "You can filter orders by status, payment mode and date and export them to Excel, which gives you the expected side of the reconciliation without manual copying. Follow-ups on gaps can be tracked as tasks with an owner and a due date. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -1054,7 +1054,7 @@ export const posts1: Post[] = [
         h: "How CodeCrest helps manage high RTO areas",
         p: [
           "CodeCrest brings Shopify orders and Shiprocket shipment status together, so return data is ready without manual merging. Reports show RTO by state and payment mode, and orders can be filtered and exported to Excel for a pincode-level analysis like the one above. That gives you your own evidence instead of a borrowed list.",
-          "For the response, every COD order already gets a verification task, with the queue ordered by value, risk and age. Agents confirm by call or WhatsApp from the store's linked number, and failed deliveries become same-day follow-up tasks. CodeCrest does not block COD in your checkout. That stays in Shopify. Stores are onboarded by the CodeCrest team.",
+          "For the response, every COD order already gets a verification task, with the queue ordered by value, risk and age. Agents confirm by call or WhatsApp from the store's WhatsApp Business number, and failed deliveries become follow-up tasks. CodeCrest does not block COD in your checkout. That stays in Shopify. Stores are onboarded by the CodeCrest team.",
         ],
       },
     ],

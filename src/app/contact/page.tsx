@@ -43,7 +43,7 @@ export default function ContactPage() {
               ))}
             </Stagger>
             <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-[13.5px] text-[#3b3b3a]">
-              {["Your own isolated organisation", "Your own integrations", "No self-serve setup to figure out"].map((t) => (
+              {["Your own isolated organisation", "Your own integrations", "Set up with you, not left to you"].map((t) => (
                 <li key={t} className="flex items-center gap-2"><Check className="w-4 h-4 text-[#0e8f55]" strokeWidth={2.5} />{t}</li>
               ))}
             </ul>

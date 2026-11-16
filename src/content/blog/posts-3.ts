@@ -82,7 +82,7 @@ export const posts3: Post[] = [
       {
         h: "How does CodeCrest help with abandoned cart messages?",
         p: [
-          "CodeCrest syncs abandoned checkouts from Shopify and turns each one into a recovery task with the customer's cart and a ready message. Reminders go out from your store's own WhatsApp number, which you link by scanning a QR code, using templates your team writes. Variables such as the customer's name and cart are filled in for you.",
+          "CodeCrest syncs abandoned checkouts from Shopify and turns each one into a recovery task with the customer's cart and a ready message. Reminders go out from your store's own WhatsApp Business number, connected through Meta's Cloud API, using templates your team writes. Variables such as the customer's name and cart are filled in for you.",
           "Carts that do not convert after the reminders are routed to an agent, in a queue sorted by cart value and age. When the customer orders, the task closes on its own, so nobody is chased for an order they already placed. Recovered orders are matched back to the cart, so you can see what actually came back.",
         ],
       },
@@ -174,7 +174,7 @@ export const posts3: Post[] = [
       {
         h: "How does CodeCrest send order confirmations?",
         p: [
-          "CodeCrest syncs orders from Shopify as they are placed and sends WhatsApp messages when something happens to an order: placed, shipped, delivery failed, delivered. Messages go from your store's own number, linked by scanning a QR code, using templates your team controls. Name, order number and tracking link are filled in automatically.",
+          "CodeCrest syncs orders from Shopify as they are placed and sends WhatsApp messages when something happens to an order: placed, shipped, delivery failed, delivered. Messages go from your store's own WhatsApp Business number, using templates your team controls. Name, order number and tracking link are filled in automatically.",
           "COD orders also get a verification task, so an agent follows up on anyone who has not confirmed. Every message and reply is logged on the customer's timeline, next to their orders and calls. Whoever picks up the conversation can see what was sent and what the customer said.",
         ],
       },
@@ -269,7 +269,7 @@ export const posts3: Post[] = [
         h: "How does CodeCrest connect to WhatsApp?",
         p: [
           "There is also a middle path that some operations tools take: linking your existing WhatsApp number by scanning a QR code, the same way you link a device. Your team keeps the number customers already know, and the tool sends templated messages from it. This is not the official API, so it suits sensible volumes to customers who expect to hear from you.",
-          "CodeCrest works this way. An admin links the store's own number by QR code, writes templates with variables, and attaches them to order events such as placed, shipped or delivered. Agents can also send a template from a task in one click. Sending is queued and rate limited, and every message is logged on the customer's timeline.",
+          "CodeCrest works this way. An admin connects the store's own WhatsApp Business number through Meta's Cloud API, writes templates with variables, and attaches them to order events such as placed, shipped or delivered. Agents can also send a template from a task in one click. Sending is queued and rate limited, and every message is logged on the customer's timeline.",
         ],
       },
     ],
@@ -368,7 +368,7 @@ export const posts3: Post[] = [
       {
         h: "How does CodeCrest fit into an opt-in process?",
         p: [
-          "Collecting consent happens in your store, at checkout and on your forms, and stays your responsibility. CodeCrest is where the messaging is carried out. Messages go from your store's own WhatsApp number, linked by QR code, using your templates, and sending is queued and rate limited to keep volume sensible.",
+          "Collecting consent happens in your store, at checkout and on your forms, and stays your responsibility. CodeCrest is where the messaging is carried out. Messages go from your store's own WhatsApp Business number using your templates, and sending is queued and rate limited to keep volume sensible.",
           "Every message is logged on the customer's timeline with the rule or agent that sent it, so you can show what a customer received and when. Campaigns go to segments you define, which lets you limit them to customers who agreed to marketing. A customer marked unresponsive drops out of the active follow-up queue.",
         ],
       },

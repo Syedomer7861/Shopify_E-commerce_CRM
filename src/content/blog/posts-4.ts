@@ -95,7 +95,7 @@ export const posts4: Post[] = [
         h: "How does CodeCrest help teams run their SOPs?",
         p: [
           "A written SOP tells people what to do. A system makes sure the job is started, owned and closed. CodeCrest is an operations platform for D2C teams on Shopify that turns recurring jobs into tasks. A new COD order creates a verification task, a failed delivery creates a follow-up task, and each task is closed with a recorded outcome instead of a tick.",
-          "Overdue tasks escalate to a manager, so the exception rule in your SOP is applied without anyone watching a sheet. Teams that need their own procedures can run them on workspace boards with custom fields and automations. There is no self-serve signup. The CodeCrest team onboards each organisation and connects its store, courier and messaging tools together with you.",
+          "Overdue tasks escalate to a manager, so the exception rule in your SOP is applied without anyone watching a sheet. Teams that need their own procedures can run them on workspace boards with custom fields and automations. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -199,7 +199,7 @@ export const posts4: Post[] = [
         h: "How does CodeCrest help with support KPIs?",
         p: [
           "CodeCrest is an operations platform for Indian D2C teams on Shopify. Support agents work from a prioritised task queue, and each task opens with the customer's orders, shipment status and past calls and messages. Agents close tasks with an outcome, so per-agent output and outcomes are reported from the work itself and nobody compiles a separate sheet.",
-          "Calls placed through a connected Exotel or Twilio account are logged on the customer timeline, and overdue tasks escalate to a manager. Shipping updates sent on WhatsApp answer many order status questions before they reach an agent. CodeCrest is set up with you by its own team, so there is no self-serve signup to configure alone.",
+          "Calls placed through a connected Exotel or Twilio account are logged on the customer timeline, and overdue tasks escalate to a manager. Shipping updates sent on WhatsApp answer many order status questions before they reach an agent. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -299,7 +299,7 @@ export const posts4: Post[] = [
         h: "How does CodeCrest handle priority and escalation?",
         p: [
           "CodeCrest, an operations platform for Indian D2C teams on Shopify, applies these ideas in two places. For customer work, agents get task queues ordered by order value, risk and age, so the first task they see is the one that matters most. Overdue tasks are flagged and escalated to a manager on a schedule you set.",
-          "For requests inside the company, CodeCrest has an internal service desk where each ticket gets an SLA from its priority and is flagged when it breaches. A business rule can alert a manager the moment an urgent ticket is raised. Customer conversations stay on the order and customer records. Organisations are onboarded by the CodeCrest team, with no self-serve signup.",
+          "For requests inside the company, CodeCrest has an internal service desk where each ticket gets an SLA from its priority and is flagged when it breaches. A business rule can alert a manager the moment an urgent ticket is raised. Customer conversations stay on the order and customer records. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -401,7 +401,7 @@ export const posts4: Post[] = [
         h: "Where does CodeCrest fit?",
         p: [
           "CodeCrest sits on the CRM side. It is an operations platform for Indian D2C teams on Shopify, built around outbound work: COD verification queues, abandoned cart recovery, and NDR and RTO follow-up through Shiprocket. Orders sync from Shopify, and each customer has one timeline of orders, calls, WhatsApp messages, notes and tasks.",
-          "It is not a shared-inbox helpdesk. Conversations are attached to customers and tasks so that ownership stays clear, and its service desk module is for internal requests from staff, not customer tickets. Teams with heavy inbound volume across many channels should weigh that honestly. CodeCrest onboards each organisation itself, so there is no self-serve signup.",
+          "It is not a shared-inbox helpdesk. Conversations are attached to customers and tasks so that ownership stays clear, and its service desk module is for internal requests from staff, not customer tickets. Teams with heavy inbound volume across many channels should weigh that honestly. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -502,7 +502,7 @@ export const posts4: Post[] = [
         h: "How does CodeCrest support a D2C team structure?",
         p: [
           "CodeCrest is an operations platform for Indian D2C teams on Shopify and the business behind them. An admin sets up branches, departments, designations and reporting lines once, and builds roles whose permissions are scoped to own records, team, department, branch or the whole organisation. A team lead sees their own team's work and a department head sees their department.",
-          "The same structure decides who approves an expense claim and whose attendance a manager can view. Verification, recovery and delivery follow-up run as task queues with owners, and a live floor view shows who is online. CodeCrest has no self-serve signup. Its team provisions each organisation and sets up the structure with you.",
+          "The same structure decides who approves an expense claim and whose attendance a manager can view. Verification, recovery and delivery follow-up run as task queues with owners, and a live floor view shows who is online. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -605,7 +605,7 @@ export const posts4: Post[] = [
         h: "How does CodeCrest handle approval workflows?",
         p: [
           "CodeCrest is an operations platform for Indian D2C teams and the business behind them. It has one approvals inbox for expense claims, tasks sent for review and requests raised by a business rule. An expense claim goes to the claimant's manager, taken from the reporting lines set up for your organisation. Managers approve or reject with the context attached.",
-          "Rules are written in plain terms: when this happens and these conditions match, notify this person or ask for approval. Self-approval is refused by the system, decisions are final, and approvals nobody answers are escalated on a schedule. There is no self-serve signup. The CodeCrest team onboards each organisation and helps set up its first rules.",
+          "Rules are written in plain terms: when this happens and these conditions match, notify this person or ask for approval. Self-approval is refused by the system, decisions are final, and approvals nobody answers are escalated on a schedule. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -709,7 +709,7 @@ export const posts4: Post[] = [
         h: "How does CodeCrest help with refund approvals?",
         p: [
           "CodeCrest is an operations platform for Indian D2C teams on Shopify. It does not issue refunds. The payment itself is still made through your store or payment provider. What it adds is the structure around the decision: one customer timeline with orders, calls, WhatsApp messages and notes, so whoever reviews a request sees the full history.",
-          "Its rules engine can raise an approval request when an event matches your conditions, and the request lands in an approvals inbox with the context attached. Self-approval is blocked, decisions are final and unanswered approvals escalate. Changes to business records are written to an audit trail. Organisations are onboarded by the CodeCrest team, as there is no self-serve signup.",
+          "Its rules engine can raise an approval request when an event matches your conditions, and the request lands in an approvals inbox with the context attached. Self-approval is blocked, decisions are final and unanswered approvals escalate. Changes to business records are written to an audit trail. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -813,7 +813,7 @@ export const posts4: Post[] = [
         h: "How does CodeCrest help with the move from spreadsheets?",
         p: [
           "CodeCrest is an operations platform for Indian D2C teams on Shopify. Orders, customers and abandoned checkouts sync from the store, and a backfill brings in historical orders and customers. For data that lives only in sheets, a guided importer loads orders and customers from CSV or Excel: you upload a file, map its columns, review a preview and import.",
-          "During import, phone numbers are normalised and likely duplicates are flagged, so imported records line up with what later arrives from the store. After that, work runs as task queues with owners and recorded outcomes. You do not set this up alone. There is no self-serve signup, and the CodeCrest team onboards each organisation and connects its tools with you.",
+          "During import, phone numbers are normalised and likely duplicates are flagged, so imported records line up with what later arrives from the store. After that, work runs as task queues with owners and recorded outcomes. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -916,7 +916,7 @@ export const posts4: Post[] = [
         h: "How does CodeCrest report operations KPIs?",
         p: [
           "CodeCrest is an operations platform for Indian D2C teams on Shopify. Orders sync from the store and shipment status from Shiprocket, and the work between them runs as tasks: COD verification, failed delivery follow-up and stuck shipment escalation. Agents close each task with an outcome, so the reports are built from the work itself with no data entry step.",
-          "Analytics cover revenue, recovery rate, RTO rate, delivery performance by state and each agent's output, with filters for date, team and payment mode and export to Excel or PDF. A scheduled daily digest goes to managers. CodeCrest has no self-serve signup. Its team onboards each organisation and connects the store and courier account with you.",
+          "Analytics cover revenue, recovery rate, RTO rate, delivery performance by state and each agent's output, with filters for date, team and payment mode and export to Excel or PDF. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],
@@ -1018,7 +1018,7 @@ export const posts4: Post[] = [
         h: "How does CodeCrest support outbound calling?",
         p: [
           "CodeCrest is an operations platform for Indian D2C teams on Shopify. Its task engine creates the calling work from live orders and shipments: COD verification, cart recovery and failed delivery follow-up, in queues ordered by order value, risk and age. It connects to your own Exotel or Twilio account, so agents click to call from the order or task they are working on.",
-          "Each call is logged with its duration and outcome on the customer's timeline, and recordings are available to the roles you allow. Customer numbers can be masked from agents. Per-agent call volume and task outcomes appear in reports. Calls are billed by your telephony provider. There is no self-serve signup, and the CodeCrest team onboards each organisation.",
+          "Each call is logged with its duration and outcome on the customer's timeline, and recordings are available to the roles you allow. Customer numbers can be masked from agents. Per-agent call volume and task outcomes appear in reports. Calls are billed by your telephony provider. You can sign up from the pricing page, or have the CodeCrest team set it up with you.",
         ],
       },
     ],

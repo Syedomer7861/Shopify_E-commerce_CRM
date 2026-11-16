@@ -776,7 +776,7 @@ export const posts2: Post[] = [
       {
         h: "How does CodeCrest help with RTO and RVP?",
         p: [
-          "CodeCrest is built mainly for the RTO side. It creates a verification task for each Shopify COD order, sends shipment updates on WhatsApp from the store's own number, and turns failed deliveries from Shiprocket into same-day follow-up tasks. Return-to-origin movements are tracked on the order, and RTO is reported by state and payment mode.",
+          "CodeCrest is built mainly for the RTO side. It creates a verification task for each Shopify COD order, sends shipment updates on WhatsApp from the store's own number, and turns failed deliveries from Shiprocket into follow-up tasks. Return-to-origin movements are tracked on the order, and RTO is reported by state and payment mode.",
           "For customer returns, the call and message history sits on the customer's timeline, so an agent handling a return request can see the full story of the order.",
         ],
       },

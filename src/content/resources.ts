@@ -243,7 +243,7 @@ export const resources: Page[] = [
     title: "Frequently asked questions about CodeCrest",
     metaTitle: "CodeCrest FAQ",
     description: "Answers to common questions about CodeCrest: what it is, who it is for, integrations, security and data isolation, onboarding and pricing.",
-    answer: "CodeCrest is a multi-tenant operations platform for e-commerce and growing businesses. It combines Shopify order operations, shipping follow-up, WhatsApp and call workflows with team management, approvals, a service desk and scoped permissions. Organisations are set up by our team rather than through self-serve signup.",
+    answer: "CodeCrest is a multi-tenant operations platform for e-commerce and growing businesses. It combines Shopify order operations, shipping follow-up, WhatsApp and call workflows with team management, approvals, a service desk and scoped permissions. Teams can sign up on their own or be set up by our team.",
     points: [
       ["Product", "What it does and who it suits."],
       ["Security", "How data is isolated and access is controlled."],
