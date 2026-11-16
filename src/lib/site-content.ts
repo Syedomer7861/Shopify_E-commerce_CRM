@@ -30,10 +30,10 @@ export const CONTENT_KEYS = {
       badge: "", badge_href: "/blog",
       headline: "Run every order, and the team behind it, from one place",
       accent: "one place",
-      subheadline: "CodeCrest unifies Shopify orders, Shiprocket shipping, WhatsApp and calls with tasks, HR, approvals and role-based access, so your team stops switching tabs and closes the loop on every order.",
+      subheadline: "Shopify orders, Shiprocket shipping, WhatsApp and calls, tasks and HR in one system. Every order gets an owner and a next step.",
       primary_label: "Talk to us", primary_href: "/contact",
       secondary_label: "Explore the product", secondary_href: "/features",
-      footnote: "Set up for you by our team · Your own isolated organisation",
+      footnote: "Your own isolated organisation · Set it up yourself or with our team",
     },
   },
   "site.announcement": {

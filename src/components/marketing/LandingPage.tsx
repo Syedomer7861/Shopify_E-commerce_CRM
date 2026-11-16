@@ -13,6 +13,7 @@ import { Counter, PinnedStory, Spotlight, Squiggle, Star, type StoryItem } from 
 import { PostCard } from "@/components/site/BlogView";
 import Visual, { DashboardMock } from "@/components/site/Visual";
 import { getSiteContent } from "@/lib/site-content-server";
+import { razorpayEnabled } from "@/lib/razorpay";
 
 const ICONS: Record<string, LucideIcon> = {
   "shopify-order-management": ShoppingBag, "abandoned-cart-recovery": ShoppingCart, "shipping-rto-management": Truck,
@@ -49,9 +50,9 @@ const SHOWCASE: ShowcaseItem[] = [
     bullets: ["Live order and shipment sync", "COD verification before dispatch", "NDR and stuck-shipment follow-up"], href: "/features/shopify-order-management", visual: "orders",
   },
   {
-    eyebrow: "Customer conversations", title: "WhatsApp, email and calls from the same screen",
+    eyebrow: "Customer conversations", title: "WhatsApp and calls from the same screen",
     text: "Send templated messages on real events, call from the task you are working on, and keep every conversation on the customer's timeline.",
-    bullets: ["Templates with order details filled in", "Click-to-call with automatic logging", "Segment campaigns"], href: "/features/whatsapp-automation", visual: "chat",
+    bullets: ["Templates with order details filled in", "Click-to-call with automatic logging", "WhatsApp campaigns to customer segments"], href: "/features/whatsapp-automation", visual: "chat",
   },
   {
     eyebrow: "Team work", title: "Work that assigns itself and shows who owns it",
@@ -76,6 +77,31 @@ const TRUST: [LucideIcon, string, string][] = [
   [ToggleRight, "Only what you need", "Modules are switched on or off per organisation, so teams see the tools they use."],
 ];
 
+const PROOF = ["Shopify + Shiprocket sync", "COD risk score on every order", "WhatsApp Cloud API", "Roles enforced in the database"];
+
+// The COD order journey as the product runs it: [stage, what happens, screen].
+const ORDER_FLOW: [string, string][] = [
+  ["Order placed", "Synced from Shopify"],
+  ["Risk scored", "COD orders scored and queued"],
+  ["Verified", "Agent calls or sends a WhatsApp template"],
+  ["Shipped", "Tracking from Shiprocket"],
+  ["Exception?", "Failed delivery becomes a follow-up task"],
+  ["Delivered", "Review and reorder tasks follow"],
+];
+
+// Each role signs in to its own home, not one shared dashboard.
+const ROLE_HOMES: [string, string, VisualKind][] = [
+  ["Agents", "A task queue ordered by due time, with the customer, order and next step on every row.", "tasks"],
+  ["Managers", "The live floor: who is online, on a call or on break, and what is overdue.", "people"],
+  ["Admin, HR and finance", "Approvals waiting on you, leave, expenses and invoices, in one inbox.", "approvals"],
+];
+
+const ONBOARD_SELF: [string, string][] = [
+  ["Pick a plan", "Choose seats and modules on the pricing page and set up auto-pay. Your workspace opens straight away."],
+  ["Connect your tools", "Add your Shopify store, Shiprocket and WhatsApp Business number in Settings. Orders start flowing in."],
+  ["Invite your team", "Create roles, add people and their queues fill on their own. Our team can help with any step."],
+];
+
 const ONBOARD: [string, string][] = [
   ["Tell us how you work", "Share your team size, the tools you run on and where orders get stuck. One short form, no sales deck."],
   ["We build your organisation", "Our team creates your workspace, roles and queues, and connects Shopify, Shiprocket and WhatsApp with you."],
@@ -89,6 +115,8 @@ const HOME_FAQS: [string, string][] = [
   ["How is each organisation's data kept separate?", "Every record belongs to one organisation and access is enforced in the database, not only in the interface."],
   ["How do we get started?", "Pick a plan on the pricing page and your workspace opens straight away, or contact us and our team sets it up with you."],
 ];
+const SIGNUP_FAQ: [string, string] = ["Is there a free trial?", "Yes. Choose a plan on the pricing page and set up auto-pay; you are not charged until the trial ends, and you can cancel before then."];
+const CONTACT_FAQ: [string, string] = ["How do we get started?", "Contact us. Our team sets up your organisation and connects your integrations with you."];
 
 const H2 = "font-display font-bold tracking-[-0.03em] text-[2rem] sm:text-4xl md:text-5xl leading-[1.06]";
 
@@ -99,6 +127,9 @@ export default async function LandingPage() {
   const featured = FEATURED.map(([slug, visual]) => ({ page: features.find((f) => f.slug === slug)!, visual }));
   const rest = features.filter((f) => !FEATURED.some(([slug]) => slug === f.slug));
   const posts = latestPosts(3);
+  const selfServe = razorpayEnabled();
+  const steps = selfServe ? ONBOARD_SELF : ONBOARD;
+  const faqs = selfServe ? [...HOME_FAQS, SIGNUP_FAQ] : [...HOME_FAQS.slice(0, -1), CONTACT_FAQ];
   // Counts come from the content itself, so they stay true as pages are added.
   const counts: [number, string][] = [[features.length, "product modules"], [CONNECTS.length, "tools it connects with"], [POSTS.length, "operations playbooks"], [TOOLS.length, "free calculators"]];
 
@@ -130,6 +161,11 @@ export default async function LandingPage() {
               <Squiggle className="hidden lg:block absolute left-[calc(50%+15rem)] -top-16 w-24 text-[#111113]" />
             </div>
             {hero.footnote && <p className="text-[var(--dim)] text-[13px] mt-5">{hero.footnote}</p>}
+            <ul className="mt-6 flex flex-wrap justify-center gap-2">
+              {PROOF.map((p) => (
+                <li key={p} className="inline-flex items-center gap-1.5 rounded-full bg-white/70 border border-black/10 px-3 py-1.5 text-[12.5px] font-medium"><CheckCircle2 aria-hidden className="w-3.5 h-3.5 text-emerald-600" />{p}</li>
+              ))}
+            </ul>
           </Reveal>
         </div>
 
@@ -163,6 +199,26 @@ export default async function LandingPage() {
         </Stagger>
       </section>
 
+      {/* The order journey, drawn as the product runs it */}
+      <section aria-labelledby="flow-h" className="max-w-6xl mx-auto px-4 sm:px-6 py-20 md:py-28">
+        <Reveal className="max-w-2xl">
+          <Eyebrow>How an order moves</Eyebrow>
+          <h2 id="flow-h" className={`${H2} mt-5`}>From checkout to doorstep, every step has an owner</h2>
+        </Reveal>
+        <Stagger className="mt-12 grid grid-cols-2 lg:grid-cols-6 gap-3" gap={0.08}>
+          {ORDER_FLOW.map(([h, t], i) => (
+            <StaggerItem key={h} className="flex">
+              <div className={`relative w-full rounded-2xl p-5 ${i === 4 ? "bg-rose-50 border border-rose-200" : i === ORDER_FLOW.length - 1 ? "bg-emerald-600 text-white" : "bg-white border border-[var(--line)]"}`}>
+                <span className={`font-display text-[12px] font-semibold tabular-nums ${i === ORDER_FLOW.length - 1 ? "text-white/70" : "text-[var(--dim)]"}`}>{String(i + 1).padStart(2, "0")}</span>
+                <h3 className="font-display font-bold text-[17px] tracking-tight mt-3">{h}</h3>
+                <p className={`text-[13.5px] leading-relaxed mt-1.5 ${i === ORDER_FLOW.length - 1 ? "text-white/80" : "text-[var(--dim)]"}`}>{t}</p>
+                {i < ORDER_FLOW.length - 1 && <ArrowRight aria-hidden className="hidden lg:block absolute -right-[11px] top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--dim)] z-10" />}
+              </div>
+            </StaggerItem>
+          ))}
+        </Stagger>
+      </section>
+
       {/* Problem to solution (pinned scroll story) */}
       <section aria-labelledby="story-h">
         <PinnedStory items={STORY}>
@@ -180,6 +236,27 @@ export default async function LandingPage() {
           </Reveal>
           <Showcase items={SHOWCASE} />
         </div>
+      </section>
+
+      {/* Each role gets its own home */}
+      <section aria-labelledby="roles-h" className="max-w-6xl mx-auto px-4 sm:px-6 pt-20 md:pt-28">
+        <Reveal className="max-w-2xl mb-12">
+          <Eyebrow>One login, the right home</Eyebrow>
+          <h2 id="roles-h" className={`${H2} mt-5`}>Everyone opens to the work that is theirs</h2>
+        </Reveal>
+        <Stagger className="grid lg:grid-cols-3 gap-4">
+          {ROLE_HOMES.map(([h, t, kind]) => (
+            <StaggerItem key={h} className="flex">
+              <div className="w-full rounded-[2rem] bg-white border border-[var(--line)] overflow-hidden flex flex-col">
+                <div className="p-7 pb-5">
+                  <h3 className="font-display font-bold text-2xl tracking-tight">{h}</h3>
+                  <p className="text-[var(--dim)] text-[14.5px] leading-relaxed mt-2">{t}</p>
+                </div>
+                <div className="px-5 mt-auto max-h-72 overflow-hidden"><Visual kind={kind} bare /></div>
+              </div>
+            </StaggerItem>
+          ))}
+        </Stagger>
       </section>
 
       {/* Features: bento */}
@@ -291,10 +368,10 @@ export default async function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 md:py-28">
           <Reveal className="max-w-2xl">
             <Eyebrow>Getting started</Eyebrow>
-            <h2 className={`${H2} mt-5`}>We set it up. You start with a working system.</h2>
+            <h2 className={`${H2} mt-5`}>{selfServe ? "Live today, with help when you want it" : "We set it up. You start with a working system."}</h2>
           </Reveal>
           <Stagger className="relative mt-12 grid md:grid-cols-3 gap-4" gap={0.12}>
-            {ONBOARD.map(([h, t], i) => (
+            {steps.map(([h, t], i) => (
               <StaggerItem key={h} className="flex">
                 <div className="relative w-full rounded-3xl bg-[#f4f3ee] p-7 overflow-hidden">
                   <span aria-hidden className="absolute -top-6 -right-2 font-display font-bold text-[7rem] leading-none text-[#111113]/[0.05] tabular-nums">{i + 1}</span>
@@ -306,8 +383,8 @@ export default async function LandingPage() {
             ))}
           </Stagger>
           <Reveal className="mt-10 flex flex-col sm:flex-row sm:items-center gap-4">
-            <Btn href="/contact" arrow>Request your workspace</Btn>
-            <p className="text-[13.5px] text-[var(--dim)]">One short form. We reply with next steps.</p>
+            <Btn href={selfServe ? "/pricing" : "/contact"} arrow>{selfServe ? "See plans and start" : "Request your workspace"}</Btn>
+            <p className="text-[13.5px] text-[var(--dim)]">{selfServe ? "Prefer a guided setup? Talk to us." : "One short form. We reply with next steps."}</p>
           </Reveal>
         </div>
       </section>
@@ -351,7 +428,7 @@ export default async function LandingPage() {
         </section>
       )}
 
-      <Faqs faqs={HOME_FAQS} heading="Questions, answered" />
+      <Faqs faqs={faqs} heading="Questions, answered" />
       <CtaBand title="Ready to bring your operations into one place?" />
 
       <JsonLd data={[
