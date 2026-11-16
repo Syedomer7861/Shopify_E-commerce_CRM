@@ -40,7 +40,7 @@ type Tab = "general" | "fields" | "forms" | "api" | "security" | "telephony" | "
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 
-import { getTemplateVariables, personaliseTemplate } from "@/lib/whatsapp";
+import { getTemplateVariables, personaliseTemplate } from "@/lib/wa-template";
 
 const WA_PRESETS: Record<string, string[]> = {
   wa_welcome_template: [
