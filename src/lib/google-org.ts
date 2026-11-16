@@ -16,12 +16,16 @@ import { createAdminClient } from "@/lib/supabase";
 export const GOOGLE_SCOPES = ["https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/userinfo.email"];
 const FOLDER = "CodeCrest backups";
 
-export const googleAppConfigured = () => Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+// The customer-facing OAuth client (GOOGLE_ORG_CLIENT_*), kept apart from the
+// platform backup's GOOGLE_CLIENT_* so switching one never breaks the other.
+const clientId = () => process.env.GOOGLE_ORG_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+const clientSecret = () => process.env.GOOGLE_ORG_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+export const googleAppConfigured = () => Boolean(clientId() && clientSecret());
 const appUrl = () => (process.env.NEXT_PUBLIC_APP_URL || "https://cureforever-crm.vercel.app").replace(/\/$/, "");
 export const googleRedirectUri = () => `${appUrl()}/api/google/callback`;
 
 export function googleOAuthClient() {
-  return new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, googleRedirectUri());
+  return new OAuth2Client(clientId(), clientSecret(), googleRedirectUri());
 }
 
 export type OrgGoogle = { org_id: string; refresh_token: string; email: string | null; sheet_id: string | null; last_backup_at: string | null; last_backup_status: string | null };
