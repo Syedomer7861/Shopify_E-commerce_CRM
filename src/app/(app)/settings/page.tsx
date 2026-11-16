@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CheckCircle2, WifiOff, ShoppingBag, Zap, Mail, Check, ShieldCheck, ListPlus, FileInput, KeyRound } from "lucide-react";
+import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CloudUpload, CheckCircle2, WifiOff, ShoppingBag, Zap, Mail, Check, ShieldCheck, ListPlus, FileInput, KeyRound } from "lucide-react";
 import { PageHeader, Modal, SyncProgressBar } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn, toDbDateString } from "@/lib/utils";
@@ -36,11 +36,12 @@ interface PipelineState {
   waiting: PipelineItem[];
 }
 
-type Tab = "general" | "fields" | "forms" | "api" | "security" | "telephony" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database";
+type Tab = "general" | "fields" | "forms" | "api" | "security" | "telephony" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database" | "backup";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 
 import { getTemplateVariables, personaliseTemplate } from "@/lib/wa-template";
+import GoogleBackupCard from "@/components/settings/GoogleBackupCard";
 
 const WA_PRESETS: Record<string, string[]> = {
   wa_welcome_template: [
@@ -1149,6 +1150,7 @@ export default function SettingsPage() {
           { key: "overrides", label: "Product Rules", icon: Package },
           { key: "shopify", label: "Shopify API", icon: ShoppingBag },
           { key: "shiprocket", label: "Logistics", icon: Package },
+          { key: "backup", label: "Backup & Google", icon: CloudUpload },
           { key: "database", label: "Danger Zone", icon: Database },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key as Tab)}
@@ -3104,6 +3106,12 @@ export default function SettingsPage() {
       {tab === "security" && (
         <div className="space-y-6">
           <TwoFactorCard />
+        </div>
+      )}
+
+      {tab === "backup" && (
+        <div className="space-y-6">
+          <GoogleBackupCard />
         </div>
       )}
 

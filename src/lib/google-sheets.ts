@@ -1,6 +1,7 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { OAuth2Client } from 'google-auth-library';
 import { getDefaultOrgId } from './server-settings';
+import { getOrgGoogle, openOrgSheet, sheetCell } from './google-org';
 
 /**
  * The live sync sheet (GOOGLE_SHEET_ID) belongs to one organisation:
@@ -46,8 +47,10 @@ export async function getGoogleSheet() {
  */
 export async function appendToSheet(orgId: string | null | undefined, sheetTitle: string, row: Record<string, any>) {
   try {
-    if (!(await isSheetOwner(orgId))) return;
-    const doc = await getGoogleSheet();
+    // The org's own connected Google account first; else the platform sheet,
+    // only for the org that owns it.
+    const conn = orgId ? await getOrgGoogle(orgId) : null;
+    const doc = conn ? await openOrgSheet(conn) : (await isSheetOwner(orgId)) ? await getGoogleSheet() : null;
     if (!doc) return;
 
     let sheet = doc.sheetsByTitle[sheetTitle];
@@ -70,16 +73,12 @@ export async function appendToSheet(orgId: string | null | undefined, sheetTitle
     }
 
     // Clean data for Google Sheets (convert nested objects to strings)
+    // Objects as JSON; text that starts like a formula is kept as text.
     const cleanRow: Record<string, any> = {};
-    for (const [key, value] of Object.entries(row)) {
-      if (typeof value === 'object' && value !== null) {
-        cleanRow[key] = JSON.stringify(value);
-      } else {
-        cleanRow[key] = value;
-      }
-    }
+    for (const [key, value] of Object.entries(row)) cleanRow[key] = sheetCell(value);
 
-    await sheet.addRow(cleanRow);
+    // raw: values are stored as typed, never evaluated as formulas.
+    await sheet.addRow(cleanRow, { raw: true });
     console.log(`Successfully synced row to Google Sheet: ${sheetTitle}`);
   } catch (error) {
     console.error(`Error appending to Google Sheet (${sheetTitle}):`, error);
