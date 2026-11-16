@@ -14,12 +14,12 @@ export const solutions: Page[] = [
       ["Grow repeat revenue", "Reorder reminders timed to the product, and win-back for customers who went quiet."],
     ],
     sections: [
-      { h: "A day in the platform", p: "Agents open their queue and work top-down. Managers watch the floor view and the overdue list. The owner reads a daily digest.", list: ["Verification, recovery and delivery queues", "WhatsApp templates for every stage", "Leaderboards and per-agent outcomes"] },
+      { h: "A day in the platform", p: "Agents open their queue and work top-down. Managers watch the live floor and the overdue list. The owner checks revenue and agent reports.", list: ["Verification, recovery and delivery queues", "WhatsApp templates for every stage", "Leaderboards and per-agent outcomes"] },
       { h: "When it fits", p: "CodeCrest suits brands with a team working orders by hand: a few agents up to a full support floor. A solo founder with a handful of orders a day may not need it yet." },
     ],
     faqs: [
-      ["Is CodeCrest only for Indian D2C brands?", "It is built around Shopify, Shiprocket and COD-heavy markets, which fits Indian D2C well. The CRM, workspace and HR modules work anywhere."],
-      ["How long does setup take?", "Our team provisions your organisation and connects your stack with you. There is no self-serve signup to configure alone."],
+      ["Is CodeCrest only for Indian D2C brands?", "It is built around Shopify, Shiprocket and COD-heavy markets, which fits Indian D2C well. Prices are in rupees with GST, and attendance follows Indian time, so it suits Indian businesses best today."],
+      ["How long does setup take?", "You can sign up, pick a plan and connect Shopify yourself the same day, or ask our team to set it up with you."],
       ["Do we need developers?", "No. Integrations are connected from Settings and rules are configured in the interface."],
     ],
     related: ["features/shopify-order-management", "features/abandoned-cart-recovery", "resources/how-to-reduce-rto"],
@@ -65,7 +65,7 @@ export const solutions: Page[] = [
     ],
     faqs: [
       ["Can agents work from home?", "Yes. It runs in a browser on desktop or phone, with attendance and the floor view working the same way."],
-      ["Can we hide customer phone numbers from agents?", "Yes. Number masking lets agents call and message without seeing the number."],
+      ["Can we control who hears call recordings?", "Yes. Recordings are visible only to the roles you allow."],
       ["Is there a shared inbox?", "Conversations are attached to customers and tasks rather than a single shared inbox, so ownership is always clear."],
     ],
     related: ["features/task-engine", "features/cloud-telephony", "features/team-hr"],
@@ -97,13 +97,13 @@ export const solutions: Page[] = [
     slug: "marketing-teams",
     title: "For marketing and content teams that need to ship on schedule",
     metaTitle: "Workspace for Marketing & Content Teams",
-    description: "Plan campaigns and content on boards and Gantt charts, send work for review, track time and goals, and reach customer segments on WhatsApp and email.",
-    answer: "Marketing teams use CodeCrest workspaces to plan campaigns and content with boards, Gantt and goals, and send finished work for review before it is marked done. Because customer data is in the same platform, they can also build segments and run WhatsApp or email campaigns without exporting a list.",
+    description: "Plan campaigns and content on boards and Gantt charts, send work for review, track time and goals, and reach customer segments on WhatsApp.",
+    answer: "Marketing teams use CodeCrest workspaces to plan campaigns and content with boards, Gantt and goals, and send finished work for review before it is marked done. Because customer data is in the same platform, they can also run WhatsApp campaigns to customer segments without exporting a list.",
     visual: "board",
     points: [
       ["Plan visually", "Board, list and Gantt views over the same tasks, with custom fields for channel, format or campaign."],
       ["Review before publish", "Send a task for review and it waits in the reviewer's approvals inbox."],
-      ["Campaigns on real segments", "Target repeat buyers, lapsed customers or a product's buyers directly."],
+      ["Campaigns on real segments", "Target repeat buyers, one-time buyers, inactive or high-risk customers directly."],
     ],
     sections: [
       { h: "From brief to done", p: "A campaign becomes a list of tasks with owners, dates and attachments. Automations move status and notify people so nobody chases updates.", list: ["Custom fields and automations", "Time tracking and workload", "Goals with progress", "Activity feed"] },

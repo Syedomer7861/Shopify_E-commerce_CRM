@@ -11,7 +11,7 @@ export function GET() {
     "",
     "> CodeCrest is a multi-tenant operations platform for e-commerce teams and growing businesses. It combines Shopify order operations, shipping and RTO follow-up, WhatsApp and call workflows with team management, approvals, a service desk and role-based permissions scoped by team, department and branch.",
     "",
-    `Organisations are provisioned by the CodeCrest team; there is no self-serve signup. Contact: ${SITE_URL}/contact`,
+    `Teams can sign up on the pricing page or be onboarded by the CodeCrest team. Contact: ${SITE_URL}/contact`,
     "",
     ...SECTIONS.flatMap((s) => [
       `## ${s.title}`, "",

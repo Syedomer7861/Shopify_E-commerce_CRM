@@ -30,7 +30,7 @@ export const comparisons: Page[] = [
         ["COD verification and NDR queues", "Built in", "Configured with custom modules and workflows"],
         ["Attendance, leave, approvals", "Built in", "Available in separate Zoho products"],
         ["Customisation depth", "Roles, rules, custom fields in workspaces", "Extensive: modules, layouts, scripting"],
-        ["Setup", "Provisioned with you by our team", "Self-serve, with partners for larger rollouts"],
+        ["Setup", "Self-serve signup, or set up with you by our team", "Self-serve, with partners for larger rollouts"],
       ],
     },
     sections: [
@@ -60,11 +60,11 @@ export const comparisons: Page[] = [
       cols: ["", "CodeCrest", "HubSpot"],
       rows: [
         ["Primary focus", "Order operations and business operations", "Inbound marketing, sales and service"],
-        ["Marketing automation", "Segments and WhatsApp or email campaigns", "Extensive: email, landing pages, forms, ads"],
+        ["Marketing automation", "WhatsApp campaigns to customer segments", "Extensive: email, landing pages, forms, ads"],
         ["Shipping and RTO workflows", "Built in with Shiprocket", "Not a core focus"],
         ["Attendance, leave, payroll inputs", "Built in", "Not included"],
         ["Website and content tools", "Not included", "Included"],
-        ["Setup", "Provisioned with you by our team", "Self-serve, with onboarding services"],
+        ["Setup", "Self-serve signup, or set up with you by our team", "Self-serve, with onboarding services"],
       ],
     },
     sections: [
@@ -72,7 +72,7 @@ export const comparisons: Page[] = [
       fit("HubSpot", "Growth depends on content, lead capture and email nurture, you want a website and marketing suite in one place, or your sales process is consultative."),
     ],
     faqs: [
-      ["Does CodeCrest do email marketing?", "It sends templated emails and segment campaigns. It is not a full marketing automation suite."],
+      ["Does CodeCrest do email marketing?", "No. Campaigns run on WhatsApp, and email is sent from workflow steps. It is not a marketing automation suite."],
       ["Is CodeCrest a help desk?", "It has an internal service desk and customer follow-up tasks. It is not a public ticketing portal."],
       ["Which is simpler to roll out?", "CodeCrest is set up for you around a defined e-commerce process. HubSpot is broader and takes more configuration to fit that process."],
     ],
@@ -166,7 +166,7 @@ export const comparisons: Page[] = [
         ["Docs and whiteboards", "Not included", "Included"],
         ["CRM and order operations", "Built in", "Built from templates or integrations"],
         ["Attendance and leave", "Built in", "Not included"],
-        ["Setup", "Provisioned for you", "Self-serve"],
+        ["Setup", "Self-serve, or set up for you", "Self-serve"],
       ],
     },
     sections: [

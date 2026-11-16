@@ -21,7 +21,7 @@ const ICONS: Record<string, LucideIcon> = {
   "service-desk": LifeBuoy, "sales-pipeline": Target, "finance-operations": Receipt, "field-visits": MapPin, "cloud-telephony": PhoneCall,
 };
 
-const CONNECTS = ["Shopify", "Shiprocket", "WhatsApp", "Exotel", "Twilio", "Gmail", "Google Sheets", "Google Drive", "CSV and Excel import", "Fastrr checkout"];
+const CONNECTS = ["Shopify", "Shiprocket", "WhatsApp", "Exotel", "Twilio", "Gmail", "CSV and Excel import", "Public API", "Webhooks"];
 
 const STORY: StoryItem[] = [
   {
@@ -85,9 +85,9 @@ const ONBOARD: [string, string][] = [
 const HOME_FAQS: [string, string][] = [
   ["What is CodeCrest?", "CodeCrest is an operations platform for e-commerce teams and growing businesses. It brings Shopify orders, shipping follow-up, WhatsApp and call workflows, tasks, HR, approvals and an internal service desk into one place, with permissions scoped by team, department and branch."],
   ["Who is it for?", "Shopify-based brands with a team working orders every day, and small to mid-sized businesses that want roles, approvals and internal requests on one system instead of spreadsheets and chat groups."],
-  ["What does it integrate with?", "Shopify, Shiprocket, WhatsApp, Exotel and Twilio for calls and SMS, Gmail, Google Sheets and Google Drive, plus CSV and Excel import."],
-  ["How is each organisation's data kept separate?", "Every record belongs to one organisation and access is enforced in the database, not only in the interface. Isolation is tested automatically across every table."],
-  ["How do we get started?", "Contact us. Our team sets up your organisation, connects your integrations with you and hands over a working system. There is no self-serve signup."],
+  ["What does it integrate with?", "Shopify, Shiprocket, WhatsApp, Exotel and Twilio for calls, Gmail, plus CSV and Excel import. A public API and webhooks connect anything else."],
+  ["How is each organisation's data kept separate?", "Every record belongs to one organisation and access is enforced in the database, not only in the interface."],
+  ["How do we get started?", "Pick a plan on the pricing page and your workspace opens straight away, or contact us and our team sets it up with you."],
 ];
 
 const H2 = "font-display font-bold tracking-[-0.03em] text-[2rem] sm:text-4xl md:text-5xl leading-[1.06]";

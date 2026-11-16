@@ -14,7 +14,7 @@ export const features: Page[] = [
       ["Built for COD", "Cash-on-delivery orders get a verification task before they ship, which is where most avoidable returns start."],
     ],
     sections: [
-      { h: "What changes for the team", p: "Agents stop exporting orders. A new order becomes a row in their queue with the next action already attached: confirm the address, verify a COD order, chase a stuck shipment or ask for a review.", list: ["Filter by status, payment mode, agent, state or date", "Bulk assign and bulk update", "Export to Excel or PDF when someone outside the team needs the data"] },
+      { h: "What changes for the team", p: "Agents stop exporting orders. A new order becomes a row in their queue with the next action already attached: confirm the address, verify a COD order, chase a stuck shipment or ask for a review.", list: ["Search plus date and amount filters", "Bulk reassign from the task queue", "CSV export, with Excel and PDF reports in Analytics"] },
       { h: "Clean data in, clean reports out", p: "Phone numbers are normalised and duplicate orders are detected on the way in. That is what makes revenue attribution, repeat-customer counts and agent leaderboards trustworthy later." },
     ],
     faqs: [
@@ -55,7 +55,7 @@ export const features: Page[] = [
     answer: "CodeCrest syncs shipment status from Shiprocket and turns exceptions into work. A failed delivery attempt creates a task to reach the customer before the courier returns the parcel; a shipment stuck in transit is escalated automatically. RTO rate is reported by state, payment mode and agent.",
     visual: "chart",
     points: [
-      ["Act on NDR the same day", "Non-delivery reports become tasks with the customer's number and the courier's reason, while a re-attempt is still possible."],
+      ["Act on NDR before the parcel returns", "Failed deliveries become follow-up tasks with the customer's number and the courier's reason, while a re-attempt is still possible."],
       ["Stuck shipments surface themselves", "Parcels that stop moving are flagged and escalated instead of being found when the customer complains."],
       ["RTO you can explain", "Break returns down by state, COD versus prepaid and courier status to see where the losses actually come from."],
     ],
@@ -84,12 +84,12 @@ export const features: Page[] = [
     ],
     sections: [
       { h: "The messages most stores automate first", p: "Start with the ones that cut support load and bring revenue back.", list: ["Order confirmation and COD verification", "Abandoned cart reminder", "Shipped and out-for-delivery updates", "Reorder reminder timed to the product", "Review request after delivery"] },
-      { h: "Automation that stays accountable", p: "Every message is recorded against the customer and the agent or rule that sent it. When a customer replies, the conversation is there for whoever picks it up." },
+      { h: "Automation that stays accountable", p: "Every message is recorded against the customer and the agent or rule that sent it. Agents see the full message history on the customer's record." },
     ],
     faqs: [
-      ["Do we use our own WhatsApp number?", "Yes. Each organisation connects its own number and messages are sent from it."],
+      ["Do we use our own WhatsApp number?", "Yes. You connect your own WhatsApp Business number through Meta's Cloud API, and messages are sent from it."],
       ["Can agents send messages manually?", "Yes. Any template can be sent from an order or task, and agents can write a custom message when a template does not fit."],
-      ["Is email supported too?", "Yes. The same templates and triggers work for email, and SMS is available for stores that use it."],
+      ["Is email supported too?", "Workflow steps can send email through your connected Gmail account. WhatsApp is the main channel for templates and campaigns."],
     ],
     related: ["integrations/whatsapp", "features/abandoned-cart-recovery", "tools/whatsapp-link-generator"],
   },
@@ -110,8 +110,8 @@ export const features: Page[] = [
       { h: "Outcomes feed the reports", p: "Agents close a task with an outcome, not just a tick. Those outcomes become recovery rate, verification rate and per-agent performance without anyone compiling a sheet." },
     ],
     faqs: [
-      ["Can we add our own task types?", "Yes. Business rules can create tasks and notifications from events in any module, and workspaces let teams run their own boards."],
-      ["How are tasks assigned?", "By rule: round-robin, by role or to the agent who already owns the customer. Managers can reassign in bulk."],
+      ["Can we add our own task types?", "Order workflows create tasks, messages and delays on order, cart and shipment events. Workspaces let other teams run their own boards and automations."],
+      ["How are tasks assigned?", "Automatically, by workload and who is online, matched to each agent's task types and customer segments. Managers can reassign in bulk."],
       ["What stops tasks piling up?", "Overdue tasks are marked and escalated automatically, and a customer who cannot be reached is moved out of the active queue."],
     ],
     related: ["features/approvals-and-rules", "features/analytics-reports", "solutions/customer-support-teams"],
@@ -172,7 +172,7 @@ export const features: Page[] = [
     points: [
       ["One version of the numbers", "Reports read the same records the team works on, so the dashboard and the floor never disagree."],
       ["Performance by person", "Leaderboards show tasks closed, outcomes and revenue attributed to each agent."],
-      ["Daily digests", "A scheduled summary goes to managers so the first look at yesterday does not need a login."],
+      ["Export in one click", "Download any report as Excel or PDF to share with people outside the platform."],
     ],
     sections: [
       { h: "Questions it answers", p: "The reports are organised around decisions.", list: ["Which states and payment modes drive our returns?", "How much abandoned revenue did we recover this month?", "Which agent closes the most, and who needs help?", "How many customers reordered?"] },
@@ -199,7 +199,7 @@ export const features: Page[] = [
     ],
     sections: [
       { h: "Controls for the organisation admin", p: "Beyond roles, an admin controls the shape of the platform for their organisation.", list: ["Switch whole modules on or off", "Set an idle session timeout", "Choose the home-screen widgets each role sees", "Read an audit trail of permission and record changes"] },
-      { h: "Isolation between organisations", p: "Every record belongs to one organisation and every query is filtered by it. Tenant isolation is tested automatically against every table before changes ship." },
+      { h: "Isolation between organisations", p: "Every record belongs to one organisation and every query is filtered by it. Access rules are enforced in the database itself, so a missed check in the interface cannot expose another organisation's data." },
     ],
     faqs: [
       ["Can we create custom roles?", "Yes. Roles are created by your admin and can be changed at any time."],
@@ -267,11 +267,11 @@ export const features: Page[] = [
       ["Deals with value and stage", "Track what is open, what is won and what it is worth."],
     ],
     sections: [
-      { h: "Simple on purpose", p: "The pipeline covers what a small sales team uses every day and leaves out the configuration burden of an enterprise CRM.", list: ["Lead status from new to qualified to lost", "Deals linked to a lead", "Territories for field teams", "CSV export"] },
+      { h: "Simple on purpose", p: "The pipeline covers what a small sales team uses every day and leaves out the configuration burden of an enterprise CRM.", list: ["Lead status from new to qualified to lost", "Convert a lead into a deal", "Quotes with GST that turn into invoices", "CSV export"] },
       { h: "Next to the rest of the business", p: "The same people, roles and approvals apply. A rule can ask for sign-off on a large deal, and the manager who approves it is the one the org chart says." },
     ],
     faqs: [
-      ["Is this a replacement for a dedicated sales CRM?", "For a small B2B or wholesale team, it covers leads, deals and assignment. Teams that need quoting, forecasting or marketing automation should compare carefully."],
+      ["Is this a replacement for a dedicated sales CRM?", "For a small B2B or wholesale team, it covers leads, deals and assignment. It also produces GST quotes that convert to invoices. Teams that need forecasting, territories or marketing automation should compare carefully."],
       ["Can a rep see another rep's leads?", "Not unless their role is granted a wider scope."],
       ["Can pipeline data be exported?", "Yes, leads and deals export to CSV."],
     ],
@@ -313,7 +313,7 @@ export const features: Page[] = [
       ["Scoped to the team", "A manager sees their reports' visits. Other teams do not."],
     ],
     sections: [
-      { h: "Who uses it", p: "Sales reps visiting retailers, service staff on site calls, and collections or audit teams.", list: ["Visit plan per person", "Check-in time and place", "Outcome notes", "Territories"] },
+      { h: "Who uses it", p: "Sales reps visiting retailers, service staff on site calls, and collections or audit teams.", list: ["Visit plan per person", "Check-in with photo, time and place", "Outcome notes", "Manager view of every visit"] },
       { h: "Privacy as a rule of the system", p: "The consent requirement is a constraint in the database, so no screen or integration can bypass it." },
     ],
     faqs: [
@@ -328,12 +328,12 @@ export const features: Page[] = [
     title: "Click-to-call with every call logged against the customer",
     metaTitle: "Cloud Telephony & Call Logging for CRM",
     description: "Call customers from an order or task, log every call automatically and keep recordings with the customer's history. Works with Exotel and Twilio.",
-    answer: "CodeCrest connects to a cloud telephony provider so agents call from the order or task they are working on. Each call is logged with its duration and outcome on the customer's timeline, and recordings are available to roles allowed to hear them. Customer numbers can be masked from agents.",
+    answer: "CodeCrest connects to a cloud telephony provider so agents call from the order or task they are working on. Each call is logged with its duration and outcome on the customer's timeline, and recordings are available to roles allowed to hear them.",
     visual: "chat",
     points: [
       ["One click from the task", "No copying numbers into a dialler. The call starts where the work is."],
       ["History that writes itself", "Calls, outcomes and recordings attach to the customer without manual notes."],
-      ["Number masking", "Agents can reach customers without seeing or exporting their phone numbers."],
+      ["Recordings by role", "Only roles you allow can play back call recordings."],
     ],
     sections: [
       { h: "Why it matters for COD and recovery", p: "Verification and recovery are call-heavy. Knowing who was called, when and what they said is the difference between a managed process and guesswork.", list: ["Call outcome on every task", "Recordings for training and disputes", "Per-agent call volume in reports"] },
@@ -342,7 +342,7 @@ export const features: Page[] = [
     faqs: [
       ["Do we need our own telephony account?", "Yes. You connect your own provider account, and calls are billed by that provider."],
       ["Who can listen to recordings?", "Only roles granted access, typically managers and quality reviewers."],
-      ["Can agents see customer phone numbers?", "That is your choice. Masking keeps numbers hidden while still allowing calls and messages."],
+      ["Which providers are supported?", "Exotel and Twilio. You connect your own account, and calls are billed by your provider."],
     ],
     related: ["integrations/cloud-telephony", "features/task-engine", "solutions/customer-support-teams"],
   },
