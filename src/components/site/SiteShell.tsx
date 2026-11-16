@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight, ChevronDown, Menu } from "lucide-react";
 import { SECTIONS, TOOLS, SITE_URL } from "@/content";
 import { MotionRoot, Reveal } from "./Motion";
-import { Magnetic } from "./Fx";
+import { Magnetic, MenuAutoClose } from "./Fx";
 import { getSiteContent } from "@/lib/site-content-server";
 import { razorpayEnabled } from "@/lib/razorpay";
 
@@ -127,6 +127,7 @@ export default async function SiteShell({ children }: { children: React.ReactNod
         </div>
       )}
 
+      <MenuAutoClose />
       <header className="sticky top-0 z-50 px-3 sm:px-4 pt-3">
         <div className="relative max-w-6xl mx-auto h-14 pl-3 pr-2 min-[360px]:pl-4 sm:pl-5 flex items-center justify-between gap-2 sm:gap-3">
           {/* The glass is its own layer: backdrop-filter on an ancestor would

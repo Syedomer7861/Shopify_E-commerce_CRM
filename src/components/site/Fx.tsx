@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { animate, useInView, useMotionValue, useReducedMotion, useSpring } from "motion/react";
 import * as m from "motion/react-m";
@@ -16,6 +17,23 @@ import * as m from "motion/react-m";
  * Plain CSS (.rise), not Motion: a Motion fade is rendered as opacity 0 in the
  * HTML, which kept the whole page blank until every script had loaded.
  */
+/**
+ * The header menus are <details> and the header stays mounted across
+ * client-side navigation, so they would stay open. Close them on any link
+ * click (covers same-page links) and on route change (covers back/forward).
+ */
+export function MenuAutoClose() {
+  const pathname = usePathname();
+  useEffect(() => {
+    const close = () => document.querySelectorAll("header details[open]").forEach((d) => d.removeAttribute("open"));
+    close();
+    const onClick = (e: MouseEvent) => { if ((e.target as Element | null)?.closest?.("header a")) close(); };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, [pathname]);
+  return null;
+}
+
 export function PageTransition({ children }: { children: React.ReactNode }) {
   return <div className="rise" style={{ ["--rise-y" as string]: "10px", animationDuration: "0.35s" }}>{children}</div>;
 }
