@@ -1,10 +1,22 @@
 name: CI
 
 # Runs the same gate used before every commit: types, lint, and the verify
-# suite (route guards, tenancy, money, billing, ...). No secrets needed:
-# checks that need a live database skip themselves when env is absent.
-# The live DB probes (check:tenancy-db, check:tenancy-writes) run by hand
-# against production and are not part of CI.
+# suite (route guards, tenancy, money, billing, ...).
+#
+# The live tenant-isolation probe (scripts/check-tenant-isolation.mjs) signs
+# in as a NON-admin user of a small second org and fails if it can see any
+# other org's rows. It only counts rows (HEAD requests); it never reads row
+# contents or writes. On pushes it is required, so missing secrets fail the
+# build. Pull requests from forks get no secrets, so there it may skip.
+#
+# Required repository secrets (Settings > Secrets and variables > Actions):
+#   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
+#   SUPABASE_SERVICE_ROLE_KEY (only lists tables and counts the test org's
+#   own rows), ISOLATION_TEST_EMAIL, ISOLATION_TEST_PASSWORD,
+#   ISOLATION_TEST_ORG_ID.
+#
+# The other live DB probes (check:tenancy-db, check:tenancy-writes) still run
+# by hand against production and are not part of CI.
 
 on:
   push:
@@ -32,3 +44,11 @@ jobs:
       - run: npx tsc --noEmit -p .
       - run: npx next lint --quiet
       - run: npm run verify
+        env:
+          REQUIRE_ISOLATION_TEST: ${{ github.event_name == 'push' && '1' || '' }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ISOLATION_TEST_EMAIL: ${{ secrets.ISOLATION_TEST_EMAIL }}
+          ISOLATION_TEST_PASSWORD: ${{ secrets.ISOLATION_TEST_PASSWORD }}
+          ISOLATION_TEST_ORG_ID: ${{ secrets.ISOLATION_TEST_ORG_ID }}

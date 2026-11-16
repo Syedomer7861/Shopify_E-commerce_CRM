@@ -33,13 +33,11 @@ export default function ReportsPage() {
   const [exportOptions, setExportOptions] = useState({
     sheets: { summary: true, calls: true, orders: true, agents: true, products: true, recovery: true, workflows: true, attendance: true, trends: true },
     format: "xlsx" as "xlsx" | "csv" | "pdf",
-    destination: "download" as "download" | "whatsapp",
-    customPhone: ""
+    destination: "download" as const
   });
   const [masterExportOptions, setMasterExportOptions] = useState({
     format: "xlsx" as "xlsx" | "csv" | "pdf",
-    destination: "download" as "download" | "whatsapp",
-    customPhone: ""
+    destination: "download" as const
   });
   const [isExporting, setIsExporting] = useState(false);
   const [stats, setStats] = useState<any>({
@@ -845,12 +843,7 @@ export default function ReportsPage() {
       });
 
       const filename = `CodeCrest_Master_History_${format(new Date(), "yyyy-MM-dd")}.pdf`;
-      if (masterExportOptions.destination === "download") {
-          pdf.save(filename);
-      } else {
-          const pdfBlob = pdf.output('blob');
-          await exportToWhatsApp(pdfBlob, filename);
-      }
+      pdf.save(filename);
       setShowMasterExport(false);
     } catch (err) {
       console.error(err);
@@ -909,12 +902,7 @@ export default function ReportsPage() {
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([attendanceHeaders, ...stats.dailyAttendanceLogs.map((a: any) => [a.date, a.name, a.clockIn, a.clockOut, a.workHours, a.breakHours, a.netHours, a.tasks, a.revenue])]), "Attendance Register");
 
       const filename = `CodeCrest_Master_Data_${format(new Date(), "yyyy-MM-dd")}.${masterExportOptions.format}`;
-      if (masterExportOptions.destination === "download") {
-        await XLSX.writeFile(wb, filename);
-      } else {
-        const wbout = await XLSX.write(wb, { bookType: masterExportOptions.format as any, type: "array" });
-        await exportToWhatsApp(new Blob([wbout]), filename);
-      }
+      await XLSX.writeFile(wb, filename);
       setShowMasterExport(false);
     } catch (err) {
       console.error(err);
@@ -1048,12 +1036,7 @@ export default function ReportsPage() {
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wfs), "Workflow Attribution");
       }
       
-      if (exportOptions.destination === "download") {
-        await XLSX.writeFile(wb, filename);
-      } else {
-        const wbout = await XLSX.write(wb, { bookType: exportOptions.format as any, type: "array" });
-        await exportToWhatsApp(new Blob([wbout]), filename);
-      }
+      await XLSX.writeFile(wb, filename);
       setShowAdvancedExport(false);
     } catch (err) {
       console.error(err);
@@ -1211,49 +1194,13 @@ export default function ReportsPage() {
 
 
           const filename = `CodeCrest_Intelligence_${dateRange.start}.pdf`;
-          if (exportOptions.destination === "download") {
-              pdf.save(filename);
-          } else {
-              const pdfBlob = pdf.output('blob');
-              await exportToWhatsApp(pdfBlob, filename);
-          }
+          pdf.save(filename);
           setShowAdvancedExport(false);
       } catch (err: any) {
           toast.error("PDF Export failed: " + err.message);
       } finally {
           setIsExporting(false);
       }
-  }
-
-  async function exportToWhatsApp(blob: Blob, filename: string) {
-    try {
-      const { data: settings } = await supabase.from("settings_public").select("whatsapp_admin_phone").single();
-      const phone = exportOptions.customPhone || settings?.whatsapp_admin_phone;
-      if (!phone) throw new Error("No phone number found");
-
-      const reader = new FileReader();
-      const base64Promise = new Promise((resolve) => {
-        reader.onload = () => resolve(reader.result?.toString().split(",")[1]);
-        reader.readAsDataURL(blob);
-      });
-      const mediaData = await base64Promise;
-
-      const res = await fetch("/api/whatsapp/send-direct", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone,
-          message: `📊 *Report Generated: ${filename}*\nSummary: ${stats.totalCalls} calls, ${formatCurrency(stats.totalRevenue)} revenue.`,
-          mediaData,
-          mimetype: filename.endsWith(".pdf") ? "application/pdf" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          filename
-        })
-      });
-      if (res.ok) toast.success("Sent to WhatsApp ✅");
-      else throw new Error("WhatsApp Bridge Error");
-    } catch (err: any) {
-      toast.error("WhatsApp delivery failed: " + err.message);
-    }
   }
 
   function getTrend(curr: number, prev: number) {
@@ -2174,9 +2121,8 @@ export default function ReportsPage() {
             <p className="text-xs text-[#5f5f5d] italic">Complete data integrity export for audit and compliance purposes.</p>
             <div className="grid grid-cols-2 gap-4">
                 <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-2 block tracking-widest">Format</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "xlsx"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "xlsx" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>EXCEL</button><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "csv"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "csv" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>CSV</button><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "pdf"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "pdf" ? "bg-rose-500 text-white border-rose-500" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>PDF</button></div></div>
-                <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-2 block tracking-widest">Target</label><div className="grid grid-cols-2 gap-2"><button onClick={() => setMasterExportOptions({...masterExportOptions, destination: "download"})} className={cn("py-2 px-2 rounded-lg border text-[10px] font-bold", masterExportOptions.destination === "download" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>LOCAL</button><button onClick={() => setMasterExportOptions({...masterExportOptions, destination: "whatsapp"})} className={cn("py-2 px-2 rounded-lg border text-[10px] font-bold", masterExportOptions.destination === "whatsapp" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>WA</button></div></div>
+                
             </div>
-            {masterExportOptions.destination === "whatsapp" && (<div className="p-4 bg-[#eceae4]/30 rounded-xl border border-[#eceae4]"><input type="text" placeholder="Phone Number" value={masterExportOptions.customPhone} onChange={e => setMasterExportOptions({...masterExportOptions, customPhone: e.target.value})} className="input text-xs" /></div>)}
         </div>
       </Modal>
 
@@ -2187,7 +2133,7 @@ export default function ReportsPage() {
             <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-4 block tracking-widest opacity-60">Select Modules</label><div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{["Summary", "Calls", "Orders", "Agents", "Products", "Recovery", "Workflows", "Attendance", "Trends"].map((s: any) => (<button key={s} onClick={() => setExportOptions({...exportOptions, sheets: {...exportOptions.sheets, [s.toLowerCase()]: !(exportOptions.sheets as any)[s.toLowerCase()]}})} className={cn("flex items-center justify-center py-3 rounded-xl border text-[11px] font-bold transition-all", (exportOptions.sheets as any)[s.toLowerCase()] ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c] shadow-lg shadow-[#1c1c1c]/10" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>{s}</button>))}</div></div>
             <div className="grid grid-cols-2 gap-8 pt-4 border-t border-[#eceae4]">
                 <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-3 block tracking-widest opacity-60">Output Format</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setExportOptions({...exportOptions, format: "xlsx"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "xlsx" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>EXCEL</button><button onClick={() => setExportOptions({...exportOptions, format: "csv"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "csv" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>CSV</button><button onClick={() => setExportOptions({...exportOptions, format: "pdf"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "pdf" ? "bg-rose-500 text-white border-rose-500" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>PDF</button></div></div>
-                <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-3 block tracking-widest opacity-60">Delivery</label><div className="grid grid-cols-2 gap-2"><button onClick={() => setExportOptions({...exportOptions, destination: "download"})} className={cn("py-2 px-2 rounded-lg border text-[10px] font-bold", exportOptions.destination === "download" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>LOCAL</button><button onClick={() => setExportOptions({...exportOptions, destination: "whatsapp"})} className={cn("py-2 px-2 rounded-lg border text-[10px] font-bold", exportOptions.destination === "whatsapp" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>WA</button></div></div>
+                
             </div>
         </div>
       </Modal>

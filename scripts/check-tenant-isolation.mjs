@@ -10,7 +10,8 @@
  * leftover permissive policy, because the admin is allowed to see those rows
  * anyway. A real cross-tenant leak survived six verified batches that way.
  *
- * Needs in .env.local (skips, exit 0, when absent so offline runs still pass):
+ * Needs in .env.local or CI secrets (skips, exit 0, when absent so offline
+ * runs still pass; fails instead when REQUIRE_ISOLATION_TEST=1, as in CI):
  *   ISOLATION_TEST_EMAIL / ISOLATION_TEST_PASSWORD  a non-admin login in a
  *     small second org; ISOLATION_TEST_ORG_ID  that org's id.
  */
@@ -30,6 +31,12 @@ const {
 } = process.env;
 
 if (!URL || !ANON || !SERVICE || !EMAIL || !PASSWORD || !ORG_ID) {
+  // CI sets REQUIRE_ISOLATION_TEST=1 so a missing secret fails the build
+  // instead of silently skipping the one check that proves isolation.
+  if (process.env.REQUIRE_ISOLATION_TEST === "1") {
+    console.error("✗ tenant-isolation: required but ISOLATION_TEST_* / Supabase env is not set (add the repository secrets)");
+    process.exit(1);
+  }
   console.log("- tenant-isolation check skipped (ISOLATION_TEST_* / Supabase env not set)");
   process.exit(0);
 }
