@@ -3,7 +3,7 @@ import { orQuote } from "@/lib/utils";
  * WhatsApp messaging via Meta Cloud API (Primary) and Local Bridge (Fallback)
  */
 import { createServerClient } from "./supabase";
-import { getSystemSettings } from "./server-settings";
+import { bridgeUrlFor, getSystemSettings } from "./server-settings";
 
 export interface WhatsAppResponse {
   ok: boolean;
@@ -177,7 +177,7 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
     let whatsappResult: WhatsAppResponse = { ok: false, error: "No WhatsApp messaging gateway configured" };
 
     // 1. Legacy wa_server.js Local Bridge (Primary Route if configured)
-    const bridgeUrl = settings?.whatsapp_bridge_url || process.env.WHATSAPP_BRIDGE_URL;
+    const bridgeUrl = await bridgeUrlFor(settings);
     if (bridgeUrl) {
       try {
         const res = await fetch(`${bridgeUrl}/send`, {

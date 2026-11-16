@@ -50,6 +50,28 @@ export async function getDefaultOrgId(): Promise<string | null> {
   return _defaultOrgIdCache;
 }
 
+/**
+ * The org whose phone the shared bridge process (wa_server.js, configured by
+ * WHATSAPP_BRIDGE_URL) is logged into: WHATSAPP_BRIDGE_ORG_ID when set,
+ * otherwise the seed org. Inbound bridge messages are filed under it, and it
+ * is the only org allowed to send through the env bridge.
+ */
+export async function getBridgeOwnerOrgId(): Promise<string | null> {
+  return process.env.WHATSAPP_BRIDGE_ORG_ID || (await getDefaultOrgId());
+}
+
+/**
+ * Bridge URL an org may send through: its own whatsapp_bridge_url, or the
+ * env bridge only when it owns that bridge. Any other org gets null, so its
+ * customers are never messaged from another tenant's number.
+ */
+export async function bridgeUrlFor(settings: { org_id?: string | null; whatsapp_bridge_url?: string | null } | null | undefined): Promise<string | null> {
+  if (settings?.whatsapp_bridge_url) return settings.whatsapp_bridge_url;
+  const env = process.env.WHATSAPP_BRIDGE_URL;
+  if (!env || !settings?.org_id) return null;
+  return settings.org_id === (await getBridgeOwnerOrgId()) ? env : null;
+}
+
 async function resolveSessionOrgId(supabase: any): Promise<string | null> {
   try {
     const { data: { user } } = await supabase.auth.getUser();

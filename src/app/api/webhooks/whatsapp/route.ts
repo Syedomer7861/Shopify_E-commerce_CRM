@@ -3,7 +3,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
 import { hasInternalSecret } from "@/lib/auth-utils";
 import { normalizePhone } from "@/lib/phone-utils";
-import { getDefaultOrgId } from "@/lib/server-settings";
+import { getBridgeOwnerOrgId } from "@/lib/server-settings";
 
 export async function POST(req: NextRequest) {
   const limited = await rateLimit(req, "webhook-whatsapp", 300, 60000);
@@ -20,16 +20,19 @@ export async function POST(req: NextRequest) {
   try {
     const { from, body, timestamp, type, selectedButtonId } = await req.json();
 
-    // Org resolution: unlike Shiprocket/Shopify, the inbound payload here
-    // carries only the CUSTOMER's phone, never anything identifying which
-    // business's WhatsApp number received it - because there's only one
-    // bridge process (wa_server.js) today, logged into one WhatsApp
-    // Business account. True multi-tenant WhatsApp needs one bridge
-    // deployment per org (each paired with its own number), which is
-    // infrastructure/deployment work, not something this route can route
-    // around on its own. Falls back to the seed org, matching the
-    // single-bridge reality.
-    const orgId = await getDefaultOrgId();
+    // Org resolution: the payload carries only the customer's phone. The
+    // bridge process is logged into one org's number, so its messages
+    // belong to that org: WHATSAPP_BRIDGE_ORG_ID, else the seed org. Only
+    // that org may send through the env bridge (bridgeUrlFor), so replies
+    // can only come from its own customers. A bridge run for another org
+    // must set WA_ORG_ID; it is checked against the organizations table.
+    const claimed = req.headers.get("x-wa-org");
+    let orgId = await getBridgeOwnerOrgId();
+    if (claimed) {
+      const { data: org } = await supabase.from("organizations").select("id").eq("id", claimed).maybeSingle();
+      if (!org) return NextResponse.json({ error: "Unknown organization" }, { status: 400 });
+      orgId = org.id;
+    }
     if (!orgId) {
       console.error("🚨 WhatsApp Webhook: could not resolve an organization for this event.");
       return NextResponse.json({ error: "Organization resolution failed" }, { status: 500 });

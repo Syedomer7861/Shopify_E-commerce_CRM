@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { getSystemSettings } from "@/lib/server-settings";
+import { bridgeUrlFor, getSystemSettings } from "@/lib/server-settings";
 import { privilegedScope } from "@/lib/auth-utils";
 
 function getSupabase() {
@@ -78,8 +78,9 @@ async function sendDigestForOrg(supabase: ReturnType<typeof createAdminClient>, 
   const reorderTasksCount = (todayTasks || []).filter(t => t.task_type === 'reorder').length;
 
   // 🏥 SYSTEM CHECK
-  // Priority: env var (most reliable locally) → settings DB → localhost default
-  const bridgeUrl = settings.whatsapp_bridge_url || process.env.WHATSAPP_BRIDGE_URL || "http://localhost:3001";
+  // The org's own bridge, or the env bridge only for the org that owns it.
+  const bridgeUrl = await bridgeUrlFor(settings);
+  if (!bridgeUrl) return { sent: false, skipped: true, reason: "No WhatsApp bridge for this organisation" };
   let bridgeStatus = "OFFLINE ❌";
   try {
     const bRes = await fetch(`${bridgeUrl}/status`);

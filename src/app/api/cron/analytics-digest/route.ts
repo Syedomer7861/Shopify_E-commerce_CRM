@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { getSystemSettings } from "@/lib/server-settings";
+import { bridgeUrlFor, getSystemSettings } from "@/lib/server-settings";
 import { requireOwnerOrInternal } from "@/lib/auth-utils";
 
 /**
@@ -120,7 +120,8 @@ async function sendDigestForOrg(supabase: ReturnType<typeof createAdminClient>, 
       `\n──────────────────\n` +
       `*View the full breakdown in Analytics.*`;
 
-    const bridgeUrl = settings.whatsapp_bridge_url || process.env.WHATSAPP_BRIDGE_URL || "http://localhost:3001";
+    const bridgeUrl = await bridgeUrlFor(settings);
+    if (!bridgeUrl) return { sent: false, skipped: true, reason: "No WhatsApp bridge for this organisation", range, orderCount, deliveredRevenue };
     const res = await fetch(`${bridgeUrl}/send`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

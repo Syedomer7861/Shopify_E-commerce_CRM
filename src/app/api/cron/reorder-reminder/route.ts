@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getTaskProductName } from "@/lib/utils";
-import { getSystemSettings } from "@/lib/server-settings";
+import { bridgeUrlFor, getSystemSettings } from "@/lib/server-settings";
 import { sendGmail } from "@/lib/gmail";
 import { personaliseTemplate, getTemplateVariables } from "@/lib/whatsapp";
 import { privilegedScope } from "@/lib/auth-utils";
@@ -61,7 +61,7 @@ async function processOrg(supabase: any, orgId: string) {
     return { waSent: 0, emailSent: 0, total: 0 };
   }
 
-  const effectiveBridgeUrl = settings.whatsapp_bridge_url || process.env.WHATSAPP_BRIDGE_URL;
+  const effectiveBridgeUrl = await bridgeUrlFor(settings);
   const waEnabled = settings.whatsapp_enabled && effectiveBridgeUrl && settings.wa_auto_reorder;
   const emailEnabled = settings.gmail_refresh_token && settings.email_auto_reorder;
 

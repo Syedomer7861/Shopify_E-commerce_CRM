@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { getTaskProductName } from "@/lib/utils";
-import { getSystemSettings } from "@/lib/server-settings";
+import { bridgeUrlFor, getSystemSettings } from "@/lib/server-settings";
 import { requireOwnerOrInternal } from "@/lib/auth-utils";
 
 function getSupabase() {
@@ -48,7 +48,7 @@ async function processOrg(supabase: any, orgId: string) {
   // 1. Get Settings
   const settings = await getSystemSettings(supabase, orgId);
 
-  const effectiveBridgeUrl = settings?.whatsapp_bridge_url || process.env.WHATSAPP_BRIDGE_URL;
+  const effectiveBridgeUrl = await bridgeUrlFor(settings);
   if (!settings?.whatsapp_enabled || !effectiveBridgeUrl || !settings?.wa_auto_order_delivered) {
     return { sent: 0, total: 0 };
   }

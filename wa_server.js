@@ -196,7 +196,8 @@ function initClient() {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-sync-secret": process.env.SYNC_SECRET || process.env.CRON_SECRET || ""
+                    "x-sync-secret": process.env.SYNC_SECRET || process.env.CRON_SECRET || "",
+                    ...(process.env.WA_ORG_ID ? { "x-wa-org": process.env.WA_ORG_ID } : {})
                 },
                 body: JSON.stringify(payload)
             });
