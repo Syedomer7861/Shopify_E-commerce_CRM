@@ -1746,7 +1746,11 @@ export default function SettingsPage() {
                       <button onClick={fetchStatus} className="text-[9px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 underline underline-offset-4">Refresh Status</button>
                     </div>
                   ) : (
-                    <div className="p-4 text-center text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest opacity-40">Not Connected</div>
+                    <div className="p-4 text-center text-[11px] text-[#5f5f5d] leading-relaxed">
+                      <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Not Connected</p>
+                      {/* The QR comes from the bridge program (npm run wa); without it there is nothing to scan. */}
+                      <p className="mt-2">{waStatus.error || "Bridge is starting. The QR code will appear in a few seconds."} The QR code to scan shows above once the bridge program is running and reachable at the URL below.</p>
+                    </div>
                   )}
                   
                   <div>
