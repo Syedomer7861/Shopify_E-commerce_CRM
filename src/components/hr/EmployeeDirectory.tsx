@@ -10,7 +10,7 @@ type EmpStatus = "Active" | "Notice Period" | "Offboarded";
 interface Employee {
   id: string; name: string; email: string; phone: string; role: string; designation: string;
   department: string; joinDate: string; status: EmpStatus;
-  salary: number; location: string; emergencyContact: string;
+  salary: number; location: string; emergencyContact: string; dob?: string;
   onboarding: { task: string; done: boolean }[];
   offboarding: { task: string; done: boolean }[];
 }
@@ -93,8 +93,8 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
   const [activePanel, setActivePanel] = useState<"profile" | "onboarding" | "offboarding">("profile");
   const [showAdd, setShowAdd] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", role: "", designation: "", department: "", joinDate: "", salary: "", location: "", emergencyContact: "", city: "", state: "", country: "India" });
-  const [newEmp, setNewEmp] = useState({ name: "", email: "", phone: "", role: "agent", designation: "", department: "IT", joinDate: "", salary: "", location: "", city: "", state: "", country: "India" });
+  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", role: "", designation: "", department: "", joinDate: "", dob: "", salary: "", location: "", emergencyContact: "", city: "", state: "", country: "India" });
+  const [newEmp, setNewEmp] = useState({ name: "", email: "", phone: "", role: "agent", designation: "", department: "IT", joinDate: "", dob: "", salary: "", location: "", city: "", state: "", country: "India" });
   const [customDept, setCustomDept] = useState({ add: false, edit: false });
   const [customDeptValue, setCustomDeptValue] = useState({ add: "", edit: "" });
   const [customDesig, setCustomDesig] = useState({ add: false, edit: false });
@@ -116,6 +116,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
       salary: Number(p.monthly_salary) || 0,
       location: p.location || "—",
       emergencyContact: p.emergency_contact || "—",
+      dob: p.date_of_birth || "",
       onboarding: (p.onboarding_progress && p.onboarding_progress.length > 0) ? p.onboarding_progress : ONBOARDING_TASKS.map(t => ({ task: t, done: false })),
       offboarding: (p.offboarding_progress && p.offboarding_progress.length > 0) ? p.offboarding_progress : OFFBOARDING_TASKS.map(t => ({ task: t, done: false })),
     }));
@@ -231,7 +232,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
       setEmployees(prev => [optimisticEmployee, ...prev]);
       toast.success("Demo: employee added (local only)");
       setShowAdd(false);
-      setNewEmp({ name: "", email: "", phone: "", role: "agent", designation: "", department: "IT", joinDate: "", salary: "", location: "", city: "", state: "", country: "India" });
+      setNewEmp({ name: "", email: "", phone: "", role: "agent", designation: "", department: "IT", joinDate: "", dob: "", salary: "", location: "", city: "", state: "", country: "India" });
       return;
     }
 
@@ -251,6 +252,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
             designation: newEmp.designation,
             department: newEmp.department,
             joining_date: newEmp.joinDate,
+            ...(newEmp.dob ? { date_of_birth: newEmp.dob } : {}),
             monthly_salary: Number(newEmp.salary),
             location: locationStr
           }
@@ -285,7 +287,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
 
       toast.success("Employee added successfully! Default password: Welcome@123");
       setShowAdd(false);
-      setNewEmp({ name: "", email: "", phone: "", role: "agent", designation: "", department: "IT", joinDate: "", salary: "", location: "", city: "", state: "", country: "India" });
+      setNewEmp({ name: "", email: "", phone: "", role: "agent", designation: "", department: "IT", joinDate: "", dob: "", salary: "", location: "", city: "", state: "", country: "India" });
       setCustomDept({ add: false, edit: false });
       setCustomDeptValue({ add: "", edit: "" });
       setCustomDesig({ add: false, edit: false });
@@ -550,6 +552,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                           designation: selected.designation,
                           department: selected.department,
                           joinDate: selected.joinDate,
+                          dob: selected.dob || "",
                           salary: String(selected.salary),
                           location: selected.location,
                           emergencyContact: selected.emergencyContact,
@@ -572,6 +575,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                     { icon: Phone, label: "Phone", key: "phone", val: selected.phone },
                     { icon: MapPin, label: "Location", key: "location", val: selected.location },
                     { icon: Calendar, label: "Join Date", key: "joinDate", val: selected.joinDate },
+                    { icon: Calendar, label: "Date of Birth", key: "dob", val: selected.dob ? new Date(selected.dob + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—" },
                     { icon: Briefcase, label: "Monthly Salary", key: "salary", val: `₹${selected.salary.toLocaleString("en-IN")}` },
                     { icon: Phone, label: "Emergency Contact", key: "emergencyContact", val: selected.emergencyContact || "—" },
                   ].map(({ icon: Icon, label, key, val }) => (
@@ -623,7 +627,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                           </div>
                         ) : (
                           <input 
-                            type={key === "joinDate" ? "date" : key === "salary" ? "number" : "text"}
+                            type={key === "joinDate" || key === "dob" ? "date" : key === "salary" ? "number" : "text"}
                             className="input w-full py-1 text-xs font-bold bg-white" 
                             value={(editForm as any)[key]} 
                             onChange={e => setEditForm({ ...editForm, [key]: e.target.value })}
@@ -648,6 +652,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                           designation: editForm.designation,
                           department: editForm.department,
                           joining_date: editForm.joinDate,
+                          ...(editForm.dob || selected.dob ? { date_of_birth: editForm.dob || null } : {}),
                           monthly_salary: Number(editForm.salary),
                           location: [editForm.city, editForm.state, editForm.country].filter(Boolean).join(", "),
                           emergency_contact: editForm.emergencyContact
@@ -832,6 +837,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
               {[
                 { key: "phone", label: "Phone", placeholder: "+91 98765 43210", type: "text" },
                 { key: "joinDate", label: "Join Date", placeholder: "", type: "date" },
+                { key: "dob", label: "Date of Birth", placeholder: "", type: "date" },
                 { key: "salary", label: "Monthly Salary (₹)", placeholder: "30000", type: "number" },
               ].map(f => (
                 <div key={f.key}>

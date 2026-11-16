@@ -19,6 +19,7 @@ import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { visibleModules } from "@/lib/modules";
 import { sendAdminNotification } from "@/lib/notifications";
 import { Modal } from "./ui";
+import { ProfileSheet, UserAvatar } from "./ProfileSheet";
 import { useChat } from "@/context/ChatContext";
 
 // Main menu, drawn in these groups (phones: a thin divider between groups).
@@ -96,6 +97,7 @@ export default function Sidebar() {
   const [shiftStart, setShiftStart] = useState<Date | null>(null);
   const [showStatusModal, setShowStatusModal] = useState<{ id: string, label: string } | null>(null);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [myLeaves, setMyLeaves] = useState<any[]>([]);
   const [leaveData, setLeaveData] = useState({ start: "", end: "", reason: "" });
   const [isSubmittingLeave, setIsSubmittingLeave] = useState(false);
@@ -531,7 +533,6 @@ export default function Sidebar() {
     !modBlocked(item.href.slice(1));
   const adminGroups = ADMIN_GROUPS.map(g => ({ label: g, items: adminNav.filter(i => i.group === g && canSeeAdmin(i)) })).filter(g => g.items.length > 0);
 
-  const initials = profile?.name ? profile.name.substring(0, 2).toUpperCase() : (profile?.email ? profile.email.substring(0, 2).toUpperCase() : "??");
   const statusDot = ({ online: "bg-emerald-500", meeting: "bg-sky-500", training: "bg-sky-500", break: "bg-amber-500", lunch: "bg-amber-500", away: "bg-orange-500" } as Record<string, string>)[profile?.status || ""] || "bg-gray-400";
   const shiftStartLabel = shiftStart && mounted ? shiftStart.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "--:--";
 
@@ -708,8 +709,8 @@ export default function Sidebar() {
         aria-label="Profile, shift and menu"
         className="lg:hidden flex flex-col items-center gap-1 py-2.5 mb-[4.25rem] border-t border-[#eceae4] flex-shrink-0"
       >
-        <span className="relative w-8 h-8 rounded-full bg-[#1c1c1c] flex items-center justify-center text-[#fcfbf8] text-[10px] font-bold">
-          {initials}
+        <span className="relative">
+          <UserAvatar profile={profile} className="w-8 h-8 text-[10px]" />
           <span className={cn("absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#f7f4ed]", statusDot)} />
         </span>
         <span className="text-[9px] font-bold text-[#1c1c1c] tabular-nums">{formatDuration(timers.workMs).slice(0, 5)}</span>
@@ -719,16 +720,17 @@ export default function Sidebar() {
       <Modal open={showMoreMenu} onClose={() => setShowMoreMenu(false)} title="Quick Actions & Menus">
         <div className="space-y-6 pb-8">
            {/* Profile */}
-           <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-[#eceae4]">
-             <span className="relative w-10 h-10 rounded-full bg-[#1c1c1c] flex items-center justify-center text-[#fcfbf8] text-xs font-bold flex-shrink-0">
-               {initials}
+           <button onClick={() => { setShowMoreMenu(false); setShowProfile(true); }} className="w-full text-left flex items-center gap-3 p-3 rounded-xl bg-white border border-[#eceae4] hover:bg-gray-50">
+             <span className="relative flex-shrink-0">
+               <UserAvatar profile={profile} className="w-10 h-10 text-xs" />
                <span className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white", statusDot)} />
              </span>
              <div className="flex-1 min-w-0">
                <div className="text-sm font-bold text-[#1c1c1c] truncate">{profile?.name || profile?.email || "Loading..."}</div>
                <div className="text-[11px] text-[#5f5f5d] truncate"><span className="capitalize">{profile?.role || "User"}</span>{profile?.email && profile?.name ? ` · ${profile.email}` : ""}</div>
              </div>
-           </div>
+             <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] flex-shrink-0">View</span>
+           </button>
 
            {/* Today's shift */}
            <div>
@@ -876,6 +878,8 @@ export default function Sidebar() {
       </Modal>
 
       {/* Popups shared by desktop and phone. Kept outside the desktop-only footer so they open on phones. */}
+      <ProfileSheet open={showProfile} onClose={() => setShowProfile(false)} profile={profile}
+        onPhotoChange={(path) => setProfile(prev => (prev ? ({ ...prev, avatar_path: path } as Profile) : prev))} />
         <Modal 
           open={!!showStatusModal} 
           onClose={() => setShowStatusModal(null)} 
@@ -1050,13 +1054,13 @@ export default function Sidebar() {
         </div>
 
         <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#f7f4ed] border border-[#eceae4] group">
-          <div className="w-8 h-8 rounded-full bg-[#1c1c1c] flex items-center justify-center text-[#fcfbf8] text-[10px] font-bold flex-shrink-0">
-            {initials}
-          </div>
+          <button onClick={() => setShowProfile(true)} title="My profile" className="flex items-center gap-3 flex-1 min-w-0 text-left">
+          <UserAvatar profile={profile} className="w-8 h-8 text-[10px]" />
           <div className="flex-1 min-w-0">
             <div className="text-[#1c1c1c] text-[11px] font-bold truncate leading-tight">{profile?.name || <span className="capitalize">{profile?.role || "User"}</span>}</div>
             <div className="text-[#5f5f5d] text-[10px] truncate opacity-80">{profile?.email || "loading..."}</div>
           </div>
+          </button>
           <button onClick={handleLogout} aria-label="Sign out" title="Sign out" className="w-7 h-7 rounded-md hover:bg-rose-50 flex items-center justify-center transition-all">
             <LogOut className="w-3.5 h-3.5 text-[#5f5f5d] hover:text-rose-500" />
           </button>

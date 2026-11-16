@@ -338,6 +338,9 @@ export interface Profile {
   department?: string | null;
   is_active: boolean;
   is_platform_admin?: boolean;
+  // 20261116a: own photo (private `avatars` bucket path) and HR-set date of birth.
+  avatar_path?: string | null;
+  date_of_birth?: string | null;
   status?: "online" | "break" | "meeting" | "lunch" | "away" | "offline";
   last_seen_at?: string;
   live_state?: {
