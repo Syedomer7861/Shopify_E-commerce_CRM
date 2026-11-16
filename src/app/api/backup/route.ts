@@ -13,7 +13,10 @@ const BACKUP_BUDGET_MS = 50_000;
 
 /**
  * GET/POST /api/backup
- * Backs up every business-critical table to Google Drive as CSV.
+ * Platform-owner backup: the operator's own off-site copy of every
+ * organisation's business-critical tables, written as CSV to the Drive
+ * behind GOOGLE_REFRESH_TOKEN. Only the cron (internal secret) can call it;
+ * no tenant can trigger it or read the files.
  *
  * This previously listed 16 tables, 4 of which didn't exist in the real
  * schema at all (system_settings, leave_requests, agent_performance_metrics,
@@ -55,7 +58,10 @@ async function handleBackup(req: NextRequest) {
   //
   //   customers, orders, order_revenue_attribution, tasks, profiles,
   //   call_logs, abandoned_carts   - core business + revenue records
-  //   settings, campaigns, campaign_templates, workflows - configuration
+  //   campaigns, campaign_templates, workflows - configuration
+  //   (settings is left out: each org's row holds its API tokens and
+  //   secrets, which must not sit in a plain CSV on Drive; Supabase's own
+  //   backups still cover it)
   //   workflow_steps               - automation step definitions (with
   //                                  `workflows` these fully define every
   //                                  workflow; without them steps must be
@@ -87,7 +93,6 @@ async function handleBackup(req: NextRequest) {
     "profiles",
     "call_logs",
     "abandoned_carts",
-    "settings",
     "campaigns",
     "campaign_templates",
     "audit_logs",

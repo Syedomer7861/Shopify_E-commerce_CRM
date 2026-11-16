@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
 
     // Pulse Log: Sync the raw webhook event to Google Sheets for transparency
     import("@/lib/google-sheets").then(m => {
-      m.appendToSheet("Audit_Logs", {
+      m.appendToSheet(orgId, "Audit_Logs", {
         timestamp: new Date().toISOString(),
         source: "shopify_webhook",
         topic: topic || "unknown",
@@ -269,7 +269,7 @@ export async function POST(req: NextRequest) {
 
             // Live Sync to Google Sheets (Comprehensive Order Mirroring)
             import("@/lib/google-sheets").then(m => {
-              m.appendToSheet("Orders", {
+              m.appendToSheet(orgId, "Orders", {
                 order_number: String(payload.order_number || payload.name),
                 topic: topic,
                 customer: `${customerData?.first_name || ""} ${customerData?.last_name || ""}`.trim(),
@@ -363,7 +363,7 @@ export async function POST(req: NextRequest) {
 
             // Live Sync to Google Sheets (In-Depth)
             import("@/lib/google-sheets").then(m => {
-              m.appendToSheet("Abandoned_Carts", {
+              m.appendToSheet(orgId, "Abandoned_Carts", {
                 cart_token: String(payload.token || payload.id),
                 customer: `${customerData?.first_name || ""} ${customerData?.last_name || ""}`.trim(),
                 phone: phone,

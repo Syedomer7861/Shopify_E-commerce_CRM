@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       activity_type,
       metadata,
       note: description
-    }).select("id, created_at").single();
+    }).select("id, created_at, org_id").single();
 
     if (error) throw error;
 
@@ -46,11 +46,11 @@ export async function POST(req: NextRequest) {
     };
 
     // Master Audit Log
-    appendToSheet("Audit_Logs", syncData).catch(err => console.error("Sync to Audit_Logs failed:", err));
+    appendToSheet(data.org_id, "Audit_Logs", syncData).catch(err => console.error("Sync to Audit_Logs failed:", err));
 
     // Targeted Tabs for In-Depth Analysis
     if (activity_type === "task_completed" || activity_type === "task_completion") {
-      appendToSheet("Task_Resolutions", {
+      appendToSheet(data.org_id, "Task_Resolutions", {
         task_id: metadata?.task_id || "N/A",
         task_type: metadata?.task_type || "N/A",
         customer: metadata?.customer_name || "N/A",
@@ -61,9 +61,9 @@ export async function POST(req: NextRequest) {
         timestamp: data.created_at
       }).catch(err => console.error("Sync to Task_Resolutions failed:", err));
     } else if (activity_type === "whatsapp") {
-      appendToSheet("WhatsApp_Logs", syncData).catch(err => console.error("Sync to WhatsApp_Logs failed:", err));
+      appendToSheet(data.org_id, "WhatsApp_Logs", syncData).catch(err => console.error("Sync to WhatsApp_Logs failed:", err));
     } else if (activity_type.includes("attendance") || activity_type.includes("clock")) {
-      appendToSheet("Attendance_Logs", syncData).catch(err => console.error("Sync to Attendance_Logs failed:", err));
+      appendToSheet(data.org_id, "Attendance_Logs", syncData).catch(err => console.error("Sync to Attendance_Logs failed:", err));
     }
 
     return NextResponse.json({ success: true, id: data.id });

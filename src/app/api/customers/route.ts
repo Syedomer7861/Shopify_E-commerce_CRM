@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
   // Live Sync to Google Sheets
   if (data) {
     import("@/lib/google-sheets").then(m => {
-      m.appendToSheet("Customers", {
+      m.appendToSheet(data.org_id, "Customers", {
         id: data.id,
         name: data.name,
         phone: data.phone,

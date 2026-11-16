@@ -542,7 +542,7 @@ export async function POST(req: NextRequest) {
       // Log to Sheets silently
       try {
         const { appendToSheet } = await import("@/lib/google-sheets");
-        appendToSheet("Audit_Logs", {
+        appendToSheet(orgIds.length === 1 ? orgIds[0] : null, "Audit_Logs", {
           timestamp: new Date().toISOString(),
           action: "REFRESH",
           entity: "Admin",

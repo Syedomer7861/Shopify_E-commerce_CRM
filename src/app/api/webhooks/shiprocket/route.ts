@@ -823,7 +823,7 @@ export async function POST(req: NextRequest) {
 
       // Live Sync to Google Sheets (Shipping Tracking)
       import("@/lib/google-sheets").then(m => {
-        m.appendToSheet("Shipping_Logs", {
+        m.appendToSheet(orgId, "Shipping_Logs", {
           awb: body.awb || "N/A",
           order: identifierStr,
           status: body.status || "unknown",
@@ -835,7 +835,7 @@ export async function POST(req: NextRequest) {
         });
 
         if (crmStatus === "rto" || crmStatus === "failed") {
-          m.appendToSheet("NDR_Exceptions", {
+          m.appendToSheet(orgId, "NDR_Exceptions", {
             order: identifierStr,
             awb: body.awb || "N/A",
             customer: body.customer_name || "N/A",

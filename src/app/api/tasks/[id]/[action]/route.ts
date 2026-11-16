@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest,
 
     const { data: task } = await supabase
       .from("tasks")
-      .select("customer_id, order_id, abandoned_cart_id, task_type, priority_score, assigned_to, customers(name)")
+      .select("org_id, customer_id, order_id, abandoned_cart_id, task_type, priority_score, assigned_to, customers(name)")
       .eq("id", id)
       .single();
     if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });
@@ -74,7 +74,7 @@ export async function PATCH(req: NextRequest,
     // 3. Live Sync to Google Sheets (Comprehensive)
     try {
       const { appendToSheet } = await import("@/lib/google-sheets");
-      await appendToSheet("Task_Resolutions", {
+      await appendToSheet((task as any).org_id, "Task_Resolutions", {
         task_id: id,
         task_type: (task as any).task_type || "manual",
         customer: (task as any).customers?.name || "Unknown",
@@ -112,7 +112,7 @@ export async function PATCH(req: NextRequest,
 
     // Live Sync to Google Sheets (In-Depth)
     import("@/lib/google-sheets").then(m => {
-      m.appendToSheet("Task_Resolutions", {
+      m.appendToSheet((task as any).org_id, "Task_Resolutions", {
         task_id: id,
         task_type: (task as any).task_type || "manual",
         customer: (task as any).customers?.name || "Unknown",
@@ -139,7 +139,7 @@ export async function PATCH(req: NextRequest,
 
     // Live Sync to Google Sheets (In-Depth)
     import("@/lib/google-sheets").then(m => {
-      m.appendToSheet("Task_Resolutions", {
+      m.appendToSheet((task as any).org_id, "Task_Resolutions", {
         task_id: id,
         task_type: (task as any)?.task_type || "manual",
         customer: (task as any)?.customers?.name || "Unknown",

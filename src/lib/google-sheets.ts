@@ -1,5 +1,17 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { OAuth2Client } from 'google-auth-library';
+import { getDefaultOrgId } from './server-settings';
+
+/**
+ * The live sync sheet (GOOGLE_SHEET_ID) belongs to one organisation:
+ * GOOGLE_SHEET_ORG_ID when set, else the seed org. Rows from any other org
+ * are never written to it - customer names, phones and order payloads must
+ * not leave their own tenant.
+ */
+async function isSheetOwner(orgId: string | null | undefined): Promise<boolean> {
+  if (!orgId) return false;
+  return orgId === (process.env.GOOGLE_SHEET_ORG_ID || (await getDefaultOrgId()));
+}
 
 /**
  * Initializes and returns a Google Spreadsheet instance using OAuth2.
@@ -32,8 +44,9 @@ export async function getGoogleSheet() {
  * Appends a row to a specific sheet (tab) by title.
  * Creates the sheet if it doesn't exist.
  */
-export async function appendToSheet(sheetTitle: string, row: Record<string, any>) {
+export async function appendToSheet(orgId: string | null | undefined, sheetTitle: string, row: Record<string, any>) {
   try {
+    if (!(await isSheetOwner(orgId))) return;
     const doc = await getGoogleSheet();
     if (!doc) return;
 
