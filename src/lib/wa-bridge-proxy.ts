@@ -19,13 +19,17 @@ export async function proxyBridge(req: NextRequest, path: "/status" | "/qr-data"
 
   const { data } = await createAdminClient().from("settings").select("whatsapp_bridge_url").eq("org_id", orgId).maybeSingle();
   const url = await bridgeUrlFor({ org_id: orgId, whatsapp_bridge_url: data?.whatsapp_bridge_url });
-  if (!url) return down(NO_BRIDGE);
+  if (!url) return down(process.env.WHATSAPP_HOSTED_BRIDGE_URL ? NO_BRIDGE : "Connect by QR is not switched on yet. Use the Meta API above, or ask CodeCrest to enable it.");
 
   try {
     const res = await fetch(`${url}${path}`, { method, headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(8000), cache: "no-store" });
     if (!res.ok && res.status !== 503) throw new Error(`bridge ${res.status}`);
     return NextResponse.json({ ok: true, ...(await res.json()) });
   } catch {
-    return down("Could not reach the WhatsApp bridge. Try again in a minute; if it keeps failing, contact support.");
+    // Say which bridge failed: an org's own server is theirs to start; the hosted one is ours.
+    const own = data?.whatsapp_bridge_url && url === data.whatsapp_bridge_url;
+    return down(own
+      ? "Your own bridge server (Bridge Server URL below) is not reachable. Start it, or clear that field to use the CodeCrest hosted connection."
+      : "Could not reach the WhatsApp bridge. Try again in a minute; if it keeps failing, contact support.");
   }
 }
