@@ -36,7 +36,7 @@ export const integrations: Page[] = [
     metaTitle: "Shiprocket CRM Integration",
     description: "Connect Shiprocket to CodeCrest to track AWB status, catch failed deliveries and stuck shipments, and report RTO by state and payment mode.",
     answer: "The Shiprocket integration pulls shipment and tracking status into each order in CodeCrest. Courier statuses are mapped to clear states, and the ones that need a person, such as a failed delivery or a shipment that has stopped moving, create a task for your team automatically.",
-    visual: "chart",
+    visual: "shipments",
     points: [
       ["Tracking on the order", "AWB, courier and current status sit beside the order and customer history."],
       ["Exceptions become tasks", "Failed deliveries become follow-up tasks, and stalled shipments are escalated."],
@@ -93,7 +93,7 @@ export const integrations: Page[] = [
     metaTitle: "Exotel & Twilio CRM Integration",
     description: "Connect Exotel or Twilio to CodeCrest for click-to-call, automatic call logs and recordings on every customer.",
     answer: "The telephony integration connects your Exotel or Twilio account to CodeCrest. Agents start calls from an order or task, each call is logged with duration and outcome, and recordings are stored with the customer's history for roles allowed to hear them.",
-    visual: "chat",
+    visual: "calls",
     points: [
       ["Click-to-call", "Start a call from the task without copying a number."],
       ["Automatic logging", "Duration, status and recording attach to the customer."],
@@ -147,7 +147,7 @@ export const integrations: Page[] = [
     metaTitle: "CSV & Excel Data Import",
     description: "Import orders and customers from CSV or Excel with a guided, step-by-step importer that maps columns, normalises phone numbers and flags duplicates.",
     answer: "CodeCrest's importer loads orders and customers from CSV or Excel in guided steps. You upload a file, map its columns, review a preview and import. Phone numbers are normalised and likely duplicates are flagged so imported data matches what later arrives from your store.",
-    visual: "orders",
+    visual: "import",
     points: [
       ["Guided mapping", "Match your columns to CodeCrest fields with a preview before anything is saved."],
       ["Cleaner than it arrived", "Phone formats are normalised and duplicates detected."],

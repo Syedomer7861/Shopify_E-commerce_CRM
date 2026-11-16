@@ -30,7 +30,7 @@ export const features: Page[] = [
     metaTitle: "Abandoned Cart Recovery for Shopify",
     description: "Turn abandoned Shopify checkouts into recovery tasks and WhatsApp reminders. Track which carts were recovered, by which agent, and how much revenue came back.",
     answer: "CodeCrest turns every abandoned Shopify checkout into a recovery task with the customer's cart, phone number and a ready message. Automated reminders go out first; carts that still don't convert are routed to an agent to call or message. Recovered revenue is attributed to the reminder or the agent who closed it.",
-    visual: "chat",
+    visual: "carts",
     points: [
       ["Reminders, then people", "Send a templated reminder automatically, and escalate to a call task only when it is worth an agent's time."],
       ["Recovery you can measure", "Recovered orders are matched back to the cart, so the recovery rate is a real number and not an estimate."],
@@ -53,7 +53,7 @@ export const features: Page[] = [
     metaTitle: "Shiprocket NDR & RTO Management",
     description: "Track every shipment from Shiprocket, act on failed deliveries the same day, and see RTO rate by state, courier and payment mode.",
     answer: "CodeCrest syncs shipment status from Shiprocket and turns exceptions into work. A failed delivery attempt creates a task to reach the customer before the courier returns the parcel; a shipment stuck in transit is escalated automatically. RTO rate is reported by state, payment mode and agent.",
-    visual: "chart",
+    visual: "shipments",
     points: [
       ["Act on NDR before the parcel returns", "Failed deliveries become follow-up tasks with the customer's number and the courier's reason, while a re-attempt is still possible."],
       ["Stuck shipments surface themselves", "Parcels that stop moving are flagged and escalated instead of being found when the customer complains."],
@@ -99,7 +99,7 @@ export const features: Page[] = [
     metaTitle: "Automated Task Engine for Support & Sales Teams",
     description: "CodeCrest generates and prioritises tasks from orders and shipments: COD verification, recovery, delivery issues, reorder, review and win-back.",
     answer: "CodeCrest's task engine reads orders, shipments and customer history and creates the work that follows from them. Each agent opens a prioritised queue: verify this COD order, recover this cart, call this customer about a failed delivery. Overdue tasks escalate to a manager automatically.",
-    visual: "board",
+    visual: "tasks",
     points: [
       ["No one builds the to-do list", "Tasks are created by rules from live data, so nothing depends on a supervisor remembering to assign it."],
       ["Priority that reflects money", "Queues are ordered by order value, risk and age, so the first task an agent sees is the one that matters most."],
@@ -122,7 +122,7 @@ export const features: Page[] = [
     metaTitle: "HR, Attendance & Performance Management",
     description: "Run attendance, leave, payroll inputs and performance reviews alongside the work itself. See who is online, who is late and who is carrying the load.",
     answer: "CodeCrest includes HR operations for the team that works in it: attendance with late and half-day rules, leave requests, payroll inputs, performance reviews and a live floor view. Because it sits next to the task and order data, performance is measured on real output, not self-reported numbers.",
-    visual: "people",
+    visual: "hr",
     points: [
       ["Attendance without a separate app", "Clock-in, breaks and shift rules are tracked where the team already works."],
       ["Performance from real work", "Reviews draw on tasks closed, outcomes and response times from the same system."],
@@ -214,7 +214,7 @@ export const features: Page[] = [
     metaTitle: "Approval Workflows & Business Rules Engine",
     description: "One approvals inbox for expense claims, task reviews and rule-raised requests, plus a rules engine that reacts to events with notifications and approvals.",
     answer: "CodeCrest has one approvals inbox for everything that needs a second person: expense claims, tasks sent for review and requests raised by a rule. A rules engine watches events such as a new urgent ticket or a high-value deal and responds by notifying the right person or opening an approval. Self-approval is blocked.",
-    visual: "flow",
+    visual: "approvals",
     points: [
       ["One inbox for every decision", "Managers approve or reject claims, reviews and requests from the same place, with the context attached."],
       ["Rules in plain terms", "When this happens, and these conditions match, notify this person or ask for approval."],
@@ -237,7 +237,7 @@ export const features: Page[] = [
     metaTitle: "Service Desk & Ticketing with SLA Tracking",
     description: "Raise, assign and resolve internal requests with priority-based SLA timers, breach alerts and clear ownership. IT, admin and operations in one queue.",
     answer: "CodeCrest's service desk lets anyone in the organisation raise a ticket and gives each one an SLA based on its priority. Managers assign tickets, assignees work them, and a ticket that passes its deadline is flagged as breached. People see their own tickets and those assigned to them; managers see the whole queue.",
-    visual: "board",
+    visual: "tickets",
     points: [
       ["SLA set by priority", "An urgent ticket gets a short deadline automatically; a low-priority one gets longer."],
       ["Clear ownership", "Only a manager assigns. The assignee works the ticket and cannot pass it on silently."],
@@ -260,7 +260,7 @@ export const features: Page[] = [
     metaTitle: "Lead & Deal Pipeline Management",
     description: "Capture leads, move deals through stages and keep each rep's pipeline private to them and their manager. Territories and exports included.",
     answer: "CodeCrest includes a lead and deal pipeline for wholesale, distribution and B2B sales. Reps create and work their own leads, managers see their team's pipeline and can assign leads to a report, and deals carry value and stage. Other departments do not see sales records unless their role allows it.",
-    visual: "board",
+    visual: "pipeline",
     points: [
       ["Private by default", "A rep sees their own leads. A manager sees the team's. Nobody browses a colleague's pipeline."],
       ["Assignment with limits", "Managers assign within their team, and a lead cannot be handed to someone outside the organisation."],
@@ -283,7 +283,7 @@ export const features: Page[] = [
     metaTitle: "Finance Operations: Vendors, Invoices & Expense Claims",
     description: "Keep a vendor list, track invoices to due date and route expense claims to the right manager for approval, with finance records limited to finance roles.",
     answer: "CodeCrest's finance module holds vendors, invoices and expense claims. Invoices are tracked by status and due date and marked overdue automatically; expense claims go to the claimant's manager for approval. Finance records are visible only to roles granted access, such as an accountant, and managers can be given view-only access.",
-    visual: "orders",
+    visual: "finance",
     points: [
       ["Invoices that do not go quiet", "A sent invoice past its due date is marked overdue by a scheduled check."],
       ["Claims with a paper trail", "Every expense claim has a requester, an approver, a decision and a timestamp."],
@@ -306,7 +306,7 @@ export const features: Page[] = [
     metaTitle: "Field Visit Tracking with Consent-Based Check-in",
     description: "Plan visits, check in on site and report outcomes. Location is stored only when the team member has consented, and managers see their own team's visits.",
     answer: "CodeCrest lets field staff plan a visit, check in when they arrive and record the outcome. Location coordinates are stored only if the person has given consent on that visit; without consent the system refuses to save them. Managers see visits for their own team.",
-    visual: "people",
+    visual: "visits",
     points: [
       ["Consent is enforced, not assumed", "Coordinates cannot be saved on a visit unless consent is recorded on it."],
       ["Planned and actual", "See which visits were planned, which were checked in and what came of them."],
@@ -329,7 +329,7 @@ export const features: Page[] = [
     metaTitle: "Cloud Telephony & Call Logging for CRM",
     description: "Call customers from an order or task, log every call automatically and keep recordings with the customer's history. Works with Exotel and Twilio.",
     answer: "CodeCrest connects to a cloud telephony provider so agents call from the order or task they are working on. Each call is logged with its duration and outcome on the customer's timeline, and recordings are available to roles allowed to hear them.",
-    visual: "chat",
+    visual: "calls",
     points: [
       ["One click from the task", "No copying numbers into a dialler. The call starts where the work is."],
       ["History that writes itself", "Calls, outcomes and recordings attach to the customer without manual notes."],

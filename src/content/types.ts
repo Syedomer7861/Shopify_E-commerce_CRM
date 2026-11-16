@@ -7,7 +7,9 @@ export const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://cureforever
 export const SITE_NAME = "CodeCrest";
 export const CONTENT_UPDATED = "2026-11-12";
 
-export type VisualKind = "orders" | "board" | "chat" | "chart" | "flow" | "people" | "matrix";
+export type VisualKind =
+  | "orders" | "board" | "chat" | "chart" | "flow" | "people" | "matrix"
+  | "carts" | "shipments" | "calls" | "tasks" | "approvals" | "hr" | "pipeline" | "tickets" | "finance" | "visits" | "connect" | "import";
 
 export type Page = {
   slug: string;

@@ -50,7 +50,7 @@ export const comparisons: Page[] = [
     metaTitle: "CodeCrest vs HubSpot for E-commerce Operations",
     description: "Compare CodeCrest and HubSpot: marketing and sales automation versus order operations, COD and shipping workflows, and built-in team management.",
     answer: "HubSpot is a marketing, sales and service platform known for inbound marketing, email automation and a polished CRM. CodeCrest focuses on what happens after an order is placed and on running the team that handles it. HubSpot is stronger for lead generation and nurture; CodeCrest is stronger for order operations in COD-heavy markets.",
-    visual: "chat",
+    visual: "pipeline",
     points: [
       ["Built for post-purchase", "Verification, delivery follow-up and reorders are first-class, not custom builds."],
       ["WhatsApp and calls at the centre", "The channels support teams in these markets actually use."],
@@ -118,7 +118,7 @@ export const comparisons: Page[] = [
     metaTitle: "CodeCrest vs ServiceNow: A Lighter Alternative",
     description: "Compare CodeCrest and ServiceNow: enterprise workflow and IT service management versus a compact operations platform with approvals, service desk and rules.",
     answer: "ServiceNow is an enterprise workflow platform best known for IT service management, used by large organisations to run processes across departments. CodeCrest offers a compact version of the same ideas, with a service desk, approvals, business rules and scoped permissions, alongside CRM and HR, for teams that do not need or cannot staff an enterprise platform.",
-    visual: "flow",
+    visual: "tickets",
     points: [
       ["The essentials, without the project", "Tickets with SLAs, an approvals inbox and event-driven rules, ready to use."],
       ["One platform with your CRM", "Internal operations and customer operations share people, roles and reporting lines."],

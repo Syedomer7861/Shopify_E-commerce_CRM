@@ -11,7 +11,7 @@ export const resources: Page[] = [
     metaTitle: "How to Reduce RTO (Return to Origin) in E-commerce",
     description: "A step-by-step guide to reducing return-to-origin: verify COD orders, fix addresses, act on NDR the same day, and track RTO by state and payment mode.",
     answer: "To reduce RTO, stop bad orders before dispatch and rescue good ones during delivery. Verify every COD order, correct incomplete addresses, flag customers who have refused before, tell customers when the parcel is out for delivery, and contact them the same day a delivery attempt fails. Then measure RTO by state and payment mode and adjust.",
-    visual: "chart",
+    visual: "shipments",
     points: [
       ["Before dispatch", "Most returns are decided here: unconfirmed intent, bad address, repeat refusers."],
       ["During delivery", "A failed attempt is recoverable for a short window. Speed is everything."],
@@ -74,7 +74,7 @@ export const resources: Page[] = [
     metaTitle: "Abandoned Cart Recovery on WhatsApp: A Guide",
     description: "How to recover abandoned Shopify checkouts with WhatsApp reminders and agent follow-up: when to send, what to say, and how to measure recovered revenue.",
     answer: "Recover abandoned carts with a short sequence: one helpful reminder soon after abandonment, a second later with any question answered, then a call for carts worth an agent's time. Keep messages personal and brief, stop the moment the customer orders, and measure recovered revenue by matching new orders to the carts you contacted.",
-    visual: "chat",
+    visual: "carts",
     points: [
       ["Soon, then spaced", "The first reminder matters most. Later ones should add something, not repeat."],
       ["Answer the real objection", "Delivery time, payment trouble and doubt about the product are the usual blockers."],
@@ -104,7 +104,7 @@ export const resources: Page[] = [
     metaTitle: "NDR Management Guide for E-commerce",
     description: "What a non-delivery report means, the common NDR reasons, and a same-day process for contacting customers and getting a successful re-attempt.",
     answer: "An NDR, or non-delivery report, is raised when a courier's delivery attempt fails. Manage it with a same-day process: read the reason, contact the customer, confirm the address and availability, and send the corrected details back to the courier for re-attempt. Orders left alone are usually returned to origin after the final attempt.",
-    visual: "flow",
+    visual: "shipments",
     points: [
       ["Read the reason", "Customer unavailable, wrong address, refused, and cash not ready each need a different response."],
       ["Contact the same day", "The window before the next attempt is short."],
@@ -135,7 +135,7 @@ export const resources: Page[] = [
     metaTitle: "How to Choose a CRM for Shopify",
     description: "A buyer's guide to CRMs for Shopify stores: the questions to ask about order sync, channels, task management, reporting, access control and setup.",
     answer: "Choose a CRM for Shopify by the work your team does after checkout. Check that orders and shipments sync automatically, that it supports your channels such as WhatsApp and calls, that it creates and assigns follow-up work, that reports come from real activity, and that access can be limited by role. Then weigh setup effort against your team's capacity.",
-    visual: "matrix",
+    visual: "connect",
     points: [
       ["Start from the work", "List what agents do each day. The right tool makes those steps shorter."],
       ["Sales CRM or operations CRM", "Lead pipelines and order operations are different problems."],

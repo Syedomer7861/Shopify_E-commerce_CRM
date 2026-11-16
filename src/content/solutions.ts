@@ -30,7 +30,7 @@ export const solutions: Page[] = [
     metaTitle: "COD Order Verification & RTO Reduction",
     description: "Verify COD orders before they ship, score risky orders, follow failed deliveries the same day and see exactly where return-to-origin losses come from.",
     answer: "Stores with a high share of COD orders use CodeCrest to stop avoidable returns. Each COD order gets a verification task and a risk score before dispatch, failed deliveries are followed up while a re-attempt is still possible, and RTO is reported by state and payment mode so the next decision is based on data.",
-    visual: "chart",
+    visual: "tasks",
     points: [
       ["Verify before you ship", "A confirmed order and a checked address cost one call. A returned parcel costs shipping both ways."],
       ["See risk early", "Orders are scored on signals such as past refusals, so agents spend time where it pays."],
@@ -53,7 +53,7 @@ export const solutions: Page[] = [
     metaTitle: "CRM for E-commerce Customer Support Teams",
     description: "Give support agents one prioritised queue with the customer's orders, shipments, calls and messages in view. Managers get live floor status and outcomes.",
     answer: "Support teams use CodeCrest as their working screen. Each agent has a prioritised queue, and every task opens with the customer's orders, shipment status and past conversations. Calls and WhatsApp messages start from the task and are logged automatically. Managers see who is online, what is overdue and how each agent is performing.",
-    visual: "chat",
+    visual: "calls",
     points: [
       ["Context without searching", "Order, tracking and history are on the task. No switching between tabs to answer a simple question."],
       ["Fair, visible workload", "Queues are assigned by rule and managers can see and rebalance them."],
@@ -76,7 +76,7 @@ export const solutions: Page[] = [
     metaTitle: "Business Operations Platform for Small & Mid-Sized Teams",
     description: "Org structure, approvals, service desk, finance operations and HR in one platform, so internal requests stop living in chat groups and spreadsheets.",
     answer: "Operations teams use CodeCrest to give internal work a system: who reports to whom, who approves what, where a request is and whether it is late. Service desk tickets, expense claims, vendor invoices and attendance run on shared roles and one approvals inbox instead of separate tools and chat threads.",
-    visual: "flow",
+    visual: "approvals",
     points: [
       ["Requests with owners", "A ticket or claim has a requester, an assignee or approver, a status and a deadline."],
       ["One org chart, used everywhere", "Reporting lines decide who approves a claim and whose data a manager sees."],
@@ -145,7 +145,7 @@ export const solutions: Page[] = [
     metaTitle: "Work Management for Agencies & Service Businesses",
     description: "Run client projects on boards with time tracking, keep leads and deals in a pipeline, and handle approvals, invoices and team attendance in one place.",
     answer: "Agencies and service businesses use CodeCrest to run delivery and the business around it. Client work lives in workspaces with boards, time tracking and review steps. New business is tracked as leads and deals. Invoices, expense claims, attendance and approvals share the same roles and reporting lines.",
-    visual: "board",
+    visual: "pipeline",
     points: [
       ["A space per client or team", "Membership is per space, so people see the clients they work on."],
       ["Time against tasks", "Track time where the work is, and see workload before promising a date."],
