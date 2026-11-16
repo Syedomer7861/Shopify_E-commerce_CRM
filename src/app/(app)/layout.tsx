@@ -26,7 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProfileProvider>
     <ChatProvider>
-      <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-[#f8f7f4]">
+      <div className="app-ui flex flex-col lg:flex-row h-screen overflow-hidden bg-[#f8f7f4]">
         <AgentHeartbeat />
         <ModuleGuard />
         <MfaGate />

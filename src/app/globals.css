@@ -224,3 +224,22 @@ h1, h2, h3, h4 {
     input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { font-size: 16px !important; }
   }
 }
+
+/* Readable text inside the signed-in app. Screens were written with very
+   small fixed sizes (7-11px); this lifts them in one place instead of
+   editing ~2,000 class names. body:has(.app-ui) also covers modals and
+   toasts portaled to <body>; the public site has no .app-ui, so it is
+   unchanged. In the utilities layer with :where() (no extra specificity),
+   so responsive variants like md:text-sm still win on larger screens.
+   Remove this block to restore the old sizes. */
+@layer utilities {
+  :where(body:has(.app-ui)) .text-\[7px\],
+  :where(body:has(.app-ui)) .text-\[8px\] { font-size: 10.5px; }
+  :where(body:has(.app-ui)) .text-\[9px\],
+  :where(body:has(.app-ui)) .text-\[9\.5px\] { font-size: 11.5px; }
+  :where(body:has(.app-ui)) .text-\[10px\],
+  :where(body:has(.app-ui)) .text-\[10\.5px\] { font-size: 12px; }
+  :where(body:has(.app-ui)) .text-\[11px\] { font-size: 12.5px; }
+  :where(body:has(.app-ui)) .text-xs { font-size: 13px; line-height: 1.15rem; }
+  :where(body:has(.app-ui)) .text-sm { font-size: 14.5px; }
+}
