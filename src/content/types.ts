@@ -24,6 +24,10 @@ export type Page = {
   visual?: VisualKind;
   /** [heading, text] benefit cards */
   points: [string, string][];
+  /** How the work moves, one short label per stage - drawn as a flow. */
+  flow?: string[];
+  /** [without, with] rows for the before/after block. */
+  shift?: [string, string][];
   sections: { h: string; p: string; list?: string[] }[];
   /** Ordered how-to steps: [name, text] */
   steps?: [string, string][];

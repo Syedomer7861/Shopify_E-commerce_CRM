@@ -189,6 +189,42 @@ export function Toc({ headings }: { headings: string[] }) {
   );
 }
 
+/** The work as a left-to-right flow, then the before/after rows. */
+function FlowShift({ flow, shift }: { flow?: string[]; shift?: [string, string][] }) {
+  if (!flow && !shift) return null;
+  return (
+    <section className="max-w-5xl mx-auto px-4 sm:px-6 pt-20">
+      {flow && (
+        <Reveal>
+          <Eyebrow>How it flows</Eyebrow>
+          <ol className="mt-5 flex flex-wrap items-center gap-2">
+            {flow.map((f, i) => (
+              <li key={f} className="flex items-center gap-2">
+                <span className={`rounded-full px-3.5 py-2 text-[13.5px] font-semibold ${i === flow.length - 1 ? "bg-emerald-600 text-white" : "bg-white border border-[var(--line)]"}`}>{f}</span>
+                {i < flow.length - 1 && <ArrowRight aria-hidden className="w-4 h-4 text-[var(--dim)]" />}
+              </li>
+            ))}
+          </ol>
+        </Reveal>
+      )}
+      {shift && (
+        <Reveal>
+          <div className={`grid sm:grid-cols-2 gap-3 ${flow ? "mt-12" : ""}`}>
+            <div className="rounded-2xl bg-[#f7f4ed] p-6">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--dim)]">Without CodeCrest</p>
+              <ul className="mt-4 space-y-3">{shift.map(([a]) => <li key={a} className="flex gap-2.5 text-[14.5px] text-[#5f5f5d]"><span aria-hidden className="mt-2 w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0" />{a}</li>)}</ul>
+            </div>
+            <div className="rounded-2xl bg-white border border-[var(--line)] shadow-xl shadow-black/5 p-6">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-700">With CodeCrest</p>
+              <ul className="mt-4 space-y-3">{shift.map(([, b]) => <li key={b} className="flex gap-2.5 text-[14.5px] font-medium"><Check aria-hidden className="w-4 h-4 mt-0.5 text-emerald-600 flex-shrink-0" strokeWidth={2.5} />{b}</li>)}</ul>
+            </div>
+          </div>
+        </Reveal>
+      )}
+    </section>
+  );
+}
+
 /** Detail page for any content entry. */
 export default function PageView({ section, page }: { section: Section; page: Page }) {
   const url = `${SITE_URL}/${section.key}/${page.slug}`;
@@ -220,6 +256,8 @@ export default function PageView({ section, page }: { section: Section; page: Pa
           ))}
         </Stagger>
       </section>
+
+      <FlowShift flow={page.flow} shift={page.shift} />
 
       {page.steps && (
         <section className="max-w-3xl mx-auto px-4 sm:px-6 pt-20">
