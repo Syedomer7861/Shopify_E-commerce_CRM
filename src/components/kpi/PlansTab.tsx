@@ -14,10 +14,10 @@ export type OrgTemplate = { id: string; name: string; version: number; period: s
 type PlanItem = Omit<KpiItem, "default_target"> & { target: number | null };
 type Plan = {
   id: string; name: string; template_id: string | null; template_version: number | null; department_id: string | null; designation_id: string | null;
-  period: string; status: "draft" | "active" | "archived"; approved_at: string | null;
+  period: string; status: "draft" | "active" | "archived"; approved_at: string | null; version: number; previous_plan_id: string | null;
   kpi_plan_items: (PlanItem & { sort_order: number })[]; kpi_assignments: { status: string }[];
 };
-type Draft = Omit<Plan, "id" | "status" | "approved_at" | "kpi_plan_items" | "kpi_assignments"> & { id: string | null; items: PlanItem[] };
+type Draft = Omit<Plan, "id" | "status" | "approved_at" | "version" | "previous_plan_id" | "kpi_plan_items" | "kpi_assignments"> & { id: string | null; items: PlanItem[] };
 
 const input = "h-9 px-2 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 const small = "text-xs px-3 py-1.5 rounded-lg border border-[#eceae4] disabled:opacity-40";
@@ -49,7 +49,7 @@ export function PlansTab({ templates, departments, designations, canManage, canA
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.from("kpi_plans")
-      .select("id, name, template_id, template_version, department_id, designation_id, period, status, approved_at, kpi_plan_items(name, description, source_key, measurement, direction, unit, target, weight, cap, threshold, missing_rule, sort_order), kpi_assignments(status)")
+      .select("id, name, template_id, template_version, department_id, designation_id, period, status, approved_at, version, previous_plan_id, kpi_plan_items(name, description, source_key, measurement, direction, unit, target, weight, cap, threshold, missing_rule, sort_order), kpi_assignments(status)")
       .order("name");
     if (error) toast.error(error.message);
     setPlans((data || []) as Plan[]);
@@ -78,7 +78,10 @@ export function PlansTab({ templates, departments, designations, canManage, canA
     if (!w.ok) return toast.error(`Weights total ${w.total}, must be 100`);
     const m = missingTargets(p.kpi_plan_items);
     if (m) return toast.error(`${m} KPI(s) still need a target`);
-    rpc("kpi_set_plan_status", { p_id: p.id, p_status: "active" }, "Plan approved and active");
+    const prev = plans.find(x => x.id === p.previous_plan_id && x.status === "active");
+    const moving = prev?.kpi_assignments.filter(a => a.status === "active").length ?? 0;
+    if (prev && !window.confirm(`Approve version ${p.version}? ${moving} employee(s) move from version ${prev.version} starting today, and version ${prev.version} is archived. Past evaluations stay as they are.`)) return;
+    rpc("kpi_set_plan_status", { p_id: p.id, p_status: "active" }, prev ? `Version ${p.version} is live` : "Plan approved and active");
   }
 
   const nameOf = (list: Named[], id: string | null) => list.find(x => x.id === id)?.name;
@@ -174,6 +177,7 @@ export function PlansTab({ templates, departments, designations, canManage, canA
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full", STATUS[p.status])}>{p.status}</span>
                     <span className="text-sm font-semibold text-[#1c1c1c]">{p.name}</span>
+                    {p.version > 1 && <span className="text-[10px] font-bold text-[#5f5f5d]">v{p.version}</span>}
                   </div>
                   <div className="text-xs text-[#5f5f5d] mt-1">
                     {who} · {p.kpi_plan_items.length} KPIs · {p.period.replace("_", "-")} · {active} assigned{waiting ? `, ${waiting} awaiting approval` : ""}
@@ -181,7 +185,10 @@ export function PlansTab({ templates, departments, designations, canManage, canA
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {canManage && p.status !== "archived" && (p.status === "draft" || canApprove) && <button className={small} onClick={() => setDraft(fromPlan(p))}>Edit</button>}
+                  {canManage && p.status === "draft" && p.kpi_assignments.length === 0 && <button className={small} onClick={() => setDraft(fromPlan(p))}>Edit</button>}
+                  {canManage && (p.status !== "draft" || p.kpi_assignments.length > 0) && !plans.some(x => x.previous_plan_id === p.id && x.status === "draft") && (
+                    <button className={small} disabled={busy} title="In-use plans change through a new version, so history stays intact" onClick={() => rpc("kpi_plan_new_version", { p_id: p.id }, "New version created as a draft")}>New version</button>
+                  )}
                   {canApprove && p.status === "draft" && <button className={small} disabled={busy} onClick={() => activate(p)}>Approve</button>}
                   {canApprove && p.status === "active" && <button className={small} disabled={busy || active > 0} title={active ? "End its assignments first" : undefined} onClick={() => rpc("kpi_set_plan_status", { p_id: p.id, p_status: "draft" }, "Back to draft")}>Unapprove</button>}
                   {canManage && p.status !== "archived" && <button className={small} disabled={busy || active > 0} title={active ? "End its assignments first" : undefined} onClick={() => rpc("kpi_set_plan_status", { p_id: p.id, p_status: "archived" }, "Archived")}>Archive</button>}
