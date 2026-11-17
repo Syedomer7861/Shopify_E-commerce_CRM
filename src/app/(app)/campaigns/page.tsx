@@ -8,6 +8,7 @@ import { AccessDenied } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { isAdmin } from "@/lib/permissions";
 import { isDemoMode } from "@/lib/demo";
+import { ALL_TIME, DateRangeFilter, inDateRange, type DateRange } from "@/components/DateRangeFilter";
 
 const SEGMENTS = ["repeat", "one_time", "inactive", "risky", "all"];
 
@@ -21,6 +22,7 @@ function toDatetimeLocal(iso?: string | null): string {
 export default function CampaignManager() {
   const { profile, loading: profileLoading } = useCurrentProfile();
   const [currentPage, setCurrentPage] = useState(1);
+  const [range, setRange] = useState<DateRange>(ALL_TIME);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -326,7 +328,9 @@ export default function CampaignManager() {
     }
   };
 
-  const paginatedCampaigns = campaigns.slice(
+  // Date range on when the campaign was created; stat cards follow it too.
+  const inRange = campaigns.filter(c => inDateRange(c.created_at, range));
+  const paginatedCampaigns = inRange.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -344,13 +348,17 @@ export default function CampaignManager() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Active Campaigns" value={campaigns.filter(c => c.status === "running").length} sub="Currently sending" accent="text-[#1c1c1c]" />
-        <StatCard label="Completed" value={campaigns.filter(c => c.status === "completed").length} sub="Lifetime total" accent="text-[#5f5f5d]" />
-        <StatCard label="Total Messages" value={campaigns.reduce((s, c) => s + (c.delivered_count || 0), 0)} sub="Across all campaigns" accent="text-[#1c1c1c]" />
+        <StatCard label="Active Campaigns" value={inRange.filter(c => c.status === "running").length} sub="Currently sending" accent="text-[#1c1c1c]" />
+        <StatCard label="Completed" value={inRange.filter(c => c.status === "completed").length} sub="Lifetime total" accent="text-[#5f5f5d]" />
+        <StatCard label="Total Messages" value={inRange.reduce((s, c) => s + (c.delivered_count || 0), 0)} sub="Across all campaigns" accent="text-[#1c1c1c]" />
         {/* No WhatsApp read-receipt webhook is wired up anywhere in this app,
             so read_count never gets written - a computed rate here would
             always read as real (and always 0%). */}
         <StatCard label="Avg. Open Rate" value="—" sub="Not tracked" accent="text-[#5f5f5d]" />
+      </div>
+
+      <div className="flex justify-end mb-3">
+        <DateRangeFilter value={range} onChange={r => { setRange(r); setCurrentPage(1); }} />
       </div>
 
       <div className="card overflow-hidden">
@@ -485,6 +493,9 @@ export default function CampaignManager() {
             ))}
           </tbody>
         </table>
+        {inRange.length === 0 && campaigns.length > 0 && !loading && (
+          <div className="py-12 text-center text-sm text-gray-400">No campaigns in this date range.</div>
+        )}
         {campaigns.length === 0 && !loading && (
           <div className="py-20 text-center flex flex-col items-center justify-center gap-4">
              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
@@ -496,11 +507,11 @@ export default function CampaignManager() {
              </div>
           </div>
         )}
-        {campaigns.length > ITEMS_PER_PAGE && (
+        {inRange.length > ITEMS_PER_PAGE && (
           <div className="px-6 border-t border-gray-100">
             <Pagination 
               current={currentPage} 
-              total={campaigns.length} 
+              total={inRange.length} 
               pageSize={ITEMS_PER_PAGE} 
               onChange={setCurrentPage} 
             />

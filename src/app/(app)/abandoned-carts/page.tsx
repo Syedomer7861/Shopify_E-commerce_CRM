@@ -21,6 +21,7 @@ import { AccessDenied } from "@/components/ui";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
 import { RefreshCw } from "lucide-react";
+import { ALL_TIME, DateRangeFilter, applyDateRange, type DateRange } from "@/components/DateRangeFilter";
 
 export default function AbandonedCartsPage() {
   const { profile, loading: profileLoading } = useCurrentProfile();
@@ -28,6 +29,7 @@ export default function AbandonedCartsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("pending");
+  const [range, setRange] = useState<DateRange>(ALL_TIME);
   const [currentPage, setCurrentPage] = useState(1);
   const [globalStats, setGlobalStats] = useState({ pendingCount: 0, pendingValue: 0, recoveredValue: 0 });
   const ITEMS_PER_PAGE = 25;
@@ -49,10 +51,10 @@ export default function AbandonedCartsPage() {
         const PAGE = 1000;
         let total = 0;
         for (let from = 0; ; from += PAGE) {
-          const { data } = await supabase
+          const { data } = await applyDateRange(supabase
             .from("abandoned_carts")
             .select("total_price")
-            .eq("recovery_status", status)
+            .eq("recovery_status", status), "abandoned_at", range)
             .range(from, from + PAGE - 1);
           if (!data || data.length === 0) break;
           total += data.reduce((acc, c) => acc + (Number(c.total_price) || 0), 0);
@@ -64,14 +66,14 @@ export default function AbandonedCartsPage() {
       const [pendingValue, recoveredValue, { count: pendingCount }] = await Promise.all([
         sumByStatus("pending"),
         sumByStatus("recovered"),
-        supabase.from("abandoned_carts").select("id", { count: "exact", head: true }).eq("recovery_status", "pending"),
+        applyDateRange(supabase.from("abandoned_carts").select("id", { count: "exact", head: true }).eq("recovery_status", "pending"), "abandoned_at", range),
       ]);
 
       setGlobalStats({ pendingCount: pendingCount || 0, pendingValue, recoveredValue });
     } catch (err) {
       console.error("Failed to load abandoned cart stats:", err);
     }
-  }, [supabase]);
+  }, [supabase, range]);
 
   const fetchCarts = useCallback(async () => {
     const isDemo = isDemoMode();
@@ -113,6 +115,7 @@ export default function AbandonedCartsPage() {
           .order("abandoned_at", { ascending: false });
         if (statusFilter !== "all") pageQuery = pageQuery.eq("recovery_status", statusFilter);
         if (orFilter) pageQuery = pageQuery.or(orFilter);
+        pageQuery = applyDateRange(pageQuery, "abandoned_at", range);
 
         const { data, error } = await pageQuery.range(from, from + PAGE - 1);
         if (error) throw error;
@@ -127,7 +130,7 @@ export default function AbandonedCartsPage() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, search, supabase]);
+  }, [statusFilter, search, supabase, range]);
 
   useEffect(() => {
     fetchCarts();
@@ -243,6 +246,7 @@ export default function AbandonedCartsPage() {
             onChange={e => setSearch(e.target.value)}
           />
         </div>
+        <DateRangeFilter value={range} onChange={r => { setRange(r); setCurrentPage(1); }} />
         <div className="flex gap-2">
           {["pending", "recovered", "all"].map(f => (
             <button 

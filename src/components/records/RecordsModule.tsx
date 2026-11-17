@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import type { Profile } from "@/types";
 import { can } from "@/lib/access";
+import { ALL_TIME, DateRangeFilter, applyDateRange, type DateRange } from "@/components/DateRangeFilter";
 
 export type RecordRow = Record<string, any> & { id: string };
 export type RecordField = {
@@ -69,6 +70,10 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
     typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("q") || "");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [defs, setDefs] = useState<FieldDef[]>([]);
+  const [range, setRange] = useState<DateRange>(ALL_TIME);
+  const [dateCol, setDateCol] = useState("created_at");
+  const [owner, setOwner] = useState("");
+  const [loadedOnce, setLoadedOnce] = useState(false);
 
   const { table, module, noun, ownerCol } = config;
   const { access, dataCol, filter } = config;
@@ -78,6 +83,12 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   const canDelete = access ? access.delete : can(profile, module, "delete") !== null;
   const canExport = access ? access.export : can(profile, module, "export") !== null;
   const filterKey = JSON.stringify(filter || {});
+  const dateCols = useMemo(() => [
+    { value: "created_at", label: "Created" },
+    ...(dataCol ? [] : config.fields.filter(f => f.type === "date" || f.type === "datetime-local").map(f => ({ value: f.key, label: f.label }))),
+  ], [config.fields, dataCol]);
+  const dateOnly = config.fields.find(f => f.key === dateCol)?.type === "date";
+  const filtering = Boolean(range.from || range.to || owner);
   const personKeys = useMemo(() => new Set(config.fields.filter(f => f.type === "person").map(f => f.key)), [config.fields]);
   // Built-in fields first, then the workspace's own (Settings > Custom fields).
   const fields = useMemo<RecordField[]>(() => [...config.fields, ...defs.map(d => ({
@@ -90,7 +101,13 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   const load = useCallback(async () => {
     setLoading(true);
     const [list, team, cf] = await Promise.all([
-      supabase.from(table).select("*").match(JSON.parse(filterKey)).order("created_at", { ascending: false }).limit(200),
+      // Date and owner narrow on the server, so older records are reachable
+      // (the unfiltered list is the latest 200). RLS still decides visibility.
+      (() => {
+        let q = applyDateRange(supabase.from(table).select("*").match(JSON.parse(filterKey)), dateCol, range, dateOnly);
+        if (owner) q = q.eq(ownerCol, owner);
+        return q.order(dateCol, { ascending: false, nullsFirst: false }).limit(range.from || range.to || owner ? 1000 : 200);
+      })(),
       supabase.from("profiles").select("id,name"),
       dataCol ? Promise.resolve({ data: [] as FieldDef[] })
         : supabase.from("custom_field_defs").select("key,label,field_type,options,required,show_in_list").eq("entity", table).eq("is_active", true).order("sort_order").order("created_at"),
@@ -108,7 +125,8 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
     }
     setPeople(Object.fromEntries((team.data || []).map((p: any) => [p.id, p.name || "Unnamed"])));
     setLoading(false);
-  }, [supabase, table, filterKey, dataCol]);
+    setLoadedOnce(true);
+  }, [supabase, table, filterKey, dataCol, dateCol, range, dateOnly, owner, ownerCol]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -213,7 +231,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
     (!needle || [...columns.map(c => (personKeys.has(c.key) ? people[r[c.key]] : r[c.key])), people[r[ownerCol]], r.status]
       .some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(needle))));
 
-  if (loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (loading && !loadedOnce) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   if (notReady) {
     return (
       <div className="card p-5 flex items-start gap-3 text-sm text-amber-700 bg-amber-50 border-amber-100">
@@ -226,10 +244,22 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   return (
     <div>
       <div className="flex flex-wrap items-center justify-end gap-2 mb-3">
-        {all.length > 0 && (
+        {(all.length > 0 || filtering) && (
           <div className="relative flex-1 min-w-[160px] max-w-xs mr-auto">
             <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input type="search" aria-label={`Search ${noun}s`} placeholder="Search" className="input pl-8 text-xs" value={query} onChange={e => setQuery(e.target.value)} />
+          </div>
+        )}
+        {(all.length > 0 || filtering) && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" aria-label="Loading" />}
+            {dateCols.length > 1 && (
+              <Select value={dateCol} onChange={setDateCol} triggerClassName="text-xs h-8 min-w-[110px]" options={dateCols} />
+            )}
+            <DateRangeFilter value={range} onChange={setRange} />
+            <Select value={owner || "__any"} onChange={v => setOwner(v === "__any" ? "" : v)} triggerClassName="text-xs h-8 min-w-[120px]"
+              options={[{ value: "__any", label: `Any ${(config.ownerLabel || "owner").toLowerCase()}` }, { value: profile.id, label: "Mine" },
+                ...Object.entries(people).filter(([id]) => id !== profile.id).sort((a, b) => a[1].localeCompare(b[1])).map(([id, name]) => ({ value: id, label: name }))]} />
           </div>
         )}
         {canExport && rows.length > 0 && (
@@ -251,8 +281,8 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
         </div>
       )}
 
-      {all.length > 0 && shown.length === 0 ? (
-        <EmptyState icon={<Search className="w-6 h-6" />} title="No matches" desc="Try a different search or status." />
+      {(all.length > 0 || filtering) && shown.length === 0 ? (
+        <EmptyState icon={<Search className="w-6 h-6" />} title="No matches" desc="Try a different search, status, date range or owner." />
       ) : shown.length === 0 ? (
         <EmptyState icon={<Plus className="w-6 h-6" />} title={`No ${noun}s yet`} desc={canCreate ? `Add the first one with "New ${noun}".` : "Nothing you have access to here."} />
       ) : (

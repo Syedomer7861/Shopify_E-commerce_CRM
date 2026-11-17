@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
 import { isDemoMode } from "@/lib/demo";
+import { ALL_TIME, DateRangeFilter, applyDateRange, type DateRange } from "@/components/DateRangeFilter";
 
 export default function CallRecordingsPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -19,6 +20,7 @@ export default function CallRecordingsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [search, setSearch] = useState("");
+  const [range, setRange] = useState<DateRange>(ALL_TIME);
 
   // Only the columns the table renders + playback. The old query did
   // SELECT * over EVERY recorded call in history on every page open.
@@ -34,10 +36,10 @@ export default function CallRecordingsPage() {
       return { rows: MOCK_RAW_CALLS.filter((c: any) => c.recording_url) as any[], more: false };
     }
     const from = page * PAGE_SIZE;
-    const { data, error } = await supabase
+    const { data, error } = await applyDateRange(supabase
       .from("raw_call_logs")
       .select(RECORDING_COLS)
-      .not("recording_url", "is", null)
+      .not("recording_url", "is", null), "created_at", range)
       .order("created_at", { ascending: false })
       .range(from, from + PAGE_SIZE - 1);
     if (error) {
@@ -45,7 +47,7 @@ export default function CallRecordingsPage() {
       return { rows: [], more: false };
     }
     return { rows: (data || []) as any[], more: (data?.length || 0) === PAGE_SIZE };
-  }, [supabase]);
+  }, [supabase, range]);
 
   const loadFirst = useCallback(async () => {
     setLoading(true);
@@ -118,6 +120,8 @@ export default function CallRecordingsPage() {
         title="Call Recordings" 
         subtitle="Listen to and audit recent agent calls."
         actions={
+          <div className="flex flex-wrap items-center gap-2">
+          <DateRangeFilter value={range} onChange={setRange} />
           <div className="relative w-64">
             <Search className="w-4 h-4 text-[#5f5f5d] absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
@@ -127,6 +131,7 @@ export default function CallRecordingsPage() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-white border border-[#eceae4] rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold focus:ring-[#1c1c1c] shadow-sm text-[#1c1c1c]"
             />
+          </div>
           </div>
         }
       />

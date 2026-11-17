@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, X, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import { EmptyState } from "@/components/ui";
 import { ModuleTabs } from "@/components/records/RecordsModule";
+import { ALL_TIME, DateRangeFilter, inDateRange, type DateRange } from "@/components/DateRangeFilter";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
@@ -33,6 +34,7 @@ export function ApprovalsInbox({ profile, compact = false }: { profile: Profile;
   const [notReady, setNotReady] = useState(false);
   const [tab, setTab] = useState<"todo" | "mine" | "history">("todo");
   const [busy, setBusy] = useState<string | null>(null);
+  const [range, setRange] = useState<DateRange>(ALL_TIME);
 
   const load = useCallback(async () => {
     const [list, team] = await Promise.all([
@@ -70,7 +72,7 @@ export function ApprovalsInbox({ profile, compact = false }: { profile: Profile;
   const todo = rows.filter(r => r.status === "pending" && r.requested_by !== profile.id);
   const mine = rows.filter(r => r.requested_by === profile.id);
   const history = rows.filter(r => r.status !== "pending" && r.requested_by !== profile.id);
-  const shown = compact ? todo.slice(0, 5) : tab === "todo" ? todo : tab === "mine" ? mine : history;
+  const shown = compact ? todo.slice(0, 5) : (tab === "todo" ? todo : tab === "mine" ? mine : history).filter(r => inDateRange(r.created_at, range));
 
   return (
     <div>
@@ -80,6 +82,7 @@ export function ApprovalsInbox({ profile, compact = false }: { profile: Profile;
           active={tab} onChange={setTab}
         />
       )}
+      {!compact && <DateRangeFilter className="mb-3" value={range} onChange={setRange} />}
       {shown.length === 0 ? (
         compact
           ? <div className="py-6 text-center text-xs text-gray-400">Nothing waiting on you.</div>

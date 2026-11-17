@@ -19,6 +19,8 @@ import { PageHeader } from "@/components/ui";
 import Link from "next/link";
 import ClickToCallModal from "@/components/ClickToCallModal";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { allowedNavModules, isAdmin } from "@/lib/permissions";
+import { CAL_KINDS, eventsOn, loadCalendarEvents, type CalEvent, type CalKind } from "@/lib/calendar-sources";
 
 // ─── task type colour config ──────────────────────────────────────────────────
 // Was its own hand-picked map covering 6 of the app's 13 real task types -
@@ -61,6 +63,18 @@ export default function CalendarPage() {
   const [activeTaskForCall, setActiveTaskForCall] = useState<any>(null);
   const supabase = createClient();
   const { profile } = useCurrentProfile();
+  const [events, setEvents]             = useState<CalEvent[]>([]);
+  const [scopePick, setScopePick]       = useState<"mine" | "all" | null>(null);
+  const [hidden, setHidden]             = useState<Set<string>>(new Set());
+
+  // What the calendar shows follows the role. Calls only when the user has the
+  // Tasks module; admins, managers and HR start on everything they can see,
+  // everyone else on their own items. RLS still bounds both choices.
+  const navAllowed = allowedNavModules(profile);
+  const canSeeCalls = !navAllowed || navAllowed.includes("tasks");
+  const broadRole = isAdmin(profile) || profile?.role === "manager" || profile?.role === "hr";
+  const scope = scopePick ?? (broadRole ? "all" : "mine");
+  const toggleSource = (k: string) => setHidden(h => { const n = new Set(h); if (n.has(k)) n.delete(k); else n.add(k); return n; });
 
   // Same scoping Dashboard/Tasks apply - without it every agent saw every
   // other agent's assigned tasks, with real customer names/phones and
@@ -109,6 +123,16 @@ export default function CalendarPage() {
 
     if (!silent) setLoading(true);
     const { start, end } = getWindow();
+    const kinds = new Set(CAL_KINDS.map(k => k.key).filter(k => !hidden.has(k)) as CalKind[]);
+    const eventsJob = profile?.id
+      ? loadCalendarEvents(supabase, { start, end, userId: profile.id, mine: scope === "mine", kinds })
+      : Promise.resolve([] as CalEvent[]);
+    if (!canSeeCalls || hidden.has("calls")) {
+      setTasks([]);
+      setEvents(await eventsJob);
+      setLoading(false);
+      return;
+    }
     // PostgREST caps a single select at 1000 rows. A busy month can
     // genuinely exceed that (one day alone has shown 290+ tasks), and since
     // the query orders by priority_score DESC, a truncated fetch would
@@ -125,6 +149,7 @@ export default function CalendarPage() {
         .lte("due_date", end)
         .not("status", "in", '("cancelled","skipped")');
       query = applyAgentFilters(query);
+      if (scope === "mine" && profile?.id) query = query.eq("assigned_to", profile.id);
       const { data } = await query
         .order("priority_score", { ascending: false })
         .range(from, from + PAGE - 1);
@@ -133,8 +158,9 @@ export default function CalendarPage() {
       if (data.length < PAGE) break;
     }
     setTasks(allTasks);
+    setEvents(await eventsJob);
     setLoading(false);
-  }, [getWindow, supabase, applyAgentFilters]);
+  }, [getWindow, supabase, applyAgentFilters, profile?.id, scope, hidden, canSeeCalls]);
 
   useEffect(() => {
     fetchTasks();
@@ -174,9 +200,11 @@ export default function CalendarPage() {
 
   const tasksOnDay = (day: Date) =>
     filteredTasks.filter(t => isSameDay(parseLocalDate(t.due_date), day));
+  const eventsOnDay = (day: Date) => eventsOn(events, format(day, "yyyy-MM-dd"));
+  const kindCfg = (k: CalKind) => CAL_KINDS.find(c => c.key === k)!;
 
   // ── heat-map shade ────────────────────────────────────────────────────────────
-  const maxCount = Math.max(1, ...calDays.map(d => tasksOnDay(d).length));
+  const maxCount = Math.max(1, ...calDays.map(d => tasksOnDay(d).length + eventsOnDay(d).length));
   const heatBg = (count: number) => {
     const pct = count / maxCount;
     if (pct === 0)   return "";
@@ -187,6 +215,7 @@ export default function CalendarPage() {
   };
 
   const selectedDayTasks = selectedDay ? tasksOnDay(selectedDay) : [];
+  const selectedDayEvents = selectedDay ? eventsOnDay(selectedDay) : [];
   const headerLabel = view === "month"
     ? format(currentDate, "MMMM yyyy")
     : `${format(startOfWeekFn(currentDate), "d MMM")} – ${format(endOfWeekFn(currentDate), "d MMM yyyy")}`;
@@ -205,6 +234,17 @@ export default function CalendarPage() {
             >
               Today
             </button>
+
+            {/* Scope: own items or everything this role can see */}
+            <div className="flex items-center bg-[#eceae4]/40 rounded-xl border border-[#eceae4] p-1" role="group" aria-label="Whose items">
+              {(["mine", "all"] as const).map(s => (
+                <button key={s} onClick={() => setScopePick(s)} aria-pressed={scope === s}
+                  className={cn("px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
+                    scope === s ? "bg-[#1c1c1c] text-white shadow" : "text-[#5f5f5d]")}>
+                  {s === "mine" ? "Mine" : broadRole ? "Team" : "All I can see"}
+                </button>
+              ))}
+            </div>
 
             {/* View toggle */}
             <div className="flex items-center bg-[#eceae4]/40 rounded-xl border border-[#eceae4] p-1">
@@ -242,8 +282,21 @@ export default function CalendarPage() {
         }
       />
 
+      {/* ── Sources ──────────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mr-1">Show</span>
+        {[...(canSeeCalls ? [{ key: "calls", label: "Call tasks", dot: "bg-violet-500" }] : []), ...CAL_KINDS].map(src => (
+          <button key={src.key} onClick={() => toggleSource(src.key)} aria-pressed={!hidden.has(src.key)}
+            className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all",
+              hidden.has(src.key) ? "bg-white text-gray-300 border-gray-200 line-through" : "bg-white text-[#1c1c1c] border-[#1c1c1c]/30")}>
+            <span className={cn("w-2 h-2 rounded-full", src.dot, hidden.has(src.key) && "opacity-30")} />
+            {src.label}
+          </button>
+        ))}
+      </div>
+
       {/* ── Type filter legend ───────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
+      <div className={cn("flex items-center gap-2 mb-3 flex-wrap", (!canSeeCalls || hidden.has("calls")) && "hidden")}>
         <button
           onClick={() => setTypeFilter("all")}
           className={cn("px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all",
@@ -290,10 +343,11 @@ export default function CalendarPage() {
             view === "month" ? "auto-rows-fr" : "")}>
             {calDays.map((day, i) => {
               const dayTasks   = tasksOnDay(day);
+              const dayEvents  = eventsOnDay(day);
               const isToday    = isTodayFn(day);
               const inMonth    = isSameMonth(day, monthStart);
               const isSelected = selectedDay ? isSameDay(day, selectedDay) : false;
-              const heat       = heatBg(dayTasks.length);
+              const heat       = heatBg(dayTasks.length + dayEvents.length);
               const overdue    = dayTasks.filter(t => t.status !== "done" && parseLocalDate(t.due_date) < new Date()).length;
 
               return (
@@ -320,15 +374,21 @@ export default function CalendarPage() {
                           {overdue}⚠
                         </span>
                       )}
-                      {dayTasks.length > 0 && (
+                      {dayTasks.length + dayEvents.length > 0 && (
                         <span className="text-[9px] font-bold text-[#1c1c1c]/40">
-                          {dayTasks.length}
+                          {dayTasks.length + dayEvents.length}
                         </span>
                       )}
                     </div>
                   </div>
 
                   <div className="flex-1 flex flex-col gap-0.5 overflow-hidden">
+                    {dayEvents.slice(0, view === "week" ? 4 : 2).map(ev => (
+                      <div key={ev.id} className={cn("px-1.5 py-0.5 rounded text-[8px] font-semibold truncate flex items-center gap-1", kindCfg(ev.kind).bg, ev.done && "line-through opacity-60")}>
+                        <span className={cn("w-1 h-1 rounded-full flex-shrink-0", kindCfg(ev.kind).dot)} />
+                        {ev.title}
+                      </div>
+                    ))}
                     {dayTasks.slice(0, view === "week" ? 8 : 3).map(task => {
                       const c = getTaskColor(task);
                       return (
@@ -341,11 +401,10 @@ export default function CalendarPage() {
                         </div>
                       );
                     })}
-                    {dayTasks.length > (view === "week" ? 8 : 3) && (
-                      <div className="text-[8px] font-bold text-gray-300 text-center">
-                        +{dayTasks.length - (view === "week" ? 8 : 3)} more
-                      </div>
-                    )}
+                    {(() => {
+                      const more = Math.max(0, dayTasks.length - (view === "week" ? 8 : 3)) + Math.max(0, dayEvents.length - (view === "week" ? 4 : 2));
+                      return more > 0 && <div className="text-[8px] font-bold text-gray-300 text-center">+{more} more</div>;
+                    })()}
                   </div>
                 </div>
               );
@@ -363,6 +422,7 @@ export default function CalendarPage() {
                 </div>
                 <div className="text-[10px] text-gray-400 font-medium mt-0.5">
                   {selectedDayTasks.length} task{selectedDayTasks.length !== 1 ? "s" : ""}
+                  {selectedDayEvents.length > 0 && ` · ${selectedDayEvents.length} other`}
                   {selectedDayTasks.filter(t => t.status === "done").length > 0 &&
                     ` · ${selectedDayTasks.filter(t => t.status === "done").length} done`}
                 </div>
@@ -376,7 +436,25 @@ export default function CalendarPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto divide-y divide-[#eceae4]/60">
-              {selectedDayTasks.length === 0 ? (
+              {selectedDayEvents.map(ev => {
+                const c = kindCfg(ev.kind);
+                const body = (
+                  <div className="flex items-start gap-2.5">
+                    <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", c.dot)} />
+                    <div className="flex-1 min-w-0">
+                      <div className={cn("text-[11px] font-black text-[#1c1c1c] truncate", ev.done && "line-through opacity-60")}>{ev.title}</div>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className={cn("px-1.5 py-0.5 rounded text-[9px] font-bold", c.bg)}>{c.label}</span>
+                        {ev.sub && <span className="text-[9px] text-gray-400 font-medium truncate">{ev.sub}</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+                return ev.href
+                  ? <Link key={ev.id} href={ev.href} className="block px-4 py-3 hover:bg-gray-50/50 transition-colors">{body}</Link>
+                  : <div key={ev.id} className="px-4 py-3">{body}</div>;
+              })}
+              {selectedDayTasks.length === 0 && selectedDayEvents.length > 0 ? null : selectedDayTasks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3 py-16 text-center px-4">
                   <CalendarDays className="w-10 h-10 text-gray-200" />
                   <p className="text-xs font-bold text-gray-400">No tasks on this day</p>
