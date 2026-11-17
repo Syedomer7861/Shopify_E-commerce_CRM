@@ -12,6 +12,8 @@ import type { Direction, Measurement } from "./score";
 export type KpiRange = { start: string; end: string; from: string; to: string }; // ISO instants + yyyy-MM-dd days
 export type KpiSource = {
   key: string;
+  /** Roles-page module whose view grant lets someone read this for another person. */
+  grant: string;
   label: string;
   group: string;
   measurement: Measurement;
@@ -44,85 +46,85 @@ const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 10000) / 100
 
 export const KPI_SOURCES: KpiSource[] = [
   // ── Calling ────────────────────────────────────────────────────────────────
-  { key: "calls.total", label: "Total calls", group: "Calling", measurement: "numeric", unit: "calls", direction: "higher",
+  { key: "calls.total", grant: "customers", label: "Total calls", group: "Calling", measurement: "numeric", unit: "calls", direction: "higher",
     compute: (sb, u, r) => count(inR(sb.from("raw_call_logs").select("id", { count: "exact", head: true }).eq("agent_id", u), "created_at", r)) },
-  { key: "calls.talked", label: "Calls with talk time", group: "Calling", measurement: "numeric", unit: "calls", direction: "higher",
+  { key: "calls.talked", grant: "customers", label: "Calls with talk time", group: "Calling", measurement: "numeric", unit: "calls", direction: "higher",
     note: "Call status isn't recorded reliably; a call counts once it has talk time.",
     compute: (sb, u, r) => count(inR(sb.from("raw_call_logs").select("id", { count: "exact", head: true }).eq("agent_id", u).gt("duration_seconds", 0), "created_at", r)) },
-  { key: "calls.talk_minutes", label: "Talk time", group: "Calling", measurement: "time", unit: "min", direction: "higher",
+  { key: "calls.talk_minutes", grant: "customers", label: "Talk time", group: "Calling", measurement: "time", unit: "min", direction: "higher",
     compute: async (sb, u, r) => { const rows = await all(() => inR(sb.from("raw_call_logs").select("duration_seconds").eq("agent_id", u), "created_at", r)); return rows && Math.round(sum(rows, x => x.duration_seconds) / 60); } },
-  { key: "calls.followups", label: "Follow-ups scheduled", group: "Calling", measurement: "numeric", unit: "follow-ups", direction: "higher",
+  { key: "calls.followups", grant: "customers", label: "Follow-ups scheduled", group: "Calling", measurement: "numeric", unit: "follow-ups", direction: "higher",
     compute: (sb, u, r) => count(inR(sb.from("call_logs").select("id, task:tasks!inner(assigned_to)", { count: "exact", head: true }).eq("task.assigned_to", u).eq("outcome", "rescheduled"), "called_at", r)) },
-  { key: "calltasks.closed", label: "Call tasks completed", group: "Calling", measurement: "numeric", unit: "tasks", direction: "higher",
+  { key: "calltasks.closed", grant: "customers", label: "Call tasks completed", group: "Calling", measurement: "numeric", unit: "tasks", direction: "higher",
     compute: (sb, u, r) => count(inR(sb.from("tasks").select("id", { count: "exact", head: true }).eq("assigned_to", u).eq("status", "done"), "completed_at", r)) },
-  { key: "calltasks.done_rate", label: "Call task done rate", group: "Calling", measurement: "percentage", unit: "%", direction: "higher",
+  { key: "calltasks.done_rate", grant: "customers", label: "Call task done rate", group: "Calling", measurement: "percentage", unit: "%", direction: "higher",
     compute: async (sb, u, r) => {
       const rows = await all(() => inR(sb.from("tasks").select("status").eq("assigned_to", u).in("status", ["done", "skipped", "cancelled"]), "completed_at", r));
       return rows && pct(rows.filter(x => x.status === "done").length, rows.length);
     } },
 
   // ── Sales ──────────────────────────────────────────────────────────────────
-  { key: "sales.leads_added", label: "Leads added", group: "Sales", measurement: "numeric", unit: "leads", direction: "higher",
+  { key: "sales.leads_added", grant: "leads", label: "Leads added", group: "Sales", measurement: "numeric", unit: "leads", direction: "higher",
     compute: (sb, u, r) => count(inR(sb.from("leads").select("id", { count: "exact", head: true }).eq("owner_id", u), "created_at", r)) },
-  { key: "sales.leads_converted", label: "Leads converted", group: "Sales", measurement: "numeric", unit: "leads", direction: "higher",
+  { key: "sales.leads_converted", grant: "leads", label: "Leads converted", group: "Sales", measurement: "numeric", unit: "leads", direction: "higher",
     compute: (sb, u, r) => count(inR(sb.from("leads").select("id", { count: "exact", head: true }).eq("owner_id", u).eq("status", "converted"), "created_at", r)) },
-  { key: "sales.lead_conversion", label: "Lead conversion rate", group: "Sales", measurement: "percentage", unit: "%", direction: "higher",
+  { key: "sales.lead_conversion", grant: "leads", label: "Lead conversion rate", group: "Sales", measurement: "percentage", unit: "%", direction: "higher",
     compute: async (sb, u, r) => { const rows = await all(() => inR(sb.from("leads").select("status").eq("owner_id", u), "created_at", r)); return rows && pct(rows.filter(x => x.status === "converted").length, rows.length); } },
-  { key: "sales.deals_won", label: "Deals closed (won)", group: "Sales", measurement: "numeric", unit: "deals", direction: "higher",
+  { key: "sales.deals_won", grant: "deals", label: "Deals closed (won)", group: "Sales", measurement: "numeric", unit: "deals", direction: "higher",
     note: "Deals carry no close date, so the period follows when the deal was created.",
     compute: (sb, u, r) => count(inR(sb.from("deals").select("id", { count: "exact", head: true }).eq("owner_id", u).eq("status", "won"), "created_at", r)) },
-  { key: "sales.revenue_won", label: "Revenue won", group: "Sales", measurement: "currency", unit: "₹", direction: "higher",
+  { key: "sales.revenue_won", grant: "deals", label: "Revenue won", group: "Sales", measurement: "currency", unit: "₹", direction: "higher",
     compute: async (sb, u, r) => { const rows = await all(() => inR(sb.from("deals").select("value").eq("owner_id", u).eq("status", "won"), "created_at", r)); return rows && sum(rows, x => x.value); } },
-  { key: "sales.win_rate", label: "Deal win rate", group: "Sales", measurement: "percentage", unit: "%", direction: "higher",
+  { key: "sales.win_rate", grant: "deals", label: "Deal win rate", group: "Sales", measurement: "percentage", unit: "%", direction: "higher",
     compute: async (sb, u, r) => { const rows = await all(() => inR(sb.from("deals").select("status").eq("owner_id", u).in("status", ["won", "lost"]), "created_at", r)); return rows && pct(rows.filter(x => x.status === "won").length, rows.length); } },
-  { key: "sales.quotes_sent", label: "Quotes created", group: "Sales", measurement: "numeric", unit: "quotes", direction: "higher",
+  { key: "sales.quotes_sent", grant: "deals", label: "Quotes created", group: "Sales", measurement: "numeric", unit: "quotes", direction: "higher",
     compute: (sb, u, r) => count(inR(sb.from("quotes").select("id", { count: "exact", head: true }).eq("owner_id", u), "created_at", r)) },
 
   // ── Work delivery (development, design, marketing, any task-based role) ─────
-  { key: "work.tasks_completed", label: "Tasks completed", group: "Work delivery", measurement: "numeric", unit: "tasks", direction: "higher",
+  { key: "work.tasks_completed", grant: "work", label: "Tasks completed", group: "Work delivery", measurement: "numeric", unit: "tasks", direction: "higher",
     compute: (sb, u, r) => count(inR(sb.from("mkt_tasks").select("id", { count: "exact", head: true }).contains("assignees", [u]).not("completed_at", "is", null), "completed_at", r)) },
-  { key: "work.tasks_assigned", label: "Tasks assigned", group: "Work delivery", measurement: "numeric", unit: "tasks", direction: "higher",
+  { key: "work.tasks_assigned", grant: "work", label: "Tasks assigned", group: "Work delivery", measurement: "numeric", unit: "tasks", direction: "higher",
     compute: (sb, u, r) => count(inR(sb.from("mkt_tasks").select("id", { count: "exact", head: true }).contains("assignees", [u]), "created_at", r)) },
-  { key: "work.on_time", label: "On-time delivery", group: "Work delivery", measurement: "percentage", unit: "%", direction: "higher",
+  { key: "work.on_time", grant: "work", label: "On-time delivery", group: "Work delivery", measurement: "percentage", unit: "%", direction: "higher",
     note: "Tasks completed in the period that had a due date: share finished on or before it.",
     compute: async (sb, u, r) => {
       const rows = await all(() => inR(sb.from("mkt_tasks").select("completed_at, due_date").contains("assignees", [u]).not("completed_at", "is", null).not("due_date", "is", null), "completed_at", r));
       return rows && pct(rows.filter(x => String(x.completed_at).slice(0, 10) <= String(x.due_date).slice(0, 10)).length, rows.length);
     } },
-  { key: "work.overdue_open", label: "Overdue open tasks", group: "Work delivery", measurement: "numeric", unit: "tasks", direction: "lower",
+  { key: "work.overdue_open", grant: "work", label: "Overdue open tasks", group: "Work delivery", measurement: "numeric", unit: "tasks", direction: "lower",
     note: "A count as of now, not of the period.",
     compute: (sb, u, r) => count(sb.from("mkt_tasks").select("id", { count: "exact", head: true }).contains("assignees", [u]).is("completed_at", null).lt("due_date", r.to)) },
-  { key: "work.hours_logged", label: "Hours logged", group: "Work delivery", measurement: "time", unit: "h", direction: "higher",
+  { key: "work.hours_logged", grant: "work", label: "Hours logged", group: "Work delivery", measurement: "time", unit: "h", direction: "higher",
     compute: async (sb, u, r) => { const rows = await all(() => inDays(sb.from("mkt_time_entries").select("minutes").eq("user_id", u), "spent_on", r)); return rows && Math.round((sum(rows, x => x.minutes) / 60) * 10) / 10; } },
 
   // ── Customer support ───────────────────────────────────────────────────────
-  { key: "support.tickets_resolved", label: "Tickets resolved", group: "Customer support", measurement: "numeric", unit: "tickets", direction: "higher",
+  { key: "support.tickets_resolved", grant: "tickets", label: "Tickets resolved", group: "Customer support", measurement: "numeric", unit: "tickets", direction: "higher",
     compute: (sb, u, r) => count(inR(sb.from("tickets").select("id", { count: "exact", head: true }).eq("assignee_id", u), "resolved_at", r)) },
-  { key: "support.resolution_hours", label: "Average resolution time", group: "Customer support", measurement: "time", unit: "h", direction: "lower",
+  { key: "support.resolution_hours", grant: "tickets", label: "Average resolution time", group: "Customer support", measurement: "time", unit: "h", direction: "lower",
     compute: async (sb, u, r) => {
       const rows = await all(() => inR(sb.from("tickets").select("created_at, resolved_at").eq("assignee_id", u), "resolved_at", r));
       if (!rows || rows.length === 0) return rows && null;
       return Math.round((sum(rows, x => (new Date(x.resolved_at).getTime() - new Date(x.created_at).getTime()) / 3_600_000) / rows.length) * 10) / 10;
     } },
-  { key: "support.sla_met", label: "SLA achievement", group: "Customer support", measurement: "percentage", unit: "%", direction: "higher",
+  { key: "support.sla_met", grant: "tickets", label: "SLA achievement", group: "Customer support", measurement: "percentage", unit: "%", direction: "higher",
     compute: async (sb, u, r) => { const rows = await all(() => inR(sb.from("tickets").select("sla_breached_at").eq("assignee_id", u), "resolved_at", r)); return rows && pct(rows.filter(x => !x.sla_breached_at).length, rows.length); } },
 
   // ── Finance ────────────────────────────────────────────────────────────────
-  { key: "finance.invoices_raised", label: "Invoices processed", group: "Accounts & finance", measurement: "numeric", unit: "invoices", direction: "higher",
+  { key: "finance.invoices_raised", grant: "invoices", label: "Invoices processed", group: "Accounts & finance", measurement: "numeric", unit: "invoices", direction: "higher",
     compute: (sb, u, r) => count(inR(sb.from("invoices").select("id", { count: "exact", head: true }).eq("created_by", u), "created_at", r)) },
-  { key: "finance.payments_received", label: "Payments received", group: "Accounts & finance", measurement: "currency", unit: "₹", direction: "higher",
+  { key: "finance.payments_received", grant: "invoices", label: "Payments received", group: "Accounts & finance", measurement: "currency", unit: "₹", direction: "higher",
     compute: async (sb, u, r) => { const rows = await all(() => inR(sb.from("invoices").select("amount").eq("created_by", u).eq("status", "paid"), "created_at", r)); return rows && sum(rows, x => x.amount); } },
-  { key: "finance.outstanding", label: "Outstanding receivables", group: "Accounts & finance", measurement: "currency", unit: "₹", direction: "lower",
+  { key: "finance.outstanding", grant: "invoices", label: "Outstanding receivables", group: "Accounts & finance", measurement: "currency", unit: "₹", direction: "lower",
     compute: async (sb, u, r) => { const rows = await all(() => inR(sb.from("invoices").select("amount").eq("created_by", u).in("status", ["sent", "overdue"]), "created_at", r)); return rows && sum(rows, x => x.amount); } },
 
   // ── Field ──────────────────────────────────────────────────────────────────
-  { key: "field.visits_completed", label: "Visits completed", group: "Field", measurement: "numeric", unit: "visits", direction: "higher",
+  { key: "field.visits_completed", grant: "visits", label: "Visits completed", group: "Field", measurement: "numeric", unit: "visits", direction: "higher",
     compute: (sb, u, r) => count(inR(sb.from("visits").select("id", { count: "exact", head: true }).eq("owner_id", u).not("check_out_at", "is", null), "planned_at", r)) },
 
   // ── Attendance (any role) ──────────────────────────────────────────────────
-  { key: "attendance.productive_hours", label: "Productive hours", group: "Attendance", measurement: "time", unit: "h", direction: "higher",
+  { key: "attendance.productive_hours", grant: "team", label: "Productive hours", group: "Attendance", measurement: "time", unit: "h", direction: "higher",
     compute: async (sb, u, r) => { const rows = await all(() => inDays(sb.from("attendance_log").select("productive_minutes").eq("agent_id", u), "date", r)); return rows && Math.round((sum(rows, x => x.productive_minutes) / 60) * 10) / 10; } },
-  { key: "attendance.days_present", label: "Days present", group: "Attendance", measurement: "numeric", unit: "days", direction: "higher",
+  { key: "attendance.days_present", grant: "team", label: "Days present", group: "Attendance", measurement: "numeric", unit: "days", direction: "higher",
     compute: (sb, u, r) => count(inDays(sb.from("attendance_log").select("id", { count: "exact", head: true }).eq("agent_id", u), "date", r)) },
 ];
 

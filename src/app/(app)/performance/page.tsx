@@ -16,6 +16,7 @@ import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
 const WorkspacePerformance = dynamic(() => import("@/components/performance/WorkspacePerformance"), { ssr: false });
 import { ModuleKpis } from "@/components/performance/ModuleKpis";
+import { KpiScorecard } from "@/components/kpi/KpiScorecard";
 import type { Grants } from "@/lib/access";
 import { cn, formatCurrency, toDbDateString, TASK_TYPE_CONFIG, DELIVERY_CONFIG, TASK_STATUS_CONFIG } from "@/lib/utils";
 import type { TaskType, DeliveryStatus, TaskStatus } from "@/types";
@@ -347,6 +348,9 @@ export default function PerformancePage() {
   const moduleKpis = selectedAgentId ? (
     <ModuleKpis userId={selectedAgentId} range={range} grants={targetGrants} isAdminRole={roleOf(selectedAgentId) === "admin"} />
   ) : null;
+  // The active KPI plan, when the person has one; nothing otherwise.
+  const kpiTarget = canBrowseAgents ? selectedAgentId : profile?.id;
+  const scorecard = kpiTarget ? <KpiScorecard key={kpiTarget} employeeId={kpiTarget} viewer={profile ?? null} /> : null;
 
   const EXPORT_HEADERS = ["Date", "Clock In", "Clock Out", "Work Hours", "Break Hours", "Net Hours", "Tasks", "Revenue"];
   const ACTIVITY_HEADERS = ["Time", "Type", "Description"];
@@ -686,6 +690,7 @@ export default function PerformancePage() {
         </div>
       ) : isWorkspaceUser ? (
         <>
+          {scorecard}
           {moduleKpis}
           <WorkspacePerformance
             userId={selectedAgentId}
@@ -706,6 +711,7 @@ export default function PerformancePage() {
             <StatCard label="Days Logged" value={dailyLogs.length} sub="In range" icon={<Calendar className="w-4 h-4" />} />
           </div>
 
+          {scorecard}
           {moduleKpis}
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6">

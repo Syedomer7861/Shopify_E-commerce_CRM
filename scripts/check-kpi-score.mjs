@@ -61,4 +61,30 @@ assert.strictEqual(bandFor(85), "meets");
 assert.strictEqual(bandFor(60), "needs_improvement");
 assert.strictEqual(bandFor(10), "below");
 
+// Review periods (lib/kpi/periods.ts).
+const load = (f) => {
+  const out = ts.transpileModule(readFileSync(f, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
+  const m = { exports: {} };
+  new Function("module", "exports", "require", out)(m, m.exports, require_);
+  return m.exports;
+};
+const { recentPeriods, periodRange } = load("src/lib/kpi/periods.ts");
+const now = new Date(2026, 10, 17); // 17 Nov 2026
+const pick = (k, i = 0) => { const p = recentPeriods(k, 3, now)[i]; return `${p.from}..${p.to}`; };
+assert.strictEqual(pick("monthly"), "2026-11-01..2026-11-30");
+assert.strictEqual(pick("monthly", 2), "2026-09-01..2026-09-30");
+assert.strictEqual(pick("quarterly"), "2026-10-01..2026-12-31");
+assert.strictEqual(pick("half_yearly"), "2026-07-01..2026-12-31");
+assert.strictEqual(pick("half_yearly", 1), "2026-01-01..2026-06-30");
+assert.strictEqual(pick("yearly", 1), "2025-01-01..2025-12-31");
+assert.strictEqual(pick("weekly"), "2026-11-16..2026-11-22");
+const pr = periodRange({ from: "2026-11-01", to: "2026-11-30" });
+assert.ok(new Date(pr.end) > new Date(pr.start) && pr.from === "2026-11-01", "period range bounds");
+
+// Every source names a real Roles-page module.
+const access = readFileSync("src/lib/access.ts", "utf8");
+for (const g of new Set([...readFileSync("src/lib/kpi/sources.ts", "utf8").matchAll(/grant: "([a-z_]+)"/g)].map(m => m[1]))) {
+  assert.ok(access.includes(`key: "${g}"`), `source grant ${g} is not a permission module`);
+}
+
 console.log("check-kpi-score: OK");
