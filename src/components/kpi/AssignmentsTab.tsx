@@ -7,11 +7,13 @@ import { EmptyState } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import type { Named } from "./PlansTab";
+import { TargetOverrides } from "./TargetOverrides";
 
 type Person = Named & { department_id: string | null; designation_id: string | null };
 type Assignment = {
   id: string; plan_id: string; employee_id: string; effective_from: string; effective_to: string | null;
   status: "suggested" | "active" | "ended"; reason: string; kpi_plans: { name: string } | null;
+  target_overrides: Record<string, number> | null;
 };
 
 const input = "h-9 px-2 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
@@ -30,11 +32,12 @@ export function AssignmentsTab({ me, departments, designations, canManage, canAp
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState<Assignment["status"]>("suggested");
+  const [targetsFor, setTargetsFor] = useState<Assignment | null>(null);
   const [bulk, setBulk] = useState<{ plan: string; from: string; dept: string; picked: string[] } | null>(null);
 
   const load = useCallback(async () => {
     const [a, p, pl] = await Promise.all([
-      supabase.from("kpi_assignments").select("id, plan_id, employee_id, effective_from, effective_to, status, reason, kpi_plans(name)").order("created_at", { ascending: false }).limit(1000),
+      supabase.from("kpi_assignments").select("id, plan_id, employee_id, effective_from, effective_to, status, reason, target_overrides, kpi_plans(name)").order("created_at", { ascending: false }).limit(1000),
       supabase.from("profiles").select("id, name, department_id, designation_id").eq("is_active", true).order("name"),
       supabase.from("kpi_plans").select("id, name").eq("status", "active").order("name"),
     ]);
@@ -70,6 +73,13 @@ export function AssignmentsTab({ me, departments, designations, canManage, canAp
   const counts = { suggested: rows.filter(a => a.status === "suggested").length, active: rows.filter(a => a.status === "active").length };
 
   if (loading) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+
+  if (targetsFor) {
+    return (
+      <TargetOverrides assignmentId={targetsFor.id} planId={targetsFor.plan_id} person={person(targetsFor.employee_id)?.name ?? "this person"}
+        initial={targetsFor.target_overrides ?? {}} onDone={saved => { setTargetsFor(null); if (saved) load(); }} />
+    );
+  }
 
   if (bulk) {
     const pool = people.filter(p => !bulk.dept || p.department_id === bulk.dept);
@@ -157,6 +167,11 @@ export function AssignmentsTab({ me, departments, designations, canManage, canAp
                     {placement(p) && `${placement(p)} · `}from {day(a.effective_from)}{a.effective_to ? ` to ${day(a.effective_to)}` : ""}{a.reason ? ` · ${a.reason}` : ""}
                   </div>
                 </div>
+                {canManage && !self && (a.status === "suggested" || (a.status === "active" && canApprove)) && (
+                  <button className={small} disabled={busy} onClick={() => setTargetsFor(a)}>
+                    Targets{Object.keys(a.target_overrides ?? {}).length ? ` (${Object.keys(a.target_overrides ?? {}).length} personal)` : ""}
+                  </button>
+                )}
                 {a.status === "suggested" && canApprove && !self && (
                   <button className={small} disabled={busy} onClick={() => rpc("kpi_approve_assignment", { p_id: a.id, p_from: today() }, () => "Approved; previous plan ended")}>Approve</button>
                 )}
