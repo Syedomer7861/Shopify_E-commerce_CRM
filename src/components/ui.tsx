@@ -137,17 +137,30 @@ export function Modal({
   footer?: React.ReactNode;
   maxWidth?: string;
 }) {
+  // Escape closes; the page behind stops scrolling while the dialog is open.
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeRef.current(); };
+    // The app scrolls inside <main>, not <body>, so lock both.
+    const els = [document.body, document.getElementById("main-application-content")].filter((el): el is HTMLElement => !!el);
+    const prev = els.map(el => el.style.overflow);
+    els.forEach(el => { el.style.overflow = "hidden"; });
+    window.addEventListener("keydown", onKey);
+    return () => { window.removeEventListener("keydown", onKey); els.forEach((el, i) => { el.style.overflow = prev[i]; }); };
+  }, [open]);
   if (!open) return null;
   return (
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
       <div className="absolute inset-0 bg-[#1c1c1c]/40 backdrop-blur-[2px] transition-all" onClick={onClose} />
-      <div className={cn("relative bg-white rounded-[22px] shadow-2xl w-full animate-slide-up border border-[#ebece6]", maxWidth)}>
-        <div className="px-6 py-5 border-b border-[#f0f0ec] flex items-center justify-between">
-          <h3 className="section-title text-sm">{title}</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-[#e6f5a6] flex items-center justify-center text-[#5f5f5d] hover:text-[#1c1c1c] transition-colors">✕</button>
+      <div className={cn("relative bg-white rounded-t-[22px] sm:rounded-[22px] shadow-2xl w-full animate-slide-up border border-[#ebece6] flex flex-col max-h-[92dvh] sm:max-h-[90dvh]", maxWidth)}>
+        <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-[#f0f0ec] flex items-center justify-between gap-3 shrink-0">
+          <h3 className="section-title text-sm min-w-0">{title}</h3>
+          <button type="button" onClick={onClose} aria-label="Close" className="w-9 h-9 shrink-0 rounded-full hover:bg-[#e6f5a6] flex items-center justify-center text-[#5f5f5d] hover:text-[#1c1c1c] transition-colors">✕</button>
         </div>
-        <div className="px-6 py-6 overflow-y-auto max-h-[80vh]">{children}</div>
-        {footer && <div className="px-6 py-5 border-t border-[#f0f0ec] flex items-center justify-end gap-3 bg-[#fafaf7] rounded-b-[22px]">{footer}</div>}
+        <div className="px-5 sm:px-6 py-5 sm:py-6 overflow-y-auto min-h-0 flex-1 overscroll-contain">{children}</div>
+        {footer && <div className="px-5 sm:px-6 py-4 sm:py-5 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5 border-t border-[#f0f0ec] flex flex-wrap items-center justify-end gap-3 bg-[#fafaf7] sm:rounded-b-[22px] shrink-0">{footer}</div>}
       </div>
     </div>
   );

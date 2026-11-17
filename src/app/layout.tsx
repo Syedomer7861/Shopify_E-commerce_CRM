@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Outfit, Instrument_Serif } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "react-hot-toast";
+import { AppToaster } from "@/components/AppToaster";
 import { Suspense } from "react";
 import { PHProvider } from "./providers";
 import PostHogPageView from "./_components/PostHogPageView";
@@ -68,20 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </PHProvider>
         <ServiceWorkerRegister />
         <ConsentBanner />
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: { 
-              background: "#1c1c1c", 
-              color: "#fcfbf8", 
-              fontSize: "13px", 
-              borderRadius: "6px", 
-              padding: "10px 14px",
-              boxShadow: "rgba(0,0,0,0.1) 0px 4px 12px" 
-            },
-            duration: 3000,
-          }}
-        />
+        <AppToaster />
       </body>
     </html>
   );

@@ -265,3 +265,7 @@ h1, h2, h3, h4 {
   #main-application-content .justify-between { flex-wrap: wrap; row-gap: 0.5rem; }
   #main-application-content .text-3xl { font-size: 1.625rem; line-height: 2rem; }
 }
+
+/* 8-9px labels (460+ of them) were unreadable on phones; 10px is the floor. */
+/* Scoped to page content: the phone icon rail's 9px labels must stay small to fit. */
+#main-application-content .text-\[8px\], #main-application-content .text-\[9px\] { font-size: 10px; }
