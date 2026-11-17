@@ -104,6 +104,11 @@ async function checkShared(key: string, limit: number, windowMs: number): Promis
   }
 }
 
+/** Same as checkRateLimit, but shared across instances when Redis is configured. */
+export async function checkSharedRateLimit(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
+  return (await checkShared(key, limit, windowMs)) ?? checkRateLimit(key, limit, windowMs);
+}
+
 /**
  * Guard for a route handler. Returns a 429 response to return early, or null
  * to continue.

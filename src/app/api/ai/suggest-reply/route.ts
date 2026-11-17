@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { memberScope } from "@/lib/auth-utils";
+import { rateLimit } from "@/lib/rate-limit";
 import { getServiceSupabase } from "@/lib/supabase";
 import { generateAiText } from "@/lib/ai";
 
 export async function POST(req: NextRequest) {
   const scope = await memberScope(req);
   if (scope.error) return scope.error;
+  // Each call spends AI tokens: 20 a minute per workspace and device is plenty for a person.
+  const limited = await rateLimit(req, `ai:${scope.orgId ?? "internal"}`, 20, 60_000);
+  if (limited) return limited;
 
   const supabase = getServiceSupabase(req);
   const { customerId, lastMessage, taskType } = await req.json();

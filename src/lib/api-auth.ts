@@ -1,7 +1,7 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkSharedRateLimit, rateLimit } from "@/lib/rate-limit";
 
 export type ApiScope = "leads:read" | "leads:write" | "deals:read" | "deals:write" | "tickets:read";
 export type ApiCaller = { orgId: string; keyId: string; admin: ReturnType<typeof createAdminClient> };
@@ -14,6 +14,9 @@ export const apiError = (status: number, error: string) => NextResponse.json({ e
  * on caller.orgId; the key's scopes limit what it may touch.
  */
 export async function apiAuth(req: NextRequest, scope: ApiScope): Promise<ApiCaller | NextResponse> {
+  // Per IP before the lookup, so guessing keys can't hammer the database.
+  const ipLimited = await rateLimit(req, "api-v1-ip", 300, 60_000);
+  if (ipLimited) return ipLimited;
   const key = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
   if (!/^cc_[0-9a-f]{48}$/.test(key)) return apiError(401, "Missing or malformed API key");
   const admin = createAdminClient();
@@ -24,7 +27,7 @@ export async function apiAuth(req: NextRequest, scope: ApiScope): Promise<ApiCal
   }
   if (!data) return apiError(401, "Invalid or revoked API key");
   const { key_id, org_id, scopes } = data as { key_id: string; org_id: string; scopes: string[] };
-  const rl = checkRateLimit(`api:${key_id}`, 120, 60_000);
+  const rl = await checkSharedRateLimit(`api:${key_id}`, 120, 60_000);
   if (!rl.allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } });
   if (!scopes.includes(scope)) return apiError(403, `This key does not have the ${scope} scope`);
   return { orgId: org_id, keyId: key_id, admin };

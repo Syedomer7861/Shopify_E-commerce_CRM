@@ -97,6 +97,15 @@ export async function middleware(request: NextRequest) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(hit.retryAfterSeconds) } })
     }
   }
+  // Same idea for API reads, set well above what any screen polls (a few per
+  // second per person), so it only trips on a runaway loop or a scraper.
+  if (path.startsWith('/api/') && request.method === 'GET' && !path.startsWith('/api/cron/')) {
+    const key = clientKey(request, user ? `api-read:${user.id}` : 'api-read:anon')
+    const hit = checkRateLimit(key, user ? 600 : 120, 60_000)
+    if (!hit.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(hit.retryAfterSeconds) } })
+    }
+  }
 
   // Protect all routes except login, api, and static files
   const isLoginPage = request.nextUrl.pathname.startsWith('/login')
