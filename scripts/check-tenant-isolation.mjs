@@ -45,6 +45,9 @@ if (!URL || !ANON || !SERVICE || !EMAIL || !PASSWORD || !ORG_ID) {
 const EXPECTED_MAX = { organizations: 1, settings_public: 1 };
 // Shared, read-only catalogues with no workspace data (members read every row).
 const SHARED_CATALOGUE = new Set(["industry_templates", "org_unit_catalog", "org_structure_templates"]);
+// Tables mixing global rows (org_id NULL, readable by every org) with org rows:
+// only the org-owned rows are compared, so a cross-org leak still fails.
+const GLOBAL_ROWS = new Set(["kpi_templates", "kpi_template_items"]);
 
 const opts = { auth: { persistSession: false, autoRefreshToken: false } };
 const service = createClient(URL, SERVICE, opts);
@@ -60,9 +63,10 @@ if (loginErr) {
 const spec = await fetch(`${URL}/rest/v1/`, { headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}` } }).then((r) => r.json());
 const defs = spec.definitions || {};
 
-async function count(client, table, orgId) {
+async function count(client, table, orgId, orgOwnedOnly = false) {
   let q = client.from(table).select("*", { count: "exact", head: true });
   if (orgId) q = q.eq("org_id", orgId);
+  if (orgOwnedOnly) q = q.not("org_id", "is", null);
   const { count: n, error } = await q;
   return error ? 0 : n ?? 0; // an RLS/permission error means "sees nothing"
 }
@@ -72,7 +76,7 @@ for (const table of Object.keys(defs).sort()) {
   const hasOrg = Boolean(defs[table]?.properties?.org_id);
   const [asAnon, asMember, own] = await Promise.all([
     count(anon, table),
-    count(member, table),
+    count(member, table, null, GLOBAL_ROWS.has(table)),
     hasOrg ? count(service, table, ORG_ID) : Promise.resolve(EXPECTED_MAX[table] ?? 0),
   ]);
   if (asAnon > 0) leaks.push(`${table}: logged-out caller sees ${asAnon} rows`);

@@ -51,6 +51,7 @@ export function KpiScorecard({ employeeId, viewer }: { employeeId: string; viewe
   const [comments, setComments] = useState("");
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [history, setHistory] = useState<{ period_start: string; period_end: string; overall: number | null; band: Band | null }[]>([]);
 
   const isSelf = viewer?.id === employeeId;
   const isAdmin = viewer?.role === "admin";
@@ -83,11 +84,13 @@ export function KpiScorecard({ employeeId, viewer }: { employeeId: string; viewe
     setLoading(true);
     const r = periodRange(period);
     const keys = items.filter(i => i.source_key && SOURCE_BY_KEY.has(i.source_key) && sourceAllowed(SOURCE_BY_KEY.get(i.source_key)!.grant)).map(i => i.source_key!);
-    const [a, mv, ev] = await Promise.all([
+    const [a, mv, ev, hist] = await Promise.all([
       computeActuals(supabase, employeeId, keys, r),
       supabase.from("kpi_manual_values").select("plan_item_id, value").eq("employee_id", employeeId).eq("period_start", period.from).eq("period_end", period.to).in("plan_item_id", items.map(i => i.id)),
       supabase.from("kpi_evaluations").select("id, status, overall, band, comments, snapshot, finalised_at").eq("assignment_id", assignment.id).eq("period_start", period.from).eq("period_end", period.to).maybeSingle(),
+      supabase.from("kpi_evaluations").select("period_start, period_end, overall, band").eq("employee_id", employeeId).eq("status", "finalised").order("period_end", { ascending: false }).limit(12),
     ]);
+    setHistory((hist.data || []) as typeof history);
     setActuals(a);
     const m = Object.fromEntries(((mv.data || []) as { plan_item_id: string; value: number }[]).map(x => [x.plan_item_id, Number(x.value)]));
     setManual(m);
@@ -223,6 +226,19 @@ export function KpiScorecard({ employeeId, viewer }: { employeeId: string; viewe
                 ))}
               </div>
               <button onClick={saveManual} disabled={busy} className="mt-2 text-xs px-3 py-1.5 rounded-lg border border-[#eceae4] disabled:opacity-50">Save values</button>
+            </div>
+          )}
+
+          {history.length > 0 && (
+            <div className="mt-4 border-t border-[#eceae4] pt-3">
+              <div className="text-xs font-bold text-[#1c1c1c] mb-2">Finalised history</div>
+              <div className="flex flex-wrap gap-2">
+                {history.map(h => (
+                  <span key={h.period_start + h.period_end} className="text-[10px] px-2 py-1 rounded-lg border border-[#eceae4]">
+                    {h.period_start} to {h.period_end}: <b>{h.overall == null ? "—" : `${h.overall}%`}</b>{h.band ? ` · ${BAND[h.band].label}` : ""}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 

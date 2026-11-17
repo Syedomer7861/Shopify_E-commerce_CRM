@@ -10,6 +10,7 @@ import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { SOURCE_BY_KEY } from "@/lib/kpi/sources";
 import { weightCheck } from "@/lib/kpi/score";
 import { PlansTab, type Named } from "@/components/kpi/PlansTab";
+import { KpiOverview } from "@/components/kpi/KpiOverview";
 import { AssignmentsTab } from "@/components/kpi/AssignmentsTab";
 import { KpiTemplateEditor, blankDraft, draftProblems, toDraft, toPayload, type KpiTemplateDraft, type TemplateRow } from "@/components/kpi/KpiTemplateEditor";
 
@@ -49,7 +50,7 @@ export default function KpiPage() {
   const canView = can(profile, "kpi", "view") !== null;
   const canManage = can(profile, "kpi", "manage") !== null;
   const canApprove = can(profile, "kpi", "approve") !== null;
-  const [view, setView] = useState<"plans" | "assignments" | "ours" | "library">("plans");
+  const [view, setView] = useState<"overview" | "plans" | "assignments" | "ours" | "library">("overview");
   const [ours, setOurs] = useState<Row[]>([]);
   const [library, setLibrary] = useState<Row[]>([]);
   const [departments, setDepartments] = useState<Named[]>([]);
@@ -131,6 +132,7 @@ export default function KpiPage() {
       ) : (
         <>
           <nav className="flex gap-1 mb-4 border-b border-[#eceae4] overflow-x-auto whitespace-nowrap">
+            <button className={tab(view === "overview")} onClick={() => setView("overview")}>Overview</button>
             <button className={tab(view === "plans")} onClick={() => setView("plans")}>Plans</button>
             <button className={tab(view === "assignments")} onClick={() => setView("assignments")}>Assignments</button>
             <button className={tab(view === "ours")} onClick={() => setView("ours")}>Our templates ({ours.filter(t => t.status !== "archived").length})</button>
@@ -138,7 +140,9 @@ export default function KpiPage() {
           </nav>
 
           {loading ? <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
-          : view === "plans" ? (
+          : view === "overview" ? (
+            <KpiOverview viewer={profile ?? null} departments={departments} />
+          ) : view === "plans" ? (
             <PlansTab templates={ours.filter(t => t.status !== "archived")} departments={departments} designations={designations} canManage={canManage} canApprove={canApprove} />
           ) : view === "assignments" ? (
             <AssignmentsTab me={profile?.id ?? ""} departments={departments} designations={designations} canManage={canManage} canApprove={canApprove} />
