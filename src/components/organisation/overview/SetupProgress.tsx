@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Circle, ListChecks } from "lucide-react";
 import type { OrgOverview } from "@/lib/org-overview";
+import { PANEL } from "@/components/dashboard/Tiles";
 
 type Step = { label: string; done: boolean | null; detail: string; href: string };
 
@@ -34,7 +35,7 @@ export function SetupProgress({ data }: { data: OrgOverview }) {
   const [shown, setShown] = useState(0);
   useEffect(() => { const t = requestAnimationFrame(() => setShown(pct)); return () => cancelAnimationFrame(t); }, [pct]);
   return (
-    <div className="card p-5 h-full">
+    <div className={`${PANEL} h-full`}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
           <h3 className="text-sm font-bold text-[#1c1c1c] flex items-center gap-2"><ListChecks className="w-4 h-4" /> Setup progress</h3>

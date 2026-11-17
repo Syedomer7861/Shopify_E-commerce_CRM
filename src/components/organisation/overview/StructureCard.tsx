@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { ArrowUpRight, Building2, Network, Users } from "lucide-react";
 import { groupCounts, type OrgOverview, type Unit } from "@/lib/org-overview";
+import { PANEL } from "@/components/dashboard/Tiles";
+import { cn } from "@/lib/utils";
 
 /**
  * The organisation's own hierarchy as a chart: the organisation on top, its
@@ -28,7 +30,7 @@ export function StructureCard({ data }: { data: OrgOverview }) {
   );
 
   return (
-    <div className="card p-5 h-full flex flex-col">
+    <div className={cn(PANEL, "h-full flex flex-col")}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-[#1c1c1c] flex items-center gap-2"><Network className="w-4 h-4" /> Organisation structure</h3>
         <Link href="/organisation" className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#5f5f5d] hover:text-[#1c1c1c]">Full structure <ArrowUpRight className="w-3 h-3" /></Link>
@@ -36,29 +38,18 @@ export function StructureCard({ data }: { data: OrgOverview }) {
       {active.length === 0 ? (
         <p className="text-xs text-[#5f5f5d]">No departments yet. <Link href="/organisation" className="underline font-semibold">Add your first department</Link> or <Link href="/organisation?templates=1" className="underline font-semibold">start from an industry template</Link>.</p>
       ) : (
-        <div className="overflow-x-auto pb-1">
-          <div className="min-w-max flex flex-col items-center">
-            <div className="rounded-xl bg-[#1c1c1c] text-white px-4 py-2 text-[11px] font-bold inline-flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5" />{data.org?.name ?? "Organisation"}</div>
-            <div className="w-px h-4 bg-[#d6d3cc]" />
-            <div className="flex gap-3 relative">
-              {top.map((d, i) => (
-                <div key={d.id} className="flex flex-col items-center relative w-32">
-                  {/* connector: horizontal rail spanning siblings + drop to the box */}
-                  {top.length > 1 && <div className="absolute top-0 h-px bg-[#d6d3cc]" style={{ left: i === 0 ? "50%" : "-6px", right: i === top.length - 1 ? "50%" : "-6px" }} />}
-                  <div className="w-px h-3 bg-[#d6d3cc]" />
-                  <div className="w-full">{box(d)}</div>
-                  {children(d.id).length > 0 && (
-                    <div className="w-full flex flex-col items-center">
-                      <div className="w-px h-3 bg-[#d6d3cc]" />
-                      <div className="w-[88%] space-y-1.5">
-                        {children(d.id).slice(0, 4).map(k => <div key={k.id}>{box(k, true)}</div>)}
-                        {children(d.id).length > 4 && <div className="text-center text-[10px] text-[#5f5f5d]">+{children(d.id).length - 4} more</div>}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+        // Root on top, departments in a wrapping grid below: never wider than the card.
+        <div className="flex flex-col items-center">
+          <div className="max-w-full rounded-xl bg-[#151515] text-white px-4 py-2 text-[11px] font-bold inline-flex items-center gap-1.5 truncate"><Building2 className="w-3.5 h-3.5 text-[#d6ef6a] flex-shrink-0" /><span className="truncate">{data.org?.name ?? "Organisation"}</span></div>
+          <div className="w-px h-4 bg-[#d6d3cc]" />
+          <div className="w-full rounded-2xl border border-dashed border-[#d6d3cc] p-2 grid grid-cols-2 gap-2 max-h-72 overflow-y-auto">
+            {top.map(d => (
+              <div key={d.id} className="min-w-0 space-y-1">
+                {box(d)}
+                {children(d.id).slice(0, 3).map(k => <div key={k.id} className="pl-2 border-l-2 border-[#e6f5a6]">{box(k, true)}</div>)}
+                {children(d.id).length > 3 && <div className="text-center text-[10px] text-[#5f5f5d]">+{children(d.id).length - 3} more</div>}
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -38,13 +38,33 @@ export function Ring({ pct, tone = "lime", label, size = 64 }: { pct: number; to
 type TileProps = {
   icon: React.ReactNode; label: string; value: React.ReactNode; sub?: React.ReactNode; href?: string;
   tone?: Tone; ring?: { pct: number; label: string; tone?: Tone } | null; className?: string;
+  /** Small trend line from real history (oldest first). */
+  spark?: number[] | null;
+  /** Short change label, e.g. "+2 this month"; tone follows direction. */
+  trend?: { text: string; dir: "up" | "down" | "flat" } | null;
 };
+
+/** Area sparkline in the tile's tone; flat when every point is equal. */
+export function Spark({ data, tone = "lime" }: { data: number[]; tone?: Tone }) {
+  const w = 96, h = 40, max = Math.max(...data), min = Math.min(...data), span = max - min || 1;
+  const pts = data.map((v, i) => [(i / Math.max(data.length - 1, 1)) * w, h - 4 - ((v - min) / span) * (h - 8)] as const);
+  const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const id = `sp-${tone}`;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-24 h-10 flex-shrink-0" aria-hidden>
+      <defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={TONES[tone].ring} stopOpacity="0.35" /><stop offset="1" stopColor={TONES[tone].ring} stopOpacity="0" /></linearGradient></defs>
+      <path d={`${line} L${w},${h} L0,${h} Z`} fill={`url(#${id})`} />
+      <path d={line} fill="none" stroke="#1c1c1c" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+const TREND = { up: "bg-[#e6f5a6] text-[#3d5208]", down: "bg-[#fde3df] text-[#b5402f]", flat: "bg-[#efefea] text-[#6b6b67]" };
 
 function Shell({ href, className, children }: { href?: string; className: string; children: React.ReactNode }) {
   return href ? <Link href={href} className={cn(className, "group")}>{children}</Link> : <div className={className}>{children}</div>;
 }
 
-export function Tile({ icon, label, value, sub, href, tone = "lime", ring, className }: TileProps) {
+export function Tile({ icon, label, value, sub, href, tone = "lime", ring, className, spark, trend }: TileProps) {
   return (
     <Shell href={href} className={cn("block bg-white rounded-[20px] p-5 shadow-[0_1px_2px_rgba(16,24,16,0.04)] border border-[#ebece6] transition-all hover:shadow-md hover:-translate-y-0.5", className)}>
       <div className="flex items-center gap-2.5">
@@ -55,9 +75,12 @@ export function Tile({ icon, label, value, sub, href, tone = "lime", ring, class
       <div className="flex items-end justify-between gap-3 mt-4">
         <div className="min-w-0">
           <div className="text-[28px] leading-none font-bold tracking-tight text-[#1c1c1c] tabular-nums">{value}</div>
-          {sub && <div className="text-xs text-[#6b6b67] mt-2 truncate">{sub}</div>}
+          <div className="flex items-center gap-1.5 mt-2 min-w-0">
+            {trend && <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap", TREND[trend.dir])}>{trend.text}</span>}
+            {sub && <span className="text-xs text-[#6b6b67] truncate">{sub}</span>}
+          </div>
         </div>
-        {ring && <Ring pct={ring.pct} label={ring.label} tone={ring.tone ?? tone} />}
+        {ring ? <Ring pct={ring.pct} label={ring.label} tone={ring.tone ?? tone} /> : spark && spark.length > 1 ? <Spark data={spark} tone={tone} /> : null}
       </div>
     </Shell>
   );
@@ -82,3 +105,6 @@ export function HeroTile({ icon, label, value, chip, sub, href, className }: { i
     </Shell>
   );
 }
+
+/** White panel used by dashboard sections (same look as the tiles). */
+export const PANEL = "bg-white rounded-[20px] border border-[#ebece6] shadow-[0_1px_2px_rgba(16,24,16,0.04)] p-5";

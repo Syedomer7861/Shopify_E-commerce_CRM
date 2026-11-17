@@ -3,6 +3,7 @@ import { useState } from "react";
 import { PieChart as PieIcon } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { cn } from "@/lib/utils";
+import { PANEL } from "@/components/dashboard/Tiles";
 import { groupCounts, type OrgOverview } from "@/lib/org-overview";
 
 const DIMS = [
@@ -39,7 +40,7 @@ export function WorkforceCard({ data }: { data: OrgOverview }) {
   const allUnset = rows.length === 1 && rows[0].unset;
 
   return (
-    <div className="card p-5 h-full">
+    <div className={cn(PANEL, "h-full")}>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <h3 className="text-sm font-bold text-[#1c1c1c] flex items-center gap-2"><PieIcon className="w-4 h-4" /> Employee distribution</h3>
         <select aria-label="Group by" className="h-8 px-2 bg-white border border-[#eceae4] rounded-lg text-xs" value={dim} onChange={e => setDim(e.target.value as typeof dim)}>
@@ -50,8 +51,8 @@ export function WorkforceCard({ data }: { data: OrgOverview }) {
       : total === 0 ? <p className="text-xs text-[#5f5f5d]">No active employees.</p>
       : allUnset ? <p className="text-xs text-[#5f5f5d]">Nobody has a {DIMS.find(d => d.key === dim)?.label.toLowerCase()} set yet. Fill it in on each employee&apos;s profile.</p>
       : (
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="relative w-40 h-40 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-center gap-4 min-w-0">
+          <div className="relative w-36 h-36 flex-shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={rows} dataKey="n" nameKey="label" innerRadius="62%" outerRadius="100%" paddingAngle={rows.length > 1 ? 2 : 0} stroke="none" animationDuration={700}>
@@ -65,12 +66,12 @@ export function WorkforceCard({ data }: { data: OrgOverview }) {
               <span className="text-[10px] text-[#5f5f5d]">active</span>
             </div>
           </div>
-          <ul className="flex-1 w-full space-y-1.5 text-xs">
+          <ul className="flex-1 min-w-0 w-full space-y-1.5 text-xs">
             {rows.map(r => (
               <li key={r.label} className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: r.color }} />
-                <span className={cn("truncate capitalize flex-1", r.unset ? "text-amber-700" : "text-[#1c1c1c]")}>{r.label}</span>
-                <span className="font-bold text-[#1c1c1c]">{r.n}</span>
+                <span title={r.label} className={cn("truncate capitalize flex-1 min-w-0", r.unset ? "text-amber-700" : "text-[#1c1c1c]")}>{r.label}</span>
+                <span className="font-bold text-[#1c1c1c] tabular-nums">{r.n}</span>
                 <span className="text-[10px] text-[#5f5f5d] w-9 text-right">{Math.round((r.n / total) * 100)}%</span>
               </li>
             ))}
