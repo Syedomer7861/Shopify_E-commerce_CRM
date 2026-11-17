@@ -318,11 +318,10 @@ export default function ReportsPage() {
       // (covers all history including today).
       const breakdownCounts: Record<string, number> = { delivered: 0, in_transit: 0, rto: 0, pending: 0 };
       const tallyDeliveryLiveAll = async () => {
-        const { data } = await supabase.from("orders").select("delivery_status");
-        for (const o of data || []) {
-          const s = o.delivery_status as string;
-          if (s in breakdownCounts) breakdownCounts[s]++;
-        }
+        // Head counts: exact past the 1000-row API cap, and no rows downloaded.
+        const keys = Object.keys(breakdownCounts);
+        const rs = await Promise.all(keys.map(k => supabase.from("orders").select("id", { count: "exact", head: true }).eq("delivery_status", k)));
+        keys.forEach((k, i) => { breakdownCounts[k] += rs[i].count || 0; });
       };
       const istNow = new Date(Date.now() + 5.5 * 3600 * 1000);
       const todayIstDate = istNow.toISOString().slice(0, 10); // YYYY-MM-DD in IST

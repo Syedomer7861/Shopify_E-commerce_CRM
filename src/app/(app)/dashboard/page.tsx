@@ -196,7 +196,8 @@ export default function Dashboard() {
         .order("created_at", { ascending: false })
         .range((todayPage - 1) * ITEMS_PER_PAGE, todayPage * ITEMS_PER_PAGE - 1);
 
-      const { data: todayData, count: todayCount } = await applyAgentFilters(queryToday, prof);
+      // Started now, awaited together below: these lists don't depend on each other.
+      const todayP = applyAgentFilters(queryToday, prof);
       
       // 2. Fetch Overdue Tasks
       const queryOverdue = supabase
@@ -208,12 +209,12 @@ export default function Dashboard() {
         .order("due_date", { ascending: true })
         .range((overduePage - 1) * ITEMS_PER_PAGE, overduePage * ITEMS_PER_PAGE - 1);
 
-      const { data: overdueData, count: overdueCount } = await applyAgentFilters(queryOverdue, prof);
+      const overdueP = applyAgentFilters(queryOverdue, prof);
 
       // 3. Fetch Upcoming Tasks (next 3 days)
       const threeDaysOut = new Date();
       threeDaysOut.setDate(threeDaysOut.getDate() + 3);
-      const { data: upcomingData, count: upcomingCount } = await applyAgentFilters(
+      const upcomingP = applyAgentFilters(
         supabase
           .from("tasks")
           .select("*, customer:customers(*), order:orders(*), abandoned_cart:abandoned_carts(*), assigned_profile:profiles!tasks_assigned_to_fkey(id,name,email,live_state)", { count: "exact" })
@@ -227,7 +228,7 @@ export default function Dashboard() {
       );
 
       // 4. Recent Activity
-      const { data: activityData } = await supabase
+      const activityP = supabase
         .from("call_logs")
         .select("*, customer:customers(*)")
         .order("called_at", { ascending: false })
@@ -244,22 +245,34 @@ export default function Dashboard() {
         .gte("completed_at", startOfWeekISO);
       
       if (prof?.role === "agent") queryDone = queryDone.eq("assigned_to", prof.id);
-      const { count: doneCount } = await queryDone;
+      
       
       // 6. WhatsApp Settings - settings itself is admin-only RLS (it holds
       // API secrets), this view exposes only the template text TaskCard needs.
-      const { data: ws } = await supabase.from("settings_public").select("*").eq("id", "00000000-0000-0000-0000-000000000000").maybeSingle();
-      setWaSettings(ws);
+      const wsP = supabase.from("settings_public").select("*").eq("id", "00000000-0000-0000-0000-000000000000").maybeSingle();
 
       // 7. Recent Webhook Logs (The "Pulse")
-      let logsData = [];
-      try {
-        const res = await fetch("/api/webhooks/recent");
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success) logsData = json.logs;
-        }
-      } catch(e) {}
+      const logsP = (async () => {
+        try {
+          const res = await fetch("/api/webhooks/recent");
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success) return json.logs;
+          }
+        } catch { /* pulse feed is optional */ }
+        return [];
+      })();
+
+      const [
+        { data: todayData, count: todayCount },
+        { data: overdueData, count: overdueCount },
+        { data: upcomingData, count: upcomingCount },
+        { data: activityData },
+        { count: doneCount },
+        { data: ws },
+        logsData,
+      ] = await Promise.all([todayP, overdueP, upcomingP, activityP, queryDone, wsP, logsP]);
+      setWaSettings(ws);
 
 
       setTodayTasks((todayData || []) as any);

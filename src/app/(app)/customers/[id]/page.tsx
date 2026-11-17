@@ -40,47 +40,24 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
   const fetchCustomerData = useCallback(async () => {
     setLoading(true);
     
-    // 1. Fetch Customer
-    const { data: custData } = await supabase
-      .from("customers")
-      .select("*")
-      .eq("id", id)
-      .single();
+    // Everything keyed by the customer id loads together (was 5 round trips in a row).
+    const [{ data: custData }, { data: ordersData }, { data: tasksData }, { data: callsData }, { data: auditData }] = await Promise.all([
+      supabase.from("customers").select("*").eq("id", id).single(),
+      supabase.from("orders").select("*").eq("customer_id", id).order("ordered_at", { ascending: false }),
+      supabase.from("tasks").select("*, order:orders(*), abandoned_cart:abandoned_carts(*)").eq("customer_id", id).order("due_date", { ascending: false }),
+      supabase.from("call_logs").select("*").eq("customer_id", id).order("called_at", { ascending: false }),
+      // This customer's rows only: the old unfiltered fetch pulled the
+      // workspace's latest 200 rows and missed anything older.
+      supabase.from("audit_logs").select("*")
+        .or(`entity_id.eq.${orQuote(id)},metadata->>customerId.eq.${orQuote(id)}`)
+        .order("created_at", { ascending: false })
+        .limit(200),
+    ]);
 
     if (!custData) {
       toast.error("Customer not found");
       return;
     }
-
-    // 2. Fetch Orders
-    const { data: ordersData } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("customer_id", id)
-      .order("ordered_at", { ascending: false });
-
-    // 3. Fetch Tasks
-    const { data: tasksData } = await supabase
-      .from("tasks")
-      .select("*, order:orders(*), abandoned_cart:abandoned_carts(*)")
-      .eq("customer_id", id)
-      .order("due_date", { ascending: false });
-
-    // 4. Fetch Calls
-    const { data: callsData } = await supabase
-      .from("call_logs")
-      .select("*")
-      .eq("customer_id", id)
-      .order("called_at", { ascending: false });
-
-    const { data: auditData } = await supabase
-      .from("audit_logs")
-      .select("*")
-      // This customer's rows only: the old unfiltered fetch pulled the
-      // workspace's latest 200 rows and missed anything older.
-      .or(`entity_id.eq.${orQuote(id)},metadata->>customerId.eq.${orQuote(id)}`)
-      .order("created_at", { ascending: false })
-      .limit(200);
 
     const isDemo = typeof document !== 'undefined' && isDemoMode();
     
