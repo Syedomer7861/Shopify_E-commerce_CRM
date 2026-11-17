@@ -9,7 +9,7 @@ import {
   LogOut, Zap, Calendar, BarChart2, Upload, CheckSquare, Plus, Loader2,
   UserCheck, Clock, FileText, ShieldCheck, Calculator, BellRing,
   Activity, ShoppingCart, MessageSquare, Headphones, TrendingUp, Gauge,
-  LayoutGrid,
+  LayoutGrid, Network,
 } from "lucide-react";
 import { cn, toDbDateString } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
@@ -46,8 +46,11 @@ const nav: { key: string; label: string; href: string; icon: typeof LayoutDashbo
 // Operations, split into sub-groups in this order.
 const ADMIN_GROUPS = ["Organisation", "Insights", "Growth", "Admin"] as const;
 const adminNav: { label: string; href: string; icon: typeof LayoutDashboard; permission: string; group: (typeof ADMIN_GROUPS)[number]; ownerOnly?: boolean; module?: string }[] = [
-  { label: "Organisation Dashboard", href: "/organisation/overview", icon: LayoutDashboard, permission: "manage_team", group: "Organisation", module: "organisation" },
-  { label: "All Dashboards", href: "/dashboards", icon: LayoutGrid, permission: "manage_team", group: "Organisation", module: "organisation" },
+  { label: "Overview",    href: "/organisation/overview", icon: LayoutDashboard, permission: "manage_team", group: "Organisation", module: "organisation" },
+  { label: "Structure & Hierarchy", href: "/organisation", icon: Network, permission: "manage_team", group: "Organisation" },
+  { label: "People",      href: "/team",        icon: Users,      permission: "manage_team", group: "Organisation" },
+  { label: "Roles & Access", href: "/roles",    icon: Shield,     permission: "manage_team", group: "Organisation" },
+  { label: "Dashboards",  href: "/dashboards",  icon: LayoutGrid, permission: "manage_team", group: "Organisation", module: "organisation" },
   { label: "Live Floor",  href: "/floor",       icon: Activity,    permission: "manage_team", group: "Insights" },
   { label: "Analytics",   href: "/reports",     icon: BarChart2, permission: "view_analytics", group: "Insights" },
   { label: "Abandoned Carts", href: "/abandoned-carts", icon: ShoppingCart, permission: "view_analytics", group: "Insights" },
@@ -57,9 +60,6 @@ const adminNav: { label: string; href: string; icon: typeof LayoutDashboard; per
   { label: "Campaigns",   href: "/campaigns",   icon: Megaphone,  permission: "manage_team", group: "Growth" },
   { label: "Templates",   href: "/templates",   icon: Sparkles,   permission: "manage_team", group: "Growth" },
   { label: "Workflows",   href: "/workflows",   icon: Zap,        permission: "manage_team", group: "Growth" },
-  { label: "Organisation", href: "/organisation", icon: Users,    permission: "manage_team", group: "Organisation" },
-  { label: "Team",        href: "/team",        icon: Shield,     permission: "manage_team", group: "Organisation" },
-  { label: "Roles",       href: "/roles",       icon: UserCheck,  permission: "manage_team", group: "Organisation" },
   { label: "System Health", href: "/system-health", icon: Activity, permission: "manage_team", ownerOnly: true, group: "Admin" },
   { label: "Settings",    href: "/settings",    icon: Settings,   permission: "manage_team", group: "Admin" },
 ];

@@ -78,6 +78,10 @@ export default function OrganisationPage() {
   }, [supabase]);
 
   useEffect(() => { if (!profileLoading && canView) load(); }, [profileLoading, canView, load]);
+  // /organisation?templates=1 (from the Organisation dashboard) opens the industry template picker.
+  useEffect(() => {
+    if (engine && canEdit && new URLSearchParams(window.location.search).get("templates") === "1") setShowTemplates(true);
+  }, [engine, canEdit]);
 
   // Org-wide controls (20261111g). Undefined on the profile = that migration isn't applied, so the card is hidden.
   const controlsReady = profile?.org_disabled_modules !== undefined;

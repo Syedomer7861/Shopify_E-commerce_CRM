@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { PieChart } from "lucide-react";
+import { PieChart as PieIcon } from "lucide-react";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { cn } from "@/lib/utils";
 import { groupCounts, type OrgOverview } from "@/lib/org-overview";
 
@@ -13,23 +14,34 @@ const DIMS = [
   { key: "work_arrangement", label: "Work arrangement" },
   { key: "employment_status", label: "Status" },
 ] as const;
+// Same series colours the app's other charts use (CourierPerformance), then ink.
+const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#6366f1", "#8b5cf6", "#ef4444", "#1c1c1c"];
+const UNSET = "#d6d3cc";
+const MAX_SLICES = 6;
 
-/** Active employees split by one dimension. Values come from org_workforce_summary(). */
+/** Active employees split by one dimension, as a donut. Values come from org_workforce_summary(). */
 export function WorkforceCard({ data }: { data: OrgOverview }) {
   const [dim, setDim] = useState<(typeof DIMS)[number]["key"]>("department");
   const counts = groupCounts(data.summary, dim);
   const named = (list: { id: string; name: string }[]) => new Map(list.map(u => [u.id, u.name]));
   const names = dim === "department" ? named(data.departments) : dim === "branch" ? named(data.branches) : dim === "designation" ? named(data.designations) : null;
-  const rows = Array.from(counts.entries())
+  const sorted = Array.from(counts.entries())
     .map(([k, n]) => ({ label: k == null ? "Not set" : names ? names.get(k) ?? "Removed" : k.replace(/_/g, " "), n, unset: k == null }))
-    .sort((a, b) => b.n - a.n);
+    .sort((a, b) => Number(a.unset) - Number(b.unset) || b.n - a.n);
+  const set = sorted.filter(r => !r.unset);
+  const rest = set.slice(MAX_SLICES);
+  const rows = [
+    ...set.slice(0, MAX_SLICES).map((r, i) => ({ ...r, color: COLORS[i] })),
+    ...(rest.length ? [{ label: `Others (${rest.length})`, n: rest.reduce((s, r) => s + r.n, 0), unset: false, color: COLORS[MAX_SLICES] }] : []),
+    ...sorted.filter(r => r.unset).map(r => ({ ...r, color: UNSET })),
+  ];
   const total = rows.reduce((s, r) => s + r.n, 0);
   const allUnset = rows.length === 1 && rows[0].unset;
 
   return (
     <div className="card p-5 h-full">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-        <h3 className="text-sm font-bold text-[#1c1c1c] flex items-center gap-2"><PieChart className="w-4 h-4" /> Workforce distribution</h3>
+        <h3 className="text-sm font-bold text-[#1c1c1c] flex items-center gap-2"><PieIcon className="w-4 h-4" /> Employee distribution</h3>
         <select aria-label="Group by" className="h-8 px-2 bg-white border border-[#eceae4] rounded-lg text-xs" value={dim} onChange={e => setDim(e.target.value as typeof dim)}>
           {DIMS.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
         </select>
@@ -38,19 +50,32 @@ export function WorkforceCard({ data }: { data: OrgOverview }) {
       : total === 0 ? <p className="text-xs text-[#5f5f5d]">No active employees.</p>
       : allUnset ? <p className="text-xs text-[#5f5f5d]">Nobody has a {DIMS.find(d => d.key === dim)?.label.toLowerCase()} set yet. Fill it in on each employee&apos;s profile.</p>
       : (
-        <ul className="space-y-2 max-h-72 overflow-y-auto pr-1">
-          {rows.map(r => (
-            <li key={r.label} className="text-xs">
-              <div className="flex justify-between mb-0.5">
-                <span className={cn("font-semibold capitalize truncate", r.unset ? "text-amber-700" : "text-[#1c1c1c]")}>{r.label}</span>
-                <span className="text-[#5f5f5d]">{r.n} ({Math.round((r.n / total) * 100)}%)</span>
-              </div>
-              <div className="h-1.5 rounded-full bg-[#eceae4] overflow-hidden">
-                <div className={cn("h-full rounded-full", r.unset ? "bg-amber-400" : "bg-[#1c1c1c]")} style={{ width: `${(r.n / total) * 100}%` }} />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="relative w-40 h-40 flex-shrink-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={rows} dataKey="n" nameKey="label" innerRadius="62%" outerRadius="100%" paddingAngle={rows.length > 1 ? 2 : 0} stroke="none" animationDuration={700}>
+                  {rows.map(r => <Cell key={r.label} fill={r.color} />)}
+                </Pie>
+                <Tooltip formatter={(v: number, n: string) => [`${v} (${Math.round((v / total) * 100)}%)`, n]} contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #eceae4" }} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-2xl font-black text-[#1c1c1c] leading-none">{total}</span>
+              <span className="text-[10px] text-[#5f5f5d]">active</span>
+            </div>
+          </div>
+          <ul className="flex-1 w-full space-y-1.5 text-xs">
+            {rows.map(r => (
+              <li key={r.label} className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: r.color }} />
+                <span className={cn("truncate capitalize flex-1", r.unset ? "text-amber-700" : "text-[#1c1c1c]")}>{r.label}</span>
+                <span className="font-bold text-[#1c1c1c]">{r.n}</span>
+                <span className="text-[10px] text-[#5f5f5d] w-9 text-right">{Math.round((r.n / total) * 100)}%</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );

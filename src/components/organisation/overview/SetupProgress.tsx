@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Circle, ListChecks } from "lucide-react";
 import type { OrgOverview } from "@/lib/org-overview";
@@ -27,22 +28,31 @@ export function setupSteps(d: OrgOverview): Step[] {
 export function SetupProgress({ data }: { data: OrgOverview }) {
   const steps = setupSteps(data);
   const known = steps.filter(s => s.done !== null);
-  const pct = known.length ? Math.round((known.filter(s => s.done).length / known.length) * 100) : 0;
+  const done = known.filter(s => s.done).length;
+  const pct = known.length ? Math.round((done / known.length) * 100) : 0;
+  // Bar grows from 0 on first paint.
+  const [shown, setShown] = useState(0);
+  useEffect(() => { const t = requestAnimationFrame(() => setShown(pct)); return () => cancelAnimationFrame(t); }, [pct]);
   return (
     <div className="card p-5 h-full">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-bold text-[#1c1c1c] flex items-center gap-2"><ListChecks className="w-4 h-4" /> Setup progress</h3>
-        <span className="text-sm font-black text-[#1c1c1c]">{pct}%</span>
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <h3 className="text-sm font-bold text-[#1c1c1c] flex items-center gap-2"><ListChecks className="w-4 h-4" /> Setup progress</h3>
+          <p className="text-[11px] text-[#5f5f5d] mt-0.5">{done} of {known.length} steps done{known.length < steps.length ? `; ${steps.length - known.length} need access you don't have` : ""}.</p>
+        </div>
+        <span className="text-lg font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg">{pct}%</span>
       </div>
-      <div className="h-2 rounded-full bg-[#eceae4] overflow-hidden mb-4">
-        <div className="h-full bg-emerald-600 rounded-full" style={{ width: `${pct}%` }} />
+      <div className="h-2 rounded-full bg-[#eceae4] overflow-hidden mb-5">
+        <div className="h-full bg-emerald-600 rounded-full transition-[width] duration-1000 ease-out" style={{ width: `${shown}%` }} />
       </div>
-      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+      <ul className="grid grid-cols-3 sm:grid-cols-5 gap-y-4 gap-x-2">
         {steps.map(s => (
           <li key={s.label}>
-            <Link href={s.href} className="flex items-start gap-2 text-xs hover:opacity-80">
-              {s.done ? <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" /> : <Circle className="w-4 h-4 text-[#5f5f5d]/50 flex-shrink-0" />}
-              <span><span className="font-semibold text-[#1c1c1c]">{s.label}</span><br /><span className="text-[10px] text-[#5f5f5d]">{s.detail}</span></span>
+            <Link href={s.href} className="flex flex-col items-center text-center gap-1 group" title={s.detail}>
+              {s.done ? <CheckCircle2 className="w-6 h-6 text-emerald-600 transition-transform group-hover:scale-110" />
+                : <Circle className={`w-6 h-6 transition-transform group-hover:scale-110 ${s.done === null ? "text-[#d6d3cc]" : "text-[#5f5f5d]/50"}`} />}
+              <span className="text-[11px] font-semibold text-[#1c1c1c] leading-tight">{s.label}</span>
+              <span className="text-[10px] text-[#5f5f5d] leading-tight">{s.detail}</span>
             </Link>
           </li>
         ))}
