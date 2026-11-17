@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Building2, Network, BadgeCheck, Users, Plus, Loader2, AlertTriangle } from "lucide-react";
+import { Building2, Network, BadgeCheck, Users, Plus, Loader2, AlertTriangle, Pencil, Trash2, Check, X } from "lucide-react";
 import { PageHeader, AccessDenied, Select } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,8 @@ export default function OrganisationPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [modulesOff, setModulesOff] = useState<string[] | null>(null);
   const [timeoutMin, setTimeoutMin] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
 
   const canView = hasPermission(profile, "manage_team") || can(profile, "organisation", "view") !== null;
   const canEdit = can(profile, "organisation", "manage") !== null; // branches, departments, designations
@@ -96,6 +98,39 @@ export default function OrganisationPage() {
     setBusy(null);
   }
 
+  const fieldOf = (table: UnitTable) => (table === "branches" ? "branch_id" : table === "departments" ? "department_id" : "designation_id");
+  const peopleIn = (table: UnitTable, id: string) => members.filter(m => m[fieldOf(table)] === id).length;
+
+  async function renameUnit(table: UnitTable, unit: Unit) {
+    const name = editName.trim();
+    if (!name || name === unit.name) { setEditing(null); return; }
+    setBusy(unit.id);
+    const { error } = await supabase.from(table).update({ name }).eq("id", unit.id);
+    if (error) toast.error(error.code === "23505" ? `"${name}" already exists` : error.message);
+    else {
+      // HR screens still read the free-text copy on profiles; keep it in step (admins only can write profiles).
+      if (canPlace && table !== "branches") {
+        const col = table === "departments" ? "department" : "designation";
+        await supabase.from("profiles").update({ [col]: name }).eq(fieldOf(table), unit.id);
+      }
+      setUnits(prev => ({ ...prev, [table]: prev[table].map(u => u.id === unit.id ? { ...u, name } : u) }));
+      setEditing(null);
+      toast.success("Renamed");
+    }
+    setBusy(null);
+  }
+
+  async function deleteUnit(table: UnitTable, unit: Unit) {
+    const count = peopleIn(table, unit.id);
+    if (count > 0) return toast.error(`${count} ${count === 1 ? "person is" : "people are"} in "${unit.name}". Move them first, or use Retire.`);
+    if (!window.confirm(`Delete "${unit.name}"? This cannot be undone.`)) return;
+    setBusy(unit.id);
+    const { error } = await supabase.from(table).delete().eq("id", unit.id);
+    if (error) toast.error(error.message);
+    else { setUnits(prev => ({ ...prev, [table]: prev[table].filter(u => u.id !== unit.id) })); toast.success("Deleted"); }
+    setBusy(null);
+  }
+
   async function place(member: Member, field: PlacementField, raw: string) {
     const value = raw === NONE ? null : raw;
     // Keep the legacy free-text columns in step - the HR screens still read them.
@@ -141,19 +176,45 @@ export default function OrganisationPage() {
                 <p className="text-[11px] text-gray-400 mb-3">{hint}</p>
                 <div className="space-y-1.5 mb-3">
                   {units[table].length === 0 && <div className="text-xs text-gray-400 py-2">None yet.</div>}
-                  {units[table].map(u => (
+                  {units[table].map(u => editing === u.id ? (
+                    <form key={u.id} onSubmit={e => { e.preventDefault(); renameUnit(table, u); }} className="flex items-center gap-1.5">
+                      <input
+                        autoFocus
+                        value={editName}
+                        onChange={e => setEditName(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Escape") setEditing(null); }}
+                        maxLength={120}
+                        aria-label={`Rename ${u.name}`}
+                        className="input flex-1 text-xs py-1.5"
+                      />
+                      <button type="submit" disabled={busy === u.id || !editName.trim()} className="p-1.5 rounded-md bg-[#1c1c1c] text-white" aria-label="Save name">
+                        {busy === u.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      </button>
+                      <button type="button" onClick={() => setEditing(null)} className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100" aria-label="Cancel rename">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </form>
+                  ) : (
                     <div key={u.id} className="flex items-center justify-between gap-2 text-xs py-1.5 px-2 rounded-lg bg-gray-50">
                       <span className={cn("truncate", !u.is_active && "line-through text-gray-400")}>
                         {u.name}{u.is_head_office && <span className="ml-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-600">HQ</span>}
                       </span>
                       <span className="shrink-0 flex items-center gap-2">
-                        <span className="text-gray-400">
-                          {members.filter(m => m[table === "branches" ? "branch_id" : table === "departments" ? "department_id" : "designation_id"] === u.id).length}
-                        </span>
+                        <span className="text-gray-400" title="People assigned">{peopleIn(table, u.id)}</span>
                         {canEdit && (
-                          <button onClick={() => toggleUnit(table, u)} disabled={busy === u.id} className="text-[10px] text-gray-500 hover:text-[#1c1c1c] underline">
-                            {u.is_active ? "Retire" : "Restore"}
-                          </button>
+                          <>
+                            <button onClick={() => { setEditing(u.id); setEditName(u.name); }} disabled={busy === u.id} className="text-gray-400 hover:text-[#1c1c1c]" aria-label={`Rename ${u.name}`} title="Rename">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => toggleUnit(table, u)} disabled={busy === u.id} className="text-[10px] text-gray-500 hover:text-[#1c1c1c] underline">
+                              {u.is_active ? "Retire" : "Restore"}
+                            </button>
+                            {!u.is_head_office && (
+                              <button onClick={() => deleteUnit(table, u)} disabled={busy === u.id} className="text-gray-400 hover:text-red-600" aria-label={`Delete ${u.name}`} title="Delete">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </>
                         )}
                       </span>
                     </div>
