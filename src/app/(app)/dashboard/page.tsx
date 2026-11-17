@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { AlertTriangle, Clock, CheckCircle2, TrendingUp, Phone, RefreshCw, ChevronLeft, ChevronRight, Smartphone, Flame, MessageSquareWarning, Truck, Timer, Siren } from "lucide-react";
 import { PageHeader, Avatar, Pagination } from "@/components/ui";
+import { DateRangeFilter, applyDateRange, presetRange, rangeLabel, type DateRange } from "@/components/DateRangeFilter";
 import { HeroTile, Tile } from "@/components/dashboard/Tiles";
 import { OrgPulse } from "@/components/dashboard/OrgPulse";
 import TaskCard from "@/components/TaskCard";
@@ -33,7 +34,7 @@ export default function Dashboard() {
   const [overdueTasks, setOverdueTasks] = useState<(Task & { customer: Customer; order?: Order; abandoned_cart?: AbandonedCart })[]>([]);
   const [upcomingTasks, setUpcomingTasks] = useState<(Task & { customer: Customer; order?: Order; abandoned_cart?: AbandonedCart })[]>([]);
   const [recentActivity, setRecentActivity] = useState<CallLog[]>([]);
-  const [counts, setCounts] = useState({ today: 0, overdue: 0, upcoming: 0, doneThisWeek: 0 });
+  const [counts, setCounts] = useState({ today: 0, overdue: 0, upcoming: 0, done: 0 });
   const [escalations, setEscalations] = useState({ medium: 0, high: 0, critical: 0, issues: 0, shipping: 0 });
   const [webhookLogs, setWebhookLogs] = useState<{ id: string; topic: string; created_at: string; payload: any }[]>([]);
   const [waSettings, setWaSettings] = useState<any>(null);
@@ -47,6 +48,8 @@ export default function Dashboard() {
   const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
   const [stats, setStats] = useState({ activeNdr: 0 });
   const [recoveryRate, setRecoveryRate] = useState(0);
+  // Window for the "calls done" count; the call queues themselves are always live.
+  const [doneRange, setDoneRange] = useState<DateRange>(() => presetRange("7d"));
   
   const [todayPage, setTodayPage] = useState(1);
   const [overduePage, setOverduePage] = useState(1);
@@ -105,7 +108,7 @@ export default function Dashboard() {
       setTodayTasks(MOCK_TASKS.slice(0, 1) as any);
       setUpcomingTasks(MOCK_TASKS.slice(1) as any);
       setOverdueTasks([]);
-      setCounts({ today: 1, overdue: 0, upcoming: 1, doneThisWeek: 12 });
+      setCounts({ today: 1, overdue: 0, upcoming: 1, done: 12 });
       setEscalations({ 
         medium: 12, 
         high: 5, 
@@ -235,14 +238,10 @@ export default function Dashboard() {
         .limit(5);
 
       // 5. Done This Week count
-      const startOfWeek = new Date();
-      startOfWeek.setDate(startOfWeek.getDate() - 7);
-      const startOfWeekISO = startOfWeek.toISOString();
-      let queryDone = supabase
+      let queryDone = applyDateRange(supabase
         .from("tasks")
         .select("id", { count: "exact", head: true })
-        .eq("status", "done")
-        .gte("completed_at", startOfWeekISO);
+        .eq("status", "done"), "completed_at", doneRange);
       
       if (prof?.role === "agent") queryDone = queryDone.eq("assigned_to", prof.id);
       
@@ -284,7 +283,7 @@ export default function Dashboard() {
         today: todayCount || 0,
         overdue: overdueCount || 0,
         upcoming: upcomingCount || 0,
-        doneThisWeek: doneCount || 0
+        done: doneCount || 0
       });
       // 7.5 Exact Escalation Counts (High Fidelity)
       const dayMs = 86400000;
@@ -375,7 +374,7 @@ export default function Dashboard() {
       setLoading(false);
       setLastChecked(new Date());
     }
-  }, [supabase, todayPage, overduePage, applyAgentFilters, profile, agents.length]);
+  }, [supabase, todayPage, overduePage, applyAgentFilters, profile, agents.length, doneRange]);
 
   const handleGlobalSync = useCallback(async (silent = false, full = false) => {
     if (syncing) return;
@@ -807,12 +806,16 @@ export default function Dashboard() {
 
 
       {/* KPI tiles */}
+      <div className="flex flex-wrap items-center justify-end gap-2 mb-2 text-xs text-[#6b6b67]">
+        <span>Calls done in</span>
+        <DateRangeFilter value={doneRange} onChange={setDoneRange} />
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <HeroTile icon={<Phone className="w-4 h-4" />} label="Calls today" value={counts.today}
-          chip={`${counts.doneThisWeek} done`} sub="this week" href="/tasks?status=due" />
+          chip={`${counts.done} done`} sub={rangeLabel(doneRange).toLowerCase()} href="/tasks?status=due" />
         <Tile icon={<AlertTriangle className="w-4 h-4" />} label="Overdue" value={counts.overdue} sub="Needs attention" tone="coral"
           href="/tasks?status=overdue" ring={{ pct: onTimePct, label: "on time" }} />
-        <Tile icon={<CheckCircle2 className="w-4 h-4" />} label="Done this week" value={counts.doneThisWeek} sub="Calls completed" tone="mint" href="/tasks?status=done" />
+        <Tile icon={<CheckCircle2 className="w-4 h-4" />} label="Calls done" value={counts.done} sub={rangeLabel(doneRange)} tone="mint" href="/tasks?status=done" />
         <Tile icon={<TrendingUp className="w-4 h-4" />} label="Recovery rate" value={`${recoveryRate}%`}
           sub={profile?.role === "agent" ? "My recovery tasks" : "Abandoned carts"} ring={{ pct: recoveryRate, label: "recovered" }} />
       </div>
