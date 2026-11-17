@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * KPI role tests against the linked Supabase project. Runs scripts/kpi-roles.sql
- * in one transaction that ROLLS BACK (nothing is kept), as admin, agent, another
+ * (or the SQL file given as the first argument) in one transaction that ROLLS BACK (nothing is kept), as admin, agent, another
  * org's admin and the platform owner, and fails if any expectation breaks.
  *
  * Needs the Supabase CLI logged in and, in .env.local:
@@ -27,9 +27,10 @@ if (Object.values(ids).some((v) => !v)) {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 for (const [k, v] of Object.entries(ids)) if (!UUID.test(v)) { console.error(`✗ ${k} is not a uuid`); process.exit(1); }
 
-let sql = readFileSync("scripts/kpi-roles.sql", "utf8");
+const SQL_FILE = process.argv[2] ?? "scripts/kpi-roles.sql";
+let sql = readFileSync(SQL_FILE, "utf8");
 for (const [k, v] of Object.entries(ids)) sql = sql.replaceAll(k, v);
-if (!/\nROLLBACK;\s*$/.test(sql)) { console.error("✗ kpi-roles.sql must end with ROLLBACK"); process.exit(1); }
+if (!/\nROLLBACK;\s*$/.test(sql)) { console.error(`✗ ${SQL_FILE} must end with ROLLBACK`); process.exit(1); }
 const file = join(mkdtempSync(join(tmpdir(), "kpi-roles-")), "run.sql");
 writeFileSync(file, sql);
 
@@ -49,4 +50,4 @@ if (results.length === 0) { console.error(`✗ kpi role tests returned nothing: 
 const failed = results.filter((r) => !r.ok);
 for (const r of failed) console.error(`✗ ${r.k}${r.d ? `: ${r.d}` : ""}`);
 if (failed.length) process.exit(1);
-console.log(`✓ kpi role tests: ${results.length} passed (rolled back)`);
+console.log(`✓ ${SQL_FILE}: ${results.length} passed (rolled back)`);

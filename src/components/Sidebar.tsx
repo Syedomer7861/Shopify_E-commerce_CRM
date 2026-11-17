@@ -8,7 +8,8 @@ import {
   Megaphone, Shield, Settings, Sparkles,
   LogOut, Zap, Calendar, BarChart2, Upload, CheckSquare, Plus, Loader2,
   UserCheck, Clock, FileText, ShieldCheck, Calculator, BellRing,
-  Activity, ShoppingCart, MessageSquare, Headphones, TrendingUp, Gauge
+  Activity, ShoppingCart, MessageSquare, Headphones, TrendingUp, Gauge,
+  LayoutGrid,
 } from "lucide-react";
 import { cn, toDbDateString } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
@@ -46,6 +47,7 @@ const nav: { key: string; label: string; href: string; icon: typeof LayoutDashbo
 const ADMIN_GROUPS = ["Organisation", "Insights", "Growth", "Admin"] as const;
 const adminNav: { label: string; href: string; icon: typeof LayoutDashboard; permission: string; group: (typeof ADMIN_GROUPS)[number]; ownerOnly?: boolean; module?: string }[] = [
   { label: "Organisation Dashboard", href: "/organisation/overview", icon: LayoutDashboard, permission: "manage_team", group: "Organisation", module: "organisation" },
+  { label: "All Dashboards", href: "/dashboards", icon: LayoutGrid, permission: "manage_team", group: "Organisation", module: "organisation" },
   { label: "Live Floor",  href: "/floor",       icon: Activity,    permission: "manage_team", group: "Insights" },
   { label: "Analytics",   href: "/reports",     icon: BarChart2, permission: "view_analytics", group: "Insights" },
   { label: "Abandoned Carts", href: "/abandoned-carts", icon: ShoppingCart, permission: "view_analytics", group: "Insights" },

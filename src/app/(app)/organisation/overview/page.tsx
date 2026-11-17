@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Activity, BadgeCheck, Building2, Gauge, Loader2, Megaphone, Network, Plus, RefreshCw, Shield, SlidersHorizontal, Upload, UserPlus, Users } from "lucide-react";
+import { Activity, BadgeCheck, Building2, Gauge, LayoutGrid, Loader2, Megaphone, Network, Plus, RefreshCw, Shield, SlidersHorizontal, Upload, UserPlus, Users } from "lucide-react";
 import { AccessDenied, PageHeader, StatCard } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn, timeAgo } from "@/lib/utils";
@@ -26,6 +26,7 @@ const ACTIONS = [
   { label: "KPI plans", href: "/kpi", icon: Gauge },
   { label: "Announcement", href: "/hr?tab=announcements", icon: Megaphone },
   { label: "Import employees", href: "/hr?tab=employees", icon: Upload },
+  { label: "All dashboards", href: "/dashboards", icon: LayoutGrid },
 ];
 
 export default function OrganisationOverviewPage() {

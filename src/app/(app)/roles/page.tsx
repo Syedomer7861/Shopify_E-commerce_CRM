@@ -12,7 +12,9 @@ import type { Role, UserPermissions } from "@/types";
 import { NAV_MODULE_GROUPS, ALL_NAV_MODULES, NEUTRAL_NAV_MODULES, hasPermission } from "@/lib/permissions";
 import { isDemoMode } from "@/lib/demo";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
-import { HOME_WIDGETS } from "@/components/workspace/WorkspaceHome";
+import { HOME_WIDGETS as ALL_HOME_WIDGETS } from "@/components/workspace/WorkspaceHome";
+// Builder-only widgets live in dashboards, not in a role's default list.
+const HOME_WIDGETS = ALL_HOME_WIDGETS.filter(w => !w.builderOnly);
 import { PERMISSION_MODULES, SCOPES, SCOPE_LABELS, type Action, type Grants, type Scope } from "@/lib/access";
 
 const NAV_MODULE_LABELS: Record<string, string> = {

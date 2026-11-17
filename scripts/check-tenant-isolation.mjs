@@ -47,7 +47,7 @@ const EXPECTED_MAX = { organizations: 1, settings_public: 1 };
 const SHARED_CATALOGUE = new Set(["industry_templates", "org_unit_catalog", "org_structure_templates"]);
 // Tables mixing global rows (org_id NULL, readable by every org) with org rows:
 // only the org-owned rows are compared, so a cross-org leak still fails.
-const GLOBAL_ROWS = new Set(["kpi_templates", "kpi_template_items"]);
+const GLOBAL_ROWS = new Set(["kpi_templates", "kpi_template_items", "dashboards", "dashboard_versions"]);
 
 const opts = { auth: { persistSession: false, autoRefreshToken: false } };
 const service = createClient(URL, SERVICE, opts);
