@@ -291,7 +291,8 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
       };
       setEmployees(prev => [optimisticEmployee, ...prev]);
 
-      toast.success("Employee added successfully! Default password: Welcome@123");
+      // The server never uses a fixed password (random unless the company set a default), so point to where it is set.
+      toast.success("Employee added. To let them sign in, set a password from Team › Edit Permissions.", { duration: 6000 });
       setShowAdd(false);
       setNewEmp({ name: "", email: "", phone: "", role: "agent", designation: "", department: "", joinDate: "", dob: "", salary: "", location: "", city: "", state: "", country: "India" });
       setCustomDept({ add: false, edit: false });
