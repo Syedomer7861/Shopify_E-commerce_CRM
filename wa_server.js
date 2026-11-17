@@ -9,6 +9,15 @@
  *   GET  /qr           → { qr: string }  (base64 QR image)
  *   POST /send         → { phone, message } → { ok: bool, error?: string }
  *   POST /logout       → logs out and clears session
+ *
+ * Security:
+ *   - Listens on 127.0.0.1 only (WA_HOST to change; a non-loopback host
+ *     refuses to start without WA_LOCAL_SECRET).
+ *   - WA_LOCAL_SECRET set: every route lives under /k/<secret>/..., so set the
+ *     CRM's Bridge Server URL to http://127.0.0.1:3001/k/<secret>. Bare paths 404.
+ *   - WA_LOCAL_SECRET unset: bare paths answer only same-PC requests that did
+ *     not come through a tunnel or proxy.
+ *   - The QR is drawn here; it is never sent to an outside QR service.
  */
 
 const express       = require("express");
@@ -17,6 +26,8 @@ const rateLimit     = require("express-rate-limit");
 const { z }         = require("zod");
 const { Client, LocalAuth, MessageMedia, Buttons } = require("whatsapp-web.js");
 const qrcode        = require("qrcode-terminal");
+const QRCode        = require("qrcode");
+const crypto        = require("crypto");
 require("dotenv").config({ path: ".env.local" });
 
 // Crash visibility for the one class of failure the WhatsApp client's own
@@ -41,6 +52,24 @@ process.on("unhandledRejection", (reason) => {
 
 const app  = express();
 const PORT = 3001;
+const HOST = process.env.WA_HOST || "127.0.0.1";
+const SECRET = process.env.WA_LOCAL_SECRET || "";
+const LOOPBACK_HOST = /^(127\.0\.0\.1|localhost|::1)$/;
+if (!LOOPBACK_HOST.test(HOST) && SECRET.length < 24) {
+  console.error("[WA] Refusing to listen on " + HOST + " without WA_LOCAL_SECRET (24+ characters). Set it, or leave WA_HOST unset.");
+  process.exit(1);
+}
+const secretOk = (given) => {
+  const a = Buffer.from(String(given || ""));
+  const b = Buffer.from(SECRET);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+};
+// Requests relayed by ngrok / cloudflared / a reverse proxy carry one of these.
+const PROXY_HEADERS = ["x-forwarded-for", "x-real-ip", "forwarded", "cf-connecting-ip", "x-forwarded-host"];
+const fromThisPc = (req) => {
+  const ip = req.socket.remoteAddress || "";
+  return /^(127\.|::1$|::ffff:127\.)/.test(ip) && !PROXY_HEADERS.some((h) => req.headers[h]);
+};
 
 // 1. Security Headers (configured for local HTTP service — no HTTPS enforcement)
 app.use(helmet({
@@ -54,7 +83,7 @@ const limiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
   message: "Too many requests from this IP, please try again after 15 minutes"
 });
-app.use("/send", limiter);
+// Applied on the /send route below (it may sit under /k/<secret>).
 
 app.use(express.json());
 
@@ -160,7 +189,7 @@ function initClient() {
         clientState = "QR_PENDING";
         console.log("\n[WA] QR Code ready — scan with WhatsApp on your phone:");
         qrcode.generate(qr, { small: true });
-        console.log("\n[WA] Or open http://127.0.0.1:3001/qr in a browser to see it.");
+        console.log(`\n[WA] Or open http://127.0.0.1:${PORT}${SECRET ? "/k/<WA_LOCAL_SECRET>" : ""}/qr in a browser on this PC.`);
     });
 
     waClient.on("authenticated", () => {
@@ -228,8 +257,20 @@ function initClient() {
 }
 
 // ── Routes ────────────────────────────────────────────────────────────────────
+// All routes hang off `api`. With a secret it is reachable only at /k/<secret>;
+// without one only from this PC directly.
+const api = express.Router();
+if (SECRET) {
+  app.use("/k/:secret", (req, res, next) => (secretOk(req.params.secret) ? next() : res.status(404).json({ ok: false, error: "Not found" })), api);
+} else {
+  console.warn("[WA] WA_LOCAL_SECRET is not set: only requests from this PC (no tunnel) are accepted.");
+  app.use((req, res, next) => (fromThisPc(req) ? next() : res.status(403).json({ ok: false, error: "Forbidden" })), api);
+}
+app.use((req, res) => res.status(404).json({ ok: false, error: "Not found" }));
 
-app.get("/status", async (req, res) => {
+const qrImage = (raw) => QRCode.toDataURL(raw, { width: 300, margin: 1 });
+
+api.get("/status", async (req, res) => {
     let internalState = clientState;
     if (waClient) {
         try {
@@ -256,16 +297,15 @@ app.get("/status", async (req, res) => {
 });
 
 // Returns QR as JSON data (used by CRM Settings page to render inline)
-app.get("/qr-data", (req, res) => {
+api.get("/qr-data", async (req, res) => {
     if (!currentQR) {
         return res.json({ qr: null, state: clientState, ready: isReady });
     }
-    // Generate a QR image URL that the frontend can use in an <img> tag
-    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(currentQR)}`;
-    res.json({ qr: qrImageUrl, qrRaw: currentQR, state: clientState, ready: isReady });
+    // Data URL drawn locally: the pairing code never leaves this PC except to the CRM.
+    res.json({ qr: await qrImage(currentQR), state: clientState, ready: isReady });
 });
 
-app.get("/qr", (req, res) => {
+api.get("/qr", async (req, res) => {
     if (!currentQR) {
         return res.json({ ok: false, error: "No QR available — client may already be authenticated" });
     }
@@ -289,14 +329,14 @@ app.get("/qr", (req, res) => {
 <body>
   <h2>Scan with WhatsApp</h2>
   <p>Open WhatsApp → Linked Devices → Link a Device</p>
-  <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(currentQR)}" />
+  <img src="${await qrImage(currentQR)}" width="300" height="300" alt="WhatsApp QR code" />
   <p style="font-size:12px;color:#999;">Auto-refreshes every 20 seconds</p>
   <button class="refresh" onclick="location.reload()">Refresh QR</button>
 </body>
 </html>`);
 });
 
-app.post("/send", async (req, res) => {
+api.post("/send", limiter, async (req, res) => {
     try {
         // Validate Input
         const validated = SendMessageSchema.parse(req.body);
@@ -325,7 +365,7 @@ app.post("/send", async (req, res) => {
 });
 
 
-app.post("/logout", async (req, res) => {
+api.post("/logout", async (req, res) => {
     try {
         if (waClient) {
             await waClient.logout();
@@ -340,7 +380,7 @@ app.post("/logout", async (req, res) => {
     }
 });
 
-app.post("/restart", async (req, res) => {
+api.post("/restart", async (req, res) => {
     try {
         console.log("[WA] Manual restart requested...");
         if (waClient) {
@@ -356,10 +396,10 @@ app.post("/restart", async (req, res) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, HOST, () => {
     console.log(`\n${"=".repeat(50)}`);
     console.log(` Cureforever WhatsApp Server`);
-    console.log(` Listening on http://127.0.0.1:${PORT}`);
+    console.log(` Listening on http://${HOST}:${PORT}${SECRET ? "/k/<WA_LOCAL_SECRET>" : " (this PC only)"}`);
     console.log(`${"=".repeat(50)}\n`);
     initClient();
 });

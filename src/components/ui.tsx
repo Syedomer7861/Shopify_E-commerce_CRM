@@ -1,5 +1,6 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { cn, SEGMENT_CONFIG, DELIVERY_CONFIG, TASK_TYPE_CONFIG, TASK_STATUS_CONFIG, initials } from "@/lib/utils";
 import type { CustomerSegment, DeliveryStatus, TaskType, TaskStatus } from "@/types";
 import { Download, TrendingUp, TrendingDown, Loader2, ShoppingBag, BarChart3, ClipboardCheck, Users, Info, Sun, Moon, Clock, Truck, Zap, CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft, ChevronDown } from "lucide-react";
@@ -238,6 +239,34 @@ export function Modal({
 }
 
 /**
+ * Fixed-position style for a dropdown list anchored to `anchor`. The list is
+ * portalled to <body>, so a modal's scroll area or a table's overflow can't
+ * clip it; it opens upward when there's no room below. Follows scrolling.
+ */
+export function useAnchoredList(open: boolean, anchor: React.RefObject<HTMLElement | null>): React.CSSProperties | null {
+  const [style, setStyle] = useState<React.CSSProperties | null>(null);
+  useLayoutEffect(() => {
+    if (!open) { setStyle(null); return; }
+    const place = () => {
+      const r = anchor.current?.getBoundingClientRect();
+      if (!r) return;
+      const below = window.innerHeight - r.bottom;
+      const up = below < 260 && r.top > below;
+      setStyle({
+        position: "fixed", left: r.left, width: r.width, zIndex: 80,
+        ...(up ? { bottom: window.innerHeight - r.top + 4 } : { top: r.bottom + 4 }),
+        maxHeight: Math.max(140, Math.min(260, (up ? r.top : below) - 12)),
+      });
+    };
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => { window.removeEventListener("scroll", place, true); window.removeEventListener("resize", place); };
+  }, [open, anchor]);
+  return style;
+}
+
+/**
  * Custom-styled dropdown replacing the native <select> - the CLOSED
  * trigger of a native select is stylable with CSS, but the OPEN options
  * list is rendered by the OS/browser itself and can't be restyled by any
@@ -265,10 +294,13 @@ export function Select({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const listStyle = useAnchoredList(open, ref);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (ref.current && !ref.current.contains(t) && !listRef.current?.contains(t)) setOpen(false);
     }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
@@ -302,10 +334,12 @@ export function Select({
         <ChevronDown className={cn("w-3.5 h-3.5 shrink-0 transition-transform", open && "rotate-180")} />
       </button>
 
-      {open && (
+      {open && listStyle && createPortal(
         <div
+          ref={listRef}
           role="listbox"
-          className="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto bg-[#f7f4ed] border border-[#eceae4] rounded-lg shadow-xl py-1 animate-slide-up"
+          style={listStyle}
+          className="overflow-y-auto bg-[#f7f4ed] border border-[#eceae4] rounded-lg shadow-xl py-1"
         >
           {options.map((o, i) => (
             <div key={o.value}>
@@ -332,7 +366,8 @@ export function Select({
               </button>
             </div>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

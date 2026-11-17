@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, Plus, Check } from "lucide-react";
+import { useAnchoredList } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 export type ComboOption = { value: string; label: string; group?: string; hint?: string; disabled?: boolean };
@@ -29,6 +31,7 @@ export function UnitCombobox({
   const wrap = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLUListElement>(null);
   const listId = useId();
+  const listStyle = useAnchoredList(open, wrap);
   const selected = options.find(o => o.value === value) ?? null;
 
   const filtered = useMemo(() => {
@@ -40,7 +43,7 @@ export function UnitCombobox({
 
   useEffect(() => {
     if (!open) return;
-    const close = (e: MouseEvent) => { if (!wrap.current?.contains(e.target as Node)) setOpen(false); };
+    const close = (e: MouseEvent) => { const t = e.target as Node; if (!wrap.current?.contains(t) && !list.current?.contains(t)) setOpen(false); };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
@@ -87,8 +90,8 @@ export function UnitCombobox({
           <ChevronDown className="w-3.5 h-3.5" />
         </button>
       </div>
-      {open && (
-        <ul ref={list} id={listId} role="listbox" className="absolute z-40 mt-1 w-full max-h-64 overflow-y-auto rounded-lg border border-[#eceae4] bg-white shadow-xl py-1 text-xs">
+      {open && listStyle && createPortal(
+        <ul ref={list} id={listId} role="listbox" style={listStyle} onMouseDown={e => e.preventDefault()} className="overflow-y-auto rounded-lg border border-[#eceae4] bg-white shadow-xl py-1 text-xs">
           {filtered.length === 0 && <li className="px-3 py-2 text-gray-400">No match.</li>}
           {filtered.map((o, i) => {
             const header = o.group && o.group !== lastGroup ? o.group : null;
@@ -128,7 +131,8 @@ export function UnitCombobox({
               </div>
             </li>
           )}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );

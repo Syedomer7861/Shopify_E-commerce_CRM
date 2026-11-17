@@ -44,7 +44,7 @@ if (!URL || !ANON || !SERVICE || !EMAIL || !PASSWORD || !ORG_ID) {
 // Rows a member may legitimately see with no org_id column to compare against.
 const EXPECTED_MAX = { organizations: 1, settings_public: 1 };
 // Shared, read-only catalogues with no workspace data (members read every row).
-const SHARED_CATALOGUE = new Set(["industry_templates"]);
+const SHARED_CATALOGUE = new Set(["industry_templates", "org_unit_catalog", "org_structure_templates"]);
 
 const opts = { auth: { persistSession: false, autoRefreshToken: false } };
 const service = createClient(URL, SERVICE, opts);

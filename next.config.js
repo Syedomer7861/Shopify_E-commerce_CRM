@@ -12,6 +12,9 @@ const securityHeaders = [
   // HSTS is only meaningful over HTTPS; harmless on localhost since browsers
   // ignore it for http:// origins.
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+  // Directives that block injection tricks without touching how pages load
+  // scripts or styles. A strict script-src needs per-request nonces (later step).
+  { key: "Content-Security-Policy", value: "base-uri 'self'; object-src 'none'; frame-ancestors 'none'" },
 ];
 
 const nextConfig = {
@@ -29,7 +32,7 @@ const nextConfig = {
       // Everything except public web forms (/f/<id>) refuses to be framed.
       { source: "/((?!f/).*)", headers: securityHeaders },
       // Public web forms are made to be embedded on customers' own sites.
-      { source: "/f/:path*", headers: [...securityHeaders.filter((h) => h.key !== "X-Frame-Options"), { key: "Content-Security-Policy", value: "frame-ancestors *" }] },
+      { source: "/f/:path*", headers: [...securityHeaders.filter((h) => h.key !== "X-Frame-Options" && h.key !== "Content-Security-Policy"), { key: "Content-Security-Policy", value: "base-uri 'self'; object-src 'none'; frame-ancestors *" }] },
       // The service worker must be revalidated on every load so a fix reaches
       // installed apps at once instead of after a cached copy expires.
       { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] },
