@@ -184,3 +184,97 @@ export function CustomersInsights() {
     </div>
   );
 }
+
+const OUTCOMES = [
+  { key: "done", label: "Completed", color: "#55c08f" },
+  { key: "whatsapp", label: "WhatsApp", color: "#c3e33a" },
+  { key: "rescheduled", label: "Rescheduled", color: "#f0b43c" },
+  { key: "no_answer", label: "No answer", color: "#ef8a7c" },
+  { key: "skipped", label: "Skipped", color: "#d6d3cc" },
+] as const;
+
+/** Calls logged per day and how they ended, over the last 14 days. */
+export function CallsInsights() {
+  const sb = useMemo(() => createClient(), []);
+  const [daily, setDaily] = useState<{ label: string; n: number }[] | null | undefined>(undefined);
+  const [outcomes, setOutcomes] = useState<{ label: string; n: number; color: string }[] | null | undefined>(undefined);
+
+  useEffect(() => {
+    let live = true;
+    const today = startOfDay(new Date());
+    const edges = Array.from({ length: 15 }, (_, i) => new Date(+today - (13 - i) * day));
+    const calls = () => sb.from("call_logs").select("id", { count: "exact", head: true });
+    bucketCounts(edges, (f, t) => calls().gte("called_at", f).lt("called_at", t))
+      .then(c => { if (live) setDaily(c ? c.map((n, i) => ({ label: short(edges[i]), n })) : null); })
+      .catch(() => { if (live) setDaily(null); });
+    Promise.all(OUTCOMES.map(o => calls().gte("called_at", edges[0].toISOString()).eq("outcome", o.key)))
+      .then(rs => {
+        if (!live) return;
+        if (rs.some(r => r.error)) return setOutcomes(null);
+        setOutcomes(OUTCOMES.map((o, i) => ({ label: o.label, n: rs[i].count ?? 0, color: o.color })).filter(o => o.n > 0));
+      })
+      .catch(() => { if (live) setOutcomes(null); });
+    return () => { live = false; };
+  }, [sb]);
+
+  const sum = daily?.reduce((s, d) => s + d.n, 0) ?? 0;
+  const oTotal = outcomes?.reduce((s, o) => s + o.n, 0) ?? 0;
+  const done = outcomes?.find(o => o.label === "Completed")?.n ?? 0;
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-3 mb-6">
+      <div className={cn(PANEL, "lg:col-span-2 rise")}>
+        <Head icon={TrendingUp} title="Calls logged per day" note={daily ? `${sum} in the last 14 days` : undefined} />
+        {daily === undefined ? <div className="h-44 rounded-xl bg-[#f6f7f2] animate-pulse" />
+        : daily === null ? <Empty text="Call history isn't available." />
+        : sum === 0 ? <Empty text="No calls logged in the last 14 days." />
+        : (
+          <div className="h-44">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={daily} margin={{ top: 6, right: 4, left: 4, bottom: 0 }}>
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#8a8a86" }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={18} />
+                <Tooltip contentStyle={tip} cursor={{ fill: "#f6f7f2" }} formatter={(v: number) => [v, "Calls"]} />
+                <Bar dataKey="n" radius={[8, 8, 8, 8]} animationDuration={800}>
+                  {daily.map((d, i) => <Cell key={d.label} fill={i === daily.length - 1 ? "#c3e33a" : "#1c1c1c"} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+      <div className={cn(PANEL, "rise")} style={{ animationDelay: "80ms" }}>
+        <Head icon={PieIcon} title="Call outcomes" note={oTotal > 0 ? `${Math.round((done / oTotal) * 100)}% completed` : undefined} />
+        {outcomes === undefined ? <div className="h-32 rounded-xl bg-[#f6f7f2] animate-pulse" />
+        : outcomes === null ? <Empty text="Call outcomes aren't available." />
+        : oTotal === 0 ? <Empty text="No calls in the last 14 days." />
+        : (
+          <div className="flex items-center gap-4">
+            <div className="relative w-32 h-32 flex-shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={outcomes} dataKey="n" nameKey="label" innerRadius="64%" outerRadius="100%" paddingAngle={outcomes.length > 1 ? 2 : 0} stroke="none" animationDuration={700}>
+                    {outcomes.map(o => <Cell key={o.label} fill={o.color} />)}
+                  </Pie>
+                  <Tooltip contentStyle={tip} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-xl font-bold text-[#1c1c1c] leading-none tabular-nums">{oTotal}</span>
+                <span className="text-[10px] text-[#6b6b67]">calls</span>
+              </div>
+            </div>
+            <ul className="flex-1 min-w-0 space-y-2 text-xs">
+              {outcomes.map(o => (
+                <li key={o.label} className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: o.color }} />
+                  <span className="truncate flex-1">{o.label}</span>
+                  <b className="tabular-nums">{o.n}</b>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

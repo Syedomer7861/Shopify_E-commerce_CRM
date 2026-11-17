@@ -19,6 +19,7 @@ import {
   Info
 } from "lucide-react";
 import { PageHeader, EmptyState, TaskTypeBadge, Pagination, Modal, Select } from "@/components/ui";
+import { CallsInsights } from "@/components/charts/LiveCharts";
 import TaskCard from "@/components/TaskCard";
 import { createClient } from "@/lib/supabase";
 import { sendAdminNotification } from "@/lib/notifications";
@@ -881,6 +882,7 @@ export default function TasksPage() {
           </div>
         }
       />
+      {(profile?.role === "admin" || profile?.role === "manager") && <CallsInsights />}
 
       {/* Advanced Filter Panel */}
       {showFilters && (
