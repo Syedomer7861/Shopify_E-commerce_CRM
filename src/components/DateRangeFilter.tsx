@@ -80,3 +80,12 @@ export function DateRangeFilter({ value, onChange, className }: { value: DateRan
     </div>
   );
 }
+
+/** Short human label for a range, e.g. "Last 30 days" or "1 Oct – 17 Nov". */
+export function rangeLabel(r: DateRange): string {
+  if (!r.from && !r.to) return "All time";
+  const p = PRESETS.find(x => x.value === r.preset);
+  if (p && p.value !== "custom") return p.label;
+  const fmt = (d: string) => format(localDay(d), "d MMM yyyy");
+  return r.from && r.to ? `${fmt(r.from)} – ${fmt(r.to)}` : r.from ? `Since ${fmt(r.from)}` : `Until ${fmt(r.to)}`;
+}

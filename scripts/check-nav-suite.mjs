@@ -44,4 +44,12 @@ assert.ok(Array.isArray(blocked) && COMMERCE_NAV.every(k => !blocked.includes(k)
 for (const key of COMMERCE_NAV) assert.ok(ALL_NAV_MODULES.includes(key), `${key} is not a known page`);
 for (const key of NEUTRAL_NAV_MODULES) assert.ok(!COMMERCE_NAV.includes(key) && ALL_NAV_MODULES.includes(key), `${key} must be neutral`);
 
+// Data grants close customer pages for roles without them; roles with them keep all.
+const dev = allowedNavModules({ role: "web_developer", role_grants: { work: { view: "assigned" } } });
+for (const key of ["customers", "orders", "tasks", "abandoned-carts"]) assert.ok(!dev.includes(key), `no grant must hide ${key}`);
+assert.ok(dev.includes("calendar") && dev.includes("my-hub"), "neutral pages stay");
+assert.strictEqual(allowedNavModules({ role: "agent", role_grants: { customers: { view: "organisation" }, orders: { view: "organisation" } } }), null, "full grants = unrestricted, as before");
+assert.deepStrictEqual(allowedNavModules({ role: "acc", role_nav_modules: ["orders", "customers"], role_grants: { orders: { view: "organisation" } } }), ["orders"], "role list still filtered by grants");
+assert.strictEqual(allowedNavModules({ role: "admin", role_grants: {} }), null, "admin never gated");
+
 console.log("check-nav-suite: OK");

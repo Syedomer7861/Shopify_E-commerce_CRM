@@ -103,11 +103,28 @@ export const NEUTRAL_NAV_MODULES: readonly string[] = ["dashboard", "my-hub", "c
  * role (and admins) is unrestricted.
  */
 export function allowedNavModules(profile: Partial<Profile> | null | undefined): string[] | null {
-  const base = roleNavModules(profile);
+  const base = grantGated(profile, roleNavModules(profile));
   // Off by the org's own switch or by the platform owner (plan / override); same rule as orgModuleOff in ./access.
   const suiteOff = profile?.org_disabled_modules?.includes(COMMERCE_SUITE) || profile?.org_platform_blocked_modules?.includes(COMMERCE_SUITE);
   if (!suiteOff) return base;
   return (base ?? ALL_NAV_MODULES).filter(key => !COMMERCE_NAV.includes(key));
+}
+
+/**
+ * Pages that show a data module's records need that module's `view` grant
+ * (Roles page, data permissions). Without it the page would only ever be
+ * empty or refused by RLS, so it leaves the menu too. Config-driven: give a
+ * role the grant and the page comes back. Skipped when grants weren't loaded.
+ */
+const NAV_NEEDS_GRANT: Record<string, string> = {
+  customers: "customers", orders: "orders", tasks: "customers", "abandoned-carts": "customers",
+};
+function grantGated(profile: Partial<Profile> | null | undefined, base: string[] | null): string[] | null {
+  const grants = profile?.role_grants;
+  if (isAdmin(profile) || !grants) return base;
+  const ok = (key: string) => !NAV_NEEDS_GRANT[key] || Boolean(grants[NAV_NEEDS_GRANT[key]]?.view);
+  const list = base ?? ALL_NAV_MODULES;
+  return list.every(ok) ? base : list.filter(ok);
 }
 
 function roleNavModules(profile: Partial<Profile> | null | undefined): string[] | null {

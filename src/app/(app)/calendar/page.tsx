@@ -20,6 +20,7 @@ import Link from "next/link";
 import ClickToCallModal from "@/components/ClickToCallModal";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { allowedNavModules, isAdmin } from "@/lib/permissions";
+import { can } from "@/lib/access";
 import { CAL_KINDS, eventsOn, loadCalendarEvents, type CalEvent, type CalKind } from "@/lib/calendar-sources";
 
 // ─── task type colour config ──────────────────────────────────────────────────
@@ -71,7 +72,10 @@ export default function CalendarPage() {
   // Tasks module; admins, managers and HR start on everything they can see,
   // everyone else on their own items. RLS still bounds both choices.
   const navAllowed = allowedNavModules(profile);
+  // Call tasks follow the Tasks page (which needs the customers grant); field
+  // visits follow the visits grant. Work tasks, leave and holidays apply to all.
   const canSeeCalls = !navAllowed || navAllowed.includes("tasks");
+  const sources = CAL_KINDS.filter(k => k.key !== "visit" || can(profile, "visits", "view") !== null);
   const broadRole = isAdmin(profile) || profile?.role === "manager" || profile?.role === "hr";
   const scope = scopePick ?? (broadRole ? "all" : "mine");
   const toggleSource = (k: string) => setHidden(h => { const n = new Set(h); if (n.has(k)) n.delete(k); else n.add(k); return n; });
@@ -123,7 +127,7 @@ export default function CalendarPage() {
 
     if (!silent) setLoading(true);
     const { start, end } = getWindow();
-    const kinds = new Set(CAL_KINDS.map(k => k.key).filter(k => !hidden.has(k)) as CalKind[]);
+    const kinds = new Set(sources.map(k => k.key).filter(k => !hidden.has(k)) as CalKind[]);
     const eventsJob = profile?.id
       ? loadCalendarEvents(supabase, { start, end, userId: profile.id, mine: scope === "mine", kinds })
       : Promise.resolve([] as CalEvent[]);
@@ -160,7 +164,8 @@ export default function CalendarPage() {
     setTasks(allTasks);
     setEvents(await eventsJob);
     setLoading(false);
-  }, [getWindow, supabase, applyAgentFilters, profile?.id, scope, hidden, canSeeCalls]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `sources` is derived from profile
+  }, [getWindow, supabase, applyAgentFilters, profile?.id, scope, hidden, canSeeCalls, sources.length]);
 
   useEffect(() => {
     fetchTasks();
@@ -285,7 +290,7 @@ export default function CalendarPage() {
       {/* ── Sources ──────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 mb-2 flex-wrap">
         <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mr-1">Show</span>
-        {[...(canSeeCalls ? [{ key: "calls", label: "Call tasks", dot: "bg-violet-500" }] : []), ...CAL_KINDS].map(src => (
+        {[...(canSeeCalls ? [{ key: "calls", label: "Call tasks", dot: "bg-violet-500" }] : []), ...sources].map(src => (
           <button key={src.key} onClick={() => toggleSource(src.key)} aria-pressed={!hidden.has(src.key)}
             className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all",
               hidden.has(src.key) ? "bg-white text-gray-300 border-gray-200 line-through" : "bg-white text-[#1c1c1c] border-[#1c1c1c]/30")}>

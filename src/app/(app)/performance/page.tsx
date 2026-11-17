@@ -15,6 +15,8 @@ import { createClient } from "@/lib/supabase";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
 const WorkspacePerformance = dynamic(() => import("@/components/performance/WorkspacePerformance"), { ssr: false });
+import { ModuleKpis } from "@/components/performance/ModuleKpis";
+import type { Grants } from "@/lib/access";
 import { cn, formatCurrency, toDbDateString, TASK_TYPE_CONFIG, DELIVERY_CONFIG, TASK_STATUS_CONFIG } from "@/lib/utils";
 import type { TaskType, DeliveryStatus, TaskStatus } from "@/types";
 import toast from "react-hot-toast";
@@ -108,6 +110,33 @@ export default function PerformancePage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showExport, setShowExport] = useState(false);
   const [exporting, setExporting] = useState(false);
+  // Every role's data grants in this org (roles_read: same-org). Decides which
+  // KPI set a person gets - no department names are hardcoded.
+  const [roleGrants, setRoleGrants] = useState<Record<string, Grants> | null>(null);
+  useEffect(() => {
+    if (!profile?.org_id || isDemoMode()) return;
+    createClient().from("roles").select("name, grants").then(({ data, error }) => {
+      if (!error && data) setRoleGrants(Object.fromEntries(data.map((r: any) => [r.name, (r.grants || {}) as Grants])));
+    });
+  }, [profile?.org_id]);
+  const range = useMemo(() => getRange(preset, customStart, customEnd), [preset, customStart, customEnd]);
+
+  // Call-centre metrics (calls, orders, revenue, attendance ledger) are for roles
+  // that work customers; everyone else gets task delivery + their module KPIs.
+  // Falls back to the old rule (marketing = workspace) if grants didn't load.
+  const roleOf = useCallback((id: string) => (id === profile?.id ? profile?.role : agents.find(a => a.id === id)?.role), [agents, profile?.id, profile?.role]);
+  const grantsOf = useCallback((id: string): Grants | undefined => {
+    const role = roleOf(id);
+    if (!role) return undefined;
+    if (id === profile?.id && profile?.role_grants) return profile.role_grants;
+    return roleGrants?.[role];
+  }, [roleOf, roleGrants, profile?.id, profile?.role_grants]);
+  const isWorkspaceTarget = useCallback((id: string) => {
+    const role = roleOf(id);
+    if (!role || role === "admin") return false;
+    const g = grantsOf(id);
+    return g ? !g.customers?.view : role === "marketing";
+  }, [roleOf, grantsOf]);
 
   // Agent-picker roster for admin/manager/hr - agents just see themselves.
   useEffect(() => {
@@ -177,7 +206,7 @@ export default function PerformancePage() {
 
     // Marketing/Workspace users render <WorkspacePerformance>, which fetches
     // its own data - skip the call-centre analytics call for them.
-    if (agents.find(a => a.id === targetAgentId)?.role === "marketing") {
+    if (isWorkspaceTarget(targetAgentId)) {
       setLoading(false);
       return;
     }
@@ -199,7 +228,7 @@ export default function PerformancePage() {
     } finally {
       if (mySeq === requestSeq.current) setLoading(false);
     }
-  }, [preset, customStart, customEnd, selectedAgentId, canBrowseAgents, profile?.id, agents]);
+  }, [preset, customStart, customEnd, selectedAgentId, canBrowseAgents, profile?.id, agents, isWorkspaceTarget]);
 
   useEffect(() => {
     if (profileLoading) return;
@@ -313,8 +342,11 @@ export default function PerformancePage() {
 
   // Workspace/marketing staff do task-board work, not calls - swap to the
   // task-throughput view instead of showing them empty call/revenue cards.
-  const isWorkspaceUser =
-    canBrowseAgents && agents.find(a => a.id === selectedAgentId)?.role === "marketing";
+  const isWorkspaceUser = Boolean(selectedAgentId) && isWorkspaceTarget(selectedAgentId);
+  const targetGrants = selectedAgentId ? grantsOf(selectedAgentId) : undefined;
+  const moduleKpis = selectedAgentId ? (
+    <ModuleKpis userId={selectedAgentId} range={range} grants={targetGrants} isAdminRole={roleOf(selectedAgentId) === "admin"} />
+  ) : null;
 
   const EXPORT_HEADERS = ["Date", "Clock In", "Clock Out", "Work Hours", "Break Hours", "Net Hours", "Tasks", "Revenue"];
   const ACTIVITY_HEADERS = ["Time", "Type", "Description"];
@@ -653,11 +685,14 @@ export default function PerformancePage() {
           <p className="text-sm font-bold text-gray-400">Select an agent to view their performance</p>
         </div>
       ) : isWorkspaceUser ? (
-        <WorkspacePerformance
-          userId={selectedAgentId}
-          name={selectedAgentName}
-          range={getRange(preset, customStart, customEnd)}
-        />
+        <>
+          {moduleKpis}
+          <WorkspacePerformance
+            userId={selectedAgentId}
+            name={selectedAgentName}
+            range={range}
+          />
+        </>
       ) : loading ? (
         <div className="p-12 text-center text-gray-400 text-sm">Loading performance data...</div>
       ) : (
@@ -670,6 +705,8 @@ export default function PerformancePage() {
             <StatCard label="Productivity" value={`${summary?.productivity || 0}/hr`} sub="Tasks per hour" icon={<Zap className="w-4 h-4" />} />
             <StatCard label="Days Logged" value={dailyLogs.length} sub="In range" icon={<Calendar className="w-4 h-4" />} />
           </div>
+
+          {moduleKpis}
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6">
             <StatCard label="Tasks Resolved" value={taskStatusSummary.total} sub="Done, skipped or cancelled" icon={<ListChecks className="w-4 h-4" />} />

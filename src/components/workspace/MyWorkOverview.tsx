@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { marketingApi } from "@/lib/marketing-client";
 import type { MktList, MktTask, Profile } from "@/types";
+import { applyDateRange, inDateRange, rangeLabel, type DateRange } from "@/components/DateRangeFilter";
 
 /**
  * Home overview built only from the person's own Workspace tasks and logged
@@ -42,11 +43,12 @@ function Card({ title, icon: Icon, href, cta, children, className }: { title: st
 
 const Empty = ({ children }: { children: React.ReactNode }) => <div className="text-xs text-gray-400 py-6 text-center">{children}</div>;
 
-export function MyWorkOverview({ profile }: { profile: Profile }) {
+export function MyWorkOverview({ profile, range }: { profile: Profile; range: DateRange }) {
   const [tasks, setTasks] = useState<MktTask[] | null>(null);
   const [lists, setLists] = useState<MktList[]>([]);
   const [minutes, setMinutes] = useState<{ minutes: number; spent_on: string }[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [rangeMins, setRangeMins] = useState<number | null>(null);
 
   const now = new Date();
   const today = iso(now);
@@ -63,6 +65,14 @@ export function MyWorkOverview({ profile }: { profile: Profile }) {
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.id]);
+
+  // Hours logged inside the chosen period (own rows; RLS scoped).
+  useEffect(() => {
+    let alive = true;
+    applyDateRange(createClient().from("mkt_time_entries").select("minutes").eq("user_id", profile.id), "spent_on", range, true).limit(5000)
+      .then(({ data, error }) => { if (alive) setRangeMins(error ? null : (data ?? []).reduce((s, m: any) => s + (m.minutes || 0), 0)); });
+    return () => { alive = false; };
+  }, [profile.id, range]);
 
   const listById = useMemo(() => new Map(lists.map(l => [l.id, l])), [lists]);
   const doneIds = useMemo(() => new Set(lists.flatMap(l => (l.statuses ?? []).filter(s => s.type === "done").map(s => `${l.id}:${s.id}`))), [lists]);
@@ -92,10 +102,21 @@ export function MyWorkOverview({ profile }: { profile: Profile }) {
       deadlines: open.filter(t => t.due_date && t.due_date >= today && t.due_date <= soon).sort(byDue).slice(0, 5),
       projects: [...projects.entries()].filter(([, p]) => p.total > p.done).sort((a, b) => b[1].total - a[1].total).slice(0, 4),
       activeProjects: [...projects.values()].filter(p => p.total > p.done).length,
+      period: (() => {
+        const done = all.filter(t => t.completed_at && inDateRange(t.completed_at, range));
+        const dated = done.filter(t => t.due_date);
+        const onTime = dated.filter(t => (t.completed_at || "").slice(0, 10) <= (t.due_date || ""));
+        return {
+          completed: done.length,
+          added: all.filter(t => inDateRange(t.created_at, range)).length,
+          onTimePct: dated.length ? Math.round((onTime.length / dated.length) * 100) : null,
+          dueInPeriod: all.filter(t => t.due_date && (range.from || range.to) && inDateRange(t.due_date, range)).length,
+        };
+      })(),
       recent: [...all].sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || "")).slice(0, 5).map(t => ({ t, done: isDone(t) })),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks, listById, doneIds, activeIds, today]);
+  }, [tasks, listById, doneIds, activeIds, today, range]);
 
   const linkFor = (t: MktTask) => `/workspace?space=${listById.get(t.list_id)?.space_id ?? ""}&list=${t.list_id}&task=${t.id}`;
 
@@ -163,6 +184,24 @@ export function MyWorkOverview({ profile }: { profile: Profile }) {
           </Link>
         ))}
       </div>
+
+      <section className="card p-5">
+        <h3 className="text-sm font-bold text-[#1c1c1c] mb-4">My delivery · {rangeLabel(range)}</h3>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Tasks completed", value: view.period.completed },
+            { label: "Tasks assigned", value: view.period.added, sub: "Created in this period" },
+            { label: "On-time delivery", value: view.period.onTimePct === null ? "—" : `${view.period.onTimePct}%`, sub: "Done by due date" },
+            { label: "Hours logged", value: rangeMins === null ? "—" : hm(rangeMins) || "0h" },
+          ].map(s => (
+            <div key={s.label}>
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">{s.label}</div>
+              <div className="text-2xl font-bold mt-1">{s.value}</div>
+              {s.sub && <div className="text-[11px] text-gray-400">{s.sub}</div>}
+            </div>
+          ))}
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card title="My active projects" icon={FolderKanban} href="/workspace">
