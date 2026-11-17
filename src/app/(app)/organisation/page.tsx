@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, Network, BadgeCheck, Users, Plus, Loader2, AlertTriangle, Pencil, Trash2, Check, X, LayoutTemplate } from "lucide-react";
 import { PageHeader, AccessDenied, Select } from "@/components/ui";
@@ -110,7 +111,7 @@ export default function OrganisationPage() {
 
   async function toggleUnit(table: UnitTable, unit: Unit) {
     const count = peopleIn(table, unit.id);
-    if (unit.is_active && !window.confirm(`Retire "${unit.name}"?${count ? ` ${count} ${count === 1 ? "person keeps" : "people keep"} it until moved, but it can't be picked for anyone new.` : ""} You can restore it later.`)) return;
+    if (unit.is_active && !await confirmDialog(`Retire "${unit.name}"?${count ? ` ${count} ${count === 1 ? "person keeps" : "people keep"} it until moved, but it can't be picked for anyone new.` : ""} You can restore it later.`)) return;
     setBusy(unit.id);
     const { error } = await supabase.from(table).update({ is_active: !unit.is_active }).eq("id", unit.id);
     if (error) toast.error(error.message);
@@ -181,7 +182,7 @@ export default function OrganisationPage() {
   async function deleteUnit(table: UnitTable, unit: Unit) {
     const count = peopleIn(table, unit.id);
     if (count > 0) return toast.error(`${count} ${count === 1 ? "person is" : "people are"} in "${unit.name}". Move them first, or use Retire.`);
-    if (!window.confirm(`Delete "${unit.name}"? This cannot be undone.`)) return;
+    if (!await confirmDialog(`Delete "${unit.name}"? This cannot be undone.`)) return;
     setBusy(unit.id);
     const { error } = await supabase.from(table).delete().eq("id", unit.id);
     if (error) toast.error(error.message);

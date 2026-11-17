@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 
 import { useCallback, useEffect, useState } from "react";
 import { ShieldCheck, ShieldOff } from "lucide-react";
@@ -52,7 +53,7 @@ export function TwoFactorCard({ onEnabled }: { onEnabled?: () => void } = {}) {
   }
 
   async function turnOff() {
-    if (!factorId || !window.confirm("Turn off two-factor sign-in? Your account will only need a password.")) return;
+    if (!factorId || !await confirmDialog("Turn off two-factor sign-in? Your account will only need a password.")) return;
     setBusy(true);
     const { error } = await createClient().auth.mfa.unenroll({ factorId });
     setBusy(false);

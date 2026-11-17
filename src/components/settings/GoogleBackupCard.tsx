@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -54,7 +55,7 @@ export default function GoogleBackupCard() {
   };
 
   const disconnect = async () => {
-    if (!confirm("Disconnect Google? Backups and the live sheet stop. Files already in your Drive stay there.")) return;
+    if (!await confirmDialog("Disconnect Google? Backups and the live sheet stop. Files already in your Drive stay there.")) return;
     setBusy(true);
     try {
       await fetch("/api/google/connection", { method: "DELETE" });

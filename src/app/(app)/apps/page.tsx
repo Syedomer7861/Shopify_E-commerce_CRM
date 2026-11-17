@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Pencil, Archive, Loader2, AlertTriangle, Blocks } from "lucide-react";
@@ -53,7 +54,7 @@ function AppsPage() {
   const current = apps.find(a => a.key === activeKey) || apps[0];
 
   async function archive(app: CustomModule) {
-    if (!confirm(`Archive "${app.label}"? It disappears for everyone. Its records are kept and it can be restored from the database.`)) return;
+    if (!await confirmDialog(`Archive "${app.label}"? It disappears for everyone. Its records are kept and it can be restored from the database.`)) return;
     const { error } = await supabase.from("custom_modules").update({ is_active: false }).eq("id", app.id);
     if (error) toast.error(error.message);
     else { toast.success("App archived"); router.replace("/apps"); load(); }

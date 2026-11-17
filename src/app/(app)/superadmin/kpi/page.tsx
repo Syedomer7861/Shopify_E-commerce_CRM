@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Gauge, Loader2, Plus, Upload } from "lucide-react";
 import toast from "react-hot-toast";
@@ -92,9 +93,9 @@ export default function SuperAdminKpiLibrary() {
     const id = await call<string>("platform_kpi_copy", { p_id: t.id, p_new_version: true }, `Version ${t.version + 1} created as a draft`);
     if (id) setEditing({ id, draft: toDraft(t) });
   }
-  function setStatus(t: Template, s: Template["status"]) {
+  async function setStatus(t: Template, s: Template["status"]) {
     if (s === "published" && !weightCheck(t.kpi_template_items).ok) return toast.error("Weights must total 100 before publishing");
-    if (s === "archived" && !window.confirm(`Archive "${t.name}" v${t.version}? Organisations that already adopted it keep their copy.`)) return;
+    if (s === "archived" && !await confirmDialog(`Archive "${t.name}" v${t.version}? Organisations that already adopted it keep their copy.`)) return;
     call("platform_kpi_set_status", { p_id: t.id, p_status: s }, s === "published" ? "Published" : s === "archived" ? "Archived" : "Moved back to draft");
   }
   function exportJson(t: Template) {

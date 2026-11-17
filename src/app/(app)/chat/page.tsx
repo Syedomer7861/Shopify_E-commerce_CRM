@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import React from 'react';
 import { ChannelList } from '@/components/chat/ChannelList';
 import { MessageList } from '@/components/chat/MessageList';
@@ -66,7 +67,7 @@ export default function ChatPage() {
       toast.success("Demo: History cleared (local only)");
       return;
     }
-    if (!confirm("Are you absolutely sure you want to clear this conversation history? This cannot be undone.")) return;
+    if (!await confirmDialog("Are you absolutely sure you want to clear this conversation history? This cannot be undone.")) return;
     
     const loadingToast = toast.loading("Clearing history...");
     try {

@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { PageHeader, Pagination } from "@/components/ui";
@@ -166,7 +167,7 @@ export default function AbandonedCartsPage() {
       setCarts(prev => prev.filter(c => c.id !== id));
       return;
     }
-    if (!confirm("Are you sure you want to delete this record?")) return;
+    if (!await confirmDialog("Are you sure you want to delete this record?")) return;
     try {
       const { error } = await supabase.from("abandoned_carts").delete().eq("id", id);
       if (error) throw error;

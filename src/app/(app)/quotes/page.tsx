@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { FileText, Loader2, Plus, Printer, Receipt, Trash2 } from "lucide-react";
@@ -190,7 +191,7 @@ function QuoteEditor({ id, onClose }: { id: string; onClose: () => void }) {
   }
 
   async function toInvoice() {
-    if (!window.confirm("Create an invoice from this quote? The quote can no longer be changed afterwards.")) return;
+    if (!await confirmDialog("Create an invoice from this quote? The quote can no longer be changed afterwards.")) return;
     setBusy(true);
     const { error } = await supabase.rpc("quote_to_invoice", { p_quote: id });
     setBusy(false);
@@ -200,7 +201,7 @@ function QuoteEditor({ id, onClose }: { id: string; onClose: () => void }) {
   }
 
   async function removeQuote() {
-    if (!window.confirm("Delete this quote? This cannot be undone.")) return;
+    if (!await confirmDialog("Delete this quote? This cannot be undone.")) return;
     const { error } = await supabase.from("quotes").delete().eq("id", id);
     if (error) return toast.error(error.message);
     onClose();

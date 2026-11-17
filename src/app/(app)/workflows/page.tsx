@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useState, useEffect } from "react";
 import { Zap, Plus, Trash2, Edit3, CheckCircle2, AlertCircle, Play, Settings, ArrowRight, Send, RefreshCw } from "lucide-react";
 import { PageHeader, Modal } from "@/components/ui";
@@ -121,7 +122,7 @@ export default function WorkflowManager() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this workflow?")) return;
+    if (!await confirmDialog("Are you sure you want to delete this workflow?")) return;
     const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Workflow deleted");

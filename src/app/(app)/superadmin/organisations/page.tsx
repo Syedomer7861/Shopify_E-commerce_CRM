@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Building2, Loader2, Power, PowerOff } from "lucide-react";
@@ -43,7 +44,7 @@ export default function SuperAdminOrganisations() {
 
   async function toggleActive(org: Org) {
     const next = !org.is_active;
-    if (!window.confirm(`${next ? "Reactivate" : "Suspend"} "${org.name}"?${next ? "" : " Every member loses access immediately. Data is kept."}`)) return;
+    if (!await confirmDialog(`${next ? "Reactivate" : "Suspend"} "${org.name}"?${next ? "" : " Every member loses access immediately. Data is kept."}`)) return;
     setBusyId(org.org_id);
     const { error } = await supabase.from("organizations").update({ is_active: next }).eq("id", org.org_id);
     if (error) toast.error(error.message);

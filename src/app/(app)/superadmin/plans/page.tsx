@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Plus, Tag } from "lucide-react";
 import toast from "react-hot-toast";
@@ -50,7 +51,7 @@ function PriceForm({ plan, onDone }: { plan: Plan; onDone: () => void }) {
     if (m == null || y == null) return toast.error("Enter prices like 1499 or 1499.50");
     if (!Number.isInteger(t) || t < 0 || t > 365) return toast.error("Trial must be 0 to 365 days");
     if (!/^[A-Z]{3}$/.test(currency)) return toast.error("Currency is a 3-letter code, e.g. INR");
-    if (!window.confirm(`Publish ${formatMinor(m, currency)}/month and ${formatMinor(y, currency)}/year for ${plan.name}? Existing subscriptions keep their current price.`)) return;
+    if (!await confirmDialog(`Publish ${formatMinor(m, currency)}/month and ${formatMinor(y, currency)}/year for ${plan.name}? Existing subscriptions keep their current price.`)) return;
     setBusy(true);
     const { error } = await supabase.rpc("platform_publish_plan_version", { p_plan: plan.id, p_currency: currency, p_monthly: m, p_yearly: y, p_trial_days: t });
     setBusy(false);

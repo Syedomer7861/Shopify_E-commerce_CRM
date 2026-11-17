@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -62,7 +63,7 @@ export default function DevToolsCard() {
   };
 
   const disconnect = async (p: Provider) => {
-    if (!confirm(`Disconnect ${p}? The dashboard stops showing its data. The token is deleted here; revoke it at ${p} too.`)) return;
+    if (!await confirmDialog(`Disconnect ${p}? The dashboard stops showing its data. The token is deleted here; revoke it at ${p} too.`)) return;
     setBusy(p);
     try {
       await fetch(`/api/devtools/connection?provider=${p}`, { method: "DELETE" });

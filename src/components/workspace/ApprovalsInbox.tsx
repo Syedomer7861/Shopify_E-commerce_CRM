@@ -1,4 +1,5 @@
 "use client";
+import { promptDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, X, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import { EmptyState } from "@/components/ui";
@@ -50,7 +51,7 @@ export function ApprovalsInbox({ profile, compact = false }: { profile: Profile;
   useEffect(() => { load(); }, [load]);
 
   async function decide(row: Approval, status: "approved" | "rejected" | "cancelled") {
-    const note = status === "rejected" ? prompt("Reason for rejecting (shown to the requester)") : null;
+    const note = status === "rejected" ? await promptDialog("Reason for rejecting (shown to the requester)") : null;
     if (status === "rejected" && note === null) return;
     setBusy(row.id);
     const { error } = await supabase.from("approvals").update({ status, decision_note: note?.trim() || null }).eq("id", row.id);

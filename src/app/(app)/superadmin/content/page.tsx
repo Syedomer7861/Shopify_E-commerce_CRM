@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { History, Loader2, Save, Send } from "lucide-react";
 import toast from "react-hot-toast";
@@ -43,7 +44,7 @@ function Editor({ k, row, versions, onChange }: { k: ContentKey; row: Row | unde
 
   async function publish() {
     if (!(await saveDraft())) return;
-    if (!window.confirm(`Publish "${def.label}" to the public site?`)) { onChange(); return; }
+    if (!await confirmDialog(`Publish "${def.label}" to the public site?`)) { onChange(); return; }
     setBusy(true);
     const { error } = await supabase.rpc("platform_publish_content", { p_key: k });
     setBusy(false);
@@ -54,7 +55,7 @@ function Editor({ k, row, versions, onChange }: { k: ContentKey; row: Row | unde
   }
 
   async function restore(v: number) {
-    if (!window.confirm(`Republish version ${v}? It becomes the newest version; nothing is deleted.`)) return;
+    if (!await confirmDialog(`Republish version ${v}? It becomes the newest version; nothing is deleted.`)) return;
     const { error } = await supabase.rpc("platform_rollback_content", { p_key: k, p_version: v });
     if (error) return toast.error(error.message);
     await refreshSite();

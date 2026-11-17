@@ -1,4 +1,5 @@
 "use client";
+import { promptDialog } from "@/components/ConfirmDialog";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { ModulePage } from "@/components/records/ModulePage";
@@ -54,7 +55,7 @@ export default function FieldVisitsPage() {
   }
 
   async function complete(row: RecordRow, reload: () => void) {
-    const outcome = prompt("Outcome of the visit?");
+    const outcome = await promptDialog("Outcome of the visit?");
     if (outcome === null) return;
     const { error } = await createClient().from("visits")
       .update({ status: "completed", check_out_at: new Date().toISOString(), outcome: outcome.trim() || null }).eq("id", row.id);

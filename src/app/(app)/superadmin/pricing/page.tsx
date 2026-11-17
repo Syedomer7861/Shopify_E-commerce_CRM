@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ExternalLink, Loader2, Plus, Trash2 } from "lucide-react";
@@ -89,7 +90,7 @@ export default function SuperAdminPricing() {
 
   async function removeRow(r: Row) {
     if (!r.id) return setRows(rs => rs.filter(x => x !== r));
-    if (!window.confirm(`Delete "${r.label}" from the comparison?`)) return;
+    if (!await confirmDialog(`Delete "${r.label}" from the comparison?`)) return;
     const { error } = await supabase.rpc("platform_delete_pricing_row", { p_id: r.id });
     if (error) return toast.error(error.message);
     load();

@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useState, useEffect, useMemo } from "react";
 import { Users, Phone, Mail, MapPin, Briefcase, Calendar, CheckCircle, Clock, Plus, Search, X, Edit3, UserPlus, UserMinus } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -625,8 +626,8 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                     ) : selected.status === "Notice Period" ? (
                       // Second step: Confirm full offboard
                       <button
-                        onClick={() => {
-                          if (confirm(`Confirm offboarding ${selected.name}? This will deactivate their CRM access.`)) {
+                        onClick={async () => {
+                          if (await confirmDialog(`Confirm offboarding ${selected.name}? This will deactivate their CRM access.`)) {
                             handleUpdate(selected.id, { is_active: false, notice_period: false });
                           }
                         }}
@@ -644,8 +645,8 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                       </button>
                     )}
                     <button 
-                      onClick={() => {
-                        if (confirm("Are you sure you want to permanently delete this employee? This action cannot be undone.")) {
+                      onClick={async () => {
+                        if (await confirmDialog("Are you sure you want to permanently delete this employee? This action cannot be undone.")) {
                           handleDelete(selected.id);
                         }
                       }} 

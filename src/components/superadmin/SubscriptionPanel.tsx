@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog, promptDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -67,7 +68,7 @@ export function SubscriptionPanel({ orgId }: { orgId: string }) {
     if (!form.version) return toast.error("Pick a plan");
     const trial = form.trial === "" ? null : Number(form.trial);
     if (trial != null && !(Number.isInteger(trial) && trial >= 0 && trial <= 365)) return toast.error("Trial must be 0 to 365 days");
-    if (!window.confirm(current ? `Replace the current subscription? It will be cancelled${current.source === "razorpay" ? " and its Razorpay auto-debit stopped" : ""}.` : "Put this organisation on the selected plan?")) return;
+    if (!await confirmDialog(current ? `Replace the current subscription? It will be cancelled${current.source === "razorpay" ? " and its Razorpay auto-debit stopped" : ""}.` : "Put this organisation on the selected plan?")) return;
     setBusy(true);
     if (current && !(await stopAutoDebit(current))) { setBusy(false); return; }
     const { error } = await supabase.rpc("platform_assign_subscription", {
@@ -82,7 +83,7 @@ export function SubscriptionPanel({ orgId }: { orgId: string }) {
 
   async function cancel() {
     if (!current) return;
-    const reason = window.prompt(current.source === "razorpay"
+    const reason = await promptDialog(current.source === "razorpay"
       ? "This stops the customer's Razorpay auto-debit now and pauses their workspace. Reason (kept in the record):"
       : "Reason for cancelling (kept in the record):");
     if (reason === null) return;

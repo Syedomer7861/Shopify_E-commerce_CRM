@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Copy, ExternalLink, Loader2, Plus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -57,7 +58,7 @@ export function WebFormsManager() {
   }
 
   async function remove(f: Form) {
-    if (!window.confirm(`Delete the form "${f.name}"? Leads it already created stay.`)) return;
+    if (!await confirmDialog(`Delete the form "${f.name}"? Leads it already created stay.`)) return;
     const { error } = await supabase.from("web_forms").delete().eq("id", f.id);
     if (error) return toast.error(error.message);
     load();

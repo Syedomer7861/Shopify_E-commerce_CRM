@@ -14,6 +14,7 @@ import { SuspendedGate } from "@/components/auth/SuspendedGate";
 import { ProfileProvider } from "@/hooks/useCurrentProfile";
 import { PlatformNotices } from "@/components/PlatformNotices";
 import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
+import { DialogHost } from "@/components/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
@@ -48,6 +49,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
         {!isChatPage && <FloatingChat />}
         {!isChatPage && <ChatWindow />}
+        {/* Last in the tree so confirm boxes sit above any open pop-up. */}
+        <DialogHost />
       </div>
     </ChatProvider>
     </ProfileProvider>

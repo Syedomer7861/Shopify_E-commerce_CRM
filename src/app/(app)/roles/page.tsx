@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useEffect, useState, useCallback } from "react";
 import {
   Shield, Eye, Trash2, UserPlus, ShoppingBag, Users, MessageSquare,
@@ -113,7 +114,7 @@ export default function RolesPage() {
 
   async function handleDelete(role: Role) {
     if (role.is_system) return;
-    if (!confirm(`Delete the "${role.name}" role? Anyone currently assigned it keeps the name but loses its permissions until reassigned.`)) return;
+    if (!await confirmDialog(`Delete the "${role.name}" role? Anyone currently assigned it keeps the name but loses its permissions until reassigned.`)) return;
     const { error } = await supabase.from("roles").delete().eq("id", role.id);
     if (error) toast.error(error.message);
     else { toast.success("Role deleted"); fetchRoles(); }

@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useState, useEffect } from "react";
 import { Plus, Search, MessageSquare, Save, Trash2, Edit3, Type, CheckCircle2, ChevronRight, Hash } from "lucide-react";
 import { PageHeader, Modal } from "@/components/ui";
@@ -119,7 +120,7 @@ export default function TemplateManager() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this template?")) return;
+    if (!await confirmDialog("Are you sure you want to delete this template?")) return;
     const isDemo = isDemoMode();
     if (isDemo) {
       toast.success("Demo: Template Deleted");

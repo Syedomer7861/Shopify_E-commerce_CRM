@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog, promptDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -105,7 +106,7 @@ export default function DashboardBuilderPage() {
   }
   async function publish() {
     const who = peopleCount ? `${peopleCount} assignment(s) will switch to this version straight away.` : "Nobody is assigned yet.";
-    const note = window.prompt(`Publish "${meta.name}" as version ${dash!.version + 1}? ${who}\n\nOptional note for the history:`, "");
+    const note = await promptDialog(`Publish "${meta.name}" as version ${dash!.version + 1}? ${who}\n\nOptional note for the history:`, "");
     if (note === null) return;
     if (dirty && !(await save())) return;
     setBusy(true);
@@ -118,10 +119,10 @@ export default function DashboardBuilderPage() {
     if (!dash!.source_dashboard_id) return;
     const { data, error } = await supabase.from("dashboards").select("layout, published_layout").eq("id", dash!.source_dashboard_id).maybeSingle();
     if (error || !data) return toast.error("The original template isn't available any more");
-    if (window.confirm("Replace the draft with the template's widgets? You can undo this until you save.")) change((data.published_layout ?? data.layout) as LayoutItem[]);
+    if (await confirmDialog("Replace the draft with the template's widgets? You can undo this until you save.")) change((data.published_layout ?? data.layout) as LayoutItem[]);
   }
   async function restore(v: number) {
-    if (dirty && !window.confirm("Discard unsaved changes and load this version into the draft?")) return;
+    if (dirty && !await confirmDialog("Discard unsaved changes and load this version into the draft?")) return;
     setBusy(true);
     const { error } = await supabase.rpc("dashboard_restore", { p_id: id, p_version: v });
     setBusy(false);

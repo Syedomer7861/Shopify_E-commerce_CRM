@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { ModulePage } from "@/components/records/ModulePage";
 import { SalesOverview } from "@/components/records/DeptOverviews";
 import toast from "react-hot-toast";
@@ -15,7 +16,7 @@ function leadAge(created: any, row: RecordRow) {
 
 // Turns a qualified lead into a deal linked to it, then marks the lead converted.
 async function convertToDeal(lead: RecordRow, reload: () => void) {
-  if (!window.confirm(`Create a deal from ${lead.name}?`)) return;
+  if (!await confirmDialog(`Create a deal from ${lead.name}?`)) return;
   const supabase = createClient();
   const { error } = await supabase.from("deals").insert({
     id: crypto.randomUUID(), lead_id: lead.id, owner_id: lead.owner_id,

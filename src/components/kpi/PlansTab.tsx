@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -73,14 +74,14 @@ export function PlansTab({ templates, departments, designations, canManage, canA
     const { id, items, ...rest } = draft;
     if (await rpc("kpi_save_plan", { p_id: id, p: { ...rest, name: draft.name.trim(), items } }, id ? "Plan saved" : "Plan created as a draft")) setDraft(null);
   }
-  function activate(p: Plan) {
+  async function activate(p: Plan) {
     const w = weightCheck(p.kpi_plan_items);
     if (!w.ok) return toast.error(`Weights total ${w.total}, must be 100`);
     const m = missingTargets(p.kpi_plan_items);
     if (m) return toast.error(`${m} KPI(s) still need a target`);
     const prev = plans.find(x => x.id === p.previous_plan_id && x.status === "active");
     const moving = prev?.kpi_assignments.filter(a => a.status === "active").length ?? 0;
-    if (prev && !window.confirm(`Approve version ${p.version}? ${moving} employee(s) move from version ${prev.version} starting today, and version ${prev.version} is archived. Past evaluations stay as they are.`)) return;
+    if (prev && !await confirmDialog(`Approve version ${p.version}? ${moving} employee(s) move from version ${prev.version} starting today, and version ${prev.version} is archived. Past evaluations stay as they are.`)) return;
     rpc("kpi_set_plan_status", { p_id: p.id, p_status: "active" }, prev ? `Version ${p.version} is live` : "Plan approved and active");
   }
 

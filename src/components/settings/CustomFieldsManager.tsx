@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Archive, Loader2, Plus, RotateCcw } from "lucide-react";
 import toast from "react-hot-toast";
@@ -43,7 +44,7 @@ export function CustomFieldsManager({ canEdit }: { canEdit: boolean }) {
 
   async function applyTemplate() {
     const t = templates.find(x => x.code === template);
-    if (!t || !window.confirm(`Add the ${t.name} fields to your records? Fields you already have are kept as they are.`)) return;
+    if (!t || !await confirmDialog(`Add the ${t.name} fields to your records? Fields you already have are kept as they are.`)) return;
     setBusy(true);
     const { data, error } = await supabase.rpc("apply_industry_template", { p_code: t.code });
     setBusy(false);

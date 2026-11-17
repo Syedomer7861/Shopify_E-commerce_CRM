@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -130,7 +131,7 @@ export default function AllDashboardsPage() {
                       {canManage && <button className={small} disabled={busy} onClick={() => copy(d)}><Copy className="w-3 h-3" /> {d.org_id ? "Duplicate" : "Use template"}</button>}
                       {canManage && d.org_id && d.status !== "archived" && <button className={small} onClick={() => setAssigning(d)}>Assign</button>}
                       {canManage && d.org_id && d.status !== "archived" && (
-                        <button className={small} disabled={busy} onClick={() => (assigns.length === 0 || window.confirm(`Archive "${d.name}"? ${peopleOn(d.id)} people go back to their role's home screen.`)) && run(supabase.from("dashboards").update({ status: "archived" }).eq("id", d.id), "Archived")}>Archive</button>
+                        <button className={small} disabled={busy} onClick={async () => (assigns.length === 0 || await confirmDialog(`Archive "${d.name}"? ${peopleOn(d.id)} people go back to their role's home screen.`)) && run(supabase.from("dashboards").update({ status: "archived" }).eq("id", d.id), "Archived")}>Archive</button>
                       )}
                       {canManage && d.org_id && d.status === "archived" && <button className={small} disabled={busy} onClick={() => run(supabase.from("dashboards").update({ status: d.version > 0 ? "published" : "draft" }).eq("id", d.id), "Restored")}>Restore</button>}
                     </div>

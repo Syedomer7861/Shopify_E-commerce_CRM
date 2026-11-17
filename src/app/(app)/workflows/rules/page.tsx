@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { GitBranch, Plus, Loader2, Trash2, AlertTriangle, Power } from "lucide-react";
 import { PageHeader, Modal, EmptyState, AccessDenied, Select } from "@/components/ui";
@@ -93,7 +94,7 @@ export default function RulesPage() {
   }
 
   async function remove(rule: Rule) {
-    if (!confirm(`Delete the rule "${rule.name}"? Its run history goes with it.`)) return;
+    if (!await confirmDialog(`Delete the rule "${rule.name}"? Its run history goes with it.`)) return;
     const { error } = await supabase.from("workflows").delete().eq("id", rule.id);
     if (error) toast.error(error.message);
     else setRules(prev => prev.filter(r => r.id !== rule.id));

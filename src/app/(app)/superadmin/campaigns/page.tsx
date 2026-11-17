@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Copy, Loader2, Megaphone, Plus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -41,7 +42,7 @@ function SpendPanel({ c, spend, onChange }: { c: Campaign; spend: Spend[]; onCha
   }
 
   async function remove(s: Spend) {
-    if (!window.confirm(`Delete ${formatMinor(s.amount_minor, c.currency)} on ${s.spend_date}?`)) return;
+    if (!await confirmDialog(`Delete ${formatMinor(s.amount_minor, c.currency)} on ${s.spend_date}?`)) return;
     const { error } = await supabase.rpc("platform_delete_spend", { p_id: s.id });
     if (error) return toast.error(error.message);
     onChange();

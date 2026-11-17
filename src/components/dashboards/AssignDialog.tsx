@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { X } from "lucide-react";
@@ -25,7 +26,7 @@ export function AssignDialog({ dashboard, dir, onClose, onChanged }: { dashboard
 
   async function add() {
     if (!key) return;
-    if (takenBy && !window.confirm(`This ${type} currently gets "${takenBy}". Move it to "${dashboard.name}"?`)) return;
+    if (takenBy && !await confirmDialog(`This ${type} currently gets "${takenBy}". Move it to "${dashboard.name}"?`)) return;
     setBusy(true);
     const { error } = await supabase.from("dashboard_assignments")
       .upsert({ org_id: dashboard.org_id, dashboard_id: dashboard.id, target_type: type, target_key: key }, { onConflict: "org_id,target_type,target_key" });

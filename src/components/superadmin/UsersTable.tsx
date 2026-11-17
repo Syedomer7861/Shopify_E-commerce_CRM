@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Loader2, LogOut, Ban, CheckCircle2, ShieldCheck, Users } from "lucide-react";
@@ -41,7 +42,7 @@ export function UsersTable({ orgId, showOrg = true }: { orgId?: string; showOrg?
     const who = u.email || u.name || "this user";
     const prompt = action === "suspend" ? `Suspend ${who}? They are signed out everywhere and cannot sign in until reactivated.`
       : action === "reactivate" ? `Let ${who} sign in again?` : `Sign ${who} out on every device?`;
-    if (!window.confirm(prompt)) return;
+    if (!await confirmDialog(prompt)) return;
     setBusyId(u.user_id);
     const { data, error } = action === "signout"
       ? await supabase.rpc("platform_force_sign_out", { p_user: u.user_id })

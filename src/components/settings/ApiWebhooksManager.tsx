@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Copy, KeyRound, Loader2, Plus, Trash2, Webhook } from "lucide-react";
 import toast from "react-hot-toast";
@@ -52,7 +53,7 @@ export function ApiWebhooksManager() {
     setKeyName(""); load();
   }
   async function revoke(k: Key) {
-    if (!window.confirm(`Revoke "${k.name}"? Anything using it stops working immediately.`)) return;
+    if (!await confirmDialog(`Revoke "${k.name}"? Anything using it stops working immediately.`)) return;
     const { error } = await supabase.from("api_keys").update({ revoked_at: new Date().toISOString() }).eq("id", k.id);
     if (error) return toast.error(error.message);
     load();
@@ -72,7 +73,7 @@ export function ApiWebhooksManager() {
     load();
   }
   async function deleteHook(h: Hook) {
-    if (!window.confirm(`Delete the webhook to ${h.url}?`)) return;
+    if (!await confirmDialog(`Delete the webhook to ${h.url}?`)) return;
     const { error } = await supabase.from("webhook_endpoints").delete().eq("id", h.id);
     if (error) return toast.error(error.message);
     load();

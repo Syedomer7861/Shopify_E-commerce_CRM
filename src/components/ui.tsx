@@ -139,10 +139,16 @@ export function Modal({
 }) {
   // Escape closes; the page behind stops scrolling while the dialog is open.
   const closeRef = useRef(onClose);
+  const boxRef = useRef<HTMLDivElement>(null);
   closeRef.current = onClose;
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeRef.current(); };
+    // Only the top-most dialog closes, so Escape on a confirm box leaves the pop-up under it open.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      const all = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+      if (all[all.length - 1] === boxRef.current) closeRef.current();
+    };
     // The app scrolls inside <main>, not <body>, so lock both.
     const els = [document.body, document.getElementById("main-application-content")].filter((el): el is HTMLElement => !!el);
     const prev = els.map(el => el.style.overflow);
@@ -152,7 +158,7 @@ export function Modal({
   }, [open]);
   if (!open) return null;
   return (
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
+    <div ref={boxRef} role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
       <div className="absolute inset-0 bg-[#1c1c1c]/40 backdrop-blur-[2px] transition-all" onClick={onClose} />
       <div className={cn("relative bg-white rounded-t-[22px] sm:rounded-[22px] shadow-2xl w-full animate-slide-up border border-[#ebece6] flex flex-col max-h-[92dvh] sm:max-h-[90dvh]", maxWidth)}>
         <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-[#f0f0ec] flex items-center justify-between gap-3 shrink-0">

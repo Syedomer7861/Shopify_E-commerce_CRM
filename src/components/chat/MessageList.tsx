@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -238,7 +239,7 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
 
                   <button
                     onClick={async () => {
-                      if (!confirm("Delete this message?")) return;
+                      if (!await confirmDialog("Delete this message?")) return;
                       const { error } = await supabase.from('messages').delete().eq('id', msg.id);
                       if (error) toast.error("Failed to delete message");
                       else setMessages(prev => prev.filter(m => m.id !== msg.id));

@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Sparkles, UserCheck } from "lucide-react";
 import toast from "react-hot-toast";
@@ -163,7 +164,7 @@ export function AssignmentsTab({ me, departments, designations, canManage, canAp
                   <button className={small} disabled={busy} onClick={() => update(a, { status: "ended", effective_to: a.effective_from > today() ? a.effective_from : today(), reason: "Dismissed" }, "Dismissed")}>Dismiss</button>
                 )}
                 {a.status === "active" && canManage && !self && (
-                  <button className={small} disabled={busy} onClick={() => window.confirm(`End ${p?.name ?? "this person"}'s plan today? It stays in history.`)
+                  <button className={small} disabled={busy} onClick={async () => await confirmDialog(`End ${p?.name ?? "this person"}'s plan today? It stays in history.`)
                     && update(a, { status: "ended", effective_to: a.effective_from > today() ? a.effective_from : today() }, "Plan ended")}>End</button>
                 )}
               </div>

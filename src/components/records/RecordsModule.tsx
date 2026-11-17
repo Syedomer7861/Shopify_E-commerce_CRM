@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Plus, Loader2, Download, Trash2, AlertTriangle, Pencil, Search } from "lucide-react";
 import { Modal, EmptyState, Select } from "@/components/ui";
@@ -171,7 +172,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
       const { data: dup } = await supabase.from(table).select("*").or(dupChecks.join(",")).limit(1);
       const hit = dup?.[0];
       const name = hit && (hit.name || hit.title || hit.subject || hit.email || hit.phone);
-      if (hit && !window.confirm(`A ${noun} with the same details already exists${name ? `: ${name}` : ""}. Add anyway?`)) {
+      if (hit && !await confirmDialog(`A ${noun} with the same details already exists${name ? `: ${name}` : ""}. Add anyway?`)) {
         setSaving(false);
         return;
       }
@@ -205,7 +206,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   }
 
   async function remove(row: RecordRow) {
-    if (!confirm(`Delete this ${noun}? This cannot be undone.`)) return;
+    if (!await confirmDialog(`Delete this ${noun}? This cannot be undone.`)) return;
     const { error } = await supabase.from(table).delete().eq("id", row.id);
     if (error) toast.error(error.message);
     else setRows(prev => prev.filter(r => r.id !== row.id));

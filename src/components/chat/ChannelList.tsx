@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Hash, MessageCircle, Search, Plus, Archive, Settings, MessageSquare, UserPlus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -210,7 +211,7 @@ export function ChannelList() {
                 <button 
                   onClick={async (e) => {
                     e.stopPropagation();
-                    if (!confirm("Are you sure you want to delete this conversation?")) return;
+                    if (!await confirmDialog("Are you sure you want to delete this conversation?")) return;
                     
                     try {
                       // Use API route instead of direct Supabase call to bypass RLS issues

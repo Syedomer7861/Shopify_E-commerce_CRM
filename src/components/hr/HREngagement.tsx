@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useState, useEffect } from "react";
 import { Star, BookOpen, AlertCircle, Plus, CheckCircle, Clock, X, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -178,7 +179,7 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
                         <p className="text-[10px] text-[#9a9a94]">{r.date}</p>
                         <div className="flex gap-3">
                           <button onClick={() => setEditReview({ id: r.id, rating: r.rating, feedback: r.feedback })} className="text-[10px] font-bold text-[#6f9bdd] hover:underline">Edit</button>
-                          <button onClick={() => { if(confirm("Delete this review?")) handleAction("review", { id: r.id }, "delete") }} className="text-[10px] font-bold text-rose-500 hover:underline">Delete</button>
+                          <button onClick={async () => { if(await confirmDialog("Delete this review?")) handleAction("review", { id: r.id }, "delete") }} className="text-[10px] font-bold text-rose-500 hover:underline">Delete</button>
                         </div>
                       </div>
                     </>

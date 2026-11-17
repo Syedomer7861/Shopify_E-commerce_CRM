@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -366,7 +367,7 @@ export default function SettingsPage() {
 
   const [waBusy, setWaBusy] = useState(false);
   const waAction = async (path: "restart" | "logout") => {
-    if (path === "logout" && !confirm("Unlink this WhatsApp number from the CRM? Automated WhatsApp messages stop until you scan again.")) return;
+    if (path === "logout" && !await confirmDialog("Unlink this WhatsApp number from the CRM? Automated WhatsApp messages stop until you scan again.")) return;
     setWaBusy(true);
     try {
       const res = await fetch(`/api/whatsapp/${path}`, { method: "POST" });
@@ -2873,8 +2874,8 @@ export default function SettingsPage() {
                         </p>
                      </div>
                      <button
-                      onClick={() => {
-                        if (confirm("Run phone number recovery? (Processes up to 100 records per run)")) {
+                      onClick={async () => {
+                        if (await confirmDialog("Run phone number recovery? (Processes up to 100 records per run)")) {
                           startSyncStream("/api/sync/unmask");
                         }
                       }}
@@ -3050,7 +3051,7 @@ export default function SettingsPage() {
                     <Sliders className="w-3.5 h-3.5" />
                   </button>
                   <button className="w-8 h-8 flex items-center justify-center bg-[#fcfbf8] border border-[#ebece6] rounded-lg text-rose-500 hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all shadow-sm" onClick={async () => {
-                     if (confirm("Permanently delete this product override?")) {
+                     if (await confirmDialog("Permanently delete this product override?")) {
                        await supabase.from("product_overrides").delete().eq("id", o.id);
                        await recalculateTasks(settings);
                        fetchSettings();

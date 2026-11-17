@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Save } from "lucide-react";
 import toast from "react-hot-toast";
@@ -37,7 +38,7 @@ export default function SuperAdminModules() {
   useEffect(() => { load(); }, [load]);
 
   async function toggleAvailable(m: Mod) {
-    if (!window.confirm(m.is_available
+    if (!await confirmDialog(m.is_available
       ? `Switch "${m.name}" off for every organisation? It closes for everyone at once; data is kept.`
       : `Make "${m.name}" available again? Plans and organisation settings decide who gets it.`)) return;
     const { error } = await supabase.rpc("platform_set_module_available", { p_key: m.key, p_available: !m.is_available });
@@ -49,7 +50,7 @@ export default function SuperAdminModules() {
   const allIncluded = included.length === 0;
 
   async function savePlan() {
-    if (!window.confirm("Save this plan's modules? Organisations currently on the plan get the change right away.")) return;
+    if (!await confirmDialog("Save this plan's modules? Organisations currently on the plan get the change right away.")) return;
     setBusy(true);
     const { error } = await supabase.rpc("platform_set_plan_modules", { p_plan: planId, p_keys: included });
     setBusy(false);

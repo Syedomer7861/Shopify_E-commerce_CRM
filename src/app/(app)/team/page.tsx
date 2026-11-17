@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useEffect, useState, useCallback } from "react";
 import { Shield, User, Loader2, Mail, Trash2, Edit2, UserPlus, CheckCircle2, XCircle, ShoppingBag, Users, MessageSquare, Eye, Search, Filter } from "lucide-react";
 import { PageHeader, Avatar, EmptyState, Modal } from "@/components/ui";
@@ -164,7 +165,7 @@ export default function TeamPage() {
   }
 
   async function handleRemoveMember(id: string) {
-    if (!confirm("Are you sure you want to remove this team member? This action will permanently delete their account and access. This cannot be undone.")) return;
+    if (!await confirmDialog("Are you sure you want to remove this team member? This action will permanently delete their account and access. This cannot be undone.")) return;
 
     const isDemo = isDemoMode();
     if (isDemo) {

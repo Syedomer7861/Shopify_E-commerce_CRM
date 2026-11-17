@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Gauge, Loader2, Lock } from "lucide-react";
@@ -149,7 +150,7 @@ export function KpiScorecard({ employeeId, viewer }: { employeeId: string; viewe
     load();
   }
   async function saveEvaluation(status: "draft" | "finalised") {
-    if (status === "finalised" && !window.confirm(`Finalise ${period.label}? The score is frozen and can't be changed afterwards.`)) return;
+    if (status === "finalised" && !await confirmDialog(`Finalise ${period.label}? The score is frozen and can't be changed afterwards.`)) return;
     setBusy(true);
     const row = {
       assignment_id: assignment!.id, employee_id: employeeId, period_start: period.from, period_end: period.to,
