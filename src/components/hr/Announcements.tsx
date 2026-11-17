@@ -1,4 +1,5 @@
 "use client";
+import { ActionButton } from "@/components/ui";
 import { useState, useEffect } from "react";
 import { Megaphone, Pin, Plus, Trash2, AlertTriangle, Info, Star, Bell, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -80,7 +81,7 @@ export default function Announcements({ announcements: dbAnnouncements, onRefres
   const add = () => {
     if (!newA.title || !newA.body) return;
     if (editId) {
-      handleAction({
+      return handleAction({
         id: editId,
         title: newA.title,
         body: newA.body,
@@ -89,7 +90,7 @@ export default function Announcements({ announcements: dbAnnouncements, onRefres
         author_name: newA.author
       }, "update");
     } else {
-      handleAction({
+      return handleAction({
         title: newA.title,
         body: newA.body,
         type: newA.type,
@@ -174,9 +175,9 @@ export default function Announcements({ announcements: dbAnnouncements, onRefres
             </div>
           </div>
           <div className="flex gap-3">
-            <button onClick={add} className="btn-primary text-xs px-6 py-2.5 gap-2 flex-1">
+            <ActionButton onClick={add} className="btn-primary text-xs px-6 py-2.5 gap-2 flex-1">
               <Megaphone className="w-3.5 h-3.5" /> {editId ? "Update Announcement" : "Post Announcement"}
-            </button>
+            </ActionButton>
             <button onClick={() => {
               setShowForm(false);
               setEditId(null);

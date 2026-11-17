@@ -709,7 +709,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
               </div>
               <div>
                 <label className="text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Email</label>
-                <input className="input w-full text-xs" placeholder="priya@company.com" value={newEmp.email}
+                <input type="email" inputMode="email" autoComplete="off" className="input w-full text-xs" placeholder="priya@company.com" value={newEmp.email}
                   onChange={e => setNewEmp(prev => ({ ...prev, email: e.target.value }))} />
               </div>
               <div>

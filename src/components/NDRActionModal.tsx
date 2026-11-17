@@ -334,7 +334,7 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
                   value={addressData.pincode}
                   onChange={e => setAddressData({...addressData, pincode: e.target.value})}
                 />
-                <input 
+                <input type="tel" inputMode="tel" 
                   placeholder="Secondary Phone" 
                   className="bg-[#f6f7f2] border border-[#ebece6] rounded-xl px-4 py-3.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all" 
                   value={addressData.phone}

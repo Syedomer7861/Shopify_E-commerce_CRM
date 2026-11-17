@@ -348,9 +348,9 @@ function CompanyDetails() {
       <label className="block text-xs font-medium text-[#3a3a36]">Legal name<input className="input mt-1" maxLength={160} value={d.legal_name} onChange={set("legal_name")} /></label>
       <div className="grid grid-cols-2 gap-3">
         <label className="block text-xs font-medium text-[#3a3a36]">GSTIN<input className="input mt-1" maxLength={15} value={d.gstin} onChange={set("gstin")} /></label>
-        <label className="block text-xs font-medium text-[#3a3a36]">Phone<input className="input mt-1" maxLength={40} value={d.phone} onChange={set("phone")} /></label>
+        <label className="block text-xs font-medium text-[#3a3a36]">Phone<input type="tel" inputMode="tel" autoComplete="tel" className="input mt-1" maxLength={40} value={d.phone} onChange={set("phone")} /></label>
       </div>
-      <label className="block text-xs font-medium text-[#3a3a36]">Email<input className="input mt-1" maxLength={160} value={d.email} onChange={set("email")} /></label>
+      <label className="block text-xs font-medium text-[#3a3a36]">Email<input type="email" inputMode="email" autoComplete="email" className="input mt-1" maxLength={160} value={d.email} onChange={set("email")} /></label>
       <label className="block text-xs font-medium text-[#3a3a36]">Address<textarea className="input mt-1 min-h-[60px]" maxLength={500} value={d.address} onChange={set("address")} /></label>
       <label className="block text-xs font-medium text-[#3a3a36]">Default terms on new quotes<textarea className="input mt-1 min-h-[80px]" maxLength={2000} value={d.quote_terms} onChange={set("quote_terms")} /></label>
       <button onClick={save} disabled={busy} className="btn-primary text-xs">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}</button>
