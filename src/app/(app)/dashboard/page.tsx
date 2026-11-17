@@ -1,7 +1,9 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { AlertTriangle, Clock, CheckCircle2, TrendingUp, Phone, RefreshCw, Sun, Moon, ChevronLeft, ChevronRight, Smartphone } from "lucide-react";
-import { StatCard, PageHeader, Avatar, Pagination } from "@/components/ui";
+import { AlertTriangle, Clock, CheckCircle2, TrendingUp, Phone, RefreshCw, ChevronLeft, ChevronRight, Smartphone, Flame, MessageSquareWarning, Truck, Timer, Siren } from "lucide-react";
+import { PageHeader, Avatar, Pagination } from "@/components/ui";
+import { HeroTile, Tile } from "@/components/dashboard/Tiles";
+import { OrgPulse } from "@/components/dashboard/OrgPulse";
 import TaskCard from "@/components/TaskCard";
 import dynamic from "next/dynamic";
 // Charts load after the page shell: the chart library is the heaviest thing here.
@@ -17,7 +19,8 @@ import AnnouncementFeed from "@/components/AnnouncementFeed";
 
 import { CallMonitor } from "@/components/CallMonitor";
 import { isDemoMode } from "@/lib/demo";
-import { allowedNavModules } from "@/lib/permissions";
+import { allowedNavModules, hasPermission } from "@/lib/permissions";
+import { can } from "@/lib/access";
 import { loadProfile } from "@/lib/profile-loader";
 import { WorkspaceHome } from "@/components/workspace/WorkspaceHome";
 
@@ -709,20 +712,10 @@ export default function Dashboard() {
     }
   }
 
-  const hour = new Date().getHours();
-  let greeting = "Good evening";
-  let Icon = Moon;
-  let iconClass = "text-[#1c1c1c] animate-float";
-
-  if (hour < 12) {
-    greeting = "Good morning";
-    Icon = Sun;
-    iconClass = "text-[#1c1c1c] animate-spin-slow";
-  } else if (hour < 17) {
-    greeting = "Good afternoon";
-    Icon = Sun;
-    iconClass = "text-[#1c1c1c] animate-pulse-slow";
-  }
+  const attention = counts.today + counts.overdue;
+  const seesOrg = hasPermission(profile, "manage_team") || can(profile, "organisation", "view") !== null;
+  // On-time share of today's queue: due today vs everything still open (today + overdue).
+  const onTimePct = attention > 0 ? (counts.today / attention) * 100 : 100;
 
   const lastWebhook = webhookLogs[0];
 
@@ -731,14 +724,13 @@ export default function Dashboard() {
       <PageHeader
         title={
           <div className="flex items-center gap-3">
-            <span>{greeting}, {profile?.name?.split(' ')[0]}</span>
-            <Icon className={cn("w-8 h-8", iconClass)} />
+            <span>Welcome back, {profile?.name?.split(' ')[0]}</span>
           </div>
         }
         subtitle={
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-1">
             <span className="text-gray-500 font-medium">
-              Today is {mounted ? new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" }) : "---"}
+              {attention > 0 ? `${attention} item${attention === 1 ? "" : "s"} need your attention` : "You're all caught up"} · {mounted ? new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" }) : "---"}
             </span>
             <div className="flex items-center gap-1.5 text-[#1c1c1c] font-bold bg-[#1c1c1c]/5 px-2.5 py-1 rounded-lg border border-[#1c1c1c]/10 w-fit">
               <Clock className="w-3.5 h-3.5" />
@@ -801,51 +793,28 @@ export default function Dashboard() {
       )}
 
 
-      {/* KPI Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
-        <StatCard 
-          label="Calls Today" 
-          value={counts.today} 
-          sub="Due now" 
-          variant="gradient"
-          icon={<Phone className="w-4 h-4" />}
-          href="/tasks?status=due" 
-        />
-        <StatCard 
-          label="Overdue" 
-          value={counts.overdue} 
-          sub="Needs attention" 
-          accent="text-red-600" 
-          variant="glass"
-          icon={<AlertTriangle className="w-4 h-4" />}
-          href="/tasks?status=overdue" 
-        />
-        <StatCard 
-          label="Done This Week" 
-          value={counts.doneThisWeek} 
-          sub="Calls completed" 
-          variant="glass"
-          icon={<CheckCircle2 className="w-4 h-4" />}
-          href="/tasks?status=done" 
-        />
-        <StatCard
-          label="Recovery Rate"
-          value={`${recoveryRate}%`}
-          sub={profile?.role === "agent" ? "My recovery tasks" : "Abandoned carts"}
-          variant="glass"
-          icon={<TrendingUp className="w-4 h-4" />}
-        />
+      {/* KPI tiles */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <HeroTile icon={<Phone className="w-4 h-4" />} label="Calls today" value={counts.today}
+          chip={`${counts.doneThisWeek} done`} sub="this week" href="/tasks?status=due" />
+        <Tile icon={<AlertTriangle className="w-4 h-4" />} label="Overdue" value={counts.overdue} sub="Needs attention" tone="coral"
+          href="/tasks?status=overdue" ring={{ pct: onTimePct, label: "on time" }} />
+        <Tile icon={<CheckCircle2 className="w-4 h-4" />} label="Done this week" value={counts.doneThisWeek} sub="Calls completed" tone="mint" href="/tasks?status=done" />
+        <Tile icon={<TrendingUp className="w-4 h-4" />} label="Recovery rate" value={`${recoveryRate}%`}
+          sub={profile?.role === "agent" ? "My recovery tasks" : "Abandoned carts"} ring={{ pct: recoveryRate, label: "recovered" }} />
       </div>
 
       {profile?.role === "admin" && (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6">
-        <StatCard label="Esc 1d+" value={escalations.medium} sub="Follow-up" accent="text-amber-600" href="/tasks?status=overdue" />
-        <StatCard label="Esc 3d+" value={escalations.high} sub="Review" accent="text-orange-600" href="/tasks?status=overdue" />
-        <StatCard label="Esc 7d+" value={escalations.critical} sub="Critical" accent="text-rose-700" href="/tasks?status=overdue" />
-        <StatCard label="Issue Flow" value={escalations.issues} sub="Problems" accent="text-rose-600" href="/tasks?type=issue_resolution" />
-        <StatCard label="NDR Comm" value={stats.activeNdr} sub="Shipping" accent="text-amber-600" href="/manager" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+        <Tile icon={<Timer className="w-4 h-4" />} label="Late 1 day+" value={escalations.medium} sub="Follow up" tone="amber" href="/tasks?status=overdue" />
+        <Tile icon={<Flame className="w-4 h-4" />} label="Late 3 days+" value={escalations.high} sub="Review" tone="amber" href="/tasks?status=overdue" />
+        <Tile icon={<Siren className="w-4 h-4" />} label="Late 7 days+" value={escalations.critical} sub="Critical" tone="coral" href="/tasks?status=overdue" />
+        <Tile icon={<MessageSquareWarning className="w-4 h-4" />} label="Issues" value={escalations.issues} sub="Problems open" tone="coral" href="/tasks?type=issue_resolution" />
+        <Tile icon={<Truck className="w-4 h-4" />} label="Delivery failed" value={stats.activeNdr} sub="NDR follow-ups" tone="amber" href="/manager" />
       </div>
       )}
+
+      {seesOrg && <OrgPulse />}
 
       {profile?.role === "agent" && agentMetrics && (
         <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">

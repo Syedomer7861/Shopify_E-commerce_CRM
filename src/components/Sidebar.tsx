@@ -20,6 +20,7 @@ import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { visibleModules } from "@/lib/modules";
 import { sendAdminNotification } from "@/lib/notifications";
 import { Modal } from "./ui";
+import { SidebarSections, type NavSection } from "./SidebarSections";
 import { ProfileSheet, UserAvatar } from "./ProfileSheet";
 import { useChat } from "@/context/ChatContext";
 
@@ -46,11 +47,10 @@ const nav: { key: string; label: string; href: string; icon: typeof LayoutDashbo
 // Operations, split into sub-groups in this order.
 const ADMIN_GROUPS = ["Organisation", "Insights", "Growth", "Admin"] as const;
 const adminNav: { label: string; href: string; icon: typeof LayoutDashboard; permission: string; group: (typeof ADMIN_GROUPS)[number]; ownerOnly?: boolean; module?: string }[] = [
-  { label: "Overview",    href: "/organisation/overview", icon: LayoutDashboard, permission: "manage_team", group: "Organisation", module: "organisation" },
   { label: "Structure & Hierarchy", href: "/organisation", icon: Network, permission: "manage_team", group: "Organisation" },
-  { label: "People",      href: "/team",        icon: Users,      permission: "manage_team", group: "Organisation" },
+  { label: "Team & Logins", href: "/team",      icon: Users,      permission: "manage_team", group: "Organisation" },
   { label: "Roles & Access", href: "/roles",    icon: Shield,     permission: "manage_team", group: "Organisation" },
-  { label: "Dashboards",  href: "/dashboards",  icon: LayoutGrid, permission: "manage_team", group: "Organisation", module: "organisation" },
+  { label: "Home Screens", href: "/dashboards", icon: LayoutGrid, permission: "manage_team", group: "Admin", module: "organisation" },
   { label: "Live Floor",  href: "/floor",       icon: Activity,    permission: "manage_team", group: "Insights" },
   { label: "Analytics",   href: "/reports",     icon: BarChart2, permission: "view_analytics", group: "Insights" },
   { label: "Abandoned Carts", href: "/abandoned-carts", icon: ShoppingCart, permission: "view_analytics", group: "Insights" },
@@ -65,7 +65,7 @@ const adminNav: { label: string; href: string; icon: typeof LayoutDashboard; per
 ];
 
 const hrNav = [
-  { label: "HR Dashboard", href: "/hr",           icon: LayoutDashboard },
+  { label: "HR Summary",   href: "/hr",           icon: LayoutDashboard },
   { label: "Agent Intelligence", href: "/hr?tab=agents", icon: ShieldCheck },
   { label: "Employees",    href: "/hr?tab=employees", icon: Users },
   { label: "Attendance",   href: "/hr?tab=attendance-reg", icon: Clock },
@@ -536,6 +536,58 @@ export default function Sidebar() {
     !modBlocked(item.module ?? item.href.slice(1));
   const adminGroups = ADMIN_GROUPS.map(g => ({ label: g, items: adminNav.filter(i => i.group === g && canSeeAdmin(i)) })).filter(g => g.items.length > 0);
 
+
+  // ── Desktop menu sections ────────────────────────────────────────────────
+  // Same links and the same visibility rules as before, grouped by job.
+  const showManager = (adminUser || profile?.role === "manager" || !!profile?.permissions?.audit_tasks) && !modBlocked("manager");
+  const showHr = (adminUser || profile?.role === "hr") && !modBlocked("hr");
+  const showSpaces = isWorkspaceAdmin(profile) || spaces.length > 0;
+  const tab = searchParams.get("tab");
+  const spaceParam = searchParams.get("space");
+  const allHrefs = [...visibleNav.map(n => n.href), ...adminNav.map(a => a.href)];
+  // Most specific link wins: /workflows/rules doesn't also light up /workflows.
+  const isActive = (href: string) => {
+    const [base, q] = href.split("?");
+    if (q) {
+      const want = new URLSearchParams(q);
+      if (want.has("tab")) return path === base && tab === want.get("tab");
+      if (want.has("space")) return path === base && spaceParam === want.get("space");
+    }
+    if (base === "/hr") return path === "/hr" && !tab;
+    if (base === "/workspace") return path === "/workspace" && !spaceParam;
+    if (path === base) return true;
+    return base !== "/" && path.startsWith(base + "/") && !allHrefs.some(o => o !== base && o.startsWith(base + "/") && (path === o || path.startsWith(o + "/")));
+  };
+  const L = (label: string, href: string, icon?: typeof LayoutDashboard, badge?: number) => ({ label, href, icon, badge, active: isActive(href) });
+  const fromNav = (keys: string[]) => visibleNav.filter(n => keys.includes(n.key))
+    .map(n => L(n.label, n.href, n.icon, n.badge === "taskCount" ? totalTasks : n.badge === "chatUnread" ? unreadCount : undefined));
+  const fromAdmin = (hrefs: string[]) => adminNav.filter(a => hrefs.includes(a.href) && canSeeAdmin(a)).map(a => L(a.label, a.href, a.icon));
+  const hrItem = (label: string) => hrNav.filter(h => h.label === label).map(h => L(h.label, h.href, h.icon));
+  const sections: NavSection[] = [
+    { key: "home", label: null, items: fromNav(["dashboard", "tasks", "chat", "calendar", "my-hub"]) },
+    { key: "sales", label: "Sales & customers", items: [...fromNav(["customers", "orders", "leads", "quotes", "field", "performance"]), ...fromAdmin(["/abandoned-carts"])] },
+    { key: "ops", label: "Operations", items: fromNav(["requests", "request-creative", "approvals", "service-desk", "finance", "rules"]) },
+    { key: "work", label: "Workspace", items: showSpaces ? [
+      L("My Work", "/workspace/my", Sparkles), L("Workload", "/workspace/workload", Gauge),
+      ...spaces.map(sp => ({ label: sp.name, href: `/workspace?space=${sp.id}`, dot: sp.color, active: isActive(`/workspace?space=${sp.id}`) })),
+      L("All Spaces", "/workspace", LayoutDashboard),
+    ] : [] },
+    { key: "people", label: "People & HR", items: [
+      ...(showManager ? managerNav.map(m => L(m.label, m.href, m.icon)) : []),
+      ...(showHr ? ["HR Summary", "Employees", "Attendance", "Payroll", "Documents", "Announcements", "Engagement", "Agent Intelligence", "Calculator"].flatMap(hrItem) : []),
+      ...fromNav(["kpi"]),
+    ] },
+    { key: "org", label: "Organisation", items: fromAdmin(["/organisation", "/team", "/roles"]) },
+    { key: "insights", label: "Reports", items: fromAdmin(["/reports", "/floor", "/recordings", "/admin-logs"]) },
+    { key: "growth", label: "Marketing", items: fromAdmin(["/campaigns", "/templates", "/workflows", "/import"]) },
+    { key: "admin", label: "Admin", items: [...fromNav(["apps"]), ...fromAdmin(["/dashboards", "/settings", "/system-health"]), ...fromNav(["superadmin"])] },
+  ];
+  // Anything visible that no section above claimed still gets shown, so no page goes missing.
+  const placed = new Set(sections.flatMap(x => x.items.map(i => i.href)));
+  const leftovers = [...visibleNav.filter(n => !placed.has(n.href)).map(n => L(n.label, n.href, n.icon)),
+    ...adminNav.filter(a => canSeeAdmin(a) && !placed.has(a.href)).map(a => L(a.label, a.href, a.icon))];
+  if (leftovers.length) sections.splice(sections.length - 1, 0, { key: "more", label: "More", items: leftovers });
+
   const statusDot = ({ online: "bg-emerald-500", meeting: "bg-sky-500", training: "bg-sky-500", break: "bg-amber-500", lunch: "bg-amber-500", away: "bg-orange-500" } as Record<string, string>)[profile?.status || ""] || "bg-gray-400";
   const shiftStartLabel = shiftStart && mounted ? shiftStart.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "--:--";
 
@@ -560,9 +612,9 @@ export default function Sidebar() {
 
       <nav className="flex-1 px-1 lg:px-4 py-2 lg:py-8 space-y-0 lg:space-y-1.5 overflow-y-auto overflow-x-hidden flex flex-col items-center lg:items-stretch gap-1 lg:gap-0 scrollbar-hide">
         {navGroups.map((g, gi) => (
-          <div key={g.key} className="contents lg:flex lg:flex-col lg:gap-0.5">
+          <div key={g.key} className="contents">
             {/* Desktop: a small group label. Phones: a thin divider, only where the group has an item shown on phones. */}
-            <div className={cn("hidden lg:block text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-2", gi > 0 && "pt-6")}>{g.label}</div>
+            <div className={cn("hidden text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-2", gi > 0 && "pt-6")}>{g.label}</div>
             {gi > 0 && g.items.some(i => !i.desktopOnly) && <div aria-hidden className="lg:hidden w-8 h-px bg-[#1c1c1c]/10 my-1.5 flex-shrink-0" />}
         {g.items.map(({ label, href, icon: Icon, badge, desktopOnly }) => {
           const active = path === href || (href !== "/" && path.startsWith(href));
@@ -570,7 +622,7 @@ export default function Sidebar() {
 
           return (
             <Link key={href} href={href} className={cn(
-              desktopOnly ? "hidden lg:flex" : "flex",
+              desktopOnly ? "hidden" : "flex lg:hidden",
               "flex-col lg:flex-row items-center gap-0.5 lg:gap-3 px-1 lg:px-4 py-1.5 lg:py-2.5 rounded-xl lg:rounded-lg text-[9px] lg:text-sm font-bold lg:font-medium transition-all duration-200 group relative whitespace-nowrap w-14 lg:w-auto flex-shrink-0",
               active 
                 ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" 
@@ -604,107 +656,7 @@ export default function Sidebar() {
           <span>More</span>
         </button>
 
-        {/* Desktop-only Secondary Menus (Hidden on mobile nav, moved to More menu) */}
-        {(adminUser || profile?.role === "hr" || profile?.role === "manager" || profile?.role === "marketing" || (profile?.permissions && Object.values(profile.permissions).some(v => v))) && (
-          <div className="hidden lg:flex flex-col border-t lg:mt-4 border-[#eceae4]">
-            {(adminUser || profile?.role === "manager" || profile?.permissions?.audit_tasks) && !modBlocked("manager") && (
-              <>
-                <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Management</div>
-                {managerNav.map((item) => {
-                  const active = path === item.href;
-                  return (
-                    <Link key={item.label} href={item.href} className={cn(
-                      "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
-                      active ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
-                    )}>
-                      <item.icon className={cn("w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-105", active ? "text-[#fcfbf8]" : "text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]")} />
-                      <span className="flex-1">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </>
-            )}
-
-            {(adminUser || profile?.role === "hr") && !modBlocked("hr") && (
-              <>
-                <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Human Capital</div>
-                {hrNav.map((item) => {
-                  const itemTab = item.href.includes("?") ? new URLSearchParams(item.href.split("?")[1]).get("tab") : null;
-                  const currentTab = searchParams.get("tab");
-                  const active = itemTab ? (path === "/hr" && currentTab === itemTab) : (path === "/hr" && !currentTab);
-                  return (
-                    <Link key={item.href} href={item.href} className={cn(
-                      "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
-                      active ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
-                    )}>
-                      <item.icon className={cn("w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-105", active ? "text-[#fcfbf8]" : "text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]")} />
-                      <span className="flex-1">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </>
-            )}
-
-            {(isWorkspaceAdmin(profile) || spaces.length > 0) && (
-              <>
-                <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-3 pt-8">Workspace</div>
-                <Link href="/workspace/my" className={cn(
-                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
-                  path === "/workspace/my" ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
-                )}>
-                  <Sparkles className="w-4 h-4 flex-shrink-0 text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]" />
-                  <span className="flex-1">My Work</span>
-                </Link>
-                <Link href="/workspace/workload" className={cn(
-                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
-                  path === "/workspace/workload" ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
-                )}>
-                  <Gauge className="w-4 h-4 flex-shrink-0 text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]" />
-                  <span className="flex-1">Workload</span>
-                </Link>
-                {spaces.map((s) => {
-                  const active = path === "/workspace" && searchParams.get("space") === s.id;
-                  return (
-                    <Link key={s.id} href={`/workspace?space=${s.id}`} className={cn(
-                      "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
-                      active ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
-                    )}>
-                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: s.color ?? "#8b8b8b" }} />
-                      <span className="flex-1">{s.name}</span>
-                    </Link>
-                  );
-                })}
-                <Link href="/workspace" className={cn(
-                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
-                  path === "/workspace" && !searchParams.get("space") ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
-                )}>
-                  <LayoutDashboard className="w-4 h-4 flex-shrink-0 text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]" />
-                  <span className="flex-1">All Spaces</span>
-                </Link>
-              </>
-            )}
-
-            {adminGroups.map(g => (
-              <div key={g.label} className="flex flex-col gap-0.5">
-            <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-2 pt-6">{g.label}</div>
-            {g.items.map((item) => {
-              const { label, href, icon: Icon } = item;
-              // Most specific link wins: /organisation/overview doesn't also light up /organisation.
-              const active = path === href || (href !== "/" && path.startsWith(href + "/") && !g.items.some(o => o.href !== href && o.href.startsWith(href) && path.startsWith(o.href)));
-              return (
-                <Link key={href} href={href} className={cn(
-                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
-                  active ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" : "text-[#5f5f5d] hover:bg-[rgba(28,28,28,0.04)] hover:text-[#1c1c1c]"
-                )}>
-                  <Icon className={cn("w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-105", active ? "text-[#fcfbf8]" : "text-[#5f5f5d]/60 group-hover:text-[#1c1c1c]")} />
-                  <span className="flex-1">{label}</span>
-                </Link>
-              );
-            })}
-              </div>
-            ))}
-          </div>
-        )}
+        <SidebarSections sections={sections} />
       </nav>
 
       {/* Phone rail footer: who is signed in, shift status and today's productive time. Tap for the full menu. */}
