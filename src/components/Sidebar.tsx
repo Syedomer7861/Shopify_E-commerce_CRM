@@ -43,8 +43,9 @@ const nav: { key: string; label: string; href: string; icon: typeof LayoutDashbo
 ];
 
 // Operations, split into sub-groups in this order.
-const ADMIN_GROUPS = ["Insights", "Growth", "Admin"] as const;
-const adminNav: { label: string; href: string; icon: typeof LayoutDashboard; permission: string; group: (typeof ADMIN_GROUPS)[number]; ownerOnly?: boolean }[] = [
+const ADMIN_GROUPS = ["Organisation", "Insights", "Growth", "Admin"] as const;
+const adminNav: { label: string; href: string; icon: typeof LayoutDashboard; permission: string; group: (typeof ADMIN_GROUPS)[number]; ownerOnly?: boolean; module?: string }[] = [
+  { label: "Organisation Dashboard", href: "/organisation/overview", icon: LayoutDashboard, permission: "manage_team", group: "Organisation", module: "organisation" },
   { label: "Live Floor",  href: "/floor",       icon: Activity,    permission: "manage_team", group: "Insights" },
   { label: "Analytics",   href: "/reports",     icon: BarChart2, permission: "view_analytics", group: "Insights" },
   { label: "Abandoned Carts", href: "/abandoned-carts", icon: ShoppingCart, permission: "view_analytics", group: "Insights" },
@@ -54,9 +55,9 @@ const adminNav: { label: string; href: string; icon: typeof LayoutDashboard; per
   { label: "Campaigns",   href: "/campaigns",   icon: Megaphone,  permission: "manage_team", group: "Growth" },
   { label: "Templates",   href: "/templates",   icon: Sparkles,   permission: "manage_team", group: "Growth" },
   { label: "Workflows",   href: "/workflows",   icon: Zap,        permission: "manage_team", group: "Growth" },
-  { label: "Team",        href: "/team",        icon: Shield,     permission: "manage_team", group: "Admin" },
-  { label: "Roles",       href: "/roles",       icon: UserCheck,  permission: "manage_team", group: "Admin" },
-  { label: "Organisation", href: "/organisation", icon: Users,    permission: "manage_team", group: "Admin" },
+  { label: "Organisation", href: "/organisation", icon: Users,    permission: "manage_team", group: "Organisation" },
+  { label: "Team",        href: "/team",        icon: Shield,     permission: "manage_team", group: "Organisation" },
+  { label: "Roles",       href: "/roles",       icon: UserCheck,  permission: "manage_team", group: "Organisation" },
   { label: "System Health", href: "/system-health", icon: Activity, permission: "manage_team", ownerOnly: true, group: "Admin" },
   { label: "Settings",    href: "/settings",    icon: Settings,   permission: "manage_team", group: "Admin" },
 ];
@@ -530,7 +531,7 @@ export default function Sidebar() {
     !(item.label === "Alert Logs" && !adminUser) &&
     !(item.ownerOnly && !profile?.is_platform_admin) &&
     !(item.permission && !hasPermission(profile, item.permission as any)) &&
-    !modBlocked(item.href.slice(1));
+    !modBlocked(item.module ?? item.href.slice(1));
   const adminGroups = ADMIN_GROUPS.map(g => ({ label: g, items: adminNav.filter(i => i.group === g && canSeeAdmin(i)) })).filter(g => g.items.length > 0);
 
   const statusDot = ({ online: "bg-emerald-500", meeting: "bg-sky-500", training: "bg-sky-500", break: "bg-amber-500", lunch: "bg-amber-500", away: "bg-orange-500" } as Record<string, string>)[profile?.status || ""] || "bg-gray-400";
@@ -686,7 +687,8 @@ export default function Sidebar() {
             <div className="text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-2 pt-6">{g.label}</div>
             {g.items.map((item) => {
               const { label, href, icon: Icon } = item;
-              const active = path === href || (href !== "/" && path.startsWith(href));
+              // Most specific link wins: /organisation/overview doesn't also light up /organisation.
+              const active = path === href || (href !== "/" && path.startsWith(href + "/") && !g.items.some(o => o.href !== href && o.href.startsWith(href) && path.startsWith(o.href)));
               return (
                 <Link key={href} href={href} className={cn(
                   "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative whitespace-nowrap",
