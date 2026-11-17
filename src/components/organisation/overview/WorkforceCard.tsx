@@ -16,7 +16,7 @@ const DIMS = [
   { key: "employment_status", label: "Status" },
 ] as const;
 // Same series colours the app's other charts use (CourierPerformance), then ink.
-const COLORS = ["#55c08f", "#a9c92a", "#f0b43c", "#6b6b67", "#8fb3e8", "#ef8a7c", "#1c1c1c"];
+const COLORS = ["#55c08f", "var(--accent-dark)", "#f0b43c", "#6b6b67", "#8fb3e8", "#ef8a7c", "#1c1c1c"];
 const UNSET = "#d6d3cc";
 const MAX_SLICES = 6;
 

@@ -12,7 +12,7 @@ type Props = {
 
 const TYPE_COLOR: Record<string, string> = {
   not_started: "#8b8b8b",
-  active: "#a9c92a",
+  active: "var(--accent-dark)",
   done: "#55c08f",
 };
 

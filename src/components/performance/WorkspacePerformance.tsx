@@ -334,7 +334,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
                   <XAxis dataKey="date" tick={{ fontSize: 9, fontWeight: 700, fill: "#5f5f5d" }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 9, fontWeight: 700, fill: "#5f5f5d" }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ background: "#1c1c1c", border: "none", borderRadius: 8, fontSize: 10 }} itemStyle={{ color: "#fcfbf8" }} labelStyle={{ color: "#fcfbf8" }} />
-                  <Bar dataKey="Hours" fill="#a9c92a" radius={[4, 4, 0, 0]} barSize={14} />
+                  <Bar dataKey="Hours" fill="var(--accent-dark)" radius={[4, 4, 0, 0]} barSize={14} />
                   <Bar dataKey="Done" fill="#55c08f" radius={[4, 4, 0, 0]} barSize={14} />
                 </BarChart>
               </ResponsiveContainer>

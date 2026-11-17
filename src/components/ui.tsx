@@ -108,7 +108,7 @@ export function StatCard({
 export function EmptyState({ icon, title, desc }: { icon: React.ReactNode; title: string; desc?: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-14 h-14 rounded-full bg-[#e6f5a6] flex items-center justify-center mb-4 text-[#1c1c1c]">{icon}</div>
+      <div className="w-14 h-14 rounded-full bg-[color:var(--accent-3)] flex items-center justify-center mb-4 text-[#1c1c1c]">{icon}</div>
       <div className="text-sm font-bold text-[#1c1c1c]">{title}</div>
       {desc && <div className="text-xs text-[#5f5f5d] mt-1.5 max-w-[240px] leading-relaxed">{desc}</div>}
     </div>
@@ -163,7 +163,7 @@ export function Modal({
       <div className={cn("relative bg-white rounded-t-[22px] sm:rounded-[22px] shadow-2xl w-full animate-slide-up border border-[#ebece6] flex flex-col max-h-[92dvh] sm:max-h-[90dvh]", maxWidth)}>
         <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-[#f0f0ec] flex items-center justify-between gap-3 shrink-0">
           <h3 className="section-title text-sm min-w-0">{title}</h3>
-          <button type="button" onClick={onClose} aria-label="Close" className="w-9 h-9 shrink-0 rounded-full hover:bg-[#e6f5a6] flex items-center justify-center text-[#5f5f5d] hover:text-[#1c1c1c] transition-colors">✕</button>
+          <button type="button" onClick={onClose} aria-label="Close" className="w-9 h-9 shrink-0 rounded-full hover:bg-[color:var(--accent-3)] flex items-center justify-center text-[#5f5f5d] hover:text-[#1c1c1c] transition-colors">✕</button>
         </div>
         <div className="px-5 sm:px-6 py-5 sm:py-6 overflow-y-auto min-h-0 flex-1 overscroll-contain">{children}</div>
         {footer && <div className="px-5 sm:px-6 py-4 sm:py-5 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5 border-t border-[#f0f0ec] flex flex-wrap items-center justify-end gap-3 bg-[#fafaf7] sm:rounded-b-[22px] shrink-0">{footer}</div>}

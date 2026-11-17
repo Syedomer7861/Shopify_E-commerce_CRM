@@ -27,7 +27,7 @@ const tip = { fontSize: 11, borderRadius: 12, border: "1px solid #ebece6", boxSh
 const Empty = ({ text }: { text: string }) => <p className="text-xs text-[#6b6b67] py-10 text-center">{text}</p>;
 const Head = ({ icon: I, title, note }: { icon: typeof Users; title: string; note?: string }) => (
   <div className="flex items-center justify-between gap-2 mb-3">
-    <h3 className="text-sm font-bold text-[#1c1c1c] flex items-center gap-2"><span className="w-7 h-7 rounded-full bg-[#e6f5a6] flex items-center justify-center"><I className="w-3.5 h-3.5" /></span>{title}</h3>
+    <h3 className="text-sm font-bold text-[#1c1c1c] flex items-center gap-2"><span className="w-7 h-7 rounded-full bg-[color:var(--accent-3)] flex items-center justify-center"><I className="w-3.5 h-3.5" /></span>{title}</h3>
     {note && <span className="text-[10px] font-semibold text-[#6b6b67] whitespace-nowrap">{note}</span>}
   </div>
 );
@@ -48,7 +48,7 @@ export function OrdersInsights({ stats, loading }: { stats: Record<"delivered" |
 
   const split = [
     { label: "Delivered", n: stats.delivered, color: "#55c08f" },
-    { label: "In transit", n: stats.in_transit + stats.out_for_delivery, color: "#c3e33a" },
+    { label: "In transit", n: stats.in_transit + stats.out_for_delivery, color: "var(--accent)" },
     { label: "Pending", n: stats.pending, color: "#f0b43c" },
     { label: "RTO / failed", n: stats.rto + stats.failed, color: "#ef8a7c" },
   ].filter(s => s.n > 0);
@@ -67,7 +67,7 @@ export function OrdersInsights({ stats, loading }: { stats: Record<"delivered" |
           <div className="h-44">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={daily} margin={{ top: 6, right: 4, left: 4, bottom: 0 }}>
-                <defs><linearGradient id="ord" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#c3e33a" stopOpacity={0.55} /><stop offset="1" stopColor="#c3e33a" stopOpacity={0} /></linearGradient></defs>
+                <defs><linearGradient id="ord" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--accent)" stopOpacity={0.55} /><stop offset="1" stopColor="var(--accent)" stopOpacity={0} /></linearGradient></defs>
                 <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#8a8a86" }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={18} />
                 <Tooltip contentStyle={tip} formatter={(v: number) => [v, "Orders"]} />
                 <Area type="monotone" dataKey="n" stroke="#1c1c1c" strokeWidth={2} fill="url(#ord)" animationDuration={800} />
@@ -110,7 +110,7 @@ export function OrdersInsights({ stats, loading }: { stats: Record<"delivered" |
   );
 }
 
-const SEG_COLORS = ["#c3e33a", "#55c08f", "#f0b43c", "#ef8a7c", "#1c1c1c", "#8fb3e8", "#b9a3e3", "#d6d3cc"];
+const SEG_COLORS = ["var(--accent)", "#55c08f", "#f0b43c", "#ef8a7c", "#1c1c1c", "#8fb3e8", "#b9a3e3", "#d6d3cc"];
 
 export function CustomersInsights() {
   const sb = useMemo(() => createClient(), []);
@@ -152,7 +152,7 @@ export function CustomersInsights() {
                 <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#8a8a86" }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={tip} cursor={{ fill: "#f6f7f2" }} formatter={(v: number) => [v, "New customers"]} labelFormatter={l => `Week of ${l}`} />
                 <Bar dataKey="n" radius={[8, 8, 8, 8]} animationDuration={800}>
-                  {weeks.map((w, i) => <Cell key={w.label} fill={i === weeks.length - 1 ? "#c3e33a" : "#1c1c1c"} />)}
+                  {weeks.map((w, i) => <Cell key={w.label} fill={i === weeks.length - 1 ? "var(--accent)" : "#1c1c1c"} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -187,7 +187,7 @@ export function CustomersInsights() {
 
 const OUTCOMES = [
   { key: "done", label: "Completed", color: "#55c08f" },
-  { key: "whatsapp", label: "WhatsApp", color: "#c3e33a" },
+  { key: "whatsapp", label: "WhatsApp", color: "var(--accent)" },
   { key: "rescheduled", label: "Rescheduled", color: "#f0b43c" },
   { key: "no_answer", label: "No answer", color: "#ef8a7c" },
   { key: "skipped", label: "Skipped", color: "#d6d3cc" },
@@ -235,7 +235,7 @@ export function CallsInsights() {
                 <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#8a8a86" }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={18} />
                 <Tooltip contentStyle={tip} cursor={{ fill: "#f6f7f2" }} formatter={(v: number) => [v, "Calls"]} />
                 <Bar dataKey="n" radius={[8, 8, 8, 8]} animationDuration={800}>
-                  {daily.map((d, i) => <Cell key={d.label} fill={i === daily.length - 1 ? "#c3e33a" : "#1c1c1c"} />)}
+                  {daily.map((d, i) => <Cell key={d.label} fill={i === daily.length - 1 ? "var(--accent)" : "#1c1c1c"} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

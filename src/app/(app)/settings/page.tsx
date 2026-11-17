@@ -3,7 +3,7 @@ import { confirmDialog } from "@/components/ConfirmDialog";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CloudUpload, CheckCircle2, WifiOff, ShoppingBag, Zap, Mail, Check, ShieldCheck, ListPlus, FileInput, KeyRound, GitBranch } from "lucide-react";
+import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CloudUpload, CheckCircle2, WifiOff, ShoppingBag, Zap, Mail, Check, ShieldCheck, ListPlus, FileInput, KeyRound, GitBranch, Palette } from "lucide-react";
 import { PageHeader, Modal, SyncProgressBar } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn, toDbDateString } from "@/lib/utils";
@@ -16,6 +16,7 @@ import { TwoFactorCard } from "@/components/auth/TwoFactorCard";
 import { CustomFieldsManager } from "@/components/settings/CustomFieldsManager";
 import { WebFormsManager } from "@/components/settings/WebFormsManager";
 import { ApiWebhooksManager } from "@/components/settings/ApiWebhooksManager";
+import { AppearanceManager } from "@/components/settings/AppearanceManager";
 import { Settings, ProductOverride } from "@/types";
 
 interface PipelineItem {
@@ -37,7 +38,7 @@ interface PipelineState {
   waiting: PipelineItem[];
 }
 
-type Tab = "general" | "fields" | "forms" | "api" | "security" | "telephony" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database" | "backup" | "devtools";
+type Tab = "general" | "appearance" | "fields" | "forms" | "api" | "security" | "telephony" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database" | "backup" | "devtools";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -1142,6 +1143,7 @@ export default function SettingsPage() {
       <div className="flex border-b border-[#ebece6] mb-8 gap-0 overflow-x-auto scroller-hide">
         {[
           { key: "general", label: "Preferences", icon: Sliders },
+          { key: "appearance", label: "Appearance", icon: Palette },
           { key: "fields", label: "Custom Fields", icon: ListPlus },
           { key: "forms", label: "Web Forms", icon: FileInput },
           { key: "api", label: "API & Webhooks", icon: KeyRound },
@@ -1165,6 +1167,7 @@ export default function SettingsPage() {
         ))}
       </div>
 
+      {tab === "appearance" && <AppearanceManager />}
       {tab === "fields" && <CustomFieldsManager canEdit={isAdmin(profile)} />}
       {tab === "forms" && <WebFormsManager />}
       {tab === "api" && <ApiWebhooksManager />}

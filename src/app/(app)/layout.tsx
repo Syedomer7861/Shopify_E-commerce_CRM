@@ -15,6 +15,7 @@ import { ProfileProvider } from "@/hooks/useCurrentProfile";
 import { PlatformNotices } from "@/components/PlatformNotices";
 import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
 import { DialogHost } from "@/components/ConfirmDialog";
+import { OrgThemeApplier } from "@/components/OrgTheme";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
@@ -29,6 +30,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <ChatProvider>
       <div className="app-ui flex flex-col lg:flex-row h-[100dvh] overflow-hidden bg-[#f2f3ee]">
         <AgentHeartbeat />
+        <OrgThemeApplier />
         <ModuleGuard />
         <MfaGate />
         <SuspendedGate />

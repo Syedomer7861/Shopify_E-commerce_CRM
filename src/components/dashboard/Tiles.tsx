@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  * opens a page. The hero variant is the dark card with a lime glow.
  */
 export const TONES = {
-  lime: { chip: "bg-[#e6f5a6] text-[#1c1c1c]", ring: "#c3e33a" },
+  lime: { chip: "bg-[color:var(--accent-3)] text-[#1c1c1c]", ring: "var(--accent)" },
   coral: { chip: "bg-[#fde3df] text-[#d6503f]", ring: "#ef8a7c" },
   mint: { chip: "bg-[#dcf2e7] text-[#1f7a55]", ring: "#55c08f" },
   amber: { chip: "bg-[#fdf0d2] text-[#b7791f]", ring: "#f0b43c" },
@@ -58,7 +58,7 @@ export function Spark({ data, tone = "lime" }: { data: number[]; tone?: Tone }) 
     </svg>
   );
 }
-const TREND = { up: "bg-[#e6f5a6] text-[#3d5208]", down: "bg-[#fde3df] text-[#b5402f]", flat: "bg-[#efefea] text-[#6b6b67]" };
+const TREND = { up: "bg-[color:var(--accent-3)] text-[#3d5208]", down: "bg-[#fde3df] text-[#b5402f]", flat: "bg-[#efefea] text-[#6b6b67]" };
 
 function Shell({ href, className, children }: { href?: string; className: string; children: React.ReactNode }) {
   return href ? <Link href={href} className={cn(className, "group")}>{children}</Link> : <div className={className}>{children}</div>;
@@ -89,16 +89,16 @@ export function Tile({ icon, label, value, sub, href, tone = "lime", ring, class
 export function HeroTile({ icon, label, value, chip, sub, href, className }: { icon: React.ReactNode; label: string; value: React.ReactNode; chip?: React.ReactNode; sub?: React.ReactNode; href?: string; className?: string }) {
   return (
     <Shell href={href} className={cn("relative block overflow-hidden rounded-[20px] p-5 bg-[#151515] text-white shadow-lg transition-transform hover:-translate-y-0.5", className)}>
-      <div aria-hidden className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-[#c3e33a]/20 blur-3xl" />
+      <div aria-hidden className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-[color:color-mix(in_srgb,var(--accent)_20%,transparent)] blur-3xl" />
       <div className="relative flex items-center gap-2.5">
-        <span className="w-9 h-9 rounded-full bg-[#d6ef6a] text-[#151515] flex items-center justify-center flex-shrink-0">{icon}</span>
+        <span className="w-9 h-9 rounded-full bg-[color:var(--accent-2)] text-[#151515] flex items-center justify-center flex-shrink-0">{icon}</span>
         <span className="text-[13px] font-semibold flex-1 truncate">{label}</span>
         {href && <span className="w-7 h-7 rounded-full border border-white/15 flex items-center justify-center text-white/70 group-hover:bg-white group-hover:text-[#151515] transition-colors"><ArrowUpRight className="w-3.5 h-3.5" /></span>}
       </div>
       <div className="relative mt-4 text-[32px] leading-none font-bold tracking-tight tabular-nums">{value}</div>
       {(chip || sub) && (
         <div className="relative mt-3 flex items-center gap-2 text-xs text-white/60">
-          {chip && <span className="px-2 py-0.5 rounded-md bg-[#d6ef6a] text-[#151515] font-bold text-[11px]">{chip}</span>}
+          {chip && <span className="px-2 py-0.5 rounded-md bg-[color:var(--accent-2)] text-[#151515] font-bold text-[11px]">{chip}</span>}
           {sub}
         </div>
       )}

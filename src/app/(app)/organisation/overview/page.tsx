@@ -40,7 +40,7 @@ const ENTITY: Record<string, { icon: typeof Users; tone: Tone; noun: string }> =
   kpi_plans: { icon: Gauge, tone: "lime", noun: "KPI plan" }, kpi_assignments: { icon: Gauge, tone: "lime", noun: "KPI assignment" }, kpi_templates: { icon: Gauge, tone: "lime", noun: "KPI template" },
   settings: { icon: SlidersHorizontal, tone: "ink", noun: "settings" }, organizations: { icon: Building2, tone: "ink", noun: "organisation" },
 };
-const CHIP: Record<Tone, string> = { lime: "bg-[#e6f5a6] text-[#1c1c1c]", coral: "bg-[#fde3df] text-[#d6503f]", mint: "bg-[#dcf2e7] text-[#1f7a55]", amber: "bg-[#fdf0d2] text-[#b7791f]", ink: "bg-[#ecece8] text-[#1c1c1c]" };
+const CHIP: Record<Tone, string> = { lime: "bg-[color:var(--accent-3)] text-[#1c1c1c]", coral: "bg-[#fde3df] text-[#d6503f]", mint: "bg-[#dcf2e7] text-[#1f7a55]", amber: "bg-[#fdf0d2] text-[#b7791f]", ink: "bg-[#ecece8] text-[#1c1c1c]" };
 const VERB: Record<string, string> = { insert: "Added", update: "Updated", delete: "Removed" };
 function sentence(a: AuditRow) {
   const raw = a.summary || a.action.replace(/_/g, " ");
@@ -143,19 +143,19 @@ export default function OrganisationOverviewPage() {
           <div className="grid gap-4 lg:grid-cols-3">
             {/* Hero: identity and headline counts */}
             <div {...rise(0, "relative overflow-hidden rounded-[20px] bg-[#151515] text-white p-6 lg:col-span-2 flex flex-col justify-between gap-8 shadow-lg")}>
-              <div aria-hidden className="absolute -right-16 -top-20 w-72 h-72 rounded-full bg-[#c3e33a]/20 blur-3xl" />
-              <div aria-hidden className="absolute right-24 -bottom-24 w-56 h-56 rounded-full bg-[#c3e33a]/10 blur-3xl" />
+              <div aria-hidden className="absolute -right-16 -top-20 w-72 h-72 rounded-full bg-[color:color-mix(in_srgb,var(--accent)_20%,transparent)] blur-3xl" />
+              <div aria-hidden className="absolute right-24 -bottom-24 w-56 h-56 rounded-full bg-[color:color-mix(in_srgb,var(--accent)_10%,transparent)] blur-3xl" />
               <div className="relative min-w-0">
                 <div className="flex items-center gap-3 flex-wrap">
                   <h2 className="text-2xl lg:text-3xl font-bold tracking-tight truncate">{data.org?.name ?? "Your organisation"}</h2>
-                  <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md", data.org?.is_active === false ? "bg-rose-400 text-[#151515]" : "bg-[#d6ef6a] text-[#151515]")}>{data.org?.is_active === false ? "Inactive" : "Active"}</span>
+                  <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md", data.org?.is_active === false ? "bg-rose-400 text-[#151515]" : "bg-[color:var(--accent-2)] text-[#151515]")}>{data.org?.is_active === false ? "Inactive" : "Active"}</span>
                 </div>
                 <div className="text-xs text-white/55 mt-1.5 capitalize">{data.org?.plan ? `${data.org.plan} plan · ` : ""}since {data.org ? new Date(data.org.created_at).toLocaleDateString("en-IN", { month: "short", year: "numeric" }) : "—"}</div>
               </div>
               <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {([["Employees", n(s?.active), Users], ["Departments", act(data.departments), Network], ["Designations", act(data.designations), BadgeCheck], ["Branches", act(data.branches), MapPin]] as const).map(([l, v, Icon]) => (
                   <div key={l} className="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3 py-2.5">
-                    <span className="w-9 h-9 rounded-full bg-[#d6ef6a] text-[#151515] flex items-center justify-center flex-shrink-0"><Icon className="w-4 h-4" /></span>
+                    <span className="w-9 h-9 rounded-full bg-[color:var(--accent-2)] text-[#151515] flex items-center justify-center flex-shrink-0"><Icon className="w-4 h-4" /></span>
                     <span className="min-w-0"><b className="block text-xl leading-none tabular-nums">{v}</b><span className="text-[11px] text-white/55">{l}</span></span>
                   </div>
                 ))}
@@ -165,8 +165,8 @@ export default function OrganisationOverviewPage() {
               <div className="text-sm font-bold text-[#1c1c1c] mb-3 flex items-center gap-2"><Zap className="w-4 h-4" /> Quick actions</div>
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {ACTIONS.map(a => (
-                  <Link key={a.label} href={a.href} className="group flex items-center gap-2 text-xs font-semibold p-2.5 rounded-xl bg-[#f6f7f2] border border-[#ebece6] hover:border-[#c3e33a] hover:bg-[#f4f9df] transition-colors">
-                    <span className="w-8 h-8 rounded-full bg-[#e6f5a6] flex items-center justify-center flex-shrink-0"><a.icon className="w-4 h-4" /></span>
+                  <Link key={a.label} href={a.href} className="group flex items-center gap-2 text-xs font-semibold p-2.5 rounded-xl bg-[#f6f7f2] border border-[#ebece6] hover:border-[color:var(--accent)] hover:bg-[#f4f9df] transition-colors">
+                    <span className="w-8 h-8 rounded-full bg-[color:var(--accent-3)] flex items-center justify-center flex-shrink-0"><a.icon className="w-4 h-4" /></span>
                     <span className="truncate">{a.label}</span>
                   </Link>
                 ))}
@@ -250,13 +250,13 @@ export default function OrganisationOverviewPage() {
             </div>
             <div {...rise(9, "flex flex-col gap-4")}>
               <div className="relative overflow-hidden rounded-[20px] bg-[#151515] text-white p-5 flex-1 flex flex-col gap-3">
-                <div aria-hidden className="absolute -right-10 -bottom-10 w-40 h-40 rounded-full bg-[#c3e33a]/20 blur-3xl" />
-                <span className="relative w-10 h-10 rounded-full bg-[#d6ef6a] text-[#151515] flex items-center justify-center"><LayoutTemplate className="w-5 h-5" /></span>
+                <div aria-hidden className="absolute -right-10 -bottom-10 w-40 h-40 rounded-full bg-[color:color-mix(in_srgb,var(--accent)_20%,transparent)] blur-3xl" />
+                <span className="relative w-10 h-10 rounded-full bg-[color:var(--accent-2)] text-[#151515] flex items-center justify-center"><LayoutTemplate className="w-5 h-5" /></span>
                 <div className="relative">
                   <h3 className="text-sm font-bold">Industry templates</h3>
                   <p className="text-[11px] text-white/60 mt-1">Suggested departments and designations for your type of business. You pick which to add.</p>
                 </div>
-                <Link href="/organisation?templates=1" className="relative mt-auto inline-flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2 rounded-full bg-[#d6ef6a] text-[#151515]">Explore templates <ArrowRight className="w-3.5 h-3.5" /></Link>
+                <Link href="/organisation?templates=1" className="relative mt-auto inline-flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2 rounded-full bg-[color:var(--accent-2)] text-[#151515]">Explore templates <ArrowRight className="w-3.5 h-3.5" /></Link>
               </div>
             </div>
           </div>
@@ -266,7 +266,7 @@ export default function OrganisationOverviewPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {manage.map(m => (
                 <Link key={m.label} href={m.href} className="group bg-white rounded-[20px] border border-[#ebece6] p-4 flex items-center gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all">
-                  <span className="w-10 h-10 rounded-full bg-[#e6f5a6] flex items-center justify-center flex-shrink-0"><m.icon className="w-4 h-4" /></span>
+                  <span className="w-10 h-10 rounded-full bg-[color:var(--accent-3)] flex items-center justify-center flex-shrink-0"><m.icon className="w-4 h-4" /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-xs font-bold text-[#1c1c1c] truncate">{m.label}</span>
                     <span className="block text-[10px] text-[#6b6b67] truncate">{m.desc}</span>

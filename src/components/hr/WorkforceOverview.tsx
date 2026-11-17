@@ -64,7 +64,7 @@ export default function WorkforceOverview({ employees, leaves, attendance, holid
               {v.weeks.map((w, i) => (
                 <div key={w.week} className="flex-1 h-full flex flex-col justify-end items-center gap-1" title={w.rate === null ? `Week of ${short(w.week)}: no records` : `Week of ${short(w.week)}: ${w.rate}% (${w.records} records)`}>
                   {w.rate !== null && <span className="text-[9px] text-[#6b6b67] tabular-nums">{w.rate}</span>}
-                  <div className={cn("w-full rounded-md grow-y", w.rate === null ? "bg-[#f0f0ec] h-1" : i === v.weeks.length - 1 ? "bg-[#c3e33a]" : "bg-[#1c1c1c]")}
+                  <div className={cn("w-full rounded-md grow-y", w.rate === null ? "bg-[#f0f0ec] h-1" : i === v.weeks.length - 1 ? "bg-[color:var(--accent)]" : "bg-[#1c1c1c]")}
                     style={w.rate === null ? undefined : { height: `${Math.max(2, w.rate)}%` }} />
                   <span className="text-[9px] text-[#6b6b67]">{short(w.week)}</span>
                 </div>
@@ -104,7 +104,7 @@ export default function WorkforceOverview({ employees, leaves, attendance, holid
             ))}
             {v.holidays.map(h => (
               <div key={h.id} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#e6f5a6] flex items-center justify-center"><CalendarDays className="w-3.5 h-3.5 text-[#1c1c1c]" /></div>
+                <div className="w-8 h-8 rounded-full bg-[color:var(--accent-3)] flex items-center justify-center"><CalendarDays className="w-3.5 h-3.5 text-[#1c1c1c]" /></div>
                 <div className="flex-1 min-w-0"><div className="text-xs font-bold truncate">{h.name}</div><div className="text-[10px] text-[#6b6b67]">{h.type || "Holiday"}</div></div>
                 <span className="text-[10px] font-bold px-2 py-1 rounded-lg bg-[#f6f7f2]">{short(h.date)}</span>
               </div>

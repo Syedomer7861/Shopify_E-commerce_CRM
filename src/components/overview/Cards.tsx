@@ -55,7 +55,7 @@ export function DayBars({ days, label, empty }: { days: { day: string; count: nu
       {days.map((d, i) => (
         <div key={d.day} className="flex-1 h-full flex flex-col justify-end items-center gap-1" title={`${shortDay(d.day)}: ${d.count}`}>
           {d.count > 0 && <span className="text-[9px] text-[#6b6b67] tabular-nums">{d.count}</span>}
-          <div className={cn("w-full rounded-md grow-y", d.count === 0 ? "bg-[#f0f0ec] h-1" : i === days.length - 1 ? "bg-[#c3e33a]" : "bg-[#1c1c1c]")}
+          <div className={cn("w-full rounded-md grow-y", d.count === 0 ? "bg-[#f0f0ec] h-1" : i === days.length - 1 ? "bg-[color:var(--accent)]" : "bg-[#1c1c1c]")}
             style={d.count === 0 ? undefined : { height: `${(d.count / max) * 100}%` }} />
           {i % 2 === (days.length - 1) % 2 && <span className="text-[9px] text-[#6b6b67] whitespace-nowrap">{shortDay(d.day)}</span>}
         </div>

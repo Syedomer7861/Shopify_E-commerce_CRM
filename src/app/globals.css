@@ -12,6 +12,16 @@
   --border-interactive: rgba(28, 28, 28, 0.4);
   --ring: rgba(28, 28, 28, 0.1);
   --off-white: #fcfbf8;
+
+  /* Accent family. These are the default lime; an organisation's own theme
+     (Settings > Appearance, plan module "branding") overrides them on <html>
+     from src/components/OrgTheme.tsx. */
+  --accent: #c3e33a;
+  --accent-2: #d6ef6a;
+  --accent-3: #e6f5a6;
+  --accent-4: #f7fbe6;
+  --accent-dark: #a9c92a;
+  --radius-card: 20px;
   
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-outfit), var(--font-inter), system-ui, sans-serif;
@@ -38,7 +48,7 @@ html, body {
   }
   
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-[#e3e4dd] text-[#1c1c1c] font-semibold text-sm rounded-full hover:border-[#c3e33a] hover:bg-[#f7fbe6] active:scale-[0.98] transition-all duration-150;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-[#e3e4dd] text-[#1c1c1c] font-semibold text-sm rounded-full hover:border-[color:var(--accent)] hover:bg-[color:var(--accent-4)] active:scale-[0.98] transition-all duration-150;
   }
   
   .btn-ghost {
@@ -46,13 +56,14 @@ html, body {
   }
 
   .card {
-    @apply bg-white border border-[#ebece6] rounded-[20px] px-4 py-4 sm:px-6 sm:py-5;
+    @apply bg-white border border-[#ebece6] px-4 py-4 sm:px-6 sm:py-5;
+    border-radius: var(--radius-card);
     box-shadow: 0 1px 2px rgba(16, 24, 16, 0.04);
     animation: card-in 0.35s cubic-bezier(0.21, 0.47, 0.32, 0.98) backwards;
   }
   
   .input {
-    @apply w-full px-3 py-2 text-sm border border-[#e3e4dd] rounded-xl bg-white text-[#1c1c1c] placeholder-[#8a8a86] focus:outline-none focus:border-[#a9c92a] focus:ring-2 focus:ring-[#c3e33a]/40 transition-all;
+    @apply w-full px-3 py-2 text-sm border border-[#e3e4dd] rounded-xl bg-white text-[#1c1c1c] placeholder-[#8a8a86] focus:outline-none focus:border-[color:var(--accent-dark)] focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--accent)_40%,transparent)] transition-all;
   }
 
   /* Phone browsers give date/time inputs a built-in minimum width that ignores
@@ -63,7 +74,7 @@ html, body {
   }
   
   .select {
-    @apply w-full px-3 py-2 text-sm border border-[#e3e4dd] rounded-xl bg-white text-[#1c1c1c] focus:outline-none focus:border-[#a9c92a] focus:ring-2 focus:ring-[#c3e33a]/40 transition-all;
+    @apply w-full px-3 py-2 text-sm border border-[#e3e4dd] rounded-xl bg-white text-[#1c1c1c] focus:outline-none focus:border-[color:var(--accent-dark)] focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--accent)_40%,transparent)] transition-all;
   }
   
   .badge {
@@ -95,7 +106,7 @@ html, body {
   }
   
   .table-row {
-    @apply flex items-center px-4 md:px-6 py-3 md:py-4 border-b border-[#f0f0ec] hover:bg-[#f7fbe6] transition-colors cursor-pointer last:border-0;
+    @apply flex items-center px-4 md:px-6 py-3 md:py-4 border-b border-[#f0f0ec] hover:bg-[color:var(--accent-4)] transition-colors cursor-pointer last:border-0;
   }
 
 
@@ -269,3 +280,8 @@ h1, h2, h3, h4 {
 /* 8-9px labels (460+ of them) were unreadable on phones; 10px is the floor. */
 /* Scoped to page content: the phone icon rail's 9px labels must stay small to fit. */
 #main-application-content .text-\[8px\], #main-application-content .text-\[9px\] { font-size: 10px; }
+
+/* Compact density (organisation theme): tighter cards and table rows. */
+html[data-density="compact"] #main-application-content .card { padding: 0.75rem 1rem; }
+html[data-density="compact"] #main-application-content .table-row { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+html[data-density="compact"] #main-application-content .table-header { padding-top: 0.5rem; padding-bottom: 0.5rem; }
