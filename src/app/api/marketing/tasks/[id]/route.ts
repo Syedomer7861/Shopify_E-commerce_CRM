@@ -31,10 +31,11 @@ const PatchTaskSchema = z
   })
   .partial();
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 // GET /api/marketing/tasks/:id — full task with subtasks, comments, links
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(_req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
@@ -61,7 +62,8 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 }
 
 // PATCH /api/marketing/tasks/:id
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase, user, profile } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
@@ -197,7 +199,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 }
 
 // DELETE /api/marketing/tasks/:id — hard delete (subtasks/comments cascade)
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+export async function DELETE(_req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase, user, profile } = await requireMarketing();
   if (errorResponse) return errorResponse;
 

@@ -8,7 +8,8 @@ import { getPost } from "@/content/blog";
 export const runtime = "edge";
 const size = { width: 1200, height: 630 };
 
-export function GET(_req: Request, { params }: { params: { slug: string } }) {
+export async function GET(_req: Request, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const post = getPost(params.slug);
   return new ImageResponse(
     (

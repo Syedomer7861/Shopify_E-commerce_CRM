@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const next = url.searchParams.get("next") || "/";
   const safeNext = next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/";
   if (!code) return NextResponse.redirect(new URL("/login?error=google", url.origin));
-  const store = cookies();
+  const store = await cookies();
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {
       get: (name: string) => store.get(name)?.value,

@@ -8,12 +8,13 @@ const CreateLinkSchema = z.object({
   kind: z.enum(["blocks", "blocked_by", "relates_to"]),
 });
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 const INVERSE: Record<string, string> = { blocks: "blocked_by", blocked_by: "blocks", relates_to: "relates_to" };
 
 // GET /api/marketing/tasks/:id/links — outgoing + incoming, with target titles
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(_req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
@@ -36,7 +37,8 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 }
 
 // POST /api/marketing/tasks/:id/links
-export async function POST(req: NextRequest, { params }: Ctx) {
+export async function POST(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
@@ -67,7 +69,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
 }
 
 // DELETE /api/marketing/tasks/:id/links?link_id=...
-export async function DELETE(req: NextRequest, { params }: Ctx) {
+export async function DELETE(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 

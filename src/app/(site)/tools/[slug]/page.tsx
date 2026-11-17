@@ -8,15 +8,17 @@ import ToolWidget from "@/components/site/Tools";
 export const dynamicParams = false;
 export const generateStaticParams = () => TOOLS.map((t) => ({ slug: t.slug }));
 
-type Props = { params: { slug: string } };
+type Props = { params: Promise<{ slug: string }> };
 const find = (slug: string) => TOOLS.find((t) => t.slug === slug);
 
-export function generateMetadata({ params }: Props) {
+export async function generateMetadata(props: Props) {
+  const params = await props.params;
   const t = find(params.slug);
   return t ? siteMetadata(`/tools/${t.slug}`, `${t.name} (Free)`, t.description) : {};
 }
 
-export default function ToolPage({ params }: Props) {
+export default async function ToolPage(props: Props) {
+  const params = await props.params;
   const t = find(params.slug);
   if (!t) notFound();
   const others = TOOLS.filter((x) => x.slug !== t.slug).slice(0, 4).map((x) => `tools/${x.slug}`);

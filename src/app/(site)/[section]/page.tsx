@@ -7,12 +7,14 @@ import { SectionIndex, siteMetadata } from "@/components/site/PageView";
 export const dynamicParams = false;
 export const generateStaticParams = () => SECTIONS.map((s) => ({ section: s.key }));
 
-export function generateMetadata({ params }: { params: { section: string } }) {
+export async function generateMetadata(props: { params: Promise<{ section: string }> }) {
+  const params = await props.params;
   const s = getSection(params.section);
   return s ? siteMetadata(`/${s.key}`, s.title, s.description) : {};
 }
 
-export default function Page({ params }: { params: { section: string } }) {
+export default async function Page(props: { params: Promise<{ section: string }> }) {
+  const params = await props.params;
   const s = getSection(params.section);
   if (!s) notFound();
   return <SectionIndex section={s} />;

@@ -7,10 +7,11 @@ const PatchSchema = z.object({
   body: z.string().min(1).max(5000).optional(),
 });
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 // PATCH /api/marketing/snippets/:id — workspace admin
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireWorkspaceAdmin();
   if (errorResponse) return errorResponse;
 
@@ -37,7 +38,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 }
 
 // DELETE /api/marketing/snippets/:id — workspace admin
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+export async function DELETE(_req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireWorkspaceAdmin();
   if (errorResponse) return errorResponse;
 

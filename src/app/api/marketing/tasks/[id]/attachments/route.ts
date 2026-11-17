@@ -11,10 +11,11 @@ const RecordSchema = z.object({
   size_bytes: z.number().int().nonnegative().optional(),
 });
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 // GET /api/marketing/tasks/:id/attachments — rows + short-lived signed URLs
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(_req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
@@ -36,7 +37,8 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 
 // POST /api/marketing/tasks/:id/attachments — record metadata after the
 // client has uploaded the file to storage.
-export async function POST(req: NextRequest, { params }: Ctx) {
+export async function POST(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase, user } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
@@ -68,7 +70,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
 }
 
 // DELETE /api/marketing/tasks/:id/attachments?attachment_id=...
-export async function DELETE(req: NextRequest, { params }: Ctx) {
+export async function DELETE(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 

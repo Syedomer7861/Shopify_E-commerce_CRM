@@ -10,10 +10,11 @@ const PatchGoalSchema = z.object({
   owner_id: z.string().uuid().nullable().optional(),
 });
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 // PATCH /api/marketing/goals/:id — RLS restricts to Space owner / workspace admin
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
@@ -40,7 +41,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 }
 
 // DELETE /api/marketing/goals/:id
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+export async function DELETE(_req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 

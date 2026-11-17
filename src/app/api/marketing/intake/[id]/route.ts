@@ -8,10 +8,11 @@ const PatchIntakeSchema = z.object({
   list_id: z.string().uuid().optional(), // where to drop the task on accept
 });
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 // PATCH /api/marketing/intake/:id — accept (spawns a task) or reject
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase, user } = await requireMarketing();
   if (errorResponse) return errorResponse;
 

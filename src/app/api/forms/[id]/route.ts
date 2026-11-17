@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase";
 import { rateLimit } from "@/lib/rate-limit";
 import { notifyUser } from "@/lib/notifications-server";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" };
@@ -18,7 +18,8 @@ export function OPTIONS() {
  * fields are kept, and whether the form is live at all, is decided by the
  * database function submit_web_form (service key only).
  */
-export async function POST(req: NextRequest, { params }: Ctx) {
+export async function POST(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   if (!UUID.test(params.id)) return NextResponse.json({ error: "Form not found" }, { status: 404, headers: CORS });
   const limited = await rateLimit(req, "web-form", 10, 60_000);
   if (limited) return limited;

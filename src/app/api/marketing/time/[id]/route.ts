@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireMarketing } from "@/lib/marketing-auth";
 import { isWorkspaceAdmin } from "@/lib/permissions";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 // DELETE /api/marketing/time/:id — remove one time entry (own, or workspace admin)
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+export async function DELETE(_req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase, user, profile } = await requireMarketing();
   if (errorResponse) return errorResponse;
 

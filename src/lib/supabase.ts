@@ -57,6 +57,8 @@ export const createServerClient = () => {
   try {
     // Try to get cookies (this only works in Request contexts like API routes or Server Actions)
     const { cookies } = require('next/headers');
+    // ponytail: sync cookies() still works in Next 15 (dev logs a warning). Next 16
+    // removes it: make this async and await it in the ~55 callers before upgrading.
     const cookieStore = cookies();
 
     return createBrowserClient(

@@ -12,7 +12,8 @@ import type { Customer, Order, Task, CallLog, AuditLog, RawCallLog } from "@/typ
 import { logAuditEvent } from "@/lib/audit";
 import { isDemoMode } from "@/lib/demo";
 
-export default function CustomerProfile({ params }: { params: { id: string } }) {
+export default function CustomerProfile(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const id = params.id;
   const router = useRouter();
   const [loading, setLoading] = useState(true);

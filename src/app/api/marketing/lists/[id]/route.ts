@@ -29,10 +29,11 @@ const PatchListSchema = z
   })
   .partial();
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 // PATCH /api/marketing/lists/:id
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
@@ -63,7 +64,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 
 // DELETE /api/marketing/lists/:id — archives by default; ?hard=1 removes it
 // (cascades to its tasks). Archive is the safe default.
-export async function DELETE(req: NextRequest, { params }: Ctx) {
+export async function DELETE(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 

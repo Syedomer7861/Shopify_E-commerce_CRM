@@ -7,7 +7,8 @@ import { PageHero, fmtDate, siteMetadata, slugify } from "@/components/site/Page
 export const dynamicParams = false;
 export const generateStaticParams = () => LEGAL_DOCS.map((d) => ({ doc: d.slug }));
 
-export function generateMetadata({ params }: { params: { doc: string } }) {
+export async function generateMetadata(props: { params: Promise<{ doc: string }> }) {
+  const params = await props.params;
   const d = getLegalDoc(params.doc);
   return d ? siteMetadata(`/legal/${d.slug}`, d.title, d.summary) : {};
 }
@@ -26,7 +27,8 @@ function Block({ b }: { b: LegalBlock }) {
   return <ul className="list-disc pl-5 space-y-2">{b.map((li) => <li key={li}><Text s={li} /></li>)}</ul>;
 }
 
-export default function LegalPage({ params }: { params: { doc: string } }) {
+export default async function LegalPage(props: { params: Promise<{ doc: string }> }) {
+  const params = await props.params;
   const d = getLegalDoc(params.doc);
   if (!d) notFound();
   return (

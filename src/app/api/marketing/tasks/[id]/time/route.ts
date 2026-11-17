@@ -8,10 +8,11 @@ const CreateEntrySchema = z.object({
   spent_on: z.string().date().optional(),
 });
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 // GET /api/marketing/tasks/:id/time — entries for a task, newest first
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(_req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
@@ -26,7 +27,8 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 }
 
 // POST /api/marketing/tasks/:id/time — log time against the task
-export async function POST(req: NextRequest, { params }: Ctx) {
+export async function POST(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase, user } = await requireMarketing();
   if (errorResponse) return errorResponse;
 

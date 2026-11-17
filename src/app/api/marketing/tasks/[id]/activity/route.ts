@@ -4,7 +4,8 @@ import { requireMarketing } from "@/lib/marketing-auth";
 // GET /api/marketing/tasks/:id/activity — the per-task audit trail.
 // PATCH/DELETE on mkt_tasks already write to audit_logs with
 // entity_type='mkt_task'.
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 

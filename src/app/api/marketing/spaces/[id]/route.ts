@@ -12,11 +12,12 @@ const PatchSpaceSchema = z
   })
   .partial();
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 // PATCH /api/marketing/spaces/:id — rename / recolor / archive. RLS
 // (is_space_owner) enforces that only an owner or workspace-admin can write.
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
@@ -44,7 +45,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 
 // DELETE /api/marketing/spaces/:id — hard delete (cascades lists/tasks).
 // RLS restricts this to workspace-admins.
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+export async function DELETE(_req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 

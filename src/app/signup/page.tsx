@@ -11,7 +11,8 @@ export const metadata: Metadata = { title: "Start your workspace | CodeCrest" };
 // Self-serve signup opens only when Razorpay is configured and at least one
 // public paid plan exists; until then this keeps sending people to /contact.
 // People choose a plan on /pricing first; arriving without one goes there.
-export default async function SignupPage({ searchParams }: { searchParams: { plan?: string; cycle?: string } }) {
+export default async function SignupPage(props: { searchParams: Promise<{ plan?: string; cycle?: string }> }) {
+  const searchParams = await props.searchParams;
   if (!razorpayEnabled()) redirect("/contact");
   const plans = await publicPlans().catch(() => []);
   if (plans.length === 0) redirect("/contact");

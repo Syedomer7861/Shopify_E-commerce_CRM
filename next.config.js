@@ -36,6 +36,8 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // A stray package-lock.json higher up the disk made Next guess the wrong root.
+  outputFileTracingRoot: __dirname,
   experimental: {
     serverActions: { allowedOrigins: serverActionAllowedOrigins }
   },

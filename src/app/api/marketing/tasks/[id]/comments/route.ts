@@ -8,10 +8,11 @@ const CreateCommentSchema = z.object({
   mentions: z.array(z.string().uuid()).optional(),
 });
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 // GET /api/marketing/tasks/:id/comments
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(_req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
@@ -25,7 +26,8 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 }
 
 // POST /api/marketing/tasks/:id/comments — add comment, notify mentions + watchers
-export async function POST(req: NextRequest, { params }: Ctx) {
+export async function POST(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { errorResponse, supabase, user, profile } = await requireMarketing();
   if (errorResponse) return errorResponse;
 
