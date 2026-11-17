@@ -328,7 +328,7 @@ export default function ImportPage() {
             </div>
             <div className="card p-4">
               <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
-                <span className="w-4 h-4 rounded bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center text-[10px] font-bold">O</span>
+                <span className="w-4 h-4 rounded bg-[#ebece6] text-[#1c1c1c] flex items-center justify-center text-[10px] font-bold">O</span>
                 Optional columns
               </div>
               <div className="space-y-1">
@@ -391,7 +391,7 @@ export default function ImportPage() {
             {/* Optional Field Mapping */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 px-1">
-                <span className="w-4 h-4 rounded bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center text-[10px] font-bold">O</span>
+                <span className="w-4 h-4 rounded bg-[#ebece6] text-[#1c1c1c] flex items-center justify-center text-[10px] font-bold">O</span>
                 <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Optional Fields</h4>
               </div>
               <div className="card divide-y divide-gray-50 overflow-hidden">
@@ -417,7 +417,7 @@ export default function ImportPage() {
             {/* Customer Details Mapping */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 px-1">
-                <span className="w-4 h-4 rounded bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center text-[10px] font-bold">C</span>
+                <span className="w-4 h-4 rounded bg-[#ebece6] text-[#1c1c1c] flex items-center justify-center text-[10px] font-bold">C</span>
                 <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Customer Details</h4>
               </div>
               <div className="card divide-y divide-gray-50 overflow-hidden">
@@ -615,7 +615,7 @@ export default function ImportPage() {
 
       {step === "done" && (
         <div className="card p-12 text-center animate-scale-in">
-          <div className="w-16 h-16 rounded-2xl bg-[#eceae4] flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-2xl bg-[#ebece6] flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-[#1c1c1c]" />
           </div>
           <h2 className="text-xl font-display text-[#1c1c1c] mb-2">Import Successful</h2>

@@ -47,10 +47,10 @@ export function AssignDialog({ dashboard, dir, onClose, onChanged }: { dashboard
         {dashboard.status !== "published" && <p className="text-amber-700">Not published yet: people assigned here keep their current home until you publish.</p>}
         <p className="text-[#5f5f5d]">If someone matches several assignments, the most specific wins: employee, then designation, department, branch, role.</p>
         <div className="flex flex-wrap gap-2">
-          <select aria-label="Assign to" value={type} onChange={e => { setType(e.target.value as TargetType); setKey(""); }} className="h-9 px-2 bg-white border border-[#eceae4] rounded-lg">
+          <select aria-label="Assign to" value={type} onChange={e => { setType(e.target.value as TargetType); setKey(""); }} className="h-9 px-2 bg-white border border-[#ebece6] rounded-lg">
             {TARGETS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
-          <select aria-label="Target" value={key} onChange={e => setKey(e.target.value)} className="h-9 px-2 bg-white border border-[#eceae4] rounded-lg flex-1 min-w-40">
+          <select aria-label="Target" value={key} onChange={e => setKey(e.target.value)} className="h-9 px-2 bg-white border border-[#ebece6] rounded-lg flex-1 min-w-40">
             <option value="">Choose…</option>
             {options.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
           </select>
@@ -62,7 +62,7 @@ export function AssignDialog({ dashboard, dir, onClose, onChanged }: { dashboard
           {mine.length === 0 ? <p className="text-[#5f5f5d]">Nobody yet.</p> : (
             <ul className="space-y-1">
               {mine.map(a => (
-                <li key={a.id} className="flex items-center gap-2 p-2 rounded-lg border border-[#eceae4]">
+                <li key={a.id} className="flex items-center gap-2 p-2 rounded-lg border border-[#ebece6]">
                   <span className="text-[10px] uppercase font-bold text-[#5f5f5d] w-24">{TARGETS.find(t => t.value === a.target_type)?.label}</span>
                   <span className="flex-1 font-semibold capitalize">{targetLabel(dir, a.target_type, a.target_key)}</span>
                   <button aria-label="Remove" disabled={busy} onClick={() => remove(a.id)} className="p-1 rounded text-rose-600"><X className="w-3.5 h-3.5" /></button>

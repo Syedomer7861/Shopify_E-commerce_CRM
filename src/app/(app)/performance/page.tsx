@@ -654,7 +654,7 @@ export default function PerformancePage() {
                 <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
             )}
-            <div className="flex items-center bg-[#eceae4]/40 rounded-xl border border-[#eceae4] p-1">
+            <div className="flex items-center bg-[#ebece6]/40 rounded-xl border border-[#ebece6] p-1">
               {(["today", "7d", "30d", "90d"] as RangePreset[]).map(p => (
                 <button
                   key={p}
@@ -726,10 +726,10 @@ export default function PerformancePage() {
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#eceae4" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ebece6" vertical={false} />
                     <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} width={24} />
-                    <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #eceae4" }} />
+                    <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #ebece6" }} />
                     <Bar dataKey="tasks" fill="#1c1c1c" radius={[4, 4, 0, 0]} name="Tasks" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -740,10 +740,10 @@ export default function PerformancePage() {
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#eceae4" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ebece6" vertical={false} />
                     <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} width={24} />
-                    <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #eceae4" }} />
+                    <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #ebece6" }} />
                     <Line type="monotone" dataKey="hours" stroke="#1c1c1c" strokeWidth={2} dot={{ r: 2 }} name="Hours" />
                   </LineChart>
                 </ResponsiveContainer>
@@ -754,10 +754,10 @@ export default function PerformancePage() {
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#eceae4" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ebece6" vertical={false} />
                     <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} width={40} tickFormatter={v => `₹${v}`} />
-                    <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #eceae4" }} formatter={(v: number) => formatCurrency(v)} />
+                    <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #ebece6" }} formatter={(v: number) => formatCurrency(v)} />
                     <Bar dataKey="revenue" fill="#16a34a" radius={[4, 4, 0, 0]} name="Revenue" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -771,10 +771,10 @@ export default function PerformancePage() {
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={taskTypeChartData} layout="vertical" margin={{ left: 8 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#eceae4" horizontal={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ebece6" horizontal={false} />
                       <XAxis type="number" tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} allowDecimals={false} />
                       <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} width={110} />
-                      <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #eceae4" }} />
+                      <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #ebece6" }} />
                       <Bar dataKey="count" radius={[0, 4, 4, 0]} name="Tasks">
                         {taskTypeChartData.map(d => <Cell key={d.key} fill={d.fill} />)}
                       </Bar>
@@ -791,10 +791,10 @@ export default function PerformancePage() {
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={orderStatusChartData} layout="vertical" margin={{ left: 8 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#eceae4" horizontal={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ebece6" horizontal={false} />
                       <XAxis type="number" tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} allowDecimals={false} />
                       <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} width={110} />
-                      <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #eceae4" }} />
+                      <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #ebece6" }} />
                       <Bar dataKey="count" radius={[0, 4, 4, 0]} name="Orders">
                         {orderStatusChartData.map(d => <Cell key={d.key} fill={d.fill} />)}
                       </Bar>
@@ -809,10 +809,10 @@ export default function PerformancePage() {
                 <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={outcomeChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#eceae4" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ebece6" vertical={false} />
                       <XAxis dataKey="name" tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 9, fill: "#5f5f5d" }} axisLine={false} tickLine={false} width={24} allowDecimals={false} />
-                      <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #eceae4" }} />
+                      <Tooltip contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #ebece6" }} />
                       <Bar dataKey="count" fill="#1c1c1c" radius={[4, 4, 0, 0]} name="Calls" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -822,10 +822,10 @@ export default function PerformancePage() {
           </div>
 
           <div className="card overflow-hidden mb-6">
-            <div className="px-5 py-4 border-b border-[#eceae4] bg-[#fcfbf8] flex flex-wrap items-center justify-between gap-3">
+            <div className="px-5 py-4 border-b border-[#ebece6] bg-[#fcfbf8] flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">Daily Attendance Ledger</h3>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center bg-[#eceae4]/60 rounded-lg border border-[#eceae4] p-0.5">
+                <div className="flex items-center bg-[#ebece6]/60 rounded-lg border border-[#ebece6] p-0.5">
                   {(["12h", "24h"] as const).map(f => (
                     <button key={f} onClick={() => setTimeFormat(f)}
                       className={cn("px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest transition-all",
@@ -838,30 +838,30 @@ export default function PerformancePage() {
                   className={cn("px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border flex items-center gap-1.5",
                     showAdvanced || minNetHours || minTasks || sortBy !== "date" || sortDir !== "desc"
                       ? "bg-[#1c1c1c] text-white border-[#1c1c1c]"
-                      : "bg-white text-[#5f5f5d] border-[#eceae4] hover:border-[#1c1c1c]/40")}>
+                      : "bg-white text-[#5f5f5d] border-[#ebece6] hover:border-[#1c1c1c]/40")}>
                   <Sliders className="w-3 h-3" /> Filters
                 </button>
               </div>
             </div>
 
             {showAdvanced && (
-              <div className="px-5 py-4 border-b border-[#eceae4] bg-[#f7f4ed] flex flex-wrap items-end gap-4">
+              <div className="px-5 py-4 border-b border-[#ebece6] bg-[#f6f7f2] flex flex-wrap items-end gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Min Net Hours</label>
                   <input type="number" min="0" step="0.5" placeholder="e.g. 4" value={minNetHours}
                     onChange={e => setMinNetHours(e.target.value)}
-                    className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white w-28" />
+                    className="text-[11px] font-bold border border-[#ebece6] rounded-lg px-3 py-2 bg-white w-28" />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Min Tasks</label>
                   <input type="number" min="0" placeholder="e.g. 5" value={minTasks}
                     onChange={e => setMinTasks(e.target.value)}
-                    className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white w-28" />
+                    className="text-[11px] font-bold border border-[#ebece6] rounded-lg px-3 py-2 bg-white w-28" />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Sort By</label>
                   <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
-                    className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white">
+                    className="text-[11px] font-bold border border-[#ebece6] rounded-lg px-3 py-2 bg-white">
                     <option value="date">Date</option>
                     <option value="netHours">Net Hours</option>
                     <option value="tasks">Tasks</option>
@@ -871,7 +871,7 @@ export default function PerformancePage() {
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Direction</label>
                   <select value={sortDir} onChange={e => setSortDir(e.target.value as typeof sortDir)}
-                    className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white">
+                    className="text-[11px] font-bold border border-[#ebece6] rounded-lg px-3 py-2 bg-white">
                     <option value="desc">Descending</option>
                     <option value="asc">Ascending</option>
                   </select>
@@ -888,7 +888,7 @@ export default function PerformancePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-[#eceae4] bg-gray-50/50">
+                  <tr className="border-b border-[#ebece6] bg-gray-50/50">
                     {["Date", "Clock In", "Clock Out", "Work Hours", "Break Hours", "Net Hours", "Tasks", "Revenue"].map(h => (
                       <th key={h} className="px-4 py-2.5 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
                     ))}
@@ -915,16 +915,16 @@ export default function PerformancePage() {
           </div>
 
           <div className="card overflow-hidden mb-6">
-            <div className="px-5 py-4 border-b border-[#eceae4] bg-[#fcfbf8] flex flex-wrap items-center justify-between gap-3">
+            <div className="px-5 py-4 border-b border-[#ebece6] bg-[#fcfbf8] flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">Tasks Worked</h3>
               <div className="flex flex-wrap items-center gap-2">
                 <select value={taskTypeFilter} onChange={e => setTaskTypeFilter(e.target.value)}
-                  className="text-[10px] font-bold border border-[#eceae4] rounded-lg px-2.5 py-1.5 bg-white">
+                  className="text-[10px] font-bold border border-[#ebece6] rounded-lg px-2.5 py-1.5 bg-white">
                   <option value="">All Task Types</option>
                   {Object.entries(TASK_TYPE_CONFIG).map(([key, c]) => <option key={key} value={key}>{c.label}</option>)}
                 </select>
                 <select value={orderStatusFilter} onChange={e => setOrderStatusFilter(e.target.value)}
-                  className="text-[10px] font-bold border border-[#eceae4] rounded-lg px-2.5 py-1.5 bg-white">
+                  className="text-[10px] font-bold border border-[#ebece6] rounded-lg px-2.5 py-1.5 bg-white">
                   <option value="">All Order Statuses</option>
                   {Object.entries(DELIVERY_CONFIG).map(([key, c]) => <option key={key} value={key}>{c.label}</option>)}
                 </select>
@@ -939,7 +939,7 @@ export default function PerformancePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-[#eceae4] bg-gray-50/50">
+                  <tr className="border-b border-[#ebece6] bg-gray-50/50">
                     {["Completed", "Task Type", "Task Status", "Order #", "Order Status", "Order Value", "Customer"].map(h => (
                       <th key={h} className="px-4 py-2.5 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
                     ))}
@@ -970,7 +970,7 @@ export default function PerformancePage() {
           </div>
 
           <div className="card overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#eceae4] bg-[#fcfbf8]">
+            <div className="px-5 py-4 border-b border-[#ebece6] bg-[#fcfbf8]">
               <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">Recent Activity</h3>
             </div>
             <div className="divide-y divide-gray-50 max-h-[400px] overflow-y-auto">

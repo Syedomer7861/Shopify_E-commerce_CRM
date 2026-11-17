@@ -241,7 +241,7 @@ export default function CalendarPage() {
             </button>
 
             {/* Scope: own items or everything this role can see */}
-            <div className="flex items-center bg-[#eceae4]/40 rounded-xl border border-[#eceae4] p-1" role="group" aria-label="Whose items">
+            <div className="flex items-center bg-[#ebece6]/40 rounded-xl border border-[#ebece6] p-1" role="group" aria-label="Whose items">
               {(["mine", "all"] as const).map(s => (
                 <button key={s} onClick={() => setScopePick(s)} aria-pressed={scope === s}
                   className={cn("px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
@@ -252,7 +252,7 @@ export default function CalendarPage() {
             </div>
 
             {/* View toggle */}
-            <div className="flex items-center bg-[#eceae4]/40 rounded-xl border border-[#eceae4] p-1">
+            <div className="flex items-center bg-[#ebece6]/40 rounded-xl border border-[#ebece6] p-1">
               <button
                 onClick={() => setView("month")}
                 className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
@@ -360,10 +360,10 @@ export default function CalendarPage() {
                   key={day.toString()}
                   onClick={() => setSelectedDay(isSelected ? null : day)}
                   className={cn(
-                    "min-h-[100px] border-r border-b border-[#eceae4] p-1.5 flex flex-col gap-0.5 cursor-pointer transition-all duration-150 group",
+                    "min-h-[100px] border-r border-b border-[#ebece6] p-1.5 flex flex-col gap-0.5 cursor-pointer transition-all duration-150 group",
                     !inMonth && "opacity-30",
                     (i + 1) % 7 === 0 && "border-r-0",
-                    isSelected ? "ring-2 ring-inset ring-[#1c1c1c] bg-[#1c1c1c]/5" : `hover:bg-[#eceae4]/20 ${heat}`,
+                    isSelected ? "ring-2 ring-inset ring-[#1c1c1c] bg-[#1c1c1c]/5" : `hover:bg-[#ebece6]/20 ${heat}`,
                   )}
                 >
                   <div className="flex items-center justify-between mb-0.5">
@@ -440,7 +440,7 @@ export default function CalendarPage() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto divide-y divide-[#eceae4]/60">
+            <div className="flex-1 overflow-y-auto divide-y divide-[#ebece6]/60">
               {selectedDayEvents.map(ev => {
                 const c = kindCfg(ev.kind);
                 const body = (
@@ -511,7 +511,7 @@ export default function CalendarPage() {
                               setActiveTaskForCall(task);
                               setShowClickToCall(true);
                             }}
-                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#eceae4]/60 text-[#1c1c1c] text-[9px] font-bold hover:bg-[#1c1c1c] hover:text-white transition-all"
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#ebece6]/60 text-[#1c1c1c] text-[9px] font-bold hover:bg-[#1c1c1c] hover:text-white transition-all"
                           >
                             <Phone className="w-2.5 h-2.5" /> Call
                           </button>

@@ -68,7 +68,7 @@ export default function LoginForm({ googleEnabled, signupOpen, googleError }: { 
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f4ed] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#f6f7f2] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Editorial Decorative Background */}
       <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none"
         style={{ backgroundImage: `radial-gradient(#1c1c1c 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
@@ -95,7 +95,7 @@ export default function LoginForm({ googleEnabled, signupOpen, googleError }: { 
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-[2rem] p-10 border border-[#eceae4] shadow-[0_20px_50px_rgba(28,28,28,0.05)] relative overflow-hidden animate-slide-up">
+        <div className="bg-white rounded-[2rem] p-10 border border-[#ebece6] shadow-[0_20px_50px_rgba(28,28,28,0.05)] relative overflow-hidden animate-slide-up">
           {mfaUserId ? (
             <MfaChallenge
               onDone={() => finishLogin(mfaUserId)}
@@ -117,7 +117,7 @@ export default function LoginForm({ googleEnabled, signupOpen, googleError }: { 
                 inputMode="email"
                 autoCapitalize="none"
                 spellCheck={false}
-                className="w-full h-14 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-5 text-[#1c1c1c] placeholder:text-[#1c1c1c]/35 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/15 focus:border-[#1c1c1c]/40 transition-all text-sm font-medium"
+                className="w-full h-14 bg-[#fcfbf8] border border-[#ebece6] rounded-2xl px-5 text-[#1c1c1c] placeholder:text-[#1c1c1c]/35 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/15 focus:border-[#1c1c1c]/40 transition-all text-sm font-medium"
                 placeholder="you@yourcompany.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -137,7 +137,7 @@ export default function LoginForm({ googleEnabled, signupOpen, googleError }: { 
                   id="login-password"
                   type={show ? "text" : "password"}
                   autoComplete="current-password"
-                  className="w-full h-14 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-5 pr-12 text-[#1c1c1c] placeholder:text-[#1c1c1c]/35 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/15 focus:border-[#1c1c1c]/40 transition-all text-sm font-medium"
+                  className="w-full h-14 bg-[#fcfbf8] border border-[#ebece6] rounded-2xl px-5 pr-12 text-[#1c1c1c] placeholder:text-[#1c1c1c]/35 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/15 focus:border-[#1c1c1c]/40 transition-all text-sm font-medium"
                   placeholder="••••••••"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
@@ -158,10 +158,10 @@ export default function LoginForm({ googleEnabled, signupOpen, googleError }: { 
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-14 bg-[#1c1c1c] text-[#f7f4ed] font-black uppercase tracking-widest rounded-2xl shadow-xl hover:shadow-[#1c1c1c]/10 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-3"
+              className="w-full h-14 bg-[#1c1c1c] text-[#f6f7f2] font-black uppercase tracking-widest rounded-2xl shadow-xl hover:shadow-[#1c1c1c]/10 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-3"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-[#f7f4ed]/20 border-t-[#f7f4ed] rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-[#f6f7f2]/20 border-t-[#f6f7f2] rounded-full animate-spin" />
               ) : (
                 <>
                   <span>Sign In</span>
@@ -172,7 +172,7 @@ export default function LoginForm({ googleEnabled, signupOpen, googleError }: { 
           {googleEnabled && (
             <div className="mt-6 space-y-4">
               <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[#1c1c1c]/40">
-                <div className="h-px flex-1 bg-[#eceae4]" />or<div className="h-px flex-1 bg-[#eceae4]" />
+                <div className="h-px flex-1 bg-[#ebece6]" />or<div className="h-px flex-1 bg-[#ebece6]" />
               </div>
               <GoogleButton />
               {googleError && <p role="alert" className="text-xs text-red-700 text-center">Google sign-in did not complete. Please try again.</p>}

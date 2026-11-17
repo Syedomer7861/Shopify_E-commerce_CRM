@@ -10,7 +10,7 @@ type FlagRow = { key: string; description: string; is_enabled: boolean; rollout_
 type Override = { flag_key: string; org_id: string; enabled: boolean };
 type Org = { id: string; name: string };
 
-const input = "h-9 px-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
+const input = "h-9 px-3 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 
 export default function SuperAdminFlags() {
   const supabase = useMemo(() => createClient(), []);
@@ -97,7 +97,7 @@ export default function SuperAdminFlags() {
                     {f.is_enabled ? "On" : "Off"}
                   </button>
                 </div>
-                <div className="mt-3 pt-3 border-t border-[#eceae4] flex flex-wrap items-center gap-2 text-xs">
+                <div className="mt-3 pt-3 border-t border-[#ebece6] flex flex-wrap items-center gap-2 text-xs">
                   {fo.map(o => (
                     <span key={o.org_id} className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-full", o.enabled ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600")}>
                       {orgName(o.org_id)}: {o.enabled ? "always on" : "always off"}
@@ -108,8 +108,8 @@ export default function SuperAdminFlags() {
                     <option value="">Organisation...</option>
                     {orgs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
                   </select>
-                  <button disabled={!pick[f.key]} onClick={() => setOrg(f.key, pick[f.key], true)} className="px-2 py-1 rounded-lg border border-[#eceae4] disabled:opacity-40">Always on</button>
-                  <button disabled={!pick[f.key]} onClick={() => setOrg(f.key, pick[f.key], false)} className="px-2 py-1 rounded-lg border border-[#eceae4] disabled:opacity-40">Always off</button>
+                  <button disabled={!pick[f.key]} onClick={() => setOrg(f.key, pick[f.key], true)} className="px-2 py-1 rounded-lg border border-[#ebece6] disabled:opacity-40">Always on</button>
+                  <button disabled={!pick[f.key]} onClick={() => setOrg(f.key, pick[f.key], false)} className="px-2 py-1 rounded-lg border border-[#ebece6] disabled:opacity-40">Always off</button>
                 </div>
               </div>
             );

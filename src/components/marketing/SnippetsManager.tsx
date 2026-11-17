@@ -67,7 +67,7 @@ export default function SnippetsManager({ canManage }: { canManage: boolean }) {
     }
   }
 
-  const cls = "w-full text-xs font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2.5 py-2";
+  const cls = "w-full text-xs font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2.5 py-2";
 
   return (
     <div className="space-y-3">
@@ -90,13 +90,13 @@ export default function SnippetsManager({ canManage }: { canManage: boolean }) {
                   <button onClick={() => saveEdit(s.id)} className="px-2.5 py-1 rounded-lg bg-[#1c1c1c] text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
                     <Check className="w-3 h-3" /> Save
                   </button>
-                  <button onClick={() => setEditId(null)} className="px-2.5 py-1 rounded-lg border border-[#eceae4] text-[#5f5f5d] text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
+                  <button onClick={() => setEditId(null)} className="px-2.5 py-1 rounded-lg border border-[#ebece6] text-[#5f5f5d] text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
                     <X className="w-3 h-3" /> Cancel
                   </button>
                 </div>
               </div>
             ) : (
-              <div key={s.id} className="flex items-start gap-2 border border-[#eceae4] rounded-xl p-2.5">
+              <div key={s.id} className="flex items-start gap-2 border border-[#ebece6] rounded-xl p-2.5">
                 <div className="flex-1 min-w-0">
                   <div className="text-[12px] font-bold text-[#1c1c1c]">{s.title}</div>
                   <div className="text-[11px] text-[#5f5f5d] whitespace-pre-wrap mt-0.5">{s.body}</div>
@@ -125,7 +125,7 @@ export default function SnippetsManager({ canManage }: { canManage: boolean }) {
       )}
 
       {canManage && (
-        <div className="border-t border-[#eceae4] pt-3 space-y-1.5">
+        <div className="border-t border-[#ebece6] pt-3 space-y-1.5">
           <div className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">New saved message</div>
           <input
             value={form.title}

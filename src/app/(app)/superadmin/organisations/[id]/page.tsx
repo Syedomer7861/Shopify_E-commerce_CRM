@@ -89,7 +89,7 @@ export default function SuperAdminOrgDetail() {
         {TABS.map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={cn("px-3 py-1.5 rounded-full text-xs font-semibold border capitalize",
-              tab === t ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#5f5f5d] border-[#eceae4]")}>
+              tab === t ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#5f5f5d] border-[#ebece6]")}>
             {t}
           </button>
         ))}
@@ -104,7 +104,7 @@ export default function SuperAdminOrgDetail() {
             <Fact label="Session timeout" value={org.session_timeout_minutes ? `${org.session_timeout_minutes} min` : "Off"} />
             <Fact label="Modules off" value={org.disabled_modules?.length || 0} />
             <SeatOverridePanel orgId={id} />
-            <div className="col-span-2 border-t border-[#eceae4] pt-3">
+            <div className="col-span-2 border-t border-[#ebece6] pt-3">
               <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Records</div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {Object.entries(usage || {}).map(([k, v]) => <Fact key={k} label={k} value={<span className="tabular-nums">{v}</span>} />)}
@@ -114,9 +114,9 @@ export default function SuperAdminOrgDetail() {
           <div className="card p-4 space-y-3">
             <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d]">Owner notes (only you see these)</div>
             <input value={tags} onChange={e => setTags(e.target.value)} placeholder="Tags, comma separated"
-              className="w-full h-10 px-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30" />
+              className="w-full h-10 px-3 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30" />
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={7} maxLength={10000} placeholder="Notes"
-              className="w-full p-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30" />
+              className="w-full p-3 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30" />
             <button onClick={saveNotes} disabled={saving}
               className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-[#1c1c1c] text-white disabled:opacity-50">
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save

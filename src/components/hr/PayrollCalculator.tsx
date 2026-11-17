@@ -317,7 +317,7 @@ export default function PayrollCalculator() {
           </button>
 
           {showPolicy && (
-            <div className="px-5 pb-5 border-t border-[#eceae4]">
+            <div className="px-5 pb-5 border-t border-[#ebece6]">
               <div className="flex justify-between items-center py-3 mb-2">
                 <p className="text-[10px] text-gray-400">Override defaults for your company policy. All calculations will reflect these values.</p>
                 <button onClick={resetPolicy} className="flex items-center gap-1 text-[10px] font-bold text-rose-400 hover:text-rose-600">

@@ -27,9 +27,9 @@ const ago = (iso: string | null) => {
 };
 
 const STATE_COLOR: Record<string, string> = {
-  READY: "bg-emerald-50 text-emerald-700", ERROR: "bg-rose-50 text-rose-700", CANCELED: "bg-[#eceae4] text-[#5f5f5d]",
+  READY: "bg-emerald-50 text-emerald-700", ERROR: "bg-rose-50 text-rose-700", CANCELED: "bg-[#ebece6] text-[#5f5f5d]",
   BUILDING: "bg-amber-50 text-amber-700", QUEUED: "bg-amber-50 text-amber-700", INITIALIZING: "bg-amber-50 text-amber-700",
-  ACTIVE_HEALTHY: "bg-emerald-50 text-emerald-700", INACTIVE: "bg-[#eceae4] text-[#5f5f5d]",
+  ACTIVE_HEALTHY: "bg-emerald-50 text-emerald-700", INACTIVE: "bg-[#ebece6] text-[#5f5f5d]",
 };
 const Badge = ({ s }: { s: string | null }) => <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${STATE_COLOR[s ?? ""] ?? "bg-rose-50 text-rose-700"}`}>{(s ?? "unknown").replace(/_/g, " ").toLowerCase()}</span>;
 
@@ -151,7 +151,7 @@ export function DevToolsFeed() {
       {gh.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {gh.map(r => (
-            <a key={r.repo} href={r.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-[#eceae4] text-xs text-[#1c1c1c] hover:bg-[#f7f4ed]">
+            <a key={r.repo} href={r.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-[#ebece6] text-xs text-[#1c1c1c] hover:bg-[#f6f7f2]">
               <ExternalLink className="w-3 h-3" /> {r.repo}
             </a>
           ))}

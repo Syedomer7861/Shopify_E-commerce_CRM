@@ -149,7 +149,7 @@ export default function ReportsPage() {
         rtoRevenue: 3600,
         deliveryBreakdown: [
           { label: "Delivered", value: 120, color: "bg-[#1c1c1c]" },
-          { label: "In Transit", value: 15, color: "bg-[#eceae4]" },
+          { label: "In Transit", value: 15, color: "bg-[#ebece6]" },
           { label: "RTO", value: 8, color: "bg-rose-500" },
           { label: "Pending", value: 7, color: "bg-gray-300" },
         ],
@@ -354,7 +354,7 @@ export default function ReportsPage() {
       }
       const breakdown = [
         { label: "Delivered", color: "bg-[#1c1c1c]", key: "delivered" },
-        { label: "In Transit", color: "bg-[#eceae4]", key: "in_transit" },
+        { label: "In Transit", color: "bg-[#ebece6]", key: "in_transit" },
         { label: "RTO", color: "bg-rose-500", key: "rto" },
         { label: "Pending", color: "bg-gray-300", key: "pending" },
       ].map(b => ({ label: b.label, value: breakdownCounts[b.key] || 0, color: b.color }));
@@ -412,7 +412,7 @@ export default function ReportsPage() {
       const taskOutcomes = [
         { label: "Confirmed", key: "done", color: "bg-[#1c1c1c]" },
         { label: "Rescheduled", key: "rescheduled", color: "bg-[#5f5f5d]" },
-        { label: "No Answer", key: "no_answer", color: "bg-[#eceae4]" }
+        { label: "No Answer", key: "no_answer", color: "bg-[#ebece6]" }
       ].map((o: any) => ({
         label: o.label,
         value: current.callsData?.filter(c => c.outcome === o.key).length || 0,
@@ -1246,7 +1246,7 @@ export default function ReportsPage() {
       <PageHeader
         title="Analytics"
         subtitle={
-          <div className="flex items-center gap-3 bg-[#eceae4]/30 px-3 py-1.5 rounded-full border border-[#eceae4] w-fit mt-1">
+          <div className="flex items-center gap-3 bg-[#ebece6]/30 px-3 py-1.5 rounded-full border border-[#ebece6] w-fit mt-1">
             <Calendar className="w-3.5 h-3.5 text-[#1c1c1c]/60" />
             <input 
               type="date" 
@@ -1296,7 +1296,7 @@ export default function ReportsPage() {
       />
 
       {/* Filter Toolbar */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-10 p-5 bg-[#f7f4ed] rounded-2xl border border-[#eceae4] animate-slide-up">
+      <div className="flex flex-col lg:flex-row gap-4 mb-10 p-5 bg-[#f6f7f2] rounded-2xl border border-[#ebece6] animate-slide-up">
          <div className="flex items-center gap-1.5 flex-wrap flex-1">
             <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mr-2 opacity-60">Presets:</span>
             {[
@@ -1309,7 +1309,7 @@ export default function ReportsPage() {
               <button 
                 key={p.value} 
                 onClick={() => setRangePreset(p.value as any)}
-                className="px-3 py-1 text-[10px] font-bold text-[#5f5f5d] bg-[#eceae4]/40 hover:bg-[#1c1c1c] hover:text-[#fcfbf8] rounded-full transition-all"
+                className="px-3 py-1 text-[10px] font-bold text-[#5f5f5d] bg-[#ebece6]/40 hover:bg-[#1c1c1c] hover:text-[#fcfbf8] rounded-full transition-all"
               >
                 {p.label}
               </button>
@@ -1317,7 +1317,7 @@ export default function ReportsPage() {
          </div>
          
          <div className="flex gap-3 flex-wrap items-center">
-            <div className="flex items-center gap-2 bg-[#eceae4]/20 px-3 py-1.5 rounded-lg border border-[#eceae4]">
+            <div className="flex items-center gap-2 bg-[#ebece6]/20 px-3 py-1.5 rounded-lg border border-[#ebece6]">
                <Users className="w-3.5 h-3.5 text-[#5f5f5d]" />
                <select 
                  className="bg-transparent border-none p-0 text-[11px] font-bold text-[#1c1c1c] focus:ring-0 min-w-[120px]"
@@ -1329,7 +1329,7 @@ export default function ReportsPage() {
                </select>
             </div>
 
-            <div className="flex items-center gap-2 bg-[#eceae4]/20 px-3 py-1.5 rounded-lg border border-[#eceae4]">
+            <div className="flex items-center gap-2 bg-[#ebece6]/20 px-3 py-1.5 rounded-lg border border-[#ebece6]">
                <Package className="w-3.5 h-3.5 text-[#5f5f5d]" />
                <select 
                  className="bg-transparent border-none p-0 text-[11px] font-bold text-[#1c1c1c] focus:ring-0 min-w-[120px]"
@@ -1361,7 +1361,7 @@ export default function ReportsPage() {
               "px-5 py-2.5 text-[13px] font-[600] rounded-full transition-all flex items-center gap-2 whitespace-nowrap",
               activeTab === t.key 
                 ? "bg-[#1c1c1c] text-[#fcfbf8] shadow-sm" 
-                : "bg-[#eceae4]/50 text-[#5f5f5d] hover:bg-[#eceae4]"
+                : "bg-[#ebece6]/50 text-[#5f5f5d] hover:bg-[#ebece6]"
             )}
           >
             <t.icon className={cn("w-4 h-4", activeTab === t.key ? "text-[#fcfbf8]" : "text-[#5f5f5d]")} />
@@ -1381,7 +1381,7 @@ export default function ReportsPage() {
                <div className="overflow-x-auto mt-6">
                   <table className="w-full text-left">
                      <thead>
-                        <tr className="border-b border-[#eceae4]">
+                        <tr className="border-b border-[#ebece6]">
                            <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Date</th>
                            <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Agent</th>
                            <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Status</th>
@@ -1393,7 +1393,7 @@ export default function ReportsPage() {
                            <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Revenue</th>
                         </tr>
                      </thead>
-                     <tbody className="divide-y divide-[#eceae4]/50">
+                     <tbody className="divide-y divide-[#ebece6]/50">
                         {stats.dailyAttendanceLogs.length > 0 ? stats.dailyAttendanceLogs.map((log: any, idx: number) => (
                            <tr key={`${log.date}-${log.name}-${idx}`} className="hover:bg-[rgba(28,28,28,0.02)] transition-colors">
                               <td className="py-4 text-xs font-bold text-[#1c1c1c]">{format(new Date(log.date), "MMM dd, yyyy")}</td>
@@ -1505,7 +1505,7 @@ export default function ReportsPage() {
                           <stop offset="95%" stopColor="#1c1c1c" stopOpacity={0.01}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eceae4" />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ebece6" />
                       <XAxis dataKey="date" tick={{fontSize: 10, fill: '#5f5f5d'}} tickFormatter={(d) => format(new Date(d), "MMM dd")} axisLine={false} tickLine={false} dy={10} />
                       <YAxis tick={{fontSize: 10, fill: '#5f5f5d'}} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${v>=1000 ? (v/1000).toFixed(1)+'k' : v}`} dx={-10} />
                       <Tooltip 
@@ -1554,14 +1554,14 @@ export default function ReportsPage() {
                   <div className="overflow-x-auto mt-6">
                     <table className="w-full text-left">
                       <thead>
-                        <tr className="border-b border-[#eceae4]">
+                        <tr className="border-b border-[#ebece6]">
                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">State</th>
                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Orders</th>
                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Revenue</th>
                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Share</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#eceae4]/50">
+                      <tbody className="divide-y divide-[#ebece6]/50">
                         {stats.stateDistribution.map((s: any) => (
                           <tr 
                             key={s.state} 
@@ -1573,7 +1573,7 @@ export default function ReportsPage() {
                             <td className="py-4 text-xs font-bold text-[#1c1c1c] text-right">{formatCurrency(s.revenue)}</td>
                             <td className="py-4 text-right">
                                <div className="flex items-center justify-end gap-3">
-                                  <div className="w-20 h-1.5 bg-[#eceae4] rounded-full overflow-hidden">
+                                  <div className="w-20 h-1.5 bg-[#ebece6] rounded-full overflow-hidden">
                                     <div className="h-full bg-[#1c1c1c] rounded-full" style={{ width: `${s.share}%` }} />
                                   </div>
                                   <span className="text-[10px] font-bold text-[#1c1c1c] min-w-[30px]">{s.share}%</span>
@@ -1597,7 +1597,7 @@ export default function ReportsPage() {
                             <span>Total Leads</span>
                             <span>{stats.funnelData.total}</span>
                          </div>
-                         <div className="h-10 bg-[#eceae4]/40 border border-[#eceae4] rounded-lg relative overflow-hidden flex items-center justify-center">
+                         <div className="h-10 bg-[#ebece6]/40 border border-[#ebece6] rounded-lg relative overflow-hidden flex items-center justify-center">
                             <div className="absolute inset-0 bg-[#1c1c1c]/5" style={{ width: '100%' }} />
                             <span className="relative text-[11px] font-bold text-[#1c1c1c]">100% Entry</span>
                          </div>
@@ -1608,7 +1608,7 @@ export default function ReportsPage() {
                             <span>Engagement</span>
                             <span>{stats.funnelData.followed}</span>
                          </div>
-                         <div className="h-10 bg-[#eceae4]/40 border border-[#eceae4] rounded-lg relative overflow-hidden flex items-center justify-center">
+                         <div className="h-10 bg-[#ebece6]/40 border border-[#ebece6] rounded-lg relative overflow-hidden flex items-center justify-center">
                             <div className="absolute inset-0 bg-[#1c1c1c]/10" style={{ width: `${stats.funnelData.total > 0 ? (stats.funnelData.followed / stats.funnelData.total) * 100 : 0}%` }} />
                             <span className="relative text-[11px] font-bold text-[#1c1c1c]">
                                {stats.funnelData.total > 0 ? Math.round((stats.funnelData.followed / stats.funnelData.total) * 100) : 0}% Reach
@@ -1643,7 +1643,7 @@ export default function ReportsPage() {
                   {stats.workflowPerformance.length === 0 ? (
                     <p className="col-span-full text-xs text-[#5f5f5d] italic text-center py-6">No automation conversions in this range.</p>
                   ) : stats.workflowPerformance.map((w: any) => (
-                    <div key={w.name} className="p-4 rounded-2xl bg-[#f7f4ed] border border-[#eceae4] shadow-sm flex items-center justify-between">
+                    <div key={w.name} className="p-4 rounded-2xl bg-[#f6f7f2] border border-[#ebece6] shadow-sm flex items-center justify-between">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">{w.name}</span>
                         <span className="text-[10px] text-[#5f5f5d] font-bold">{w.conversions} Conversions</span>
@@ -1666,7 +1666,7 @@ export default function ReportsPage() {
                         <span className="font-black text-[#1c1c1c] uppercase tracking-tighter">{a.name.split("@")[0]}</span>
                         <span className="font-black text-[#1c1c1c]">{formatCurrency(a.revenue)}</span>
                       </div>
-                      <div className="h-2 bg-[#eceae4] rounded-full overflow-hidden">
+                      <div className="h-2 bg-[#ebece6] rounded-full overflow-hidden">
                         <div className="h-full bg-[#1c1c1c]" style={{ width: `${(a.count / Math.max(...stats.agentPerformance.map((x: any) => x.count), 1)) * 100}%` }} />
                       </div>
                     </div>
@@ -1692,7 +1692,7 @@ export default function ReportsPage() {
                  <div className="overflow-x-auto mt-6">
                     <table className="w-full text-left">
                        <thead>
-                          <tr className="border-b border-[#eceae4]">
+                          <tr className="border-b border-[#ebece6]">
                              <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Courier</th>
                              <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Total</th>
                              <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Delivered %</th>
@@ -1700,7 +1700,7 @@ export default function ReportsPage() {
                              <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Performance</th>
                           </tr>
                        </thead>
-                       <tbody className="divide-y divide-[#eceae4]/50">
+                       <tbody className="divide-y divide-[#ebece6]/50">
                           {stats.shippingMetrics.courierDistribution.map((c: any) => (
                              <tr key={c.name} className="hover:bg-[rgba(28,28,28,0.02)] transition-colors">
                                 <td className="py-4 text-xs font-bold text-[#1c1c1c] uppercase">{c.name}</td>
@@ -1708,7 +1708,7 @@ export default function ReportsPage() {
                                 <td className="py-4 text-xs font-bold text-emerald-600 text-center">{Math.round((c.delivered / c.total) * 100)}%</td>
                                 <td className="py-4 text-xs font-bold text-rose-600 text-center">{Math.round((c.rto / c.total) * 100)}%</td>
                                 <td className="py-4 text-right">
-                                   <div className="w-20 h-1.5 bg-[#eceae4] rounded-full ml-auto overflow-hidden">
+                                   <div className="w-20 h-1.5 bg-[#ebece6] rounded-full ml-auto overflow-hidden">
                                       <div className="h-full bg-[#1c1c1c] rounded-full" style={{ width: `${(c.delivered / c.total) * 100}%` }} />
                                    </div>
                                 </td>
@@ -1757,7 +1757,7 @@ export default function ReportsPage() {
                                 <span>{w.name}</span>
                                 <span>{w.value}</span>
                              </div>
-                             <div className="h-1.5 bg-[#eceae4] rounded-full overflow-hidden">
+                             <div className="h-1.5 bg-[#ebece6] rounded-full overflow-hidden">
                                 <div className="h-full bg-[#1c1c1c]" style={{ width: `${(w.value / (stats.ordersInRange || 1)) * 100}%` }} />
                              </div>
                           </div>
@@ -1786,13 +1786,13 @@ export default function ReportsPage() {
               <div className="overflow-x-auto mt-4">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[#eceae4]">
+                    <tr className="border-b border-[#ebece6]">
                       <th className="text-left py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Agent</th>
                       <th className="text-center py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Calls</th>
                       <th className="text-right py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Sales</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#eceae4]/50">
+                  <tbody className="divide-y divide-[#ebece6]/50">
                     {stats.agentPerformance.map((a: any) => (
                       <tr 
                          key={a.name} 
@@ -1823,21 +1823,21 @@ export default function ReportsPage() {
                <div className="overflow-x-auto mt-4">
                   <table className="w-full text-left">
                      <thead>
-                        <tr className="border-b border-[#eceae4]">
+                        <tr className="border-b border-[#ebece6]">
                            <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Product</th>
                            <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Units</th>
                            <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Revenue</th>
                            <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Share</th>
                         </tr>
                      </thead>
-                     <tbody className="divide-y divide-[#eceae4]/50">
+                     <tbody className="divide-y divide-[#ebece6]/50">
                         {stats.topProducts.map((p: any) => (
                            <tr key={p.name} className="hover:bg-[rgba(28,28,28,0.02)] transition-colors">
                               <td className="py-4 text-xs font-bold text-[#1c1c1c]">{p.name}</td>
                               <td className="py-4 text-xs font-bold text-[#5f5f5d] text-center">{p.count}</td>
                               <td className="py-4 text-xs font-bold text-[#1c1c1c] text-right">{formatCurrency(p.revenue)}</td>
                               <td className="py-4 text-right">
-                                 <span className="text-[10px] font-bold text-[#5f5f5d] bg-[#eceae4]/50 px-2 py-0.5 rounded-full">
+                                 <span className="text-[10px] font-bold text-[#5f5f5d] bg-[#ebece6]/50 px-2 py-0.5 rounded-full">
                                     {stats.totalProductRevenue > 0 ? Math.round((p.revenue / stats.totalProductRevenue) * 100) : 0}%
                                  </span>
                               </td>
@@ -1848,7 +1848,7 @@ export default function ReportsPage() {
                </div>
             </div>
             
-            <div className="card p-6 bg-[#eceae4]/10 flex flex-col">
+            <div className="card p-6 bg-[#ebece6]/10 flex flex-col">
                <SectionTitle>Revenue Distribution</SectionTitle>
                {stats.topProducts.length === 0 ? (
                   <div className="flex-1 flex items-center justify-center text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest py-16">
@@ -1895,7 +1895,7 @@ export default function ReportsPage() {
                                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: REVENUE_COLORS[index % REVENUE_COLORS.length] }} />
                                  <span className="font-bold text-[#1c1c1c] truncate flex-1">{p.name}</span>
                                  <span className="font-bold text-[#5f5f5d] tabular-nums">{formatCurrency(p.revenue)}</span>
-                                 <span className="text-[10px] font-bold text-[#5f5f5d] bg-[#eceae4]/60 px-2 py-0.5 rounded-full tabular-nums shrink-0 w-12 text-center">{Math.round(share)}%</span>
+                                 <span className="text-[10px] font-bold text-[#5f5f5d] bg-[#ebece6]/60 px-2 py-0.5 rounded-full tabular-nums shrink-0 w-12 text-center">{Math.round(share)}%</span>
                               </div>
                            );
                         })}
@@ -1925,13 +1925,13 @@ export default function ReportsPage() {
             <div className="overflow-x-auto mt-6">
                <table className="w-full text-left">
                   <thead>
-                     <tr className="border-b border-[#eceae4]">
+                     <tr className="border-b border-[#ebece6]">
                         <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Customer</th>
                         <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Orders</th>
                         <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">LTV</th>
                      </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#eceae4]/50">
+                  <tbody className="divide-y divide-[#ebece6]/50">
                      {stats.topCustomers.map((c: any) => (
                         <tr key={c.id} className="hover:bg-[rgba(28,28,28,0.02)] transition-colors">
                            <td className="py-4">
@@ -1953,12 +1953,12 @@ export default function ReportsPage() {
             <SectionTitle>Product Leaderboard</SectionTitle>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
                 {stats.topProducts.map((p: any) => (
-                    <div key={p.name} className="flex items-center justify-between p-4 rounded-xl border border-[#eceae4] bg-[#eceae4]/10 hover:shadow-md transition-all">
+                    <div key={p.name} className="flex items-center justify-between p-4 rounded-xl border border-[#ebece6] bg-[#ebece6]/10 hover:shadow-md transition-all">
                         <div className="flex flex-col gap-1 truncate pr-4">
                            <span className="text-xs font-bold text-[#1c1c1c] truncate">{p.name}</span>
                            <span className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">{p.count} Units Sold</span>
                         </div>
-                        <div className="text-xs font-bold text-[#1c1c1c] border-l border-[#eceae4] pl-4">{formatCurrency(p.revenue)}</div>
+                        <div className="text-xs font-bold text-[#1c1c1c] border-l border-[#ebece6] pl-4">{formatCurrency(p.revenue)}</div>
                     </div>
                 ))}
             </div>
@@ -1981,7 +1981,7 @@ export default function ReportsPage() {
                     {stats.agentAttendance.filter((a: any) => a.taskCount > 0).map((a: any) => (
                         <div key={a.name} className="flex items-center gap-4">
                             <div className="w-24 text-[10px] font-bold text-[#5f5f5d] uppercase truncate">{a.name.split("@")[0]}</div>
-                            <div className="flex-1 h-2 bg-[#eceae4] rounded-full overflow-hidden">
+                            <div className="flex-1 h-2 bg-[#ebece6] rounded-full overflow-hidden">
                                 <div className="h-full bg-[#1c1c1c] rounded-full" style={{ width: `${Math.min(100, (a.taskCount / Math.max(...stats.agentAttendance.map((x: any) => x.taskCount), 1)) * 100)}%` }} />
                             </div>
                             <div className="w-12 text-[10px] font-bold text-[#1c1c1c] text-right">{a.taskCount}</div>
@@ -2002,7 +2002,7 @@ export default function ReportsPage() {
                <div className="overflow-x-auto mt-6">
                   <table className="w-full text-left">
                      <thead>
-                        <tr className="border-b border-[#eceae4]">
+                        <tr className="border-b border-[#ebece6]">
                            <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Agent Detail</th>
                            <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Status / Activity</th>
                            <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Net Work</th>
@@ -2012,7 +2012,7 @@ export default function ReportsPage() {
                            <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Effort Score</th>
                         </tr>
                      </thead>
-                     <tbody className="divide-y divide-[#eceae4]/50">
+                     <tbody className="divide-y divide-[#ebece6]/50">
                         {stats.agentAttendance.map((a: any) => {
                            const isOnline = a.status === "online";
                            const isBreak = ["break", "lunch", "away"].includes(a.status);
@@ -2069,7 +2069,7 @@ export default function ReportsPage() {
                                    <div className="flex flex-col items-end">
                                       <span className={cn(
                                           "px-3 py-1 rounded-full text-[10px] font-black",
-                                          Number(a.productivity) > 5 ? "bg-emerald-500 text-white" : "bg-[#eceae4] text-[#5f5f5d]"
+                                          Number(a.productivity) > 5 ? "bg-emerald-500 text-white" : "bg-[#ebece6] text-[#5f5f5d]"
                                       )}>
                                           {a.productivity} T/H
                                       </span>
@@ -2092,13 +2092,13 @@ export default function ReportsPage() {
             <div className="overflow-x-auto mt-6">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#eceae4]">
+                  <tr className="border-b border-[#ebece6]">
                     <th className="text-left py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Order</th>
                     <th className="text-left py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Customer</th>
                     <th className="text-right py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Value</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#eceae4]/50">
+                <tbody className="divide-y divide-[#ebece6]/50">
                   {stats.rtoOrders.map((r: any) => (
                     <tr key={r.id}>
                       <td className="py-4 text-xs font-bold text-[#1c1c1c]">#{r.order_number}</td>
@@ -2120,7 +2120,7 @@ export default function ReportsPage() {
         <div className="space-y-6 py-2">
             <p className="text-xs text-[#5f5f5d] italic">Complete data integrity export for audit and compliance purposes.</p>
             <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-2 block tracking-widest">Format</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "xlsx"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "xlsx" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>EXCEL</button><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "csv"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "csv" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>CSV</button><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "pdf"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "pdf" ? "bg-rose-500 text-white border-rose-500" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>PDF</button></div></div>
+                <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-2 block tracking-widest">Format</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "xlsx"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "xlsx" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>EXCEL</button><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "csv"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "csv" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>CSV</button><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "pdf"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "pdf" ? "bg-rose-500 text-white border-rose-500" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>PDF</button></div></div>
                 
             </div>
         </div>
@@ -2130,9 +2130,9 @@ export default function ReportsPage() {
         footer={<><button className="btn-secondary" onClick={() => setShowAdvancedExport(false)}>Cancel</button><button className="btn-primary" onClick={handleAdvancedExport} disabled={isExporting}>{isExporting ? "Processing..." : "Generate Report"}</button></>}
       >
         <div className="space-y-8 py-2">
-            <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-4 block tracking-widest opacity-60">Select Modules</label><div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{["Summary", "Calls", "Orders", "Agents", "Products", "Recovery", "Workflows", "Attendance", "Trends"].map((s: any) => (<button key={s} onClick={() => setExportOptions({...exportOptions, sheets: {...exportOptions.sheets, [s.toLowerCase()]: !(exportOptions.sheets as any)[s.toLowerCase()]}})} className={cn("flex items-center justify-center py-3 rounded-xl border text-[11px] font-bold transition-all", (exportOptions.sheets as any)[s.toLowerCase()] ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c] shadow-lg shadow-[#1c1c1c]/10" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>{s}</button>))}</div></div>
-            <div className="grid grid-cols-2 gap-8 pt-4 border-t border-[#eceae4]">
-                <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-3 block tracking-widest opacity-60">Output Format</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setExportOptions({...exportOptions, format: "xlsx"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "xlsx" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>EXCEL</button><button onClick={() => setExportOptions({...exportOptions, format: "csv"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "csv" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>CSV</button><button onClick={() => setExportOptions({...exportOptions, format: "pdf"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "pdf" ? "bg-rose-500 text-white border-rose-500" : "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]")}>PDF</button></div></div>
+            <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-4 block tracking-widest opacity-60">Select Modules</label><div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{["Summary", "Calls", "Orders", "Agents", "Products", "Recovery", "Workflows", "Attendance", "Trends"].map((s: any) => (<button key={s} onClick={() => setExportOptions({...exportOptions, sheets: {...exportOptions.sheets, [s.toLowerCase()]: !(exportOptions.sheets as any)[s.toLowerCase()]}})} className={cn("flex items-center justify-center py-3 rounded-xl border text-[11px] font-bold transition-all", (exportOptions.sheets as any)[s.toLowerCase()] ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c] shadow-lg shadow-[#1c1c1c]/10" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>{s}</button>))}</div></div>
+            <div className="grid grid-cols-2 gap-8 pt-4 border-t border-[#ebece6]">
+                <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-3 block tracking-widest opacity-60">Output Format</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setExportOptions({...exportOptions, format: "xlsx"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "xlsx" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>EXCEL</button><button onClick={() => setExportOptions({...exportOptions, format: "csv"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "csv" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>CSV</button><button onClick={() => setExportOptions({...exportOptions, format: "pdf"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "pdf" ? "bg-rose-500 text-white border-rose-500" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>PDF</button></div></div>
                 
             </div>
         </div>

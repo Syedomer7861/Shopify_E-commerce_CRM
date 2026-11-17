@@ -103,8 +103,8 @@ export default function BillingPage() {
   async function signOut() { await createClient().auth.signOut(); window.location.href = "/login"; }
 
   const shell = (body: React.ReactNode) => (
-    <div className="min-h-screen bg-[#f7f4ed] flex items-center justify-center p-4 py-10">
-      <div className="w-full max-w-[520px] bg-white rounded-[2rem] p-6 sm:p-8 border border-[#eceae4] space-y-6">
+    <div className="min-h-screen bg-[#f6f7f2] flex items-center justify-center p-4 py-10">
+      <div className="w-full max-w-[520px] bg-white rounded-[2rem] p-6 sm:p-8 border border-[#ebece6] space-y-6">
         <div className="flex items-center gap-3">
           <CreditCard className="w-6 h-6 text-[#1c1c1c]" aria-hidden />
           <div className="min-w-0">
@@ -113,7 +113,7 @@ export default function BillingPage() {
           </div>
         </div>
         {body}
-        {msg && <p role="status" className="text-sm text-[#1c1c1c] bg-[#f7f4ed] rounded-xl px-4 py-3">{msg}</p>}
+        {msg && <p role="status" className="text-sm text-[#1c1c1c] bg-[#f6f7f2] rounded-xl px-4 py-3">{msg}</p>}
         <div className="flex justify-between text-xs">
           {!s?.hold ? <a href="/" className="font-bold text-[#1c1c1c] underline underline-offset-2 py-2">Back to workspace</a> : <span />}
           <button onClick={signOut} className="font-bold text-[#5f5f5d] hover:text-[#1c1c1c] py-2">Sign out</button>
@@ -132,7 +132,7 @@ export default function BillingPage() {
       {s.state === "past_due" && !s.hold && <p className="text-sm bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">A payment failed. Razorpay will retry automatically; please make sure your payment method has funds.</p>}
 
       {live && s.current && (
-        <div className="rounded-2xl border border-[#eceae4] p-4 text-sm space-y-1">
+        <div className="rounded-2xl border border-[#ebece6] p-4 text-sm space-y-1">
           <div className="font-bold text-[#1c1c1c]">{s.current.plan} · <span className="capitalize">{s.current.cycle}</span></div>
           <div className="text-[#5f5f5d]">{money(s.current.price, s.current.currency)} per {s.current.cycle === "monthly" ? "month" : "year"}</div>
           <div className="text-[#5f5f5d]">
@@ -148,7 +148,7 @@ export default function BillingPage() {
         !live && <p className="text-sm text-[#5f5f5d]">Online payments are not open yet. <a href="/contact" className="font-bold underline">Contact us</a> to activate your workspace.</p>
       ) : live ? (
         s.current?.source === "razorpay" && (
-          <button onClick={cancel} disabled={busy} className="h-11 px-5 rounded-xl border border-[#eceae4] text-sm font-bold text-[#1c1c1c] disabled:opacity-50">
+          <button onClick={cancel} disabled={busy} className="h-11 px-5 rounded-xl border border-[#ebece6] text-sm font-bold text-[#1c1c1c] disabled:opacity-50">
             Stop auto-pay
           </button>
         )
@@ -161,11 +161,11 @@ export default function BillingPage() {
             <label className="block space-y-2">
               <span className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest ml-1">Company name</span>
               <input value={orgName} onChange={(e) => setOrgName(e.target.value)} maxLength={120} autoComplete="organization"
-                className="w-full h-12 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-4 text-sm text-[#1c1c1c] focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/15" />
+                className="w-full h-12 bg-[#fcfbf8] border border-[#ebece6] rounded-2xl px-4 text-sm text-[#1c1c1c] focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/15" />
             </label>
           )}
           <button onClick={pay} disabled={busy || !versionId || (s.state === "pending" && orgName.trim().length < 2)}
-            className="w-full h-12 bg-[#1c1c1c] text-[#f7f4ed] font-black uppercase tracking-widest text-xs rounded-2xl disabled:opacity-50">
+            className="w-full h-12 bg-[#1c1c1c] text-[#f6f7f2] font-black uppercase tracking-widest text-xs rounded-2xl disabled:opacity-50">
             {busy ? "Opening payment…" : "Set up auto-pay"}
           </button>
           <p className="text-[11px] text-[#5f5f5d] text-center">Secure payment by Razorpay. You can stop auto-pay any time from this page.</p>

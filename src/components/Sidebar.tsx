@@ -355,7 +355,7 @@ export default function Sidebar() {
                 <span className="uppercase tracking-tight">Personal Reminder</span>
               </div>
               <p className="text-[11px] text-[#5f5f5d] font-medium leading-relaxed italic">{reminder.title}</p>
-              <div className="flex justify-end border-t border-[#eceae4] pt-2">
+              <div className="flex justify-end border-t border-[#ebece6] pt-2">
                 <button 
                   onClick={() => toast.dismiss(t.id)}
                   className="text-[9px] font-black text-emerald-600 hover:text-emerald-700 uppercase tracking-widest"
@@ -593,8 +593,8 @@ export default function Sidebar() {
 
   return (
     // Phones: a slim icon rail on the left (was a bottom bar that sat over content). Desktop unchanged.
-    <aside className="w-16 lg:w-64 lg:min-w-[256px] h-[100dvh] lg:h-screen bg-[#f7f4ed] flex flex-col border-r border-[#eceae4] fixed left-0 top-0 lg:relative z-50 pb-[env(safe-area-inset-bottom)] lg:pb-0">
-      <div className="px-0 lg:px-6 py-3 lg:py-10 border-b border-[#eceae4]/50 flex justify-center lg:block flex-shrink-0 bg-white lg:bg-transparent">
+    <aside className="w-16 lg:w-64 lg:min-w-[256px] h-[100dvh] lg:h-screen bg-[#f6f7f2] flex flex-col border-r border-[#ebece6] fixed left-0 top-0 lg:relative z-50 pb-[env(safe-area-inset-bottom)] lg:pb-0">
+      <div className="px-0 lg:px-6 py-3 lg:py-10 border-b border-[#ebece6]/50 flex justify-center lg:block flex-shrink-0 bg-white lg:bg-transparent">
         <div className="flex items-center gap-2 lg:gap-3">
           <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full overflow-hidden flex-shrink-0 shadow-lg shadow-[#1c1c1c]/10">
             <img src="/logo-mark.png" alt="CodeCrest" className="w-full h-full object-cover" />
@@ -663,11 +663,11 @@ export default function Sidebar() {
       <button
         onClick={() => setShowMoreMenu(true)}
         aria-label="Profile, shift and menu"
-        className="lg:hidden flex flex-col items-center gap-1 py-2.5 mb-[4.25rem] border-t border-[#eceae4] flex-shrink-0"
+        className="lg:hidden flex flex-col items-center gap-1 py-2.5 mb-[4.25rem] border-t border-[#ebece6] flex-shrink-0"
       >
         <span className="relative">
           <UserAvatar profile={profile} className="w-8 h-8 text-[10px]" />
-          <span className={cn("absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#f7f4ed]", statusDot)} />
+          <span className={cn("absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#f6f7f2]", statusDot)} />
         </span>
         <span className="text-[9px] font-bold text-[#1c1c1c] tabular-nums">{formatDuration(timers.workMs).slice(0, 5)}</span>
       </button>
@@ -676,7 +676,7 @@ export default function Sidebar() {
       <Modal open={showMoreMenu} onClose={() => setShowMoreMenu(false)} title="Quick Actions & Menus">
         <div className="space-y-6 pb-8">
            {/* Profile */}
-           <button onClick={() => { setShowMoreMenu(false); setShowProfile(true); }} className="w-full text-left flex items-center gap-3 p-3 rounded-xl bg-white border border-[#eceae4] hover:bg-gray-50">
+           <button onClick={() => { setShowMoreMenu(false); setShowProfile(true); }} className="w-full text-left flex items-center gap-3 p-3 rounded-xl bg-white border border-[#ebece6] hover:bg-gray-50">
              <span className="relative flex-shrink-0">
                <UserAvatar profile={profile} className="w-10 h-10 text-xs" />
                <span className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white", statusDot)} />
@@ -692,15 +692,15 @@ export default function Sidebar() {
            <div>
               <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-2 px-1">Today&apos;s Shift</label>
               <div className="grid grid-cols-3 gap-2">
-                <div className="p-3 rounded-xl bg-white border border-[#eceae4]">
+                <div className="p-3 rounded-xl bg-white border border-[#ebece6]">
                   <div className="text-[9px] font-bold uppercase tracking-widest text-[#5f5f5d]/70">Logged in</div>
                   <div className="text-sm font-bold text-[#1c1c1c] tabular-nums mt-0.5">{shiftStartLabel}</div>
                 </div>
-                <div className="p-3 rounded-xl bg-white border border-[#eceae4]">
+                <div className="p-3 rounded-xl bg-white border border-[#ebece6]">
                   <div className="text-[9px] font-bold uppercase tracking-widest text-[#5f5f5d]/70">Productive</div>
                   <div className="text-sm font-bold text-[#1c1c1c] tabular-nums mt-0.5">{formatDuration(timers.workMs)}</div>
                 </div>
-                <div className="p-3 rounded-xl bg-white border border-[#eceae4]">
+                <div className="p-3 rounded-xl bg-white border border-[#ebece6]">
                   <div className="text-[9px] font-bold uppercase tracking-widest text-[#5f5f5d]/70">Break</div>
                   <div className="text-sm font-bold text-amber-700 tabular-nums mt-0.5">{formatDuration(timers.breakMs)}</div>
                 </div>
@@ -708,7 +708,7 @@ export default function Sidebar() {
               {profile?.role !== "admin" && profile?.role !== "hr" && (
                 <button
                   onClick={() => { setShowMoreMenu(false); setShowLeaveModal(true); }}
-                  className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#eceae4] bg-white text-[#1c1c1c] text-[11px] font-bold uppercase tracking-widest hover:bg-gray-50"
+                  className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#ebece6] bg-white text-[#1c1c1c] text-[11px] font-bold uppercase tracking-widest hover:bg-gray-50"
                 >
                   <Calendar className="w-3.5 h-3.5" /> Request Leave
                 </button>
@@ -740,7 +740,7 @@ export default function Sidebar() {
                     }}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all",
-                      profile?.status === s.id ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#1c1c1c] border-[#eceae4] hover:bg-gray-50"
+                      profile?.status === s.id ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#1c1c1c] border-[#ebece6] hover:bg-gray-50"
                     )}
                   >
                     <span>{s.icon}</span> {s.label}
@@ -750,7 +750,7 @@ export default function Sidebar() {
            </div>
 
            {/* Mobile Management/Admin Sections */}
-           <div className="space-y-4 pt-4 border-t border-[#eceae4]">
+           <div className="space-y-4 pt-4 border-t border-[#ebece6]">
               {moduleNav.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Business</h4>
@@ -825,7 +825,7 @@ export default function Sidebar() {
               ))}
            </div>
 
-           <div className="pt-4 border-t border-[#eceae4]">
+           <div className="pt-4 border-t border-[#ebece6]">
               <button onClick={() => { handleLogout(); setShowMoreMenu(false); }} className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-rose-50 text-rose-600 text-xs font-black uppercase tracking-widest hover:bg-rose-100 transition-all">
                 <LogOut className="w-4 h-4" /> Sign Out
               </button>
@@ -855,7 +855,7 @@ export default function Sidebar() {
                     updateStatus(showStatusModal!.id, r);
                     setShowStatusModal(null);
                   }}
-                  className="w-full text-left px-4 py-2.5 rounded-lg border border-[#eceae4] text-xs font-medium hover:bg-[#1c1c1c] hover:text-white transition-all"
+                  className="w-full text-left px-4 py-2.5 rounded-lg border border-[#ebece6] text-xs font-medium hover:bg-[#1c1c1c] hover:text-white transition-all"
                 >
                   {r}
                 </button>
@@ -872,11 +872,11 @@ export default function Sidebar() {
               <div className="grid grid-cols-2 gap-4">
                  <div>
                     <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-1.5">Start Date</label>
-                    <input type="date" className="w-full bg-[#f7f4ed] border-[#eceae4] rounded-lg text-xs font-bold p-2.5 focus:ring-[#1c1c1c] shadow-sm" value={leaveData.start} onChange={e => setLeaveData({...leaveData, start: e.target.value})} />
+                    <input type="date" className="w-full bg-[#f6f7f2] border-[#ebece6] rounded-lg text-xs font-bold p-2.5 focus:ring-[#1c1c1c] shadow-sm" value={leaveData.start} onChange={e => setLeaveData({...leaveData, start: e.target.value})} />
                  </div>
                  <div>
                     <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-1.5">End Date</label>
-                    <input type="date" className="w-full bg-[#f7f4ed] border-[#eceae4] rounded-lg text-xs font-bold p-2.5 focus:ring-[#1c1c1c] shadow-sm" value={leaveData.end} onChange={e => setLeaveData({...leaveData, end: e.target.value})} />
+                    <input type="date" className="w-full bg-[#f6f7f2] border-[#ebece6] rounded-lg text-xs font-bold p-2.5 focus:ring-[#1c1c1c] shadow-sm" value={leaveData.end} onChange={e => setLeaveData({...leaveData, end: e.target.value})} />
                  </div>
               </div>
               <div>
@@ -890,14 +890,14 @@ export default function Sidebar() {
                       <button
                         key={preset.label}
                         onClick={() => setLeaveData({ ...leaveData, reason: preset.text })}
-                        className="text-[10px] px-3 py-1.5 bg-[#f7f4ed] border border-[#eceae4] hover:bg-[#1c1c1c] hover:text-white rounded-lg transition-all text-[#5f5f5d] font-black uppercase tracking-tighter"
+                        className="text-[10px] px-3 py-1.5 bg-[#f6f7f2] border border-[#ebece6] hover:bg-[#1c1c1c] hover:text-white rounded-lg transition-all text-[#5f5f5d] font-black uppercase tracking-tighter"
                       >
                         {preset.label}
                       </button>
                     ))}
                  </div>
                  <textarea 
-                   className="w-full bg-[#f7f4ed] border-[#eceae4] rounded-xl p-4 text-xs font-bold min-h-[120px] focus:ring-[#1c1c1c] placeholder:text-[#5f5f5d]/20 shadow-inner" 
+                   className="w-full bg-[#f6f7f2] border-[#ebece6] rounded-xl p-4 text-xs font-bold min-h-[120px] focus:ring-[#1c1c1c] placeholder:text-[#5f5f5d]/20 shadow-inner" 
                    placeholder="Select a preset above or write a custom message..."
                    value={leaveData.reason}
                    onChange={e => setLeaveData({...leaveData, reason: e.target.value})}
@@ -906,18 +906,18 @@ export default function Sidebar() {
               <button 
                 onClick={handleRequestLeave}
                 disabled={isSubmittingLeave}
-                className="w-full py-4 bg-[#1c1c1c] text-[#f7f4ed] rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-xl flex items-center justify-center gap-2"
+                className="w-full py-4 bg-[#1c1c1c] text-[#f6f7f2] rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-xl flex items-center justify-center gap-2"
                 style={{ boxShadow: "rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px" }}
               >
                 {isSubmittingLeave ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> Submit to HR</>}
               </button>
 
               {myLeaves.length > 0 && (
-                <div className="mt-8 border-t border-[#eceae4] pt-8">
+                <div className="mt-8 border-t border-[#ebece6] pt-8">
                   <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-[0.2em] mb-4">Request History</h4>
                   <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                     {myLeaves.map(l => (
-                      <div key={l.id} className="p-4 bg-[#eceae4]/20 rounded-xl border border-[#eceae4] group transition-all hover:bg-[#f7f4ed]">
+                      <div key={l.id} className="p-4 bg-[#ebece6]/20 rounded-xl border border-[#ebece6] group transition-all hover:bg-[#f6f7f2]">
                         <div className="flex justify-between items-start mb-2.5">
                            <div className="text-[11px] font-black text-[#1c1c1c] tracking-tight">
                              {l.start_date} <span className="text-[#5f5f5d]/20 font-bold mx-1">→</span> {l.end_date}
@@ -938,7 +938,7 @@ export default function Sidebar() {
            </div>
         </Modal>
 
-      <div className="hidden lg:block px-4 py-6 border-t border-[#eceae4]/50 bg-[rgba(28,28,28,0.01)]">
+      <div className="hidden lg:block px-4 py-6 border-t border-[#ebece6]/50 bg-[rgba(28,28,28,0.01)]">
         <div className="mb-4 px-2">
           <label className="text-[9px] font-bold text-[#5f5f5d]/60 uppercase tracking-widest block mb-1.5">Shift Status</label>
           <div className="relative">
@@ -962,7 +962,7 @@ export default function Sidebar() {
                 }
                 updateStatus(newStatus);
               }}
-              className="w-full appearance-none bg-[#f7f4ed] border border-[#eceae4] text-[#1c1c1c] text-xs font-bold py-2.5 pl-3 pr-8 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1c1c1c] focus:border-[#1c1c1c] shadow-sm transition-all"
+              className="w-full appearance-none bg-[#f6f7f2] border border-[#ebece6] text-[#1c1c1c] text-xs font-bold py-2.5 pl-3 pr-8 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1c1c1c] focus:border-[#1c1c1c] shadow-sm transition-all"
             >
               <option value="online">⚡ Online</option>
               <option value="meeting">👥 Meeting</option>
@@ -981,7 +981,7 @@ export default function Sidebar() {
         {profile?.role !== 'admin' && profile?.role !== 'hr' && (
            <button 
              onClick={() => setShowLeaveModal(true)}
-             className="w-full flex items-center justify-center gap-2 py-2 mb-4 rounded-lg border border-[#eceae4] text-[#5f5f5d] text-[10px] font-bold uppercase tracking-widest hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
+             className="w-full flex items-center justify-center gap-2 py-2 mb-4 rounded-lg border border-[#ebece6] text-[#5f5f5d] text-[10px] font-bold uppercase tracking-widest hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
            >
              <Calendar className="w-3 h-3" /> Request Leave
            </button>
@@ -1009,7 +1009,7 @@ export default function Sidebar() {
             </span>
         </div>
 
-        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#f7f4ed] border border-[#eceae4] group">
+        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#f6f7f2] border border-[#ebece6] group">
           <button onClick={() => setShowProfile(true)} title="My profile" className="flex items-center gap-3 flex-1 min-w-0 text-left">
           <UserAvatar profile={profile} className="w-8 h-8 text-[10px]" />
           <div className="flex-1 min-w-0">

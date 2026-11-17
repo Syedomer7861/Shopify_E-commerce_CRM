@@ -229,7 +229,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
               }
               className={cn(
                 "flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all",
-                hiddenStatuses.has(s.id) ? "opacity-40 border-[#eceae4] bg-white" : "border-[#eceae4] bg-white hover:shadow-sm"
+                hiddenStatuses.has(s.id) ? "opacity-40 border-[#ebece6] bg-white" : "border-[#ebece6] bg-white hover:shadow-sm"
               )}
             >
               <span className="w-8 h-8 rounded-lg flex-shrink-0" style={{ backgroundColor: s.color + "26" }}>
@@ -246,8 +246,8 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
         </div>
 
         {/* Toolbar */}
-        <div className="bg-white border border-[#eceae4] rounded-2xl">
-          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-[#eceae4]">
+        <div className="bg-white border border-[#ebece6] rounded-2xl">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-[#ebece6]">
             <div className="flex items-center gap-1">
               <button aria-label="Previous" onClick={() => step(-1)} className="w-7 h-7 rounded-lg hover:bg-[#f2efe8] flex items-center justify-center text-[#5f5f5d]">
                 <ChevronLeft className="w-4 h-4" />
@@ -283,7 +283,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
                 onClick={() => setShowFilters((s) => !s)}
                 className={cn(
                   "px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border flex items-center gap-1.5",
-                  showFilters || hiddenStatuses.size || hideDone ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#5f5f5d] border-[#eceae4]"
+                  showFilters || hiddenStatuses.size || hideDone ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#5f5f5d] border-[#ebece6]"
                 )}
               >
                 <SlidersHorizontal className="w-3 h-3" /> Filters
@@ -291,19 +291,19 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
               <div className="relative">
                 <button
                   onClick={() => setExportOpen((o) => !o)}
-                  className="px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-white text-[#5f5f5d] border border-[#eceae4] flex items-center gap-1.5"
+                  className="px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-white text-[#5f5f5d] border border-[#ebece6] flex items-center gap-1.5"
                 >
                   <Download className="w-3 h-3" /> Export
                 </button>
                 {exportOpen && (
-                  <div className="absolute right-0 mt-1 w-44 bg-white border border-[#eceae4] rounded-xl shadow-lg z-20 overflow-hidden">
-                    <button onClick={() => doExport("ics")} className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-bold hover:bg-[#f7f4ed]">
+                  <div className="absolute right-0 mt-1 w-44 bg-white border border-[#ebece6] rounded-xl shadow-lg z-20 overflow-hidden">
+                    <button onClick={() => doExport("ics")} className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-bold hover:bg-[#f6f7f2]">
                       <CalendarDays className="w-3.5 h-3.5" /> iCalendar (.ics)
                     </button>
-                    <button onClick={() => doExport("csv")} className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-bold hover:bg-[#f7f4ed] border-t border-[#eceae4]">
+                    <button onClick={() => doExport("csv")} className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-bold hover:bg-[#f6f7f2] border-t border-[#ebece6]">
                       <FileText className="w-3.5 h-3.5" /> Spreadsheet (.csv)
                     </button>
-                    <div className="px-3 py-1.5 text-[9px] font-bold text-[#5f5f5d]/50 border-t border-[#eceae4]">
+                    <div className="px-3 py-1.5 text-[9px] font-bold text-[#5f5f5d]/50 border-t border-[#ebece6]">
                       {scoped.length} event{scoped.length === 1 ? "" : "s"} in view
                     </div>
                   </div>
@@ -313,7 +313,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
           </div>
 
           {showFilters && (
-            <div className="px-4 py-3 border-b border-[#eceae4] bg-[#faf8f3] flex flex-wrap items-center gap-2">
+            <div className="px-4 py-3 border-b border-[#ebece6] bg-[#faf8f3] flex flex-wrap items-center gap-2">
               <span className="text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50">Show</span>
               {list.statuses.map((s) => {
                 const on = !hiddenStatuses.has(s.id);
@@ -329,7 +329,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
                     }
                     className={cn(
                       "flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold border transition-all",
-                      on ? "bg-white border-[#eceae4] text-[#1c1c1c]" : "bg-transparent border-[#eceae4] text-[#5f5f5d]/40 line-through"
+                      on ? "bg-white border-[#ebece6] text-[#1c1c1c]" : "bg-transparent border-[#ebece6] text-[#5f5f5d]/40 line-through"
                     )}
                   >
                     <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
@@ -356,7 +356,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
           {view === "month" && (
             <div className="overflow-x-auto">
               <div className="min-w-[620px]">
-                <div className="grid grid-cols-7 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50 border-b border-[#eceae4]">
+                <div className="grid grid-cols-7 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50 border-b border-[#ebece6]">
                   {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
                     <div key={d} className="px-2 py-2 text-center">{d}</div>
                   ))}
@@ -368,7 +368,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
                     const inMonth = isSameMonth(day, cursor);
                     const today = isSameDay(day, new Date());
                     return (
-                      <div key={k} className={cn("min-h-[116px] border-b border-r border-[#eceae4] p-1.5 space-y-1", !inMonth && "bg-[#faf8f3]")}>
+                      <div key={k} className={cn("min-h-[116px] border-b border-r border-[#ebece6] p-1.5 space-y-1", !inMonth && "bg-[#faf8f3]")}>
                         <div className={cn(
                           "text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full",
                           today ? "bg-[#1c1c1c] text-white" : inMonth ? "text-[#1c1c1c]" : "text-[#5f5f5d]/40"
@@ -397,8 +397,8 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
                   const list_ = byDay.get(k) ?? [];
                   const today = isSameDay(day, new Date());
                   return (
-                    <div key={k} className="border-r border-[#eceae4] min-h-[420px]">
-                      <div className={cn("px-2 py-2 border-b border-[#eceae4] text-center", today && "bg-[#1c1c1c] text-white")}>
+                    <div key={k} className="border-r border-[#ebece6] min-h-[420px]">
+                      <div className={cn("px-2 py-2 border-b border-[#ebece6] text-center", today && "bg-[#1c1c1c] text-white")}>
                         <div className="text-[8px] font-black uppercase tracking-widest opacity-60">{format(day, "EEE")}</div>
                         <div className="text-sm font-black">{format(day, "d")}</div>
                       </div>
@@ -414,7 +414,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
           )}
 
           {view === "agenda" && (
-            <div className="divide-y divide-[#eceae4] max-h-[560px] overflow-y-auto">
+            <div className="divide-y divide-[#ebece6] max-h-[560px] overflow-y-auto">
               {[...byDay.keys()].sort().length === 0 && (
                 <div className="px-4 py-12 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/40">
                   Nothing scheduled in this window
@@ -437,7 +437,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
 
       {/* Details drawer */}
       <div className={cn(
-        "bg-white border border-[#eceae4] rounded-2xl p-4 h-fit xl:sticky xl:top-4",
+        "bg-white border border-[#ebece6] rounded-2xl p-4 h-fit xl:sticky xl:top-4",
         !selected && "hidden xl:block"
       )}>
         {!selected ? (
@@ -473,11 +473,11 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
             </div>
 
             {selected.description && (
-              <p className="text-[11px] text-[#5f5f5d] whitespace-pre-wrap border-t border-[#eceae4] pt-3">{selected.description}</p>
+              <p className="text-[11px] text-[#5f5f5d] whitespace-pre-wrap border-t border-[#ebece6] pt-3">{selected.description}</p>
             )}
 
             {(selected.assignees?.length ?? 0) > 0 && (
-              <div className="border-t border-[#eceae4] pt-3">
+              <div className="border-t border-[#ebece6] pt-3">
                 <div className="text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50 mb-2 flex items-center gap-1.5">
                   <UsersIcon className="w-3 h-3" /> Team
                 </div>
@@ -498,9 +498,9 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
             )}
 
             {(selected.tags?.length ?? 0) > 0 && (
-              <div className="border-t border-[#eceae4] pt-3 flex flex-wrap gap-1.5">
+              <div className="border-t border-[#ebece6] pt-3 flex flex-wrap gap-1.5">
                 {selected.tags!.map((tag) => (
-                  <span key={tag} className="text-[9px] font-bold px-2 py-0.5 rounded-lg bg-[#f7f4ed] border border-[#eceae4] text-[#5f5f5d] flex items-center gap-1">
+                  <span key={tag} className="text-[9px] font-bold px-2 py-0.5 rounded-lg bg-[#f6f7f2] border border-[#ebece6] text-[#5f5f5d] flex items-center gap-1">
                     <TagIcon className="w-2.5 h-2.5" /> {tag}
                   </span>
                 ))}

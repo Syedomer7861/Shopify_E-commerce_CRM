@@ -91,7 +91,7 @@ export function UnitCombobox({
         </button>
       </div>
       {open && listStyle && createPortal(
-        <ul ref={list} id={listId} role="listbox" style={listStyle} onMouseDown={e => e.preventDefault()} className="overflow-y-auto rounded-lg border border-[#eceae4] bg-white shadow-xl py-1 text-xs">
+        <ul ref={list} id={listId} role="listbox" style={listStyle} onMouseDown={e => e.preventDefault()} className="overflow-y-auto rounded-lg border border-[#ebece6] bg-white shadow-xl py-1 text-xs">
           {filtered.length === 0 && <li className="px-3 py-2 text-gray-400">No match.</li>}
           {filtered.map((o, i) => {
             const header = o.group && o.group !== lastGroup ? o.group : null;
@@ -107,7 +107,7 @@ export function UnitCombobox({
                   onMouseEnter={() => setActive(i)}
                   onMouseDown={e => { e.preventDefault(); pick(i); }}
                   className={cn("px-3 py-1.5 flex items-center justify-between gap-2 cursor-pointer",
-                    i === active && "bg-[#f7f4ed]", o.disabled && "opacity-40 cursor-not-allowed")}
+                    i === active && "bg-[#f6f7f2]", o.disabled && "opacity-40 cursor-not-allowed")}
                 >
                   <span className="truncate">{o.label}</span>
                   <span className="shrink-0 flex items-center gap-1 text-[10px] text-gray-400">
@@ -118,14 +118,14 @@ export function UnitCombobox({
             );
           })}
           {onAdd && (
-            <li role="presentation" className="border-t border-[#eceae4] mt-1 pt-1">
+            <li role="presentation" className="border-t border-[#ebece6] mt-1 pt-1">
               <div
                 role="option"
                 aria-selected={false}
                 data-idx={filtered.length}
                 onMouseEnter={() => setActive(filtered.length)}
                 onMouseDown={e => { e.preventDefault(); pick(filtered.length); }}
-                className={cn("px-3 py-2 flex items-center gap-1.5 font-semibold text-[#1c1c1c] cursor-pointer", active === filtered.length && "bg-[#f7f4ed]")}
+                className={cn("px-3 py-2 flex items-center gap-1.5 font-semibold text-[#1c1c1c] cursor-pointer", active === filtered.length && "bg-[#f6f7f2]")}
               >
                 <Plus className="w-3.5 h-3.5" /> {addLabel ?? "Add custom"}{query.trim() && !exact ? `: "${query.trim()}"` : ""}
               </div>

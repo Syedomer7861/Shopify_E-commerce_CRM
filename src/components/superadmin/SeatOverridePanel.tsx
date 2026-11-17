@@ -35,13 +35,13 @@ export function SeatOverridePanel({ orgId }: { orgId: string }) {
 
   if (!seats) return null;
   return (
-    <div className="col-span-2 border-t border-[#eceae4] pt-3">
+    <div className="col-span-2 border-t border-[#ebece6] pt-3">
       <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Team members</div>
       <p className="text-sm tabular-nums">{seats.used} of {seats.limit ?? "unlimited"} in use</p>
       <div className="flex gap-1 mt-2">
         <input value={value} onChange={e => setValue(e.target.value)} inputMode="numeric" placeholder="Follow plan"
-          className="h-9 w-28 px-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30" />
-        <button onClick={save} disabled={busy} className="inline-flex items-center gap-1 text-xs font-semibold px-3 rounded-lg border border-[#eceae4] disabled:opacity-50">
+          className="h-9 w-28 px-3 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30" />
+        <button onClick={save} disabled={busy} className="inline-flex items-center gap-1 text-xs font-semibold px-3 rounded-lg border border-[#ebece6] disabled:opacity-50">
           {busy && <Loader2 className="w-3 h-3 animate-spin" />} Set seats
         </button>
       </div>

@@ -84,7 +84,7 @@ export default function TaskHistoryModal({ taskId, taskTitle, members = [], onCl
                 <div className="w-6 h-6 rounded-full bg-[#f2efe8] text-[#5f5f5d] flex items-center justify-center flex-shrink-0">
                   {iconFor(r.action)}
                 </div>
-                {i < rows.length - 1 && <div className="w-px flex-1 bg-[#eceae4] my-1" />}
+                {i < rows.length - 1 && <div className="w-px flex-1 bg-[#ebece6] my-1" />}
               </div>
               <div className="pb-4 min-w-0">
                 <div className="text-[12px] text-[#5f5f5d] leading-snug">

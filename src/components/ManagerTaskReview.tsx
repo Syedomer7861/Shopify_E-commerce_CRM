@@ -333,8 +333,8 @@ export default function ManagerTaskReview() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#eceae4]">
-        <div className="flex items-center gap-1.5 p-1 bg-[#eceae4]/40 rounded-xl border border-[#eceae4] w-fit">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#ebece6]">
+        <div className="flex items-center gap-1.5 p-1 bg-[#ebece6]/40 rounded-xl border border-[#ebece6] w-fit">
           <button 
             onClick={() => setViewMode('audit')}
             className={cn(
@@ -361,7 +361,7 @@ export default function ManagerTaskReview() {
             <input 
               type="text" 
               placeholder={viewMode === 'audit' ? "Search customer or agent..." : "Search Order, AWB..."}
-              className="pl-12 pr-6 py-3 text-[12px] font-bold border-[#eceae4] rounded-xl focus:ring-4 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c] bg-[#f7f4ed] w-full lg:w-80 shadow-sm transition-all placeholder:text-[#5f5f5d]/40"
+              className="pl-12 pr-6 py-3 text-[12px] font-bold border-[#ebece6] rounded-xl focus:ring-4 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c] bg-[#f6f7f2] w-full lg:w-80 shadow-sm transition-all placeholder:text-[#5f5f5d]/40"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -374,7 +374,7 @@ export default function ManagerTaskReview() {
           </div>
           <button 
             onClick={() => viewMode === 'audit' ? fetchTasks() : fetchNdrOrders()} 
-            className="w-12 h-12 bg-[#f7f4ed] border border-[#eceae4] rounded-xl flex items-center justify-center hover:bg-[#eceae4]/20 transition-all shadow-sm text-[#5f5f5d] hover:text-[#1c1c1c] active:scale-95 group/refresh"
+            className="w-12 h-12 bg-[#f6f7f2] border border-[#ebece6] rounded-xl flex items-center justify-center hover:bg-[#ebece6]/20 transition-all shadow-sm text-[#5f5f5d] hover:text-[#1c1c1c] active:scale-95 group/refresh"
             title="Refresh"
           >
             <History className={cn("w-5 h-5 transition-transform duration-500 group-active/refresh:rotate-180", loading && "animate-spin")} />
@@ -388,8 +388,8 @@ export default function ManagerTaskReview() {
           className={cn(
             "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border",
             showAdvanced || segmentFilter !== 'all' || minPriority || dateFrom || dateTo || deliveryStatusFilter !== 'all' || courierFilter
-              ? "bg-[#1c1c1c] text-[#f7f4ed] border-[#1c1c1c]"
-              : "bg-[#f7f4ed] text-[#5f5f5d]/60 border-[#eceae4] hover:border-[#1c1c1c]/40"
+              ? "bg-[#1c1c1c] text-[#f6f7f2] border-[#1c1c1c]"
+              : "bg-[#f6f7f2] text-[#5f5f5d]/60 border-[#ebece6] hover:border-[#1c1c1c]/40"
           )}
         >
           Advanced Filters
@@ -414,20 +414,20 @@ export default function ManagerTaskReview() {
       </div>
 
       {showAdvanced && (
-        <div className="flex flex-wrap items-end gap-4 bg-[#f7f4ed] p-4 rounded-xl border border-[#eceae4]">
+        <div className="flex flex-wrap items-end gap-4 bg-[#f6f7f2] p-4 rounded-xl border border-[#ebece6]">
           <div className="flex flex-col gap-1">
             <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">
               {viewMode === 'audit' ? 'Completed From' : 'Ordered From'}
             </label>
             <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-              className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white" />
+              className="text-[11px] font-bold border border-[#ebece6] rounded-lg px-3 py-2 bg-white" />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">
               {viewMode === 'audit' ? 'Completed To' : 'Ordered To'}
             </label>
             <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-              className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white" />
+              className="text-[11px] font-bold border border-[#ebece6] rounded-lg px-3 py-2 bg-white" />
           </div>
 
           {viewMode === 'audit' ? (
@@ -435,12 +435,12 @@ export default function ManagerTaskReview() {
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Min Priority</label>
                 <input type="number" placeholder="e.g. 100" value={minPriority} onChange={(e) => setMinPriority(e.target.value)}
-                  className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white w-28" />
+                  className="text-[11px] font-bold border border-[#ebece6] rounded-lg px-3 py-2 bg-white w-28" />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Customer Segment</label>
                 <select value={segmentFilter} onChange={(e) => setSegmentFilter(e.target.value)}
-                  className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white">
+                  className="text-[11px] font-bold border border-[#ebece6] rounded-lg px-3 py-2 bg-white">
                   <option value="all">All Segments</option>
                   {Object.entries(SEGMENT_CONFIG).map(([key, cfg]) => (
                     <option key={key} value={key}>{cfg.label}</option>
@@ -453,7 +453,7 @@ export default function ManagerTaskReview() {
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Delivery Status</label>
                 <select value={deliveryStatusFilter} onChange={(e) => setDeliveryStatusFilter(e.target.value)}
-                  className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white">
+                  className="text-[11px] font-bold border border-[#ebece6] rounded-lg px-3 py-2 bg-white">
                   <option value="all">RTO / Failed / Out for Delivery</option>
                   <option value="rto">RTO Only</option>
                   <option value="failed">Failed (NDR) Only</option>
@@ -463,7 +463,7 @@ export default function ManagerTaskReview() {
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Courier</label>
                 <input type="text" placeholder="e.g. Delhivery" value={courierFilter} onChange={(e) => setCourierFilter(e.target.value)}
-                  className="text-[11px] font-bold border border-[#eceae4] rounded-lg px-3 py-2 bg-white w-40" />
+                  className="text-[11px] font-bold border border-[#ebece6] rounded-lg px-3 py-2 bg-white w-40" />
               </div>
             </>
           )}
@@ -472,18 +472,18 @@ export default function ManagerTaskReview() {
 
         {viewMode === 'audit' ? (
           <>
-            <div className="flex flex-wrap items-center gap-3 bg-[#eceae4]/40 p-2 rounded-xl border border-[#eceae4]">
+            <div className="flex flex-wrap items-center gap-3 bg-[#ebece6]/40 p-2 rounded-xl border border-[#ebece6]">
               <button 
                 onClick={() => setMineOnly(!mineOnly)}
                 className={cn(
                   "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border",
-                  mineOnly ? "bg-[#1c1c1c] text-[#f7f4ed] border-[#1c1c1c]" : "bg-[#f7f4ed] text-[#5f5f5d]/60 border-[#eceae4] hover:border-[#1c1c1c]/40"
+                  mineOnly ? "bg-[#1c1c1c] text-[#f6f7f2] border-[#1c1c1c]" : "bg-[#f6f7f2] text-[#5f5f5d]/60 border-[#ebece6] hover:border-[#1c1c1c]/40"
                 )}
               >
                 {myFirstName ? `${myFirstName}’s work only` : "My work only"}
               </button>
 <CheckCircle className="w-3.5 h-3.5 text-[#5f5f5d]/40" />
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f7f4ed] rounded-lg border border-[#eceae4]">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f6f7f2] rounded-lg border border-[#ebece6]">
                 <User className="w-3.5 h-3.5 text-[#5f5f5d]/40" />
                 <select 
                   className="bg-transparent border-none text-[10px] font-black uppercase tracking-tight focus:ring-0 py-0 cursor-pointer text-[#1c1c1c]"
@@ -495,7 +495,7 @@ export default function ManagerTaskReview() {
                 </select>
               </div>
 
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f7f4ed] rounded-lg border border-[#eceae4]">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f6f7f2] rounded-lg border border-[#ebece6]">
                 <Filter className="w-3.5 h-3.5 text-[#5f5f5d]/40" />
                 <select 
                   className="bg-transparent border-none text-[10px] font-black uppercase tracking-tight focus:ring-0 py-0 cursor-pointer text-[#1c1c1c]"
@@ -511,7 +511,7 @@ export default function ManagerTaskReview() {
                 </select>
               </div>
 
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f7f4ed] rounded-lg border border-[#eceae4]">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f6f7f2] rounded-lg border border-[#ebece6]">
                 <CheckCircle className="w-3.5 h-3.5 text-[#5f5f5d]/40" />
                 <select 
                   className="bg-transparent border-none text-[10px] font-black uppercase tracking-tight focus:ring-0 py-0 cursor-pointer text-[#1c1c1c]"
@@ -548,10 +548,10 @@ export default function ManagerTaskReview() {
                     <p className="text-xs font-bold uppercase tracking-widest">Loading audit queue...</p>
                   </div>
                 ) : filteredTasks.length === 0 ? (
-                  <div className="card p-24 flex flex-col items-center justify-center text-center bg-[#f7f4ed] border-dashed border-2 border-[#eceae4] rounded-2xl overflow-hidden relative group">
-                    <div className="absolute inset-0 bg-[#eceae4]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                  <div className="card p-24 flex flex-col items-center justify-center text-center bg-[#f6f7f2] border-dashed border-2 border-[#ebece6] rounded-2xl overflow-hidden relative group">
+                    <div className="absolute inset-0 bg-[#ebece6]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                     <div className="relative z-10 flex flex-col items-center">
-                      <div className="w-20 h-20 bg-[#eceae4] rounded-full flex items-center justify-center mb-6 shadow-sm animate-bounce-subtle">
+                      <div className="w-20 h-20 bg-[#ebece6] rounded-full flex items-center justify-center mb-6 shadow-sm animate-bounce-subtle">
                         <CheckCircle className="w-10 h-10 text-[#1c1c1c]/40" />
                       </div>
                       <h3 className="text-xl font-black text-[#1c1c1c] uppercase tracking-tighter mb-2">Workspace Optimized</h3>
@@ -567,7 +567,7 @@ export default function ManagerTaskReview() {
                       onClick={() => setSelectedTask(t)}
                       className={cn(
                         "card p-5 cursor-pointer transition-all group relative overflow-hidden",
-                        selectedTask?.id === t.id ? "border-[#1c1c1c] bg-[#eceae4]/60 ring-1 ring-[#1c1c1c]/10" : "bg-[#f7f4ed] border-transparent"
+                        selectedTask?.id === t.id ? "border-[#1c1c1c] bg-[#ebece6]/60 ring-1 ring-[#1c1c1c]/10" : "bg-[#f6f7f2] border-transparent"
                       )}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4">
@@ -594,7 +594,7 @@ export default function ManagerTaskReview() {
                           </div>
                         </div>
                         <div className="pl-14 sm:pl-0 sm:text-right">
-                          <span className="badge bg-[#f7f4ed] border-[#eceae4] text-[10px] font-black text-[#5f5f5d] uppercase tracking-tight">
+                          <span className="badge bg-[#f6f7f2] border-[#ebece6] text-[10px] font-black text-[#5f5f5d] uppercase tracking-tight">
                             {t.call_logs?.[0]?.outcome?.replace(/_/g, ' ') || "RESOLVED"}
                           </span>
                           <p className="text-[10px] font-bold text-emerald-600 mt-1 uppercase tracking-tighter">
@@ -604,17 +604,17 @@ export default function ManagerTaskReview() {
                       </div>
                       
                       {/* Agent Note Snippet */}
-                      <div className="mt-4 p-3 bg-[#eceae4]/40 rounded-xl border border-[#eceae4] group-hover:bg-[#f7f4ed] transition-all">
+                      <div className="mt-4 p-3 bg-[#ebece6]/40 rounded-xl border border-[#ebece6] group-hover:bg-[#f6f7f2] transition-all">
                         <p className="text-[11px] font-medium text-[#5f5f5d] leading-relaxed line-clamp-2 italic">
                           &ldquo;{t.call_logs?.[0]?.note || "No comments provided by agent."}&rdquo;
                         </p>
                       </div>
                       
-                      <div className="mt-4 pt-4 border-t border-[#eceae4]/60 flex flex-wrap items-center justify-between gap-2">
+                      <div className="mt-4 pt-4 border-t border-[#ebece6]/60 flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2 text-[10px] font-bold text-[#5f5f5d]/60">
                           <ShoppingBag className="w-3 h-3" />
                           {getTaskProductName(t)}
-                          <span className="w-1 h-1 bg-[#eceae4] rounded-full" />
+                          <span className="w-1 h-1 bg-[#ebece6] rounded-full" />
                           <span className="text-[#1c1c1c]">₹{(Array.isArray(t.order) ? t.order[0] : t.order)?.total_price || (Array.isArray(t.abandoned_cart) ? t.abandoned_cart[0] : t.abandoned_cart)?.total_price || 0}</span>
                         </div>
                         
@@ -638,8 +638,8 @@ export default function ManagerTaskReview() {
 
               <div className="lg:col-span-5">
                 <div className="sticky top-6">
-                  <div className="card bg-[#f7f4ed] border-[#eceae4] shadow-2xl overflow-hidden min-h-[650px] flex flex-col rounded-2xl">
-                    <div className="p-4 border-b border-[#eceae4] bg-[#eceae4]/20 flex items-center justify-between">
+                  <div className="card bg-[#f6f7f2] border-[#ebece6] shadow-2xl overflow-hidden min-h-[650px] flex flex-col rounded-2xl">
+                    <div className="p-4 border-b border-[#ebece6] bg-[#ebece6]/20 flex items-center justify-between">
                       <h3 className="text-[11px] font-black text-[#1c1c1c] uppercase tracking-widest flex items-center gap-2">
                         <Eye className="w-3.5 h-3.5" />
                         Audit Inspector
@@ -647,7 +647,7 @@ export default function ManagerTaskReview() {
                       {selectedTask && (
                         <button aria-label="History" 
                           onClick={() => setShowOrderModal(true)}
-                          className="w-8 h-8 rounded-lg hover:bg-[#f7f4ed] flex items-center justify-center text-[#5f5f5d] hover:text-[#1c1c1c] transition-all shadow-sm border border-transparent hover:border-[#eceae4]"
+                          className="w-8 h-8 rounded-lg hover:bg-[#f6f7f2] flex items-center justify-center text-[#5f5f5d] hover:text-[#1c1c1c] transition-all shadow-sm border border-transparent hover:border-[#ebece6]"
                         >
                           <History className="w-4 h-4" />
                         </button>
@@ -658,7 +658,7 @@ export default function ManagerTaskReview() {
                       <div className="flex-1 flex flex-col min-h-0">
                         <div className="flex-1 overflow-y-auto p-6 animate-in fade-in slide-in-from-right-4 duration-500">
                           <div className="space-y-6">
-                            <div className="p-4 bg-[#f7f4ed] border border-[#eceae4] rounded-xl shadow-sm space-y-3">
+                            <div className="p-4 bg-[#f6f7f2] border border-[#ebece6] rounded-xl shadow-sm space-y-3">
                               <h4 className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest flex items-center gap-2">
                                 <User className="w-3 h-3" /> Customer Intelligence
                               </h4>
@@ -701,7 +701,7 @@ export default function ManagerTaskReview() {
                               </div>
                               <div>
                                 <p className="text-[9px] font-black text-amber-600 uppercase tracking-[0.2em] mb-1.5 opacity-40">Internal Disposition Note</p>
-                                <div className="bg-[#f7f4ed] p-4 rounded-xl border border-amber-100 shadow-sm">
+                                <div className="bg-[#f6f7f2] p-4 rounded-xl border border-amber-100 shadow-sm">
                                   <p className="text-[11px] font-medium text-[#1c1c1c] italic leading-relaxed">
                                     &ldquo;{selectedTask.call_logs?.[0]?.note || "No notes provided by agent."}&rdquo;
                                   </p>
@@ -715,7 +715,7 @@ export default function ManagerTaskReview() {
                                 <span className="text-[9px] font-bold text-[#5f5f5d]/30 italic">Visible to agent if rejected</span>
                               </div>
                               <textarea 
-                                className="w-full h-32 bg-[#f7f4ed] border-[#eceae4] rounded-xl p-4 text-xs font-bold focus:ring-[#1c1c1c] placeholder:text-[#5f5f5d]/30 shadow-inner"
+                                className="w-full h-32 bg-[#f6f7f2] border-[#ebece6] rounded-xl p-4 text-xs font-bold focus:ring-[#1c1c1c] placeholder:text-[#5f5f5d]/30 shadow-inner"
                                 placeholder="Add feedback or specific instructions for the agent..."
                                 value={reviewNote}
                                 onChange={(e) => setReviewNote(e.target.value)}
@@ -724,12 +724,12 @@ export default function ManagerTaskReview() {
                           </div>
                         </div>
 
-                        <div className="p-6 pt-4 border-t border-[#eceae4] bg-[#eceae4]/20 space-y-3">
+                        <div className="p-6 pt-4 border-t border-[#ebece6] bg-[#ebece6]/20 space-y-3">
                           <div className="flex flex-col xl:flex-row gap-3">
                             <button 
                               onClick={() => handleProcess(selectedTask.id, 'rejected')}
                               disabled={!!processing}
-                              className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#f7f4ed] border border-rose-100 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm"
+                              className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#f6f7f2] border border-rose-100 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm"
                             >
                               <AlertCircle className="w-3.5 h-3.5" />
                               Flag Revision
@@ -737,7 +737,7 @@ export default function ManagerTaskReview() {
                             <button 
                               onClick={() => handleProcess(selectedTask.id, 'approved')}
                               disabled={!!processing}
-                              className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#1c1c1c] text-[#f7f4ed] rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-xl active:scale-[0.98] disabled:opacity-50"
+                              className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#1c1c1c] text-[#f6f7f2] rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-xl active:scale-[0.98] disabled:opacity-50"
                               style={{ boxShadow: "rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px" }}
                             >
                               {processing === selectedTask.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
@@ -748,7 +748,7 @@ export default function ManagerTaskReview() {
                           {(selectedTask.task_type === 'ndr' || selectedTask.order || selectedTask.order_id) && (
                             <button 
                               onClick={() => setShowNDRModal(true)}
-                              className="w-full flex items-center justify-center gap-2 py-3 bg-amber-500 text-[#f7f4ed] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all active:scale-[0.98] shadow-lg shadow-amber-100"
+                              className="w-full flex items-center justify-center gap-2 py-3 bg-amber-500 text-[#f6f7f2] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all active:scale-[0.98] shadow-lg shadow-amber-100"
                             >
                               <Zap className="w-3.5 h-3.5 fill-current" />
                               Trigger Shiprocket Action
@@ -758,7 +758,7 @@ export default function ManagerTaskReview() {
                       </div>
                     ) : (
                       <div className="flex-1 flex flex-col items-center justify-center text-center p-10 opacity-30 grayscale">
-                        <div className="w-20 h-20 bg-[#eceae4]/40 border-2 border-dashed border-[#eceae4] rounded-full flex items-center justify-center mb-4">
+                        <div className="w-20 h-20 bg-[#ebece6]/40 border-2 border-dashed border-[#ebece6] rounded-full flex items-center justify-center mb-4">
                           <Info className="w-8 h-8 text-[#5f5f5d]/40" />
                         </div>
                         <h3 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest">Inspector Idle</h3>
@@ -775,12 +775,12 @@ export default function ManagerTaskReview() {
           <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500 pb-20">
             <div className="grid grid-cols-1 gap-4">
               {loading ? (
-                <div className="py-20 text-center bg-[#f7f4ed] rounded-2xl border border-[#eceae4]">
+                <div className="py-20 text-center bg-[#f6f7f2] rounded-2xl border border-[#ebece6]">
                   <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#5f5f5d]/20 mb-3" />
                   <span className="text-xs font-black text-[#5f5f5d]/40 uppercase tracking-[0.2em]">Syncing Logistics Intelligence...</span>
                 </div>
               ) : filteredNdr.length === 0 ? (
-                <div className="py-20 text-center bg-[#f7f4ed] rounded-2xl border border-[#eceae4] opacity-50">
+                <div className="py-20 text-center bg-[#f6f7f2] rounded-2xl border border-[#ebece6] opacity-50">
                   <Package className="w-12 h-12 mx-auto text-[#5f5f5d]/20 mb-4" />
                   <p className="text-sm font-black uppercase tracking-widest text-[#5f5f5d]/40">No active NDR exceptions</p>
                 </div>
@@ -791,7 +791,7 @@ export default function ManagerTaskReview() {
                   const isCritical = status === 'rto' || status === 'failed';
                   
                   return (
-                    <div key={order.id} className="bg-[#f7f4ed] rounded-2xl border border-[#eceae4] p-6 group overflow-hidden relative">
+                    <div key={order.id} className="bg-[#f6f7f2] rounded-2xl border border-[#ebece6] p-6 group overflow-hidden relative">
                       {isCritical && <div className="absolute top-0 left-0 w-1 h-full bg-rose-500" />}
                       
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
@@ -813,7 +813,7 @@ export default function ManagerTaskReview() {
                                  </div>
                               </div>
                            </div>
-                           <div className="flex items-center gap-2 text-[10px] font-bold text-[#5f5f5d]/60 bg-[#eceae4]/40 px-3 py-1.5 rounded-lg w-fit">
+                           <div className="flex items-center gap-2 text-[10px] font-bold text-[#5f5f5d]/60 bg-[#ebece6]/40 px-3 py-1.5 rounded-lg w-fit">
                               <Calendar className="w-3 h-3" />
                               {formatDate(order.ordered_at)}
                            </div>
@@ -849,7 +849,7 @@ export default function ManagerTaskReview() {
                            <div>
                               <p className="text-[9px] font-black text-[#5f5f5d]/40 uppercase tracking-widest mb-1">Tracking (AWB)</p>
                               <div className="flex items-center gap-2">
-                                 <span className="text-[12px] font-black text-[#1c1c1c] tabular-nums bg-[#eceae4]/40 px-2 py-0.5 rounded-lg border border-[#eceae4]">
+                                 <span className="text-[12px] font-black text-[#1c1c1c] tabular-nums bg-[#ebece6]/40 px-2 py-0.5 rounded-lg border border-[#ebece6]">
                                     {order.tracking_number || "AWB PENDING"}
                                  </span>
                               </div>
@@ -864,7 +864,7 @@ export default function ManagerTaskReview() {
                                    {order.delivery_status}
                                  </span>
                               </div>
-                              <div className="w-[1px] h-6 bg-[#eceae4]" />
+                              <div className="w-[1px] h-6 bg-[#ebece6]" />
                               <div className="flex flex-col">
                                  <span className="text-[8px] font-black text-[#5f5f5d]/40 uppercase tracking-widest">Last Reason</span>
                                  <span className="text-[10px] font-bold text-[#5f5f5d]/60 mt-0.5 line-clamp-1 max-w-[120px]">
@@ -881,7 +881,7 @@ export default function ManagerTaskReview() {
                                setNdrOrderForModal(order);
                                setShowNDRModal(true);
                              }}
-                             className="w-full py-3 bg-[#1c1c1c] text-[#f7f4ed] text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:opacity-90 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2"
+                             className="w-full py-3 bg-[#1c1c1c] text-[#f6f7f2] text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:opacity-90 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2"
                              style={{ boxShadow: "rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px" }}
                            >
                              <Zap className="w-4 h-4 fill-current" />
@@ -892,7 +892,7 @@ export default function ManagerTaskReview() {
                                setSelectedTask({ order: [order], customer: order.customer });
                                setShowOrderModal(true);
                              }}
-                             className="w-full py-2.5 bg-[#f7f4ed] border border-[#eceae4] text-[#5f5f5d] text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-[#eceae4]/20 transition-all flex items-center justify-center gap-2"
+                             className="w-full py-2.5 bg-[#f6f7f2] border border-[#ebece6] text-[#5f5f5d] text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-[#ebece6]/20 transition-all flex items-center justify-center gap-2"
                            >
                              <Eye className="w-3.5 h-3.5" />
                              View Timeline
@@ -901,9 +901,9 @@ export default function ManagerTaskReview() {
                       </div>
 
                       {/* Detail Ribbon (Hidden by default, expands on hover or just visible for context) */}
-                      <div className="mt-4 pt-4 border-t border-[#eceae4]/60 flex items-center justify-between">
+                      <div className="mt-4 pt-4 border-t border-[#ebece6]/60 flex items-center justify-between">
                          <div className="flex items-center gap-3">
-                            <span className="flex items-center gap-1.5 text-[9px] font-black text-[#5f5f5d]/60 uppercase bg-[#eceae4]/40 px-2 py-1 rounded-lg">
+                            <span className="flex items-center gap-1.5 text-[9px] font-black text-[#5f5f5d]/60 uppercase bg-[#ebece6]/40 px-2 py-1 rounded-lg">
                                <ShoppingBag className="w-3 h-3" />
                                {order.line_items?.length || 1} Products
                             </span>
@@ -934,11 +934,11 @@ export default function ManagerTaskReview() {
           selectedTask && (
             <div className="flex items-center gap-3">
               <span className="uppercase tracking-widest text-[10px] font-black opacity-50">Audit View</span>
-              <span className="w-1 h-1 bg-[#eceae4] rounded-full" />
+              <span className="w-1 h-1 bg-[#ebece6] rounded-full" />
               <span className="font-black text-[#1c1c1c]">
                 {selectedTask.task_type === 'recovery' ? 'Abandoned Cart' : `Order #${(Array.isArray(selectedTask.order) ? selectedTask.order[0] : selectedTask.order)?.order_number || '???'}`}
               </span>
-              <span className="px-2 py-0.5 bg-[#eceae4] rounded text-[9px] font-bold text-[#5f5f5d] uppercase tracking-tighter flex gap-2">
+              <span className="px-2 py-0.5 bg-[#ebece6] rounded text-[9px] font-bold text-[#5f5f5d] uppercase tracking-tighter flex gap-2">
                 <a href={`/customers/${selectedTask.customer?.id}`} target="_blank" className="hover:text-[#1c1c1c] hover:underline">
                   {selectedTask.customer?.name}
                 </a>
@@ -952,7 +952,7 @@ export default function ManagerTaskReview() {
         }
         maxWidth="max-w-6xl"
       >
-        <div className="bg-[#f7f4ed] -m-5 -mt-4 rounded-xl overflow-hidden min-h-[70vh]">
+        <div className="bg-[#f6f7f2] -m-5 -mt-4 rounded-xl overflow-hidden min-h-[70vh]">
           {(() => {
             if (!selectedTask) return null;
             const order = Array.isArray(selectedTask.order) ? selectedTask.order[0] : selectedTask.order;
@@ -970,7 +970,7 @@ export default function ManagerTaskReview() {
               <div className="p-12 space-y-8 animate-in fade-in duration-500">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-[#eceae4] text-[#1c1c1c]/40 rounded-2xl flex items-center justify-center shadow-sm">
+                    <div className="w-12 h-12 bg-[#ebece6] text-[#1c1c1c]/40 rounded-2xl flex items-center justify-center shadow-sm">
                       <History className="w-6 h-6" />
                     </div>
                     <div>
@@ -985,7 +985,7 @@ export default function ManagerTaskReview() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="card p-6 bg-[#f7f4ed] border-[#eceae4] shadow-sm space-y-4">
+                  <div className="card p-6 bg-[#f6f7f2] border-[#ebece6] shadow-sm space-y-4">
                     <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-[0.2em] mb-4">Customer Intelligence</h4>
                     <div className="space-y-3">
                       <div>
@@ -1011,11 +1011,11 @@ export default function ManagerTaskReview() {
                     </div>
                   </div>
 
-                  <div className="card p-6 bg-[#f7f4ed] border-[#eceae4] shadow-sm space-y-4">
+                  <div className="card p-6 bg-[#f6f7f2] border-[#ebece6] shadow-sm space-y-4">
                     <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-[0.2em] mb-4">Cart Items</h4>
                     <div className="space-y-4">
                       {((cart?.line_items as any[])?.filter(i => !i.__metadata) || []).map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between gap-4 border-b border-[#eceae4] pb-3 last:border-0">
+                        <div key={idx} className="flex items-center justify-between gap-4 border-b border-[#ebece6] pb-3 last:border-0">
                           <div>
                             <p className="text-xs font-black text-[#1c1c1c]">{item.name || item.title}</p>
                             <p className="text-[9px] font-bold text-[#5f5f5d]/40 uppercase">{item.variant || "Default Variant"}</p>
@@ -1030,8 +1030,8 @@ export default function ManagerTaskReview() {
                   </div>
                 </div>
 
-                <div className="card p-6 bg-[#1c1c1c] text-[#f7f4ed] border-none shadow-xl space-y-2">
-                  <h4 className="text-[10px] font-black text-[#f7f4ed]/40 uppercase tracking-[0.2em]">Agent Resolution Note</h4>
+                <div className="card p-6 bg-[#1c1c1c] text-[#f6f7f2] border-none shadow-xl space-y-2">
+                  <h4 className="text-[10px] font-black text-[#f6f7f2]/40 uppercase tracking-[0.2em]">Agent Resolution Note</h4>
                   <p className="text-sm leading-relaxed font-medium italic">&ldquo;{selectedTask.call_logs?.[0]?.note || "No notes provided by agent."}&rdquo;</p>
                 </div>
               </div>

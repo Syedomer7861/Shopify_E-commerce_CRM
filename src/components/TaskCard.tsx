@@ -977,7 +977,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
               <span className="hidden md:inline mx-1.5 flex-shrink-0">·</span> 
               <span className="truncate w-full md:w-auto md:max-w-[200px] min-w-0 md:px-0 order-3 md:order-none text-[#1c1c1c]/70" title={product}>{product}</span> 
               <span className="hidden md:inline mx-1.5 flex-shrink-0">·</span> 
-              <span className="flex-shrink-0 whitespace-nowrap ml-auto md:ml-0 bg-[#eceae4] md:bg-transparent px-1.5 md:px-0 py-0.5 md:py-0 rounded-md md:rounded-none text-[#1c1c1c] md:text-gray-400 font-bold md:font-medium text-[10px] md:text-xs">Due: {mounted ? formatDate(task.due_date) : "—"}</span>
+              <span className="flex-shrink-0 whitespace-nowrap ml-auto md:ml-0 bg-[#ebece6] md:bg-transparent px-1.5 md:px-0 py-0.5 md:py-0 rounded-md md:rounded-none text-[#1c1c1c] md:text-gray-400 font-bold md:font-medium text-[10px] md:text-xs">Due: {mounted ? formatDate(task.due_date) : "—"}</span>
               {task.order?.delivered_at && (
                 <>
                   <span className="hidden md:inline mx-1.5 flex-shrink-0 text-blue-400">·</span>
@@ -990,14 +990,14 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
               <div className="flex items-center gap-2 mt-3 flex-wrap sm:flex-nowrap" onClick={(e) => e.stopPropagation()}>
                 {task.task_type === 'manager_audit' ? (
                   <>
-                    <button onClick={(e) => handleManagerAction(e, 'rejected')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-[#f7f4ed] border border-rose-100 text-rose-500 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm">
+                    <button onClick={(e) => handleManagerAction(e, 'rejected')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-[#f6f7f2] border border-rose-100 text-rose-500 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm">
                       <AlertCircle className="w-3 h-3" /> Flag Revision
                     </button>
-                    <button onClick={(e) => handleManagerAction(e, 'approved')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-[#1c1c1c] text-[#f7f4ed] rounded-lg text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50" style={{ boxShadow: "rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px" }}>
+                    <button onClick={(e) => handleManagerAction(e, 'approved')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-[#1c1c1c] text-[#f6f7f2] rounded-lg text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50" style={{ boxShadow: "rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px" }}>
                       {processingManager ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve Resolution
                     </button>
                     {(task.order || task.order_id) && (
-                      <button onClick={(e) => { e.stopPropagation(); setShowNDRModal(true); }} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-amber-500 text-[#f7f4ed] rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all active:scale-[0.98] shadow-sm shadow-amber-100">
+                      <button onClick={(e) => { e.stopPropagation(); setShowNDRModal(true); }} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-amber-500 text-[#f6f7f2] rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all active:scale-[0.98] shadow-sm shadow-amber-100">
                         <Zap className="w-3 h-3 fill-current" /> Trigger Shiprocket Action
                       </button>
                     )}
@@ -1062,14 +1062,14 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                 <div className="flex flex-wrap items-center gap-2 md:border-l md:pl-4 border-gray-200 [&>button]:whitespace-nowrap">
                   {task.task_type === 'manager_audit' ? (
                     <>
-                      <button onClick={(e) => handleManagerAction(e, 'rejected')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f7f4ed] border border-rose-100 text-rose-500 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm">
+                      <button onClick={(e) => handleManagerAction(e, 'rejected')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f6f7f2] border border-rose-100 text-rose-500 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm">
                         <AlertCircle className="w-3 h-3" /> Flag Revision
                       </button>
-                      <button onClick={(e) => handleManagerAction(e, 'approved')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#1c1c1c] text-[#f7f4ed] rounded-lg text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50" style={{ boxShadow: "rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px" }}>
+                      <button onClick={(e) => handleManagerAction(e, 'approved')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#1c1c1c] text-[#f6f7f2] rounded-lg text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50" style={{ boxShadow: "rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px" }}>
                         {processingManager ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve Resolution
                       </button>
                       {(task.order || task.order_id) && (
-                        <button onClick={(e) => { e.stopPropagation(); setShowNDRModal(true); }} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-500 text-[#f7f4ed] rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all active:scale-[0.98] shadow-sm shadow-amber-100">
+                        <button onClick={(e) => { e.stopPropagation(); setShowNDRModal(true); }} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-500 text-[#f6f7f2] rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all active:scale-[0.98] shadow-sm shadow-amber-100">
                           <Zap className="w-3 h-3 fill-current" /> Trigger Shiprocket Action
                         </button>
                       )}

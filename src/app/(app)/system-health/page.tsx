@@ -138,7 +138,7 @@ export default function SystemHealthPage() {
         subtitle="Live status of the database, quota, integrations, cron jobs, queue, and environment"
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center bg-[#eceae4]/50 rounded-lg border border-[#eceae4] p-0.5">
+            <div className="flex items-center bg-[#ebece6]/50 rounded-lg border border-[#ebece6] p-0.5">
               {([0, 30, 60] as const).map(v => (
                 <button key={v} onClick={() => setAuto(v)}
                   className={cn("px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest",
@@ -148,7 +148,7 @@ export default function SystemHealthPage() {
               ))}
             </div>
             <button onClick={copyReport} disabled={!checks.length}
-              className="px-2.5 py-2 rounded-lg border border-[#eceae4] bg-white text-[#1c1c1c] text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-40">
+              className="px-2.5 py-2 rounded-lg border border-[#ebece6] bg-white text-[#1c1c1c] text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-40">
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
               <span className="hidden sm:inline">{copied ? "Copied" : "Copy report"}</span>
             </button>
@@ -195,7 +195,7 @@ export default function SystemHealthPage() {
             {problemCount > 0 && (
               <button onClick={() => setProblemsOnly(p => !p)}
                 className={cn("text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border",
-                  problemsOnly ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#5f5f5d] border-[#eceae4]")}>
+                  problemsOnly ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#5f5f5d] border-[#ebece6]")}>
                 {problemsOnly ? "Show all" : "Problems only"}
               </button>
             )}

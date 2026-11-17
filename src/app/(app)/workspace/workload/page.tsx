@@ -113,7 +113,7 @@ export default function WorkloadPage() {
             <input
               type="number" min={1} value={weeklyHours}
               onChange={(e) => setCap(Math.max(1, Number(e.target.value) || DEFAULT_WEEKLY_HOURS))}
-              className="w-16 text-xs font-bold bg-white border border-[#eceae4] rounded-lg px-2 py-1.5"
+              className="w-16 text-xs font-bold bg-white border border-[#ebece6] rounded-lg px-2 py-1.5"
             />
             <span className="font-bold text-[#5f5f5d]">h</span>
           </div>
@@ -121,11 +121,11 @@ export default function WorkloadPage() {
       />
 
       {rows.length === 0 ? (
-        <div className="bg-white border border-[#eceae4] rounded-2xl p-10 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
+        <div className="bg-white border border-[#ebece6] rounded-2xl p-10 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
           No open assigned tasks
         </div>
       ) : (
-        <div className="bg-white border border-[#eceae4] rounded-2xl divide-y divide-[#eceae4]">
+        <div className="bg-white border border-[#ebece6] rounded-2xl divide-y divide-[#ebece6]">
           {rows.map((r) => {
             const over = r.pct > 100;
             return (
@@ -137,7 +137,7 @@ export default function WorkloadPage() {
                     <span className="text-[#5f5f5d]/60"> / {weeklyHours}h · {r.count} task{r.count === 1 ? "" : "s"}</span>
                   </div>
                 </div>
-                <div className="h-1.5 rounded-full bg-[#eceae4] overflow-hidden mt-2">
+                <div className="h-1.5 rounded-full bg-[#ebece6] overflow-hidden mt-2">
                   <div
                     className={cn("h-full rounded-full", over ? "bg-rose-500" : r.pct > 80 ? "bg-amber-500" : "bg-emerald-500")}
                     style={{ width: `${Math.min(100, r.pct)}%` }}

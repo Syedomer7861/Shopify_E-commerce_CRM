@@ -3,11 +3,10 @@ import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { cn, SEGMENT_CONFIG, DELIVERY_CONFIG, TASK_TYPE_CONFIG, TASK_STATUS_CONFIG, initials } from "@/lib/utils";
 import type { CustomerSegment, DeliveryStatus, TaskType, TaskStatus } from "@/types";
-import { Download, TrendingUp, TrendingDown, Loader2, ShoppingBag, BarChart3, ClipboardCheck, Users, Info, Sun, Moon, Clock, Truck, Zap, CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft, ChevronDown } from "lucide-react";
-import dynamic from "next/dynamic";
+import { Download, Loader2, ShoppingBag, BarChart3, ClipboardCheck, Users, Info, Sun, Moon, Clock, Truck, Zap, CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft, ChevronDown } from "lucide-react";
 import Link from "next/link";
+import { Tile, type Tone } from "@/components/dashboard/Tiles";
 
-const Sparkline = dynamic(() => import("./Sparkline"), { ssr: false });
 
 export function SegmentBadge({ segment, rto }: { segment: CustomerSegment; rto?: boolean }) {
   if (rto) return <span className="badge bg-amber-50 border-amber-200 text-amber-700">⚠ RTO</span>;
@@ -70,8 +69,8 @@ export function TaskStatusBadge({ status }: { status: TaskStatus }) {
 export function Avatar({ name, size = "md", className }: { name: string; size?: "sm" | "md" | "lg"; className?: string }) {
   const sz = { sm: "w-7 h-7 text-[10px]", md: "w-9 h-9 text-xs", lg: "w-12 h-12 text-sm" }[size];
   const colors = [
-    "bg-[#eceae4] text-[#1c1c1c]", 
-    "bg-[#f7f4ed] border border-[#eceae4] text-[#1c1c1c]"
+    "bg-[#ebece6] text-[#1c1c1c]", 
+    "bg-[#f6f7f2] border border-[#ebece6] text-[#1c1c1c]"
   ];
   const charCode = name?.charCodeAt(0) || 0;
   const color = colors[charCode % colors.length];
@@ -82,14 +81,15 @@ export function Avatar({ name, size = "md", className }: { name: string; size?: 
   );
 }
 
-export function StatCard({ 
-  label, value, sub, accent, className, href, trend, trendValue, sparklineData, icon, variant = "default"
-}: { 
-  label: string; 
-  value: string | number; 
-  sub?: string; 
-  accent?: string; 
-  className?: string; 
+/** Legacy stat card API, drawn as the dashboard Tile so every page shares one look. */
+export function StatCard({
+  label, value, sub, accent, className, href, trend, trendValue, sparklineData, icon,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  accent?: string;
+  className?: string;
   href?: string;
   trend?: "up" | "down" | "neutral";
   trendValue?: string | number;
@@ -97,103 +97,18 @@ export function StatCard({
   icon?: React.ReactNode;
   variant?: "default" | "glass" | "gradient";
 }) {
-  const isGradient = variant === "gradient";
-  const isGlass = variant === "glass";
-
-  const content = (
-    <div className="relative overflow-hidden h-full flex flex-col">
-      <div className="flex flex-col gap-2 mb-4 relative z-10">
-        <div className="flex items-center justify-between">
-          {icon && (
-            <div className={cn(
-              "w-8 h-8 rounded-xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110",
-              "bg-[#f7f4ed] border border-[#eceae4] text-[#1c1c1c]"
-            )}>
-              {icon}
-            </div>
-          )}
-          {trend && (
-            <div className={cn(
-              "flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all duration-500",
-              trend === "up" ? "bg-emerald-50 text-emerald-700 border-emerald-100" : 
-              trend === "down" ? "bg-rose-50 text-rose-700 border-rose-100" : "bg-[#f7f4ed] text-[#5f5f5d] border-[#eceae4]"
-            )}>
-              {trend === "up" ? <TrendingUp className="w-2.5 h-2.5" /> : 
-               trend === "down" ? <TrendingDown className="w-2.5 h-2.5" /> : null}
-              {trendValue}
-            </div>
-          )}
-        </div>
-        <div className={cn(
-          "text-[10px] font-black uppercase tracking-[0.15em] opacity-60",
-          "text-[#5f5f5d]"
-        )}>{label}</div>
-      </div>
-      
-      <div className="flex-1 flex flex-col justify-end relative z-10">
-        <div className={cn(
-          "font-[900] tracking-tighter leading-none mb-1 font-display transition-all duration-500", 
-          String(value).length > 8 ? "text-lg md:text-xl" : "text-2xl md:text-[32px]",
-          "text-[#1c1c1c]"
-        )}>
-          {value}
-        </div>
-        
-        <div className="flex items-center justify-between mt-1">
-          {sub && (
-            <div className={cn(
-              "text-[10px] font-black uppercase tracking-wider opacity-60",
-              "text-[#5f5f5d]"
-            )}>
-              {sub}
-            </div>
-          )}
-          
-          {href && (
-            <div className={cn(
-              "transition-all duration-500",
-              "text-[#1c1c1c] opacity-0 group-hover:opacity-100 translate-x-1 group-hover:translate-x-0"
-            )}>
-              <ChevronRight className="w-4 h-4" />
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {sparklineData && sparklineData.length > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 h-16 w-full opacity-20 pointer-events-none transition-opacity duration-500 group-hover:opacity-40">
-          <Sparkline data={sparklineData} isGradient={isGradient} accent={accent} />
-        </div>
-      )}
-    </div>
-  );
-
-  const containerClasses = cn(
-    "card p-6 group transition-all duration-500 relative overflow-hidden",
-    "hover:border-[rgba(28,28,28,0.4)]",
-    href && "cursor-pointer",
-    className
-  );
-
-  if (href) {
-    return (
-      <Link href={href} className={containerClasses}>
-        {content}
-      </Link>
-    );
-  }
-
+  const tone: Tone = accent?.includes("rose") || accent?.includes("red") ? "coral" : accent?.includes("amber") ? "amber" : accent?.includes("emerald") || accent?.includes("green") ? "mint" : "lime";
   return (
-    <div className={containerClasses}>
-      {content}
-    </div>
+    <Tile icon={icon ?? <BarChart3 className="w-4 h-4" />} label={label} value={value} sub={sub} href={href} tone={tone} className={cn("h-full", className)}
+      trend={trend && trendValue != null && trendValue !== "" ? { text: String(trendValue), dir: trend === "neutral" ? "flat" : trend } : null}
+      spark={sparklineData?.map(d => d.value) ?? null} />
   );
 }
 
 export function EmptyState({ icon, title, desc }: { icon: React.ReactNode; title: string; desc?: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-14 h-14 rounded-2xl bg-[#eceae4] flex items-center justify-center mb-4 text-[#1c1c1c] border border-[#eceae4]">{icon}</div>
+      <div className="w-14 h-14 rounded-full bg-[#e6f5a6] flex items-center justify-center mb-4 text-[#1c1c1c]">{icon}</div>
       <div className="text-sm font-bold text-[#1c1c1c]">{title}</div>
       {desc && <div className="text-xs text-[#5f5f5d] mt-1.5 max-w-[240px] leading-relaxed">{desc}</div>}
     </div>
@@ -226,13 +141,13 @@ export function Modal({
   return (
     <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[#1c1c1c]/40 backdrop-blur-[2px] transition-all" onClick={onClose} />
-      <div className={cn("relative bg-[#f7f4ed] rounded-xl shadow-2xl w-full animate-slide-up border border-[#eceae4]", maxWidth)}>
-        <div className="px-6 py-5 border-b border-[#eceae4] flex items-center justify-between">
+      <div className={cn("relative bg-white rounded-[22px] shadow-2xl w-full animate-slide-up border border-[#ebece6]", maxWidth)}>
+        <div className="px-6 py-5 border-b border-[#f0f0ec] flex items-center justify-between">
           <h3 className="section-title text-sm">{title}</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-[#eceae4] flex items-center justify-center text-[#5f5f5d] hover:text-[#1c1c1c] transition-colors">✕</button>
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-[#e6f5a6] flex items-center justify-center text-[#5f5f5d] hover:text-[#1c1c1c] transition-colors">✕</button>
         </div>
         <div className="px-6 py-6 overflow-y-auto max-h-[80vh]">{children}</div>
-        {footer && <div className="px-6 py-5 border-t border-[#eceae4] flex items-center justify-end gap-3 bg-[#eceae4]/20 rounded-b-xl">{footer}</div>}
+        {footer && <div className="px-6 py-5 border-t border-[#f0f0ec] flex items-center justify-end gap-3 bg-[#fafaf7] rounded-b-[22px]">{footer}</div>}
       </div>
     </div>
   );
@@ -339,7 +254,7 @@ export function Select({
           ref={listRef}
           role="listbox"
           style={listStyle}
-          className="overflow-y-auto bg-[#f7f4ed] border border-[#eceae4] rounded-lg shadow-xl py-1"
+          className="overflow-y-auto bg-[#f6f7f2] border border-[#ebece6] rounded-lg shadow-xl py-1"
         >
           {options.map((o, i) => (
             <div key={o.value}>
@@ -357,8 +272,8 @@ export function Select({
                   setOpen(false);
                 }}
                 className={cn(
-                  "w-full text-left px-3 py-2 text-sm text-[#1c1c1c] hover:bg-[#eceae4]/60 transition-colors truncate",
-                  o.value === value && "bg-[#eceae4] font-semibold",
+                  "w-full text-left px-3 py-2 text-sm text-[#1c1c1c] hover:bg-[#ebece6]/60 transition-colors truncate",
+                  o.value === value && "bg-[#ebece6] font-semibold",
                   o.disabled && "opacity-40 cursor-not-allowed"
                 )}
               >
@@ -375,7 +290,7 @@ export function Select({
 
 export function PageHeader({ title, subtitle, actions }: { title: React.ReactNode; subtitle?: React.ReactNode; actions?: React.ReactNode }) {
   return (
-    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-10">
+    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 rise">
       <div className="flex flex-col gap-2">
         <h1 className="page-title">{title}</h1>
         {subtitle && <div className="page-subtitle">{subtitle}</div>}
@@ -412,7 +327,7 @@ export function SyncProgressBar({
         </div>
         <span className="text-[10px] font-bold text-[#1c1c1c] tabular-nums">{Math.round(progress)}%</span>
       </div>
-      <div className="h-1.5 w-full bg-[#eceae4] rounded-full overflow-hidden">
+      <div className="h-1.5 w-full bg-[#ebece6] rounded-full overflow-hidden">
         <div 
           className={cn(
             "h-full transition-all duration-500 ease-out relative",
@@ -445,7 +360,7 @@ export function BarRow({ label, value, max, color = "bg-[#1c1c1c]", suffix = "" 
   return (
     <div className="flex items-center gap-3 text-sm">
       <div className="w-32 text-[10px] text-[#5f5f5d] text-right flex-shrink-0 truncate">{label}</div>
-      <div className="flex-1 h-3 bg-[#eceae4] rounded-full overflow-hidden">
+      <div className="flex-1 h-3 bg-[#ebece6] rounded-full overflow-hidden">
         <div className={cn("h-full rounded-full transition-all duration-500", color)} style={{ width: `${pct}%` }} />
       </div>
       <div className="w-20 text-[10px] font-bold text-[#1c1c1c] text-right flex-shrink-0">{Math.round(value).toLocaleString()}{suffix}</div>
@@ -468,7 +383,7 @@ export function Pagination({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between py-6 mt-6 border-t border-[#eceae4]/60">
+    <div className="flex items-center justify-between py-6 mt-6 border-t border-[#ebece6]/60">
       <p className="text-[10px] font-black text-[#5f5f5d] uppercase tracking-[0.2em] opacity-40">
         Showing <span className="text-[#1c1c1c]">{(current - 1) * pageSize + 1}</span> to <span className="text-[#1c1c1c]">{Math.min(current * pageSize, total)}</span> of <span className="text-[#1c1c1c]">{total}</span> entries
       </p>
@@ -476,7 +391,7 @@ export function Pagination({
         <button aria-label="Previous" 
           onClick={() => onChange(Math.max(1, current - 1))}
           disabled={current === 1}
-          className="w-9 h-9 flex items-center justify-center bg-[#f7f4ed] border border-[#eceae4] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white disabled:opacity-20 transition-all shadow-sm active:scale-95"
+          className="w-9 h-9 flex items-center justify-center bg-[#f6f7f2] border border-[#ebece6] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white disabled:opacity-20 transition-all shadow-sm active:scale-95"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -500,7 +415,7 @@ export function Pagination({
               <>
                 {startPage > 1 && (
                   <>
-                    <button onClick={() => onChange(1)} className="w-9 h-9 rounded-xl text-[10px] font-black bg-[#f7f4ed] text-[#5f5f5d] border border-[#eceae4] hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">1</button>
+                    <button onClick={() => onChange(1)} className="w-9 h-9 rounded-xl text-[10px] font-black bg-[#f6f7f2] text-[#5f5f5d] border border-[#ebece6] hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">1</button>
                     {startPage > 2 && <span className="text-[#5f5f5d] px-1 text-[10px] font-black opacity-30">...</span>}
                   </>
                 )}
@@ -510,7 +425,7 @@ export function Pagination({
                     onClick={() => onChange(p)}
                     className={cn(
                       "w-9 h-9 rounded-xl text-[10px] font-black transition-all shadow-sm",
-                      current === p ? "bg-[#1c1c1c] text-white ring-4 ring-[#1c1c1c]/10" : "bg-[#f7f4ed] text-[#5f5f5d] border border-[#eceae4] hover:border-[#1c1c1c] hover:text-[#1c1c1c]"
+                      current === p ? "bg-[#1c1c1c] text-white ring-4 ring-[#1c1c1c]/10" : "bg-[#f6f7f2] text-[#5f5f5d] border border-[#ebece6] hover:border-[#1c1c1c] hover:text-[#1c1c1c]"
                     )}
                   >
                     {p}
@@ -519,7 +434,7 @@ export function Pagination({
                 {endPage < totalPages && (
                   <>
                     {endPage < totalPages - 1 && <span className="text-[#5f5f5d] px-1 text-[10px] font-black opacity-30">...</span>}
-                    <button onClick={() => onChange(totalPages)} className="w-9 h-9 rounded-xl text-[10px] font-black bg-[#f7f4ed] text-[#5f5f5d] border border-[#eceae4] hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">{totalPages}</button>
+                    <button onClick={() => onChange(totalPages)} className="w-9 h-9 rounded-xl text-[10px] font-black bg-[#f6f7f2] text-[#5f5f5d] border border-[#ebece6] hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">{totalPages}</button>
                   </>
                 )}
               </>
@@ -530,7 +445,7 @@ export function Pagination({
         <button aria-label="Next" 
           onClick={() => onChange(Math.min(totalPages, current + 1))}
           disabled={current === totalPages}
-          className="w-9 h-9 flex items-center justify-center bg-[#f7f4ed] border border-[#eceae4] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white disabled:opacity-20 transition-all shadow-sm active:scale-95"
+          className="w-9 h-9 flex items-center justify-center bg-[#f6f7f2] border border-[#ebece6] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white disabled:opacity-20 transition-all shadow-sm active:scale-95"
         >
           <ChevronRight className="w-4 h-4" />
         </button>

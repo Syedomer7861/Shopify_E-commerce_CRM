@@ -187,11 +187,11 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
   ];
 
   return (
-    <div className="bg-[#f7f4ed] min-h-screen text-[#1c1c1c]">
+    <div className="bg-[#f6f7f2] min-h-screen text-[#1c1c1c]">
       {/* Header Bar */}
-      <div className="bg-[#f7f4ed] border-b border-[#eceae4] px-4 sm:px-6 py-4 sm:py-6 flex flex-col md:flex-row items-start md:items-center justify-between sticky top-0 z-20 shadow-sm gap-4">
+      <div className="bg-[#f6f7f2] border-b border-[#ebece6] px-4 sm:px-6 py-4 sm:py-6 flex flex-col md:flex-row items-start md:items-center justify-between sticky top-0 z-20 shadow-sm gap-4">
         <div className="flex items-center gap-4">
-          <div className="bg-[#eceae4] p-3 rounded-xl">
+          <div className="bg-[#ebece6] p-3 rounded-xl">
             <Package className="w-5 h-5 text-[#1c1c1c]/60" />
           </div>
           <div>
@@ -225,7 +225,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
               <a 
                 href={`https://cureforever.shiprocket.co/tracking/${shipment.awb || order.awb_code}`}
                 target="_blank"
-                className="px-5 py-2.5 bg-[#1c1c1c] text-[#f7f4ed] rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all flex items-center gap-2 shadow-xl"
+                className="px-5 py-2.5 bg-[#1c1c1c] text-[#f6f7f2] rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all flex items-center gap-2 shadow-xl"
                 style={{ boxShadow: "rgba(255,255,255,0.1) 0px 1px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 1px inset" }}
               >
                 Track Live <ExternalLink className="w-3 h-3" />
@@ -238,13 +238,13 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                   : `https://app.shiprocket.in/seller/orders?search=${order.channel_order_id || order.id}`
                 }
                 target="_blank"
-                className="p-2.5 bg-[#f7f4ed] border border-[#eceae4] rounded-xl hover:bg-[#eceae4] transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                className="p-2.5 bg-[#f6f7f2] border border-[#ebece6] rounded-xl hover:bg-[#ebece6] transition-all active:scale-95 shadow-sm flex items-center justify-center"
                 title="Open in Shiprocket Seller Panel"
               >
                 <ShiprocketIcon className="w-5 h-5" />
               </a>
             )}
-            <button className="flex-1 sm:flex-initial px-4 py-2.5 bg-[#f7f4ed] border border-[#eceae4] text-[#5f5f5d] rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#eceae4] transition-all shadow-sm">
+            <button className="flex-1 sm:flex-initial px-4 py-2.5 bg-[#f6f7f2] border border-[#ebece6] text-[#5f5f5d] rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#ebece6] transition-all shadow-sm">
               Cancel order
             </button>
             <button 
@@ -270,7 +270,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                   btn.innerHTML = originalContent;
                 }
               }}
-              className="p-3 bg-[#f7f4ed] border border-[#eceae4] rounded-xl hover:bg-[#eceae4] transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+              className="p-3 bg-[#f6f7f2] border border-[#ebece6] rounded-xl hover:bg-[#ebece6] transition-all active:scale-95 disabled:opacity-50 shadow-sm"
               title="Print Invoice"
             >
               <Printer className="w-4 h-4 text-[#5f5f5d]" />
@@ -288,11 +288,11 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
       </div>
 
       {/* Premium Fulfillment Stepper */}
-      <div className="bg-[#f7f4ed] border-b border-[#eceae4] px-4 sm:px-6 py-8 sm:py-12">
+      <div className="bg-[#f6f7f2] border-b border-[#ebece6] px-4 sm:px-6 py-8 sm:py-12">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between relative">
             {/* Background Line */}
-            <div className="absolute top-1/2 left-0 w-full h-1 bg-[#eceae4] -translate-y-1/2 z-0" />
+            <div className="absolute top-1/2 left-0 w-full h-1 bg-[#ebece6] -translate-y-1/2 z-0" />
             
             {steps.map((step, idx, arr) => {
               const isActive = step.status.includes(uiStatus);
@@ -302,10 +302,10 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
               return (
                 <div key={step.label} className="relative z-10 flex flex-col items-center group">
                   <div className={cn(
-                    "w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-xl border-4 border-[#f7f4ed]",
-                    isPast ? "bg-blue-600 text-[#f7f4ed]" : 
-                    isCurrent ? "bg-[#1c1c1c] text-[#f7f4ed] animate-pulse-slow ring-8 ring-[#1c1c1c]/10" : 
-                    "bg-[#eceae4] text-[#5f5f5d]/40"
+                    "w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-xl border-4 border-[#f6f7f2]",
+                    isPast ? "bg-blue-600 text-[#f6f7f2]" : 
+                    isCurrent ? "bg-[#1c1c1c] text-[#f6f7f2] animate-pulse-slow ring-8 ring-[#1c1c1c]/10" : 
+                    "bg-[#ebece6] text-[#5f5f5d]/40"
                   )}>
                     <step.icon className="w-5 h-5" />
                   </div>
@@ -333,8 +333,8 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
         <div className="lg:col-span-2 space-y-8 min-w-0">
           
           {/* Order Details Card */}
-          <section className="card bg-[#f7f4ed] border-[#eceae4] rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-6 py-5 border-b border-[#eceae4] flex items-center gap-3 bg-[#eceae4]/10">
+          <section className="card bg-[#f6f7f2] border-[#ebece6] rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-6 py-5 border-b border-[#ebece6] flex items-center gap-3 bg-[#ebece6]/10">
               <History className="w-4 h-4 text-[#1c1c1c]/40" />
               <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1c1c1c]/60">Order Intelligence</h2>
               <div className={cn(
@@ -377,8 +377,8 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
           </section>
 
           {/* Shipping Details Card */}
-          <section className="card bg-[#f7f4ed] border-[#eceae4] rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-6 py-5 border-b border-[#eceae4] flex items-center gap-3 bg-[#eceae4]/10">
+          <section className="card bg-[#f6f7f2] border-[#ebece6] rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-6 py-5 border-b border-[#ebece6] flex items-center gap-3 bg-[#ebece6]/10">
               <Truck className="w-4 h-4 text-[#1c1c1c]/40" />
               <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1c1c1c]/60">Transit Parameters</h2>
             </div>
@@ -406,8 +406,8 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
           </section>
 
           {/* Package Details Card */}
-          <section className="card bg-[#f7f4ed] border-[#eceae4] rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-6 py-5 border-b border-[#eceae4] flex items-center gap-3 bg-[#eceae4]/10">
+          <section className="card bg-[#f6f7f2] border-[#ebece6] rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-6 py-5 border-b border-[#ebece6] flex items-center gap-3 bg-[#ebece6]/10">
               <Box className="w-4 h-4 text-[#1c1c1c]/40" />
               <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1c1c1c]/60">Physical Metrics</h2>
             </div>
@@ -438,8 +438,8 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
           </section>
 
           {/* Customer Intelligence Card */}
-          <section className="card bg-[#f7f4ed] border-[#eceae4] rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-6 py-5 border-b border-[#eceae4] flex items-center gap-3 bg-[#eceae4]/10">
+          <section className="card bg-[#f6f7f2] border-[#ebece6] rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-6 py-5 border-b border-[#ebece6] flex items-center gap-3 bg-[#ebece6]/10">
               <User className="w-4 h-4 text-[#1c1c1c]/40" />
               <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1c1c1c]/60">Customer Profile</h2>
             </div>
@@ -453,7 +453,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                   <label className="text-[9px] text-[#5f5f5d]/40 font-black uppercase tracking-widest block mb-1.5">Verified Contact</label>
                   <div className="text-sm font-bold text-[#1c1c1c] flex items-center gap-2">
                     {order.customer_phone || order.billing_phone}
-                    <div className="w-4 h-4 bg-[#eceae4] rounded flex items-center justify-center cursor-pointer hover:bg-[#1c1c1c] hover:text-white transition-all">
+                    <div className="w-4 h-4 bg-[#ebece6] rounded flex items-center justify-center cursor-pointer hover:bg-[#1c1c1c] hover:text-white transition-all">
                       <ChevronRight className="w-3 h-3" />
                     </div>
                   </div>
@@ -485,10 +485,10 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                     return (
                       <>
                         <div className={cn(
-                          "w-14 h-14 rounded-2xl flex items-center justify-center border-4 border-[#f7f4ed] shadow-lg mb-2 mx-auto overflow-hidden",
+                          "w-14 h-14 rounded-2xl flex items-center justify-center border-4 border-[#f6f7f2] shadow-lg mb-2 mx-auto overflow-hidden",
                           isValid ? "bg-blue-600" : isAmbiguous ? "bg-amber-400" : "bg-rose-500"
                         )}>
-                          <div className="w-full h-full flex items-center justify-center text-[#f7f4ed] text-[11px] font-black italic">
+                          <div className="w-full h-full flex items-center justify-center text-[#f6f7f2] text-[11px] font-black italic">
                             {score > 0 ? `${score.toFixed(0)}%` : "N/A"}
                           </div>
                         </div>
@@ -507,15 +507,15 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
           </section>
 
           {/* Product Inventory Table */}
-          <section className="card bg-[#f7f4ed] border-[#eceae4] rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-6 py-5 border-b border-[#eceae4] flex items-center gap-3 bg-[#eceae4]/10">
+          <section className="card bg-[#f6f7f2] border-[#ebece6] rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-6 py-5 border-b border-[#ebece6] flex items-center gap-3 bg-[#ebece6]/10">
               <Package className="w-4 h-4 text-[#1c1c1c]/40" />
               <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1c1c1c]/60">Consolidated SKU Inventory</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-[#eceae4]/30 text-[9px] text-[#5f5f5d]/60 uppercase font-black border-b border-[#eceae4]">
+                  <tr className="bg-[#ebece6]/30 text-[9px] text-[#5f5f5d]/60 uppercase font-black border-b border-[#ebece6]">
                     <td className="px-8 py-4">Item Intelligence</td>
                     <td className="px-4 py-4">HSN</td>
                     <td className="px-4 py-4">SKU Code</td>
@@ -526,7 +526,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                 </thead>
                 <tbody className="text-xs">
                   {(order.order_items || order.products || []).map((item: any, i: number) => (
-                    <tr key={i} className="border-b border-[#eceae4]/40 last:border-0 hover:bg-[#eceae4]/20 transition-colors">
+                    <tr key={i} className="border-b border-[#ebece6]/40 last:border-0 hover:bg-[#ebece6]/20 transition-colors">
                       <td className="px-8 py-5 font-black text-[#1c1c1c] max-w-[250px] truncate" title={item.name || item.product_name}>{item.name || item.product_name}</td>
                       <td className="px-4 py-5 text-[#5f5f5d]/60 font-bold tabular-nums">{item.hsn || item.hsn_code || "—"}</td>
                       <td className="px-4 py-5 text-[#5f5f5d]/60 font-black">{item.sku || "—"}</td>
@@ -538,7 +538,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                 </tbody>
               </table>
             </div>
-            <div className="bg-[#eceae4]/20 p-6 lg:p-8 flex flex-col items-stretch gap-2 border-t border-[#eceae4] uppercase">
+            <div className="bg-[#ebece6]/20 p-6 lg:p-8 flex flex-col items-stretch gap-2 border-t border-[#ebece6] uppercase">
               <div className="flex items-center justify-between text-[10px] font-bold text-[#5f5f5d]/40">
                 <span>Gross Value ({ (order.order_items || order.products || []).length } SKUs)</span>
                 <span className="text-[#1c1c1c] text-right tabular-nums">₹{order.sub_total || order.total}</span>
@@ -554,13 +554,13 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
 
         {/* Right Column: Execution Timeline */}
         <div className="lg:col-span-1 min-w-0">
-          <div className="card bg-[#f7f4ed] border-[#eceae4] rounded-2xl p-0 shadow-xl sticky top-24 overflow-hidden">
-            <div className="flex border-b border-[#eceae4]">
+          <div className="card bg-[#f6f7f2] border-[#ebece6] rounded-2xl p-0 shadow-xl sticky top-24 overflow-hidden">
+            <div className="flex border-b border-[#ebece6]">
               <button 
                 onClick={() => setActiveTab("activity")}
                 className={cn(
                   "flex-1 px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2",
-                  activeTab === "activity" ? "text-[#1c1c1c] border-[#1c1c1c] bg-[#eceae4]/20" : "text-[#5f5f5d]/40 border-transparent hover:bg-[#eceae4]/10"
+                  activeTab === "activity" ? "text-[#1c1c1c] border-[#1c1c1c] bg-[#ebece6]/20" : "text-[#5f5f5d]/40 border-transparent hover:bg-[#ebece6]/10"
                 )}
               >
                 Pulse Log
@@ -569,7 +569,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                 onClick={() => setActiveTab("tracking")}
                 className={cn(
                   "flex-1 px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2",
-                  activeTab === "tracking" ? "text-[#1c1c1c] border-[#1c1c1c] bg-[#eceae4]/20" : "text-[#5f5f5d]/40 border-transparent hover:bg-[#eceae4]/10"
+                  activeTab === "tracking" ? "text-[#1c1c1c] border-[#1c1c1c] bg-[#ebece6]/20" : "text-[#5f5f5d]/40 border-transparent hover:bg-[#ebece6]/10"
                 )}
               >
                 Registry
@@ -579,7 +579,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
             <div className="p-5 lg:p-6">
               <div className="relative">
                 {/* Vertical Line */}
-                <div className="absolute left-[7px] top-2 bottom-2 w-[2px] bg-[#eceae4]"></div>
+                <div className="absolute left-[7px] top-2 bottom-2 w-[2px] bg-[#ebece6]"></div>
                 
                 <div className="space-y-10 relative">
                   {activeTab === "activity" && combinedPulse.length > 0 ? (
@@ -588,8 +588,8 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                        return (
                         <div key={i} className="flex gap-5 group">
                           <div className={cn(
-                            "w-4 h-4 rounded-full border-2 border-[#f7f4ed] ring-2 z-10 mt-1 flex-shrink-0 transition-transform group-hover:scale-125",
-                            isLatest ? "bg-[#1c1c1c] ring-[#1c1c1c]/20" : "bg-[#eceae4] ring-[#eceae4]/40"
+                            "w-4 h-4 rounded-full border-2 border-[#f6f7f2] ring-2 z-10 mt-1 flex-shrink-0 transition-transform group-hover:scale-125",
+                            isLatest ? "bg-[#1c1c1c] ring-[#1c1c1c]/20" : "bg-[#ebece6] ring-[#ebece6]/40"
                           )}></div>
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-col 2xl:flex-row 2xl:items-start 2xl:justify-between gap-1 2xl:gap-3 mb-1.5">
@@ -613,7 +613,7 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                             </p>
                             {isLatest && (
                                 <div className="mt-4 bg-[#1c1c1c] rounded-xl p-4 shadow-xl">
-                                   <p className="text-[10px] text-[#f7f4ed] font-bold italic leading-relaxed break-words whitespace-normal">
+                                   <p className="text-[10px] text-[#f6f7f2] font-bold italic leading-relaxed break-words whitespace-normal">
                                       &ldquo;{step.description || step.activity}&rdquo;
                                    </p>
                                 </div>
@@ -624,11 +624,11 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
                     })
                   ) : activeTab === "tracking" ? (
                     <div className="space-y-4">
-                        <div className="p-4 bg-[#eceae4]/30 rounded-xl border border-[#eceae4]">
+                        <div className="p-4 bg-[#ebece6]/30 rounded-xl border border-[#ebece6]">
                             <div className="text-[9px] text-[#5f5f5d]/40 font-black uppercase tracking-[0.2em] mb-1.5">Master Tracking ID</div>
                             <div className="text-sm font-black text-[#1c1c1c] tabular-nums tracking-tight">{shipment.awb || order.awb_code || "NOT_GENERATED"}</div>
                         </div>
-                        <div className="p-4 bg-[#eceae4]/30 rounded-xl border border-[#eceae4]">
+                        <div className="p-4 bg-[#ebece6]/30 rounded-xl border border-[#ebece6]">
                             <div className="text-[9px] text-[#5f5f5d]/40 font-black uppercase tracking-[0.2em] mb-1.5">Courier Authority</div>
                             <div className="text-sm font-black text-[#1c1c1c] uppercase tracking-tighter">{shipment.courier || order.courier_name || "Pending Validation"}</div>
                         </div>
@@ -643,15 +643,15 @@ export default function ShiprocketOrderView({ orderId }: ShiprocketOrderViewProp
               </div>
             </div>
 
-            <div className="bg-[#eceae4]/40 p-5 border-t border-[#eceae4] flex items-center gap-4">
-               <div className="w-10 h-10 rounded-2xl bg-[#1c1c1c] flex items-center justify-center text-[#f7f4ed] flex-shrink-0 shadow-lg shadow-[#1c1c1c]/10">
+            <div className="bg-[#ebece6]/40 p-5 border-t border-[#ebece6] flex items-center gap-4">
+               <div className="w-10 h-10 rounded-2xl bg-[#1c1c1c] flex items-center justify-center text-[#f6f7f2] flex-shrink-0 shadow-lg shadow-[#1c1c1c]/10">
                   <Truck className="w-5 h-5" />
                </div>
                <div>
                   <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#5f5f5d]/60 mb-0.5">Execution Status</p>
                   <p className="text-xs font-black text-[#1c1c1c] tracking-tight">{order.status || "WAITING_PICKUP"}</p>
                </div>
-               <div className="ml-auto w-8 h-8 rounded-full border border-[#eceae4] flex items-center justify-center text-[#5f5f5d]/40 hover:bg-[#1c1c1c] hover:text-white transition-all cursor-pointer">
+               <div className="ml-auto w-8 h-8 rounded-full border border-[#ebece6] flex items-center justify-center text-[#5f5f5d]/40 hover:bg-[#1c1c1c] hover:text-white transition-all cursor-pointer">
                   <ChevronRight className="w-4 h-4" />
                </div>
             </div>

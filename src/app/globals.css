@@ -5,10 +5,10 @@
 @tailwind utilities;
 
 :root {
-  --background: #f7f4ed;
+  --background: #f2f3ee;
   --foreground: #1c1c1c;
   --muted: #5f5f5d;
-  --border-passive: #eceae4;
+  --border-passive: #ebece6;
   --border-interactive: rgba(28, 28, 28, 0.4);
   --ring: rgba(28, 28, 28, 0.1);
   --off-white: #fcfbf8;
@@ -33,24 +33,26 @@ html, body {
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#1c1c1c] text-[#fcfbf8] font-medium text-sm rounded-[6px] hover:opacity-90 active:opacity-80 transition-all duration-150;
-    box-shadow: rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#151515] text-white font-semibold text-sm rounded-full hover:bg-[#2a2a2a] active:scale-[0.98] transition-all duration-150;
+    box-shadow: 0 1px 2px rgba(16,24,16,0.12);
   }
   
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-transparent border border-[rgba(28,28,28,0.4)] text-[#1c1c1c] font-medium text-sm rounded-[6px] hover:bg-[rgba(28,28,28,0.04)] active:opacity-80 transition-all duration-150;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-[#e3e4dd] text-[#1c1c1c] font-semibold text-sm rounded-full hover:border-[#c3e33a] hover:bg-[#f7fbe6] active:scale-[0.98] transition-all duration-150;
   }
   
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-transparent text-[#1c1c1c] font-medium text-sm rounded-[6px] hover:bg-[rgba(28,28,28,0.04)] active:opacity-80 transition-all duration-150;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-transparent text-[#1c1c1c] font-medium text-sm rounded-full hover:bg-[rgba(28,28,28,0.05)] active:opacity-80 transition-all duration-150;
   }
 
   .card {
-    @apply bg-[#f7f4ed] border border-[#eceae4] rounded-[12px] px-6 py-5;
+    @apply bg-white border border-[#ebece6] rounded-[20px] px-6 py-5;
+    box-shadow: 0 1px 2px rgba(16, 24, 16, 0.04);
+    animation: card-in 0.35s cubic-bezier(0.21, 0.47, 0.32, 0.98) backwards;
   }
   
   .input {
-    @apply w-full px-3 py-2 text-sm border border-[#eceae4] rounded-[6px] bg-[#f7f4ed] text-[#1c1c1c] placeholder-[#5f5f5d] focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/25 transition-all;
+    @apply w-full px-3 py-2 text-sm border border-[#e3e4dd] rounded-xl bg-white text-[#1c1c1c] placeholder-[#8a8a86] focus:outline-none focus:border-[#a9c92a] focus:ring-2 focus:ring-[#c3e33a]/40 transition-all;
   }
 
   /* Phone browsers give date/time inputs a built-in minimum width that ignores
@@ -61,7 +63,7 @@ html, body {
   }
   
   .select {
-    @apply w-full px-3 py-2 text-sm border border-[#eceae4] rounded-[6px] bg-[#f7f4ed] text-[#1c1c1c] focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/25 transition-all;
+    @apply w-full px-3 py-2 text-sm border border-[#e3e4dd] rounded-xl bg-white text-[#1c1c1c] focus:outline-none focus:border-[#a9c92a] focus:ring-2 focus:ring-[#c3e33a]/40 transition-all;
   }
   
   .badge {
@@ -69,11 +71,11 @@ html, body {
   }
   
   .page-title {
-    @apply text-[32px] md:text-[48px] font-[600] text-[#1c1c1c] tracking-[-1.2px] leading-[1.0] font-display;
+    @apply text-[26px] md:text-[32px] font-[700] text-[#1c1c1c] tracking-[-0.8px] leading-[1.1] font-display;
   }
   
   .page-subtitle {
-    @apply text-[14px] md:text-[16px] text-[#5f5f5d] font-[400] leading-[1.5] mt-2;
+    @apply text-[13px] md:text-[14px] text-[#6b6b67] font-[400] leading-[1.5] mt-1;
   }
   
   .section-title {
@@ -89,11 +91,11 @@ html, body {
   }
   
   .table-header {
-    @apply text-[10px] md:text-[11px] font-bold text-[#5f5f5d] uppercase tracking-wider px-4 md:px-6 py-3 md:py-4 bg-[#f7f4ed] border-b border-[#eceae4] whitespace-nowrap;
+    @apply text-[10px] md:text-[11px] font-bold text-[#5f5f5d] uppercase tracking-wider px-4 md:px-6 py-3 md:py-4 bg-[#fafaf7] border-b border-[#ebece6] whitespace-nowrap;
   }
   
   .table-row {
-    @apply flex items-center px-4 md:px-6 py-3 md:py-4 border-b border-[#eceae4] hover:bg-[rgba(28,28,28,0.03)] transition-colors cursor-pointer last:border-0;
+    @apply flex items-center px-4 md:px-6 py-3 md:py-4 border-b border-[#f0f0ec] hover:bg-[#f7fbe6] transition-colors cursor-pointer last:border-0;
   }
 
 
@@ -196,7 +198,8 @@ h1, h2, h3, h4 {
 /* First-screen entrance without JavaScript: see Reveal eager and WordsIn in components/site/Motion.tsx. */
 @keyframes rise { from { opacity: 0; transform: translateY(var(--rise-y, 24px)); } to { opacity: 1; transform: none; } }
 .rise { animation: rise 0.5s cubic-bezier(0.21, 0.47, 0.32, 0.98) both; }
-@media (prefers-reduced-motion: reduce) { .rise { animation: none; } }
+@keyframes card-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .rise, .card { animation: none; } }
 
 /* Phones: public-site sections show at once instead of waiting for the
    scroll-reveal script, which on a slow phone left whole pages blank. The

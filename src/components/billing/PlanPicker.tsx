@@ -33,7 +33,7 @@ export function PlanPicker({ plans, versionId, cycle, onChange }: {
           const on = p.versionId === versionId;
           return (
             <button key={p.versionId} type="button" role="radio" aria-checked={on} onClick={() => onChange(p.versionId, cycle)}
-              className={`text-left rounded-2xl border p-4 transition-colors ${on ? "border-[#1c1c1c] bg-[#fcfbf8]" : "border-[#eceae4] hover:border-[#1c1c1c]/30"}`}>
+              className={`text-left rounded-2xl border p-4 transition-colors ${on ? "border-[#1c1c1c] bg-[#fcfbf8]" : "border-[#ebece6] hover:border-[#1c1c1c]/30"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 font-bold text-[#1c1c1c]">

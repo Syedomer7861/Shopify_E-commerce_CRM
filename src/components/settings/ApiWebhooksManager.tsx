@@ -10,7 +10,7 @@ const EVENTS = ["lead.created", "deal.created", "deal.won", "ticket.created", "q
 type Key = { id: string; name: string; prefix: string; scopes: string[]; created_at: string; last_used_at: string | null; revoked_at: string | null };
 type Hook = { id: string; url: string; events: string[]; is_active: boolean; created_at: string };
 type Delivery = { id: number; endpoint_id: string; event: string; created_at: string; status_code: number | null; error: string | null };
-const input = "h-9 px-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
+const input = "h-9 px-3 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 
 /** API keys and webhooks for a workspace. Admin-only in the database (RLS + functions). */
 export function ApiWebhooksManager() {
@@ -95,7 +95,7 @@ export function ApiWebhooksManager() {
         <h3 className="flex items-center gap-2 text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest"><KeyRound className="w-3.5 h-3.5" /> API keys</h3>
         <p className="text-xs text-[#5f5f5d]">Connect other software. Send the key as <code>Authorization: Bearer &lt;key&gt;</code> to <code>{origin}/api/v1/leads</code>, <code>/api/v1/deals</code> or <code>/api/v1/tickets</code>. GET lists (<code>?limit=</code>, <code>?since=</code>); POST creates leads and deals. 120 requests a minute per key.</p>
         {keys.length > 0 && (
-          <div className="divide-y divide-[#eceae4] border border-[#eceae4] rounded-lg">
+          <div className="divide-y divide-[#ebece6] border border-[#ebece6] rounded-lg">
             {keys.map(k => (
               <div key={k.id} className={cn("p-3 flex flex-wrap items-center gap-2 text-sm", k.revoked_at && "opacity-50")}>
                 <div className="flex-1 min-w-[160px]"><div className="font-semibold">{k.name} <code className="text-[11px] font-normal text-[#5f5f5d]">{k.prefix}…</code></div>
@@ -108,7 +108,7 @@ export function ApiWebhooksManager() {
         <div className="flex flex-wrap items-end gap-2">
           <label className="text-[10px] text-[#5f5f5d] flex-1 min-w-[160px]">Key name<input className={cn(input, "w-full mt-1")} maxLength={80} value={keyName} onChange={e => setKeyName(e.target.value)} placeholder="Zapier, website, ERP" /></label>
           <div className="flex flex-wrap gap-1.5">{SCOPES.map(s => (
-            <label key={s} className="flex items-center gap-1 text-[11px] border border-[#eceae4] rounded-full px-2 py-1"><input type="checkbox" checked={keyScopes.includes(s)} onChange={() => setKeyScopes(toggle(keyScopes, s))} /> {s}</label>
+            <label key={s} className="flex items-center gap-1 text-[11px] border border-[#ebece6] rounded-full px-2 py-1"><input type="checkbox" checked={keyScopes.includes(s)} onChange={() => setKeyScopes(toggle(keyScopes, s))} /> {s}</label>
           ))}</div>
           <button onClick={createKey} disabled={busy} className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 h-9 rounded-lg bg-[#1c1c1c] text-white disabled:opacity-50">{busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />} Create key</button>
         </div>
@@ -118,7 +118,7 @@ export function ApiWebhooksManager() {
         <h3 className="flex items-center gap-2 text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest"><Webhook className="w-3.5 h-3.5" /> Webhooks</h3>
         <p className="text-xs text-[#5f5f5d]">We POST JSON to your https address when these happen. Verify the <code>X-CodeCrest-Signature</code> header: hex HMAC-SHA256 of the raw body with your signing secret.</p>
         {hooks.length > 0 && (
-          <div className="divide-y divide-[#eceae4] border border-[#eceae4] rounded-lg">
+          <div className="divide-y divide-[#ebece6] border border-[#ebece6] rounded-lg">
             {hooks.map(h => (
               <div key={h.id} className={cn("p-3 flex flex-wrap items-center gap-2 text-sm", !h.is_active && "opacity-50")}>
                 <div className="flex-1 min-w-[160px]"><div className="font-semibold break-all">{h.url}</div><div className="text-[11px] text-[#5f5f5d]">{h.events.join(", ")}</div></div>
@@ -131,14 +131,14 @@ export function ApiWebhooksManager() {
         <div className="flex flex-wrap items-end gap-2">
           <label className="text-[10px] text-[#5f5f5d] flex-1 min-w-[200px]">https address<input className={cn(input, "w-full mt-1")} maxLength={500} value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.com/hooks/codecrest" /></label>
           <div className="flex flex-wrap gap-1.5">{EVENTS.map(ev => (
-            <label key={ev} className="flex items-center gap-1 text-[11px] border border-[#eceae4] rounded-full px-2 py-1"><input type="checkbox" checked={events.includes(ev)} onChange={() => setEvents(toggle(events, ev))} /> {ev}</label>
+            <label key={ev} className="flex items-center gap-1 text-[11px] border border-[#ebece6] rounded-full px-2 py-1"><input type="checkbox" checked={events.includes(ev)} onChange={() => setEvents(toggle(events, ev))} /> {ev}</label>
           ))}</div>
           <button onClick={createHook} disabled={busy || !url.trim()} className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 h-9 rounded-lg bg-[#1c1c1c] text-white disabled:opacity-50"><Plus className="w-3.5 h-3.5" /> Add webhook</button>
         </div>
         {deliveries.length > 0 && (
           <div>
             <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-1">Recent deliveries</div>
-            <div className="max-h-56 overflow-y-auto text-[11px] divide-y divide-[#eceae4] border border-[#eceae4] rounded-lg">
+            <div className="max-h-56 overflow-y-auto text-[11px] divide-y divide-[#ebece6] border border-[#ebece6] rounded-lg">
               {deliveries.map(d => (
                 <div key={d.id} className="px-3 py-1.5 flex gap-3">
                   <span className="w-28 shrink-0 text-[#5f5f5d]">{new Date(d.created_at).toLocaleString()}</span>

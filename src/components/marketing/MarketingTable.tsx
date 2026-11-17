@@ -65,9 +65,9 @@ export default function MarketingTable({ list, tasks, members, onOpenTask }: Pro
   );
 
   return (
-    <div className="bg-white border border-[#eceae4] rounded-2xl overflow-x-auto">
+    <div className="bg-white border border-[#ebece6] rounded-2xl overflow-x-auto">
       <table className="w-full min-w-[640px]">
-        <thead className="border-b border-[#eceae4]">
+        <thead className="border-b border-[#ebece6]">
           <tr>
             <Th k="title" label="Task" />
             <Th k="status" label="Status" />
@@ -79,7 +79,7 @@ export default function MarketingTable({ list, tasks, members, onOpenTask }: Pro
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#eceae4]">
+        <tbody className="divide-y divide-[#ebece6]">
           {rows.length === 0 && (
             <tr>
               <td colSpan={5 + fields.length} className="px-4 py-8 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
@@ -90,7 +90,7 @@ export default function MarketingTable({ list, tasks, members, onOpenTask }: Pro
           {rows.map((t) => {
             const col = colOf(t.status);
             return (
-              <tr key={t.id} onClick={() => onOpenTask(t.id)} className="cursor-pointer hover:bg-[#f7f4ed]">
+              <tr key={t.id} onClick={() => onOpenTask(t.id)} className="cursor-pointer hover:bg-[#f6f7f2]">
                 <td className="px-4 py-3 text-[13px] font-semibold text-[#1c1c1c]">{t.title}</td>
                 <td className="px-4 py-3">
                   <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#5f5f5d]">

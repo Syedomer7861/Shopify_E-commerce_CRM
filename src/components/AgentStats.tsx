@@ -44,7 +44,7 @@ export const AgentStats: React.FC<AgentStatsProps> = ({ metrics, trendData }) =>
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Revenue Progress Card */}
-        <div className="card p-6 bg-[#f7f4ed] border border-[#eceae4] rounded-3xl shadow-sm relative overflow-hidden group">
+        <div className="card p-6 bg-[#f6f7f2] border border-[#ebece6] rounded-3xl shadow-sm relative overflow-hidden group">
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-[0.2em] mb-1">Recovered Revenue</p>
@@ -59,7 +59,7 @@ export const AgentStats: React.FC<AgentStatsProps> = ({ metrics, trendData }) =>
               <span className="text-[#5f5f5d]/40">{hasTarget ? `TARGET: ₹${metrics.weekly_revenue_target.toLocaleString()}` : "NO TARGET SET"}</span>
               <span className="text-emerald-600">{hasTarget ? `${revenueProgress.toFixed(0)}%` : "—"}</span>
             </div>
-            <div className="w-full bg-[#eceae4] h-2 rounded-full overflow-hidden">
+            <div className="w-full bg-[#ebece6] h-2 rounded-full overflow-hidden">
               <div
                 className="bg-emerald-500 h-full rounded-full transition-all duration-1000 ease-out"
                 style={{ width: `${revenueProgress}%` }}
@@ -69,7 +69,7 @@ export const AgentStats: React.FC<AgentStatsProps> = ({ metrics, trendData }) =>
         </div>
 
         {/* Attendance Hours Card */}
-        <div className="card p-6 bg-[#f7f4ed] border border-[#eceae4] rounded-3xl shadow-sm relative overflow-hidden group">
+        <div className="card p-6 bg-[#f6f7f2] border border-[#ebece6] rounded-3xl shadow-sm relative overflow-hidden group">
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-[0.2em] mb-1">Operational Shift</p>
@@ -88,7 +88,7 @@ export const AgentStats: React.FC<AgentStatsProps> = ({ metrics, trendData }) =>
                 "px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border",
                 metrics.current_status === "online" ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
                 ["break", "lunch", "away"].includes(metrics.current_status || "") ? "bg-amber-50 text-amber-700 border-amber-100" :
-                "bg-[#eceae4] text-[#1c1c1c]/60 border-[#eceae4]"
+                "bg-[#ebece6] text-[#1c1c1c]/60 border-[#ebece6]"
             )}>
                 {metrics.current_status || "Active"}
             </div>
@@ -96,9 +96,9 @@ export const AgentStats: React.FC<AgentStatsProps> = ({ metrics, trendData }) =>
         </div>
 
         {/* Activity Breakdown */}
-        <div className="card p-6 bg-[#f7f4ed] border border-[#eceae4] rounded-3xl shadow-sm md:col-span-1 lg:col-span-2">
+        <div className="card p-6 bg-[#f6f7f2] border border-[#ebece6] rounded-3xl shadow-sm md:col-span-1 lg:col-span-2">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-[#eceae4] rounded-xl">
+            <div className="p-2 bg-[#ebece6] rounded-xl">
               <Target className="w-4 h-4 text-[#1c1c1c]/40" />
             </div>
             <h3 className="text-[11px] font-black text-[#1c1c1c] uppercase tracking-[0.2em]">Efficiency Distribution</h3>
@@ -106,7 +106,7 @@ export const AgentStats: React.FC<AgentStatsProps> = ({ metrics, trendData }) =>
           <div className="h-[120px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#eceae4" />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#ebece6" />
                 <XAxis type="number" hide />
                 <YAxis 
                   dataKey="name" 
@@ -118,7 +118,7 @@ export const AgentStats: React.FC<AgentStatsProps> = ({ metrics, trendData }) =>
                   tickFormatter={(val) => val.toUpperCase()}
                 />
                 <Tooltip 
-                  cursor={{ fill: '#eceae4/50' }}
+                  cursor={{ fill: '#ebece6/50' }}
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       return (
@@ -144,21 +144,21 @@ export const AgentStats: React.FC<AgentStatsProps> = ({ metrics, trendData }) =>
 
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-[#f7f4ed] border border-[#eceae4] p-5 rounded-[24px] flex flex-col items-center justify-center text-center group hover:bg-[#eceae4] transition-all shadow-sm">
+        <div className="bg-[#f6f7f2] border border-[#ebece6] p-5 rounded-[24px] flex flex-col items-center justify-center text-center group hover:bg-[#ebece6] transition-all shadow-sm">
           <div className="p-3 bg-blue-50 rounded-2xl mb-3 group-hover:scale-110 transition-transform">
             <Phone className="w-5 h-5 text-blue-600" />
           </div>
           <span className="text-xl font-black text-[#1c1c1c] tracking-tighter tabular-nums mb-1">{metrics.total_calls}</span>
           <span className="text-[10px] text-[#5f5f5d]/40 font-black uppercase tracking-widest">Calls</span>
         </div>
-        <div className="bg-[#f7f4ed] border border-[#eceae4] p-5 rounded-[24px] flex flex-col items-center justify-center text-center group hover:bg-[#eceae4] transition-all shadow-sm">
+        <div className="bg-[#f6f7f2] border border-[#ebece6] p-5 rounded-[24px] flex flex-col items-center justify-center text-center group hover:bg-[#ebece6] transition-all shadow-sm">
           <div className="p-3 bg-[#1c1c1c]/5 rounded-2xl mb-3 group-hover:scale-110 transition-transform">
             <MessageSquare className="w-5 h-5 text-[#1c1c1c]" />
           </div>
           <span className="text-xl font-black text-[#1c1c1c] tracking-tighter tabular-nums mb-1">{metrics.total_whatsapp}</span>
           <span className="text-[10px] text-[#5f5f5d]/40 font-black uppercase tracking-widest">WhatsApp</span>
         </div>
-        <div className="bg-[#f7f4ed] border border-[#eceae4] p-5 rounded-[24px] flex flex-col items-center justify-center text-center group hover:bg-[#eceae4] transition-all shadow-sm">
+        <div className="bg-[#f6f7f2] border border-[#ebece6] p-5 rounded-[24px] flex flex-col items-center justify-center text-center group hover:bg-[#ebece6] transition-all shadow-sm">
           <div className="p-3 bg-emerald-50 rounded-2xl mb-3 group-hover:scale-110 transition-transform">
             <CheckCircle className="w-5 h-5 text-emerald-600" />
           </div>

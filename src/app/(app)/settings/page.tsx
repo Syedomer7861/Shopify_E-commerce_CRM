@@ -1128,7 +1128,7 @@ export default function SettingsPage() {
       <PageHeader title="Settings" subtitle="Configure your CRM behaviour, integrations, and notifications" />
 
       {syncStatus.active && (
-        <div className="mb-8 card p-5 bg-[#eceae4]/30 shadow-inner animate-in slide-in-from-top-4 duration-500">
+        <div className="mb-8 card p-5 bg-[#ebece6]/30 shadow-inner animate-in slide-in-from-top-4 duration-500">
           <SyncProgressBar 
             progress={syncStatus.progress} 
             message={syncStatus.message} 
@@ -1138,7 +1138,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="flex border-b border-[#eceae4] mb-8 gap-0 overflow-x-auto scroller-hide">
+      <div className="flex border-b border-[#ebece6] mb-8 gap-0 overflow-x-auto scroller-hide">
         {[
           { key: "general", label: "Preferences", icon: Sliders },
           { key: "fields", label: "Custom Fields", icon: ListPlus },
@@ -1182,7 +1182,7 @@ export default function SettingsPage() {
               { label: "Retention anchor (Final)", field: "final_offset_days", desc: "Terminal follow-up before archival", max: 90 },
               { label: "Churn threshold (Inactive)", field: "inactive_threshold_days", desc: "Dormancy limit for active customer status", max: 180 },
             ].map(f => (
-              <div key={f.field} className="flex flex-col sm:flex-row sm:items-center justify-between py-6 border-b border-[#eceae4]/50 last:border-0 gap-3 sm:gap-8">
+              <div key={f.field} className="flex flex-col sm:flex-row sm:items-center justify-between py-6 border-b border-[#ebece6]/50 last:border-0 gap-3 sm:gap-8">
                 <div className="flex-1">
                   <div className="text-xs font-bold text-[#1c1c1c]">{f.label}</div>
                   <div className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">{f.desc}</div>
@@ -1216,7 +1216,7 @@ export default function SettingsPage() {
         <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
           {/* Cloud Telephony Gateway */}
           <div className="card overflow-hidden bg-[#fcfbf8]">
-            <div className="px-6 py-4 bg-[#1c1c1c] text-[#f7f4ed] flex items-center justify-between">
+            <div className="px-6 py-4 bg-[#1c1c1c] text-[#f6f7f2] flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Smartphone className="w-4 h-4 text-emerald-400" />
                 <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Cloud Telephony</h3>
@@ -1242,7 +1242,7 @@ export default function SettingsPage() {
                         "py-3 px-4 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all text-center",
                         settings.telephony_provider === p.key
                           ? "bg-[#1c1c1c] border-[#1c1c1c] text-white shadow-md shadow-black/10"
-                          : "bg-white border-[#eceae4] text-[#5f5f5d] hover:border-[#1c1c1c]/30"
+                          : "bg-white border-[#ebece6] text-[#5f5f5d] hover:border-[#1c1c1c]/30"
                       )}
                     >
                       {p.label}
@@ -1252,7 +1252,7 @@ export default function SettingsPage() {
               </div>
 
               {settings.telephony_provider === "demo" && (
-                <div className="space-y-4 pt-2 border-t border-[#eceae4]/50 animate-in fade-in duration-300">
+                <div className="space-y-4 pt-2 border-t border-[#ebece6]/50 animate-in fade-in duration-300">
                   <div className="bg-[#fcfbf8] border border-amber-200 bg-amber-50/30 rounded-2xl p-5">
                     <h4 className="text-[10px] font-bold text-amber-800 uppercase tracking-widest mb-1.5 flex items-center gap-2">
                       <AlertCircle className="w-3.5 h-3.5 text-amber-600" /> Simulated Call Sandbox Active
@@ -1263,7 +1263,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Test Connection */}
-                  <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-4 flex items-center justify-between gap-4">
+                  <div className="bg-[#fcfbf8] border border-[#ebece6] rounded-2xl p-4 flex items-center justify-between gap-4">
                     <div className="flex-1">
                       <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">Verify Simulated Dialer</h4>
                       <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed opacity-70">
@@ -1276,7 +1276,7 @@ export default function SettingsPage() {
                         value={testCallPhone}
                         onChange={e => setTestCallPhone(e.target.value)}
                         placeholder="Enter phone number"
-                        className="input w-48 text-[10px] bg-white h-9 px-3 border border-[#eceae4] rounded-xl font-mono"
+                        className="input w-48 text-[10px] bg-white h-9 px-3 border border-[#ebece6] rounded-xl font-mono"
                       />
                       <button
                         onClick={handleTestCall}
@@ -1291,7 +1291,7 @@ export default function SettingsPage() {
               )}
 
               {settings.telephony_provider === "twilio" && (
-                <div className="space-y-4 pt-2 border-t border-[#eceae4]/50 animate-in fade-in duration-300">
+                <div className="space-y-4 pt-2 border-t border-[#ebece6]/50 animate-in fade-in duration-300">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
                       <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Twilio Account SID</label>
@@ -1326,7 +1326,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Test Connection */}
-                  <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-4 flex items-center justify-between gap-4 mt-4">
+                  <div className="bg-[#fcfbf8] border border-[#ebece6] rounded-2xl p-4 flex items-center justify-between gap-4 mt-4">
                     <div className="flex-1">
                       <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">Verify Twilio Credentials</h4>
                       <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed opacity-70">
@@ -1339,7 +1339,7 @@ export default function SettingsPage() {
                         value={testCallPhone}
                         onChange={e => setTestCallPhone(e.target.value)}
                         placeholder="Enter phone number (+91...)"
-                        className="input w-48 text-[10px] bg-white h-9 px-3 border border-[#eceae4] rounded-xl font-mono"
+                        className="input w-48 text-[10px] bg-white h-9 px-3 border border-[#ebece6] rounded-xl font-mono"
                       />
                       <button
                         onClick={handleTestCall}
@@ -1354,7 +1354,7 @@ export default function SettingsPage() {
               )}
 
               {settings.telephony_provider === "exotel" && (
-                <div className="space-y-4 pt-2 border-t border-[#eceae4]/50 animate-in fade-in duration-300">
+                <div className="space-y-4 pt-2 border-t border-[#ebece6]/50 animate-in fade-in duration-300">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
                       <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Exotel API Key / SID</label>
@@ -1389,7 +1389,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Test Connection */}
-                  <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-4 flex items-center justify-between gap-4 mt-4">
+                  <div className="bg-[#fcfbf8] border border-[#ebece6] rounded-2xl p-4 flex items-center justify-between gap-4 mt-4">
                     <div className="flex-1">
                       <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">Verify Exotel Credentials</h4>
                       <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed opacity-70">
@@ -1402,7 +1402,7 @@ export default function SettingsPage() {
                         value={testCallPhone}
                         onChange={e => setTestCallPhone(e.target.value)}
                         placeholder="Enter phone number"
-                        className="input w-48 text-[10px] bg-white h-9 px-3 border border-[#eceae4] rounded-xl font-mono"
+                        className="input w-48 text-[10px] bg-white h-9 px-3 border border-[#ebece6] rounded-xl font-mono"
                       />
                       <button
                         onClick={handleTestCall}
@@ -1420,7 +1420,7 @@ export default function SettingsPage() {
 
           {/* SMS Fallback Bridge */}
           <div className="card overflow-hidden bg-[#fcfbf8]">
-            <div className="px-6 py-4 bg-[#1c1c1c]/5 border-b border-[#eceae4] flex items-center justify-between">
+            <div className="px-6 py-4 bg-[#1c1c1c]/5 border-b border-[#ebece6] flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-[#5f5f5d]" />
                 <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1c1c1c]">SMS Fallback Bridge</h3>
@@ -1436,7 +1436,7 @@ export default function SettingsPage() {
                     <span className="text-[8px] font-black text-white uppercase tracking-widest">BRIDGE ACTIVE</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#eceae4] rounded-xl">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#ebece6] rounded-xl">
                     <ToggleLeft className="w-4 h-4 text-gray-400" />
                     <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">BRIDGE INACTIVE</span>
                   </div>
@@ -1483,7 +1483,7 @@ export default function SettingsPage() {
               </div>
 
               {/* SMS Test Connection */}
-              <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-4 flex items-center justify-between gap-4 mt-4">
+              <div className="bg-[#fcfbf8] border border-[#ebece6] rounded-2xl p-4 flex items-center justify-between gap-4 mt-4">
                 <div className="flex-1">
                   <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">Test SMS Connection</h4>
                   <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed opacity-70">
@@ -1496,7 +1496,7 @@ export default function SettingsPage() {
                     value={testSMSPhone}
                     onChange={e => setTestSMSPhone(e.target.value)}
                     placeholder="Phone number (+91...)"
-                    className="input w-48 text-[10px] bg-white h-9 px-3 border border-[#eceae4] rounded-xl font-mono"
+                    className="input w-48 text-[10px] bg-white h-9 px-3 border border-[#ebece6] rounded-xl font-mono"
                   />
                   <button
                     onClick={handleTestSMS}
@@ -1516,18 +1516,18 @@ export default function SettingsPage() {
             <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Establish a cost-free manual telephony channel by transforming any agent&apos;s Android device into an automated webhook caller via MacroDroid.</p>
             
             <div className="space-y-8">
-              <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-6 space-y-6">
+              <div className="bg-[#fcfbf8] border border-[#ebece6] rounded-2xl p-6 space-y-6">
                   <div className="flex items-start gap-4">
-                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">1</div>
+                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f6f7f2]">1</div>
                      <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
                        Install <strong>MacroDroid</strong> from the Play Store on your agent&apos;s Android handset.
                      </p>
                   </div>
                   <div className="flex items-start gap-4">
-                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">2</div>
+                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f6f7f2]">2</div>
                      <div className="flex-1">
                         <p className="text-[11px] text-[#1c1c1c] font-medium">Create a Macro that triggers on &quot;Outgoing Call Started&quot; or &quot;Ended&quot;, and set the Action to an HTTP POST request to this endpoint:</p>
-                        <div className="mt-3 flex items-center gap-3 bg-[#f7f4ed] border border-[#eceae4] rounded-xl p-3">
+                        <div className="mt-3 flex items-center gap-3 bg-[#f6f7f2] border border-[#ebece6] rounded-xl p-3">
                            <code className="text-[10px] text-[#1c1c1c] font-mono flex-1 break-all opacity-70">
                              {typeof window !== 'undefined' ? window.location.origin : ''}/api/calls/webhook
                            </code>
@@ -1537,7 +1537,7 @@ export default function SettingsPage() {
                                navigator.clipboard.writeText(url);
                                toast.success("Webhook URL Copied");
                              }}
-                             className="w-8 h-8 flex items-center justify-center border border-[#eceae4] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] rounded-lg text-[#5f5f5d] transition-all"
+                             className="w-8 h-8 flex items-center justify-center border border-[#ebece6] hover:bg-[#1c1c1c] hover:text-[#f6f7f2] rounded-lg text-[#5f5f5d] transition-all"
                            >
                               <Paperclip className="w-3.5 h-3.5" />
                            </button>
@@ -1545,12 +1545,12 @@ export default function SettingsPage() {
                      </div>
                   </div>
                   <div className="flex items-start gap-4">
-                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">3</div>
+                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f6f7f2]">3</div>
                      <div className="flex-1">
                        <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium mb-2">
                          Set the JSON Payload to include your agent&apos;s email and the customer&apos;s phone number. Example:
                        </p>
-                       <pre className="text-[9px] font-mono bg-[#1c1c1c] text-[#f7f4ed] p-4 rounded-xl overflow-x-auto shadow-inner">
+                       <pre className="text-[9px] font-mono bg-[#1c1c1c] text-[#f6f7f2] p-4 rounded-xl overflow-x-auto shadow-inner">
 {`{
   "event": "started",
   "agent_email": "{agent_email_from_macrodroid}",
@@ -1560,7 +1560,7 @@ export default function SettingsPage() {
                      </div>
                   </div>
                   <div className="flex items-start gap-4">
-                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">4</div>
+                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f6f7f2]">4</div>
                      <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
                        <strong>Auto-Recording (Optional):</strong> Enable &quot;Auto-record calls&quot; in the phone&apos;s native settings. Set MacroDroid to upload the recording file to the CRM upon call completion.
                      </p>
@@ -1572,7 +1572,7 @@ export default function SettingsPage() {
                   <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                   <div>
                     <h4 className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-2">Manager Live Monitor</h4>
-                    <p className="text-[11px] text-[#f7f4ed] leading-relaxed font-medium opacity-90">
+                    <p className="text-[11px] text-[#f6f7f2] leading-relaxed font-medium opacity-90">
                       Once configured, whenever an agent initiates a call, their status will instantly update to <span className="bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">ON CALL</span> across the CRM. Managers can listen to recorded calls directly from the Audit Queue.
                     </p>
                   </div>
@@ -1582,7 +1582,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Commit Settings Button */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-[#eceae4]/50">
+          <div className="flex justify-end gap-3 pt-4 border-t border-[#ebece6]/50">
              <button onClick={handleSave} disabled={saving} className="btn-primary py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest min-w-[140px]">
                 {saving ? "Saving..." : "Commit Settings"}
              </button>
@@ -1615,7 +1615,7 @@ export default function SettingsPage() {
                       <span className="text-[10px] font-black text-white uppercase tracking-widest">ON</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-white border border-[#eceae4] rounded-2xl shadow-sm">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-white border border-[#ebece6] rounded-2xl shadow-sm">
                       <ToggleLeft className="w-5 h-5 text-gray-400" />
                       <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">OFF</span>
                     </div>
@@ -1628,7 +1628,7 @@ export default function SettingsPage() {
               
               {/* Meta Cloud API (Official) */}
               <div className="card overflow-hidden bg-[#fcfbf8]">
-                <div className="px-6 py-4 bg-[#1c1c1c] text-[#f7f4ed] flex items-center justify-between">
+                <div className="px-6 py-4 bg-[#1c1c1c] text-[#f6f7f2] flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Smartphone className="w-4 h-4" />
                     <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Enterprise Meta API</h3>
@@ -1680,7 +1680,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-[#eceae4]/50">
+                  <div className="pt-6 border-t border-[#ebece6]/50">
                     <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Webhook Configuration</label>
                     <p className="text-[10px] text-[#5f5f5d] mb-4 italic opacity-70">Configure these in Meta Dashboard &gt; Webhooks</p>
                     
@@ -1692,14 +1692,14 @@ export default function SettingsPage() {
                             type="text" 
                             readOnly 
                             value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/whatsapp`}
-                            className="input font-mono text-[10px] h-9 bg-[#eceae4]/20 border-transparent text-[#5f5f5d] cursor-default" 
+                            className="input font-mono text-[10px] h-9 bg-[#ebece6]/20 border-transparent text-[#5f5f5d] cursor-default" 
                           />
                           <button 
                             onClick={() => {
                               navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/whatsapp`);
                               toast.success("URL Copied!");
                             }}
-                            className="w-9 h-9 flex items-center justify-center border border-[#eceae4] rounded-lg hover:bg-[#eceae4] text-[#5f5f5d] hover:text-[#1c1c1c] transition-all"
+                            className="w-9 h-9 flex items-center justify-center border border-[#ebece6] rounded-lg hover:bg-[#ebece6] text-[#5f5f5d] hover:text-[#1c1c1c] transition-all"
                           >
                             <Paperclip className="w-3.5 h-3.5" />
                           </button>
@@ -1724,13 +1724,13 @@ export default function SettingsPage() {
               {/* High Visibility QR Scanner (Only when pending) */}
               {!waStatus.ready && waStatus.qr && (
                 <div className="card overflow-hidden bg-[#fcfbf8] border-[#1c1c1c]/10">
-                  <div className="px-6 py-4 bg-[#1c1c1c] text-[#f7f4ed] flex items-center gap-3">
+                  <div className="px-6 py-4 bg-[#1c1c1c] text-[#f6f7f2] flex items-center gap-3">
                     <AlertCircle className="w-4 h-4" />
                     <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Authenticating Bridge</h3>
                   </div>
-                  <div className="p-10 text-center bg-[#eceae4]/10">
+                  <div className="p-10 text-center bg-[#ebece6]/10">
                     <p className="text-xs text-[#5f5f5d] mb-8 font-medium max-w-xs mx-auto leading-relaxed">On your phone open WhatsApp, go to Settings, Linked devices, Link a device, and scan this code. It refreshes every few seconds.</p>
-                    <div className="inline-block p-6 bg-white rounded-3xl shadow-2xl border border-[#eceae4] relative group">
+                    <div className="inline-block p-6 bg-white rounded-3xl shadow-2xl border border-[#ebece6] relative group">
                         <Image 
                           src={waStatus.qr} 
                           alt="WhatsApp QR Code" 
@@ -1739,31 +1739,31 @@ export default function SettingsPage() {
                           className="relative z-10"
                           unoptimized
                         />
-                       {!waStatus.qr && <div className="w-52 h-52 flex items-center justify-center text-[#eceae4]"><Loader2 className="w-10 h-10 animate-spin" /></div>}
+                       {!waStatus.qr && <div className="w-52 h-52 flex items-center justify-center text-[#ebece6]"><Loader2 className="w-10 h-10 animate-spin" /></div>}
                     </div>
                     <div className="mt-8 flex flex-col items-center gap-3">
-                       <div className="flex items-center gap-3 text-[10px] text-[#1c1c1c] font-bold bg-white px-5 py-2 rounded-xl border border-[#eceae4] shadow-sm uppercase tracking-widest">
+                       <div className="flex items-center gap-3 text-[10px] text-[#1c1c1c] font-bold bg-white px-5 py-2 rounded-xl border border-[#ebece6] shadow-sm uppercase tracking-widest">
                           <WifiOff className="w-3.5 h-3.5 animate-pulse" /> Awaiting Handshake...
                        </div>
-                       <button onClick={fetchStatus} className="text-[10px] text-[#5f5f5d] hover:text-[#1c1c1c] underline underline-offset-4 decoration-[#eceae4] transition-all font-bold uppercase tracking-widest">Refresh Sequence</button>
+                       <button onClick={fetchStatus} className="text-[10px] text-[#5f5f5d] hover:text-[#1c1c1c] underline underline-offset-4 decoration-[#ebece6] transition-all font-bold uppercase tracking-widest">Refresh Sequence</button>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Legacy Bridge (Accordion) */}
-              <details className="card border-[#eceae4]/60 bg-[#eceae4]/10 group">
+              <details className="card border-[#ebece6]/60 bg-[#ebece6]/10 group">
                 <summary className="px-6 py-4 text-[10px] font-bold text-[#5f5f5d] cursor-pointer hover:text-[#1c1c1c] transition-colors flex items-center justify-between uppercase tracking-widest list-none">
                   <div className="flex items-center gap-3">
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Own bridge server (optional)</span>
                   </div>
-                  <span className="text-[9px] bg-[#eceae4] text-[#1c1c1c] px-2 py-0.5 rounded-lg tracking-widest">v2.0</span>
+                  <span className="text-[9px] bg-[#ebece6] text-[#1c1c1c] px-2 py-0.5 rounded-lg tracking-widest">v2.0</span>
                 </summary>
                 
-                <div className="px-6 pb-6 pt-2 border-t border-[#eceae4]/50 space-y-5">
+                <div className="px-6 pb-6 pt-2 border-t border-[#ebece6]/50 space-y-5">
                   {waStatus.ready ? (
-                    <div className="p-4 rounded-xl bg-[#1c1c1c] text-[#f7f4ed] flex items-center justify-between shadow-lg shadow-black/10">
+                    <div className="p-4 rounded-xl bg-[#1c1c1c] text-[#f6f7f2] flex items-center justify-between shadow-lg shadow-black/10">
                       <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Connected
                       </div>
@@ -1813,7 +1813,7 @@ export default function SettingsPage() {
               </div>
 
               {/* Compact Status Bar */}
-              <div className="pt-6 border-t border-[#eceae4]/50">
+              <div className="pt-6 border-t border-[#ebece6]/50">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className={cn("w-2.5 h-2.5 rounded-full animate-pulse", 
@@ -1839,7 +1839,7 @@ export default function SettingsPage() {
               </div>
 
               {/* Testing & Tools */}
-              <div className="pt-8 mt-4 border-t border-[#eceae4]/50">
+              <div className="pt-8 mt-4 border-t border-[#ebece6]/50">
                 <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4">Diagnostics & Manual Triggers</h4>
                 <div className="grid grid-cols-2 gap-4">
                   {[
@@ -1886,7 +1886,7 @@ export default function SettingsPage() {
                   ].map((btn, i) => (
                     <button key={i}
                       onClick={btn.onClick}
-                      className="flex items-center justify-center gap-3 py-3 px-4 bg-[#fcfbf8] hover:bg-[#eceae4] text-[#1c1c1c] rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-[#eceae4] shadow-sm hover:shadow-md"
+                      className="flex items-center justify-center gap-3 py-3 px-4 bg-[#fcfbf8] hover:bg-[#ebece6] text-[#1c1c1c] rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-[#ebece6] shadow-sm hover:shadow-md"
                     >
                       <btn.icon className="w-3.5 h-3.5" /> {btn.label}
                     </button>
@@ -1900,7 +1900,7 @@ export default function SettingsPage() {
                 <p className="text-[10px] text-gray-400 mb-6 italic">Enable these to send WhatsApp messages automatically when certain events occur. <strong>These will be sent instantly via the active bridge.</strong></p>
                 
                 {/* Anti-Ban Safeguard Speed Config */}
-                <div className="border border-[#eceae4] rounded-lg p-3 bg-[#f7f4ed]/30 space-y-3 mb-6">
+                <div className="border border-[#ebece6] rounded-lg p-3 bg-[#f6f7f2]/30 space-y-3 mb-6">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-[#1c1c1c]">
                     <AlertCircle className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
                     Anti-Ban Sending Speed Safeguard
@@ -2009,7 +2009,7 @@ export default function SettingsPage() {
                                         setSettings({ ...settings, [rule.templateField]: preset });
                                         toast.success("Template Loaded");
                                       }}
-                                      className="flex items-center gap-2 px-3 py-1.5 bg-[#fcfbf8] border border-[#eceae4] rounded-lg text-[9px] font-bold text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] hover:border-[#1c1c1c] transition-all shadow-sm group"
+                                      className="flex items-center gap-2 px-3 py-1.5 bg-[#fcfbf8] border border-[#ebece6] rounded-lg text-[9px] font-bold text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f6f7f2] hover:border-[#1c1c1c] transition-all shadow-sm group"
                                     >
                                       <Send className="w-3 h-3 opacity-40 group-hover:opacity-100" />
                                       {idx === 0 ? "Option Alpha" : "Option Beta"}
@@ -2023,7 +2023,7 @@ export default function SettingsPage() {
                               <textarea 
                                 value={settings[rule.templateField] || ""} 
                                 onChange={e => setSettings({ ...settings, [rule.templateField]: e.target.value })}
-                                className="relative w-full input text-xs min-h-[120px] font-medium leading-relaxed bg-[#fcfbf8] border-[#eceae4] focus:border-[#1c1c1c] rounded-xl p-5 shadow-sm"
+                                className="relative w-full input text-xs min-h-[120px] font-medium leading-relaxed bg-[#fcfbf8] border-[#ebece6] focus:border-[#1c1c1c] rounded-xl p-5 shadow-sm"
                                 placeholder="Draft your automated broadcast..."
                               />
                             </div>
@@ -2036,7 +2036,7 @@ export default function SettingsPage() {
               </div>
 
                {/* Message Templates */}
-               <div className="pt-10 mt-8 border-t border-[#eceae4]">
+               <div className="pt-10 mt-8 border-t border-[#ebece6]">
                 <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-6">Task Specific Prototypes (Scheduled)</h4>
                 
                 <div className="space-y-8">
@@ -2055,7 +2055,7 @@ export default function SettingsPage() {
                         <textarea 
                           value={settings[t.field] || ""} 
                           onChange={e => setSettings({ ...settings, [t.field]: e.target.value })}
-                          className="input text-xs min-h-[100px] font-medium leading-relaxed bg-[#fcfbf8] border-[#eceae4] rounded-xl p-4"
+                          className="input text-xs min-h-[100px] font-medium leading-relaxed bg-[#fcfbf8] border-[#ebece6] rounded-xl p-4"
                           placeholder="Refine follow-up logic..."
                         />
                       </div>
@@ -2066,15 +2066,15 @@ export default function SettingsPage() {
                           value={settings[t.metaField] || ""} 
                           onChange={e => setSettings({ ...settings, [t.metaField]: e.target.value })}
                           placeholder="review_v1"
-                          className="input font-mono text-[10px] bg-[#eceae4]/20 border-transparent h-10" 
+                          className="input font-mono text-[10px] bg-[#ebece6]/20 border-transparent h-10" 
                         />
                         <p className="text-[9px] text-[#5f5f5d] mt-2 opacity-50 italic">Must mirror the approved namespace in Meta Dashboard.</p>
                       </div>
-                      <div className="col-span-3 h-px bg-[#eceae4]/50 my-2" />
+                      <div className="col-span-3 h-px bg-[#ebece6]/50 my-2" />
                     </div>
                   ))}
 
-                  <div className="bg-[#1c1c1c] text-[#f7f4ed] rounded-xl p-5 shadow-lg shadow-black/10">
+                  <div className="bg-[#1c1c1c] text-[#f6f7f2] rounded-xl p-5 shadow-lg shadow-black/10">
                     <h5 className="text-[10px] font-bold uppercase tracking-widest mb-3 opacity-60">System Attributes</h5>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-2">
                       <div className="text-[10px] font-bold flex justify-between"><span>{"{{name}}"}</span> <span className="opacity-40">Full Name</span></div>
@@ -2090,7 +2090,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <div className="pt-4 flex items-center justify-between border-t border-[#eceae4]/50">
+                  <div className="pt-4 flex items-center justify-between border-t border-[#ebece6]/50">
                     <div>
                       <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-1 opacity-60">Recovery Sequence Latency</label>
                       <p className="text-[10px] text-[#5f5f5d] italic opacity-50">Hours elapsed before cart abandonment trigger</p>
@@ -2110,13 +2110,13 @@ export default function SettingsPage() {
               </div>
 
                {/* Automation Command Center */}
-               <div className="pt-10 mt-8 border-t border-[#eceae4]">
+               <div className="pt-10 mt-8 border-t border-[#ebece6]">
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Live Pipeline Monitoring</h4>
                     <p className="text-[10px] text-[#5f5f5d] mt-1 opacity-60 font-medium">Real-time visibility into administrative communication flows</p>
                   </div>
-                  <button onClick={fetchPipelineData} aria-label="Refresh" title="Refresh" className="w-9 h-9 flex items-center justify-center hover:bg-[#eceae4] rounded-lg text-[#5f5f5d] transition-all">
+                  <button onClick={fetchPipelineData} aria-label="Refresh" title="Refresh" className="w-9 h-9 flex items-center justify-center hover:bg-[#ebece6] rounded-lg text-[#5f5f5d] transition-all">
                     <RefreshCw className={cn("w-3.5 h-3.5", fetchingPipeline && "animate-spin")} />
                   </button>
                 </div>
@@ -2127,9 +2127,9 @@ export default function SettingsPage() {
                       <h5 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest px-1 opacity-40">Recently Dispatched</h5>
                       <div className="space-y-2 max-h-[240px] overflow-y-auto pr-2 scroller-hide">
                          {pipeline.sent.length === 0 ? (
-                           <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest p-8 border border-dashed border-[#eceae4] rounded-2xl text-center opacity-30 bg-[#eceae4]/10">No recent activity</div>
+                           <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest p-8 border border-dashed border-[#ebece6] rounded-2xl text-center opacity-30 bg-[#ebece6]/10">No recent activity</div>
                          ) : pipeline.sent.map(log => (
-                           <div key={log.id} className="p-4 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl group transition-all hover:border-[#1c1c1c]/30 shadow-sm">
+                           <div key={log.id} className="p-4 bg-[#fcfbf8] border border-[#ebece6] rounded-2xl group transition-all hover:border-[#1c1c1c]/30 shadow-sm">
                              <div className="flex justify-between items-start mb-1">
                                <div className="flex items-center gap-2">
                                   <span className="text-[10px] font-bold text-[#1c1c1c] truncate uppercase tracking-widest">{log.customer?.name || "Customer"}</span>
@@ -2148,7 +2148,7 @@ export default function SettingsPage() {
                       <h5 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest px-1 opacity-40">Queued for Dispatch</h5>
                       <div className="space-y-2 max-h-[240px] overflow-y-auto pr-2 scroller-hide">
                          {pipeline.waiting.length === 0 ? (
-                           <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest p-8 border border-dashed border-[#eceae4] rounded-2xl text-center opacity-30 bg-[#eceae4]/10">Queue finalized</div>
+                           <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest p-8 border border-dashed border-[#ebece6] rounded-2xl text-center opacity-30 bg-[#ebece6]/10">Queue finalized</div>
                          ) : pipeline.waiting.map(task => {
                             const [h, m] = (settings.whatsapp_send_time || "10:00").split(":");
                             const target = new Date();
@@ -2182,7 +2182,7 @@ export default function SettingsPage() {
                              }
 
                            return (
-                             <div key={task.id} className="p-4 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl group hover:border-[#1c1c1c]/30 transition-all shadow-sm">
+                             <div key={task.id} className="p-4 bg-[#fcfbf8] border border-[#ebece6] rounded-2xl group hover:border-[#1c1c1c]/30 transition-all shadow-sm">
                                <div className="flex justify-between items-start mb-2">
                                  <div>
                                    <div className="flex items-center gap-2 mb-1">
@@ -2190,21 +2190,21 @@ export default function SettingsPage() {
                                      {task.isWorkflow ? (
                                        <span className="text-[8px] px-1.5 py-0.5 bg-[#1c1c1c] text-white rounded font-bold uppercase tracking-tighter">Auto</span>
                                      ) : (
-                                       <span className="text-[8px] px-1.5 py-0.5 bg-[#eceae4] text-[#5f5f5d] rounded font-bold uppercase tracking-tighter">Manual</span>
+                                       <span className="text-[8px] px-1.5 py-0.5 bg-[#ebece6] text-[#5f5f5d] rounded font-bold uppercase tracking-tighter">Manual</span>
                                      )}
                                    </div>
                                    <div className="flex items-center gap-2">
                                      <span className={cn("text-[9px] font-bold uppercase tracking-widest", isOverdue ? "text-[#1c1c1c]" : "text-[#5f5f5d] opacity-50")}>
                                        {timeText}
                                      </span>
-                                     <span className="text-[8px] px-2 py-0.5 bg-[#eceae4]/30 border border-[#eceae4] text-[#5f5f5d] rounded-lg font-bold uppercase tracking-widest">
+                                     <span className="text-[8px] px-2 py-0.5 bg-[#ebece6]/30 border border-[#ebece6] text-[#5f5f5d] rounded-lg font-bold uppercase tracking-widest">
                                        {task.isWorkflow ? (task.workflowName || "Workflow") : (task.task_type || "manual").replace("_", " ")}
                                      </span>
                                    </div>
                                  </div>
                                  <button 
                                    onClick={() => handleOpenManualWa(task)}
-                                   className="w-8 h-8 flex items-center justify-center bg-[#1c1c1c] text-[#f7f4ed] rounded-lg transition-all opacity-0 group-hover:opacity-100 shadow-lg shadow-black/10 hover:scale-105 active:scale-95"
+                                   className="w-8 h-8 flex items-center justify-center bg-[#1c1c1c] text-[#f6f7f2] rounded-lg transition-all opacity-0 group-hover:opacity-100 shadow-lg shadow-black/10 hover:scale-105 active:scale-95"
                                    title="Execute Broadcast"
                                  >
                                    <Send className="w-3.5 h-3.5" />
@@ -2241,7 +2241,7 @@ export default function SettingsPage() {
             <div className="bg-[#1c1c1c]/5 border border-[#1c1c1c]/10 rounded-2xl p-5 mb-8">
               <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-3 opacity-60">Fast Import (credentials.json)</label>
               <textarea 
-                className="w-full h-24 bg-white border-[#eceae4] rounded-xl p-4 text-[10px] font-mono mb-3"
+                className="w-full h-24 bg-white border-[#ebece6] rounded-xl p-4 text-[10px] font-mono mb-3"
                 placeholder='Paste your Google credentials JSON here...'
                 onChange={(e) => {
                   if (e.target.value.trim().startsWith('{')) {
@@ -2295,7 +2295,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <details className="mt-8 pt-8 border-t border-[#eceae4]/50 group">
+            <details className="mt-8 pt-8 border-t border-[#ebece6]/50 group">
               <summary className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest cursor-pointer opacity-40 hover:opacity-100 transition-opacity list-none flex items-center gap-2">
                 Advanced Endpoints <Sliders className="w-3 h-3" />
               </summary>
@@ -2333,7 +2333,7 @@ export default function SettingsPage() {
                  href="/api/auth/google" 
                  target="_blank"
                  rel="noopener noreferrer"
-                 className="flex items-center gap-2 px-6 py-2.5 bg-[#fcfbf8] hover:bg-[#eceae4] text-[#1c1c1c] rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-[#eceae4] shadow-sm hover:shadow-md"
+                 className="flex items-center gap-2 px-6 py-2.5 bg-[#fcfbf8] hover:bg-[#ebece6] text-[#1c1c1c] rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-[#ebece6] shadow-sm hover:shadow-md"
                >
                  <ShieldCheck className="w-4 h-4" /> Authorize Gmail
                </a>
@@ -2344,7 +2344,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Email Automation Rules */}
-          <div className="pt-10 mt-10 border-t border-[#eceae4]">
+          <div className="pt-10 mt-10 border-t border-[#ebece6]">
             <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 flex items-center gap-2">
               <Zap className="w-3.5 h-3.5 text-amber-500" /> Branded Email Automations
             </h4>
@@ -2359,7 +2359,7 @@ export default function SettingsPage() {
                 { label: "Cart Recovery", field: "email_auto_cart_abandoned", subjectField: "email_cart_abandoned_subject", templateField: "email_cart_abandoned_template", desc: "Sent after a customer abandons their cart" },
                 { label: "Refill Reminder", field: "email_auto_reorder", subjectField: "email_reorder_subject", templateField: "email_reorder_template", desc: "Sent when it's time for a product refill" },
               ].map(rule => (
-                <div key={rule.field} className="card p-6 border-[#eceae4] bg-[#fcfbf8]/50">
+                <div key={rule.field} className="card p-6 border-[#ebece6] bg-[#fcfbf8]/50">
                   <div className="flex items-center justify-between gap-4 mb-6">
                     <div className="flex-1">
                       <div className="text-xs font-bold text-[#1c1c1c] tracking-tight">{rule.label}</div>
@@ -2370,12 +2370,12 @@ export default function SettingsPage() {
                       className="focus:outline-none transition-transform active:scale-95"
                     >
                       {settings[rule.field] ? (
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1c1c1c] text-[#f7f4ed] rounded-full shadow-lg shadow-black/10">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1c1c1c] text-[#f6f7f2] rounded-full shadow-lg shadow-black/10">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span className="text-[9px] font-black uppercase tracking-widest">ACTIVE</span>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#eceae4] text-[#5f5f5d] rounded-full">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#ebece6] text-[#5f5f5d] rounded-full">
                           <ToggleLeft className="w-3.5 h-3.5 opacity-40" />
                           <span className="text-[9px] font-black uppercase tracking-widest">DISABLED</span>
                         </div>
@@ -2384,7 +2384,7 @@ export default function SettingsPage() {
                   </div>
 
                   {settings[rule.field] && (
-                    <div className="space-y-4 pt-6 border-t border-[#eceae4] animate-fade-in-down">
+                    <div className="space-y-4 pt-6 border-t border-[#ebece6] animate-fade-in-down">
                       <div className="flex items-center justify-between">
                         <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest opacity-40">Configure Template</label>
                         <div className="flex items-center gap-2">
@@ -2400,7 +2400,7 @@ export default function SettingsPage() {
                                 });
                                 toast.success("Template & Subject Loaded");
                               }}
-                              className="px-2.5 py-1 bg-white border border-[#eceae4] rounded-lg text-[9px] font-bold text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
+                              className="px-2.5 py-1 bg-white border border-[#ebece6] rounded-lg text-[9px] font-bold text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
                             >
                               Variant {idx + 1}
                             </button>
@@ -2416,7 +2416,7 @@ export default function SettingsPage() {
                             value={settings[rule.subjectField] || ""} 
                             onChange={e => setSettings({ ...settings, [rule.subjectField]: e.target.value })}
                             placeholder="e.g. Welcome to the family! 🌿"
-                            className="input text-xs bg-white border-[#eceae4] font-medium" 
+                            className="input text-xs bg-white border-[#ebece6] font-medium" 
                           />
                         </div>
                         <div>
@@ -2424,7 +2424,7 @@ export default function SettingsPage() {
                           <textarea 
                             value={settings[rule.templateField] || ""} 
                             onChange={e => setSettings({ ...settings, [rule.templateField]: e.target.value })}
-                            className="input text-xs min-h-[120px] bg-white border-[#eceae4] font-medium leading-relaxed p-4"
+                            className="input text-xs min-h-[120px] bg-white border-[#ebece6] font-medium leading-relaxed p-4"
                             placeholder="Write your message here... You can use {{name}}, {{product}}, etc."
                           />
                           <p className="text-[9px] text-[#5f5f5d] mt-2 italic opacity-50">Note: New lines will automatically be converted to breaks. Branded header & footer are added automatically.</p>
@@ -2547,13 +2547,13 @@ export default function SettingsPage() {
               </div>
 
               {settings.shopify_token_expires_at && (
-                <div className="text-[10px] font-bold text-[#1c1c1c] bg-[#eceae4]/30 border border-[#eceae4] rounded-xl px-4 py-3 flex items-center justify-between">
+                <div className="text-[10px] font-bold text-[#1c1c1c] bg-[#ebece6]/30 border border-[#ebece6] rounded-xl px-4 py-3 flex items-center justify-between">
                   <span className="opacity-60 uppercase tracking-widest">Token Lifecycle Ends:</span>
                   <span className="font-mono">{new Date(settings.shopify_token_expires_at).toLocaleString()}</span>
                 </div>
               )}
 
-              <div className="pt-8 border-t border-[#eceae4]/50 flex items-center justify-between">
+              <div className="pt-8 border-t border-[#ebece6]/50 flex items-center justify-between">
                 <div>
                    <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Autonomous Sentinel</h4>
                    <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">
@@ -2564,7 +2564,7 @@ export default function SettingsPage() {
                 </div>
                 <div className={cn(
                   "px-4 py-1.5 rounded-full text-[9px] font-black tracking-widest border transition-all", 
-                  settings.shopify_api_key ? "bg-[#1c1c1c] text-[#f7f4ed] border-[#1c1c1c]" : "bg-[#eceae4]/30 text-[#5f5f5d] border-[#eceae4]"
+                  settings.shopify_api_key ? "bg-[#1c1c1c] text-[#f6f7f2] border-[#1c1c1c]" : "bg-[#ebece6]/30 text-[#5f5f5d] border-[#ebece6]"
                 )}>
                   {settings.shopify_api_key ? "ACTIVE" : "OFFLINE"}
                 </div>
@@ -2585,7 +2585,7 @@ export default function SettingsPage() {
               <Zap className={cn("w-3.5 h-3.5 mr-2", saving && "animate-pulse")} /> Run 48h Recovery Audit
             </button>
             <button
-              className="btn-primary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest bg-[#1c1c1c] hover:bg-[#1c1c1c]/90 text-[#f7f4ed]"
+              className="btn-primary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest bg-[#1c1c1c] hover:bg-[#1c1c1c]/90 text-[#f6f7f2]"
               onClick={() => startSyncStream("/api/sync/shopify")}
               disabled={saving || !settings.shopify_api_key}
             >
@@ -2598,8 +2598,8 @@ export default function SettingsPage() {
               and are disabled until shopify_api_key is set, which could never
               happen through this tab alone. Every other settings tab ends
               with this same Save Settings button; this one just didn't. */}
-          <div className="flex justify-end pt-8 mt-8 border-t border-[#eceae4]">
-            <button className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-3 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleSave} disabled={saving}>
+          <div className="flex justify-end pt-8 mt-8 border-t border-[#ebece6]">
+            <button className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-3 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Save className="w-3.5 h-3.5 mr-2" />}
               {saving ? "Saving..." : "Save Settings"}
             </button>
@@ -2638,7 +2638,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="pt-8 border-t border-[#eceae4]/50">
+            <div className="pt-8 border-t border-[#ebece6]/50">
                <div className="flex items-center justify-between mb-6">
                   <div>
                      <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest flex items-center gap-2">
@@ -2648,18 +2648,18 @@ export default function SettingsPage() {
                   </div>
                </div>
 
-               <div className="bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-6 space-y-4">
+               <div className="bg-[#fcfbf8] border border-[#ebece6] rounded-2xl p-6 space-y-4">
                   <div className="flex items-start gap-4">
-                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">1</div>
+                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f6f7f2]">1</div>
                      <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
                        Navigate to <strong>Shiprocket Dashboard</strong> &gt; <strong>Checkout</strong> &gt; <strong>Settings</strong> &gt; <strong>Webhooks</strong>.
                      </p>
                   </div>
                   <div className="flex items-start gap-4">
-                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">2</div>
+                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f6f7f2]">2</div>
                      <div className="flex-1">
                         <p className="text-[11px] text-[#1c1c1c] font-medium">Create a new webhook for the <strong>&quot;Abandoned Cart&quot;</strong> event:</p>
-                        <div className="mt-3 flex items-center gap-3 bg-[#f7f4ed] border border-[#eceae4] rounded-xl p-3">
+                        <div className="mt-3 flex items-center gap-3 bg-[#f6f7f2] border border-[#ebece6] rounded-xl p-3">
                            {/* Was hardcoded to a Tailscale address on one developer
                                machine, so abandoned-cart webhooks were dropped
                                whenever that PC was off. Derive it from the current
@@ -2673,7 +2673,7 @@ export default function SettingsPage() {
                                navigator.clipboard.writeText(url);
                                toast.success("URL Copied");
                              }}
-                             className="w-8 h-8 flex items-center justify-center hover:bg-[#eceae4] rounded-lg text-[#1c1c1c] transition-all"
+                             className="w-8 h-8 flex items-center justify-center hover:bg-[#ebece6] rounded-lg text-[#1c1c1c] transition-all"
                            >
                               <CheckCircle2 className="w-3.5 h-3.5" />
                            </button>
@@ -2681,20 +2681,20 @@ export default function SettingsPage() {
                      </div>
                   </div>
                   <div className="flex items-start gap-4">
-                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f7f4ed]">3</div>
+                     <div className="w-6 h-6 bg-[#1c1c1c] rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#f6f7f2]">3</div>
                      {/* Used to point admins at SHIPROCKET_WEBHOOK_TOKEN (a
                          single env var shared by every org) instead of the
                          Webhook Secret field a few lines down on this same
                          tab, which is this org's own and is what the webhook
                          handler actually checks first. */}
                      <p className="text-[11px] text-[#1c1c1c] leading-relaxed font-medium">
-                       Set header <code className="bg-[#eceae4]/30 px-2 py-0.5 rounded font-mono text-[#1c1c1c]">x-shiprocket-secret</code> to the <strong>Webhook Secret</strong> value you set below, then save.
+                       Set header <code className="bg-[#ebece6]/30 px-2 py-0.5 rounded font-mono text-[#1c1c1c]">x-shiprocket-secret</code> to the <strong>Webhook Secret</strong> value you set below, then save.
                      </p>
                   </div>
                </div>
             </div>
 
-            <div className="bg-[#1c1c1c] text-[#f7f4ed] rounded-2xl p-6 mb-8 relative overflow-hidden shadow-xl shadow-black/10">
+            <div className="bg-[#1c1c1c] text-[#f6f7f2] rounded-2xl p-6 mb-8 relative overflow-hidden shadow-xl shadow-black/10">
               <div className="absolute top-0 right-0 p-6 opacity-5">
                 <WifiOff className="w-16 h-16" />
               </div>
@@ -2718,10 +2718,10 @@ export default function SettingsPage() {
                   <WifiOff className="w-5 h-5 text-rose-500 shrink-0" />
                   <div>
                     <h4 className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-2">Can&apos;t Reach Localhost</h4>
-                    <p className="text-[11px] text-[#f7f4ed] leading-relaxed font-medium">
-                      Administrative oversight is compromised. Shiprocket cannot reach <span className="underline decoration-rose-500/50 italic text-[#eceae4]">localhost</span> from the cloud.
+                    <p className="text-[11px] text-[#f6f7f2] leading-relaxed font-medium">
+                      Administrative oversight is compromised. Shiprocket cannot reach <span className="underline decoration-rose-500/50 italic text-[#ebece6]">localhost</span> from the cloud.
                       <br /><br />
-                      <span className="text-rose-500 font-bold uppercase tracking-widest">Remedy:</span> Implement an <span className="bg-white/10 px-2 py-0.5 rounded-lg text-[#eceae4]">ngrok</span> tunnel or deploy to a reachable staging environment to restore live cart visibility.
+                      <span className="text-rose-500 font-bold uppercase tracking-widest">Remedy:</span> Implement an <span className="bg-white/10 px-2 py-0.5 rounded-lg text-[#ebece6]">ngrok</span> tunnel or deploy to a reachable staging environment to restore live cart visibility.
                     </p>
                   </div>
                 </div>
@@ -2736,14 +2736,14 @@ export default function SettingsPage() {
                     type="text" 
                     readOnly 
                     value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/shiprocket`}
-                    className="input font-mono text-[10px] bg-[#eceae4]/30 text-[#1c1c1c] cursor-default border-transparent" 
+                    className="input font-mono text-[10px] bg-[#ebece6]/30 text-[#1c1c1c] cursor-default border-transparent" 
                   />
                   <button 
                     onClick={() => {
                       navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/shiprocket`);
                       toast.success("URL Copied");
                     }}
-                    className="w-10 h-10 flex items-center justify-center border border-[#eceae4] rounded-xl hover:bg-[#1c1c1c] hover:text-[#f7f4ed] hover:border-[#1c1c1c] text-[#5f5f5d] transition-all"
+                    className="w-10 h-10 flex items-center justify-center border border-[#ebece6] rounded-xl hover:bg-[#1c1c1c] hover:text-[#f6f7f2] hover:border-[#1c1c1c] text-[#5f5f5d] transition-all"
                   >
                     <Paperclip className="w-4 h-4" />
                   </button>
@@ -2762,12 +2762,12 @@ export default function SettingsPage() {
                 <p className="text-[9px] text-[#5f5f5d] mt-2 opacity-50 italic">Must mirror the secret string defined in your Shiprocket Webhook settings.</p>
               </div>
 
-              <div className="pt-10 mt-8 border-t border-[#eceae4]">
+              <div className="pt-10 mt-8 border-t border-[#ebece6]">
                  <div className="flex items-center gap-3 mb-6">
                     <Database className="w-4 h-4 text-[#1c1c1c]" />
                     <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Import Past Fastrr Carts</h3>
                  </div>
-                 <div className="flex items-center gap-8 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl p-6">
+                 <div className="flex items-center gap-8 bg-[#fcfbf8] border border-[#ebece6] rounded-2xl p-6">
                     <div className="flex-1">
                         <p className="text-[11px] text-[#5f5f5d] leading-relaxed font-medium">
                         Import old abandoned carts from a CSV exported from <strong>Checkout &gt; Abandoned Cart</strong>. Customers will be matched automatically and recovery tasks created.
@@ -2827,7 +2827,7 @@ export default function SettingsPage() {
                         />
                         <button 
                             onClick={() => (fileInputRef as any).current?.click()}
-                            className="btn-primary bg-[#1c1c1c] hover:bg-[#1c1c1c]/90 text-[#f7f4ed] py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10"
+                            className="btn-primary bg-[#1c1c1c] hover:bg-[#1c1c1c]/90 text-[#f6f7f2] py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10"
                             disabled={saving}
                         >
                             <Plus className="w-3.5 h-3.5 mr-2" /> Upload CSV
@@ -2836,7 +2836,7 @@ export default function SettingsPage() {
                  </div>
               </div>
 
-              <div className="pt-10 mt-8 border-t border-[#eceae4]">
+              <div className="pt-10 mt-8 border-t border-[#ebece6]">
                 <div className="space-y-8">
                   <div className="flex items-center justify-between">
                      <div>
@@ -2845,14 +2845,14 @@ export default function SettingsPage() {
                      </div>
                       <button
                         onClick={() => startSyncStream("/api/sync/shiprocket")}
-                        className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10"
+                        className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10"
                         disabled={saving}
                       >
                         <RefreshCw className={cn("w-3.5 h-3.5 mr-2", syncStatus.active && "animate-spin")} /> Run Sync
                       </button>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-[#eceae4]/50 pt-8">
+                  <div className="flex items-center justify-between border-t border-[#ebece6]/50 pt-8">
                      <div className="flex-1 pr-12">
                         <div className="flex items-center gap-3 mb-2">
                            <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Phone Number Recovery</h4>
@@ -2862,7 +2862,7 @@ export default function SettingsPage() {
                              </span>
                            )}
                            {maskedCount === 0 && (
-                             <span className="px-2 py-0.5 bg-[#1c1c1c] text-[#f7f4ed] text-[9px] font-black rounded-lg tracking-widest uppercase">
+                             <span className="px-2 py-0.5 bg-[#1c1c1c] text-[#f6f7f2] text-[9px] font-black rounded-lg tracking-widest uppercase">
                                Optimized
                              </span>
                            )}
@@ -2881,8 +2881,8 @@ export default function SettingsPage() {
                       className={cn(
                         "btn-primary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl transition-all",
                         maskedCount && maskedCount > 0
-                          ? "bg-[#1c1c1c] text-[#f7f4ed] shadow-black/10"
-                          : "bg-[#eceae4]/50 text-[#5f5f5d] shadow-none cursor-not-allowed border-[#eceae4]"
+                          ? "bg-[#1c1c1c] text-[#f6f7f2] shadow-black/10"
+                          : "bg-[#ebece6]/50 text-[#5f5f5d] shadow-none cursor-not-allowed border-[#ebece6]"
                       )}
                       disabled={syncStatus.active || maskedCount === 0}
                      >
@@ -2891,7 +2891,7 @@ export default function SettingsPage() {
                      </button>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-[#eceae4]/50 pt-8">
+                  <div className="flex items-center justify-between border-t border-[#ebece6]/50 pt-8">
                      <div>
                         <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Pending Webhooks</h4>
                         <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">Process any webhook events that are still waiting</p>
@@ -2909,8 +2909,8 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="flex justify-end pt-8 mt-8 border-t border-[#eceae4]">
-            <button className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-3 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleSave} disabled={saving}>
+          <div className="flex justify-end pt-8 mt-8 border-t border-[#ebece6]">
+            <button className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-3 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Save className="w-3.5 h-3.5 mr-2" />}
               {saving ? "Saving..." : "Save Settings"}
             </button>
@@ -2922,14 +2922,14 @@ export default function SettingsPage() {
       <Modal open={manualWaModal} onClose={() => setManualWaModal(false)} title="Send Manual Message"
         footer={<>
           <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setManualWaModal(false)}>Cancel</button>
-          <button className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleManualSend} disabled={sendingManualWa}>
+          <button className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleManualSend} disabled={sendingManualWa}>
             {sendingManualWa ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Send className="w-3.5 h-3.5 mr-2" />}
             {sendingManualWa ? "Sending..." : "Send Now"}
           </button>
         </>}
       >
         <div className="space-y-6 py-4">
-          <div className="bg-[#1c1c1c] text-[#f7f4ed] p-5 rounded-2xl flex gap-4 shadow-xl">
+          <div className="bg-[#1c1c1c] text-[#f6f7f2] p-5 rounded-2xl flex gap-4 shadow-xl">
              <AlertCircle className="w-4 h-4 text-white shrink-0 mt-0.5" />
              <div className="text-[10px] font-bold uppercase tracking-widest leading-relaxed opacity-80">
                 Sends a message to <span className="text-white">{manualWaCustomerName}</span> right now and marks this task as <span className="text-white">Resolved</span>.
@@ -2939,7 +2939,7 @@ export default function SettingsPage() {
           <div>
             <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Message</label>
             <textarea
-              className="input text-xs h-40 leading-relaxed bg-[#fcfbf8] border-[#eceae4] rounded-2xl p-5"
+              className="input text-xs h-40 leading-relaxed bg-[#fcfbf8] border-[#ebece6] rounded-2xl p-5"
               value={manualWaMessage}
               onChange={e => setManualWaMessage(e.target.value)}
               placeholder="Type your message..."
@@ -2949,13 +2949,13 @@ export default function SettingsPage() {
           <div>
             <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Attachment (Optional)</label>
             <div className="flex items-center gap-4">
-              <label className="flex items-center gap-3 px-5 py-3 border border-dashed border-[#eceae4] rounded-xl hover:border-[#1c1c1c] hover:bg-[#eceae4]/30 transition-all cursor-pointer text-[#5f5f5d]">
+              <label className="flex items-center gap-3 px-5 py-3 border border-dashed border-[#ebece6] rounded-xl hover:border-[#1c1c1c] hover:bg-[#ebece6]/30 transition-all cursor-pointer text-[#5f5f5d]">
                 <Paperclip className="w-3.5 h-3.5" />
                 <span className="text-[10px] font-bold uppercase tracking-widest">{manualWaFile ? "Replace File" : "Attach File"}</span>
                 <input type="file" className="hidden" onChange={e => setManualWaFile(e.target.files?.[0] || null)} />
               </label>
               {manualWaFile && (
-                <div className="text-[10px] bg-[#1c1c1c] text-[#f7f4ed] font-bold px-4 py-2 rounded-xl flex items-center gap-3 shadow-lg shadow-black/10">
+                <div className="text-[10px] bg-[#1c1c1c] text-[#f6f7f2] font-bold px-4 py-2 rounded-xl flex items-center gap-3 shadow-lg shadow-black/10">
                   <span className="truncate max-w-[180px]">{manualWaFile.name}</span>
                   <button aria-label="Remove" onClick={() => setManualWaFile(null)} className="w-5 h-5 flex items-center justify-center hover:bg-white/10 rounded-full"><X className="w-3 h-3" /></button>
                 </div>
@@ -2968,14 +2968,14 @@ export default function SettingsPage() {
       {/* OVERRIDES */}
       {tab === "overrides" && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between gap-6 p-6 bg-[#fcfbf8] rounded-2xl border border-[#eceae4]">
+          <div className="flex items-center justify-between gap-6 p-6 bg-[#fcfbf8] rounded-2xl border border-[#ebece6]">
              <div>
                 <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Product Lifecycle Management</h4>
                 <p className="text-[11px] text-[#5f5f5d] font-medium opacity-60">Define custom offsets and administrative logic per catalog entity</p>
              </div>
              <div className="flex gap-3">
                 <button 
-                  className="w-10 h-10 flex items-center justify-center border border-[#eceae4] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] hover:border-[#1c1c1c] transition-all" 
+                  className="w-10 h-10 flex items-center justify-center border border-[#ebece6] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f6f7f2] hover:border-[#1c1c1c] transition-all" 
                   onClick={() => downloadOverrideTemplate()}
                   title="Download CSV Schema"
                 >
@@ -2983,7 +2983,7 @@ export default function SettingsPage() {
                 </button>
                 <div className="relative">
                   <button 
-                    className="w-10 h-10 flex items-center justify-center border border-[#eceae4] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] hover:border-[#1c1c1c] transition-all" 
+                    className="w-10 h-10 flex items-center justify-center border border-[#ebece6] rounded-xl text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f6f7f2] hover:border-[#1c1c1c] transition-all" 
                     onClick={() => document.getElementById('bulk-import')?.click()}
                     title="Bulk Import"
                   >
@@ -2998,7 +2998,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <button 
-                  className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-2 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" 
+                  className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-2 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" 
                   onClick={() => {
                     setEditingId(null);
                     setNewOverride({
@@ -3021,18 +3021,18 @@ export default function SettingsPage() {
           </div>
 
           {overrides.length === 0 ? (
-            <div className="card p-20 text-center border-dashed border-[#eceae4]">
+            <div className="card p-20 text-center border-dashed border-[#ebece6]">
               <p className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest opacity-20">No product overrides defined.</p>
             </div>
           ) : overrides.map(o => (
-            <div key={o.id} className="card p-6 border-[#eceae4] hover:border-[#1c1c1c]/30 transition-all">
+            <div key={o.id} className="card p-6 border-[#ebece6] hover:border-[#1c1c1c]/30 transition-all">
               <div className="flex items-start justify-between gap-6 mb-6">
                 <div>
                   <div className="text-[11px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">{o.product_name}</div>
                   <div className="text-[9px] text-[#5f5f5d] font-mono opacity-40">{o.shopify_product_id}</div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button className="w-8 h-8 flex items-center justify-center bg-[#fcfbf8] border border-[#eceae4] rounded-lg text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] hover:border-[#1c1c1c] transition-all shadow-sm" onClick={() => {
+                  <button className="w-8 h-8 flex items-center justify-center bg-[#fcfbf8] border border-[#ebece6] rounded-lg text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f6f7f2] hover:border-[#1c1c1c] transition-all shadow-sm" onClick={() => {
                     setEditingId(o.id);
                     setNewOverride({
                       shopify_product_id: o.shopify_product_id,
@@ -3049,7 +3049,7 @@ export default function SettingsPage() {
                   }}>
                     <Sliders className="w-3.5 h-3.5" />
                   </button>
-                  <button className="w-8 h-8 flex items-center justify-center bg-[#fcfbf8] border border-[#eceae4] rounded-lg text-rose-500 hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all shadow-sm" onClick={async () => {
+                  <button className="w-8 h-8 flex items-center justify-center bg-[#fcfbf8] border border-[#ebece6] rounded-lg text-rose-500 hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all shadow-sm" onClick={async () => {
                      if (confirm("Permanently delete this product override?")) {
                        await supabase.from("product_overrides").delete().eq("id", o.id);
                        await recalculateTasks(settings);
@@ -3076,7 +3076,7 @@ export default function SettingsPage() {
               </div>
               
               {(o.usage_notes || o.upsell_product_name || o.is_priority) && (
-                <div className="mt-6 pt-6 border-t border-[#eceae4]/50 grid grid-cols-2 gap-8">
+                <div className="mt-6 pt-6 border-t border-[#ebece6]/50 grid grid-cols-2 gap-8">
                   {o.usage_notes && (
                     <div className="col-span-2">
                        <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-40">Operational Notes</label>
@@ -3155,7 +3155,7 @@ export default function SettingsPage() {
       <Modal open={showAddOverride} onClose={() => setShowAddOverride(false)} title={editingId ? "Edit Override" : "Add Override"}
         footer={<>
           <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setShowAddOverride(false)}>Cancel</button>
-          <button className="btn-primary bg-[#1c1c1c] text-[#f7f4ed] py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleAddOverride} disabled={saving}>
+          <button className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleAddOverride} disabled={saving}>
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : (editingId ? <CheckCircle2 className="w-3.5 h-3.5 mr-2" /> : <Plus className="w-3.5 h-3.5 mr-2" />)}
             {saving ? "Saving..." : (editingId ? "Save Changes" : "Add Override")}
           </button>
@@ -3165,7 +3165,7 @@ export default function SettingsPage() {
           <div>
             <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Product</label>
             <select 
-              className="input text-[11px] font-bold bg-[#fcfbf8] border-[#eceae4] rounded-xl h-12 disabled:opacity-30"
+              className="input text-[11px] font-bold bg-[#fcfbf8] border-[#ebece6] rounded-xl h-12 disabled:opacity-30"
               disabled={!!editingId}
               value={newOverride.shopify_product_id}
               onChange={e => {
@@ -3198,7 +3198,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Duration</label>
-              <input type="number" className="input text-[10px] font-bold bg-[#1c1c1c] text-[#f7f4ed] h-12 text-center border-transparent" value={newOverride.course_duration_days} onChange={e => setNewOverride({ ...newOverride, course_duration_days: +e.target.value })} />
+              <input type="number" className="input text-[10px] font-bold bg-[#1c1c1c] text-[#f6f7f2] h-12 text-center border-transparent" value={newOverride.course_duration_days} onChange={e => setNewOverride({ ...newOverride, course_duration_days: +e.target.value })} />
             </div>
           </div>
 
@@ -3208,7 +3208,7 @@ export default function SettingsPage() {
                 <textarea
                   value={newOverride.usage_notes}
                   onChange={e => setNewOverride({...newOverride, usage_notes: e.target.value})}
-                  className="input text-[10px] h-20 resize-none bg-[#fcfbf8] border-[#eceae4] rounded-xl p-3 font-medium"
+                  className="input text-[10px] h-20 resize-none bg-[#fcfbf8] border-[#ebece6] rounded-xl p-3 font-medium"
                   placeholder="e.g. usage instructions..."
                 />
              </div>
@@ -3224,14 +3224,14 @@ export default function SettingsPage() {
                   />
                 </div>
                 
-                <div className="flex items-center justify-between p-4 bg-[#fcfbf8] rounded-xl border border-[#eceae4]">
+                <div className="flex items-center justify-between p-4 bg-[#fcfbf8] rounded-xl border border-[#ebece6]">
                     <div>
                       <div className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest">Priority Boost</div>
                       <div className="text-[8px] text-[#5f5f5d] italic opacity-60">Elevate task score (+50)</div>
                     </div>
                     <button 
                       onClick={() => setNewOverride({...newOverride, is_priority: !newOverride.is_priority})}
-                      className={cn("w-10 h-6 rounded-full transition-all relative", newOverride.is_priority ? "bg-[#1c1c1c]" : "bg-[#eceae4]")}
+                      className={cn("w-10 h-6 rounded-full transition-all relative", newOverride.is_priority ? "bg-[#1c1c1c]" : "bg-[#ebece6]")}
                     >
                       <div className={cn("w-4 h-4 bg-white rounded-full absolute top-1 transition-all", newOverride.is_priority ? "right-1" : "left-1")} />
                     </button>
@@ -3239,7 +3239,7 @@ export default function SettingsPage() {
              </div>
           </div>
 
-          <div className="p-4 bg-[#1c1c1c] text-[#f7f4ed] text-[10px] font-bold uppercase tracking-widest rounded-2xl flex gap-4 shadow-xl">
+          <div className="p-4 bg-[#1c1c1c] text-[#f6f7f2] text-[10px] font-bold uppercase tracking-widest rounded-2xl flex gap-4 shadow-xl">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <p className="opacity-80 leading-relaxed">Task due dates for orders using this product will update immediately when saved.</p>
           </div>

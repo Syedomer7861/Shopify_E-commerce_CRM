@@ -93,7 +93,7 @@ export default function GoalsModal({ open, spaceId, canManage, members, onClose 
         {loading ? (
           <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-[#5f5f5d]" /></div>
         ) : goals.length === 0 ? (
-          <div className="bg-white border border-[#eceae4] rounded-2xl p-6 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
+          <div className="bg-white border border-[#ebece6] rounded-2xl p-6 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
             No goals yet
           </div>
         ) : (
@@ -103,7 +103,7 @@ export default function GoalsModal({ open, spaceId, canManage, members, onClose 
               const done = (g.progress ?? 0) >= g.target;
               const owner = members.find((m) => m.id === g.owner_id);
               return (
-                <div key={g.id} className="bg-white border border-[#eceae4] rounded-xl p-3">
+                <div key={g.id} className="bg-white border border-[#ebece6] rounded-xl p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="text-[13px] font-bold text-[#1c1c1c] flex items-center gap-1.5">
@@ -131,7 +131,7 @@ export default function GoalsModal({ open, spaceId, canManage, members, onClose 
                       )}
                     </div>
                   </div>
-                  <div className="h-1.5 rounded-full bg-[#eceae4] overflow-hidden mt-2">
+                  <div className="h-1.5 rounded-full bg-[#ebece6] overflow-hidden mt-2">
                     <div className={cn("h-full rounded-full", done ? "bg-emerald-500" : "bg-[#1c1c1c]")} style={{ width: `${pct}%` }} />
                   </div>
                 </div>
@@ -141,38 +141,38 @@ export default function GoalsModal({ open, spaceId, canManage, members, onClose 
         )}
 
         {canManage && (
-          <div className="border-t border-[#eceae4] pt-4 space-y-2">
+          <div className="border-t border-[#ebece6] pt-4 space-y-2">
             <div className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">New goal</div>
             <input
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder="e.g. Ship 8 tasks this sprint"
-              className="w-full text-sm font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-3 py-2"
+              className="w-full text-sm font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-3 py-2"
             />
             <div className="flex flex-wrap items-center gap-1.5">
               <input
                 type="number" min={1} value={form.target}
                 onChange={(e) => setForm((f) => ({ ...f, target: e.target.value }))}
-                className="w-16 text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                className="w-16 text-xs font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
                 title="Target — tasks completed"
               />
               <span className="text-[10px] font-bold text-[#5f5f5d]">tasks done</span>
               <input
                 type="date" value={form.period_start}
                 onChange={(e) => setForm((f) => ({ ...f, period_start: e.target.value }))}
-                className="text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                className="text-xs font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
               />
               <span className="text-[10px] text-[#5f5f5d]">–</span>
               <input
                 type="date" value={form.period_end}
                 onChange={(e) => setForm((f) => ({ ...f, period_end: e.target.value }))}
-                className="text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                className="text-xs font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
               />
             </div>
             <select
               value={form.owner_id}
               onChange={(e) => setForm((f) => ({ ...f, owner_id: e.target.value }))}
-              className="w-full text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+              className="w-full text-xs font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
             >
               <option value="">Whole Space</option>
               {members.map((m) => <option key={m.id} value={m.id}>{m.name || m.email}</option>)}

@@ -163,7 +163,7 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
       }
       maxWidth="max-w-4xl"
     >
-      <div className="py-4 space-y-8 bg-[#f7f4ed]">
+      <div className="py-4 space-y-8 bg-[#f6f7f2]">
         {/* Rapid Action Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <a 
@@ -172,7 +172,7 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
               : `https://app.shiprocket.in/seller/orders?search=${orderNumber}`
             }
             target="_blank"
-            className="flex flex-col items-center justify-center p-5 bg-[#f7f4ed] border border-[#eceae4] rounded-2xl hover:bg-[#eceae4] transition-all group shadow-sm active:scale-95"
+            className="flex flex-col items-center justify-center p-5 bg-[#f6f7f2] border border-[#ebece6] rounded-2xl hover:bg-[#ebece6] transition-all group shadow-sm active:scale-95"
           >
             <ImageIcon className="w-5 h-5 mb-2 text-[#1c1c1c]/40 group-hover:text-[#1c1c1c]" />
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-center text-[#5f5f5d]">Open Seller Panel</span>
@@ -181,7 +181,7 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
           <a 
             href={`https://app.shiprocket.in/seller/ndr?search=${orderNumber}`}
             target="_blank"
-            className="flex flex-col items-center justify-center p-5 bg-[#f7f4ed] border border-[#eceae4] rounded-2xl hover:bg-[#eceae4] transition-all group shadow-sm active:scale-95"
+            className="flex flex-col items-center justify-center p-5 bg-[#f6f7f2] border border-[#ebece6] rounded-2xl hover:bg-[#ebece6] transition-all group shadow-sm active:scale-95"
           >
             <AlertCircle className="w-5 h-5 mb-2 text-[#1c1c1c]/40 group-hover:text-[#1c1c1c]" />
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-center text-[#5f5f5d]">NDR Dashboard</span>
@@ -189,17 +189,17 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
         </div>
 
         {/* Live Pulse Tracking - Dark High-Contrast Premium Section */}
-        <div className="bg-[#1c1c1c] text-[#f7f4ed] p-4 sm:p-8 rounded-[24px] sm:rounded-[32px] border border-[#1c1c1c] shadow-2xl overflow-hidden relative group min-h-[200px] flex flex-col">
+        <div className="bg-[#1c1c1c] text-[#f6f7f2] p-4 sm:p-8 rounded-[24px] sm:rounded-[32px] border border-[#1c1c1c] shadow-2xl overflow-hidden relative group min-h-[200px] flex flex-col">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 shrink-0 gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-[#f7f4ed]/10 rounded-2xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-[#f6f7f2]/10 rounded-2xl flex items-center justify-center">
                 <Truck className="w-5 h-5 text-blue-400" />
               </div>
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#f7f4ed]">
+                <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#f6f7f2]">
                   Live Payload Sync
                 </p>
-                <p className="text-[9px] font-bold text-[#f7f4ed]/40 uppercase tracking-widest mt-0.5">
+                <p className="text-[9px] font-bold text-[#f6f7f2]/40 uppercase tracking-widest mt-0.5">
                   Shiprocket API Telemetry
                 </p>
               </div>
@@ -208,7 +208,7 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
               {historyLoading && <Loader2 className="w-4 h-4 animate-spin text-blue-400" />}
               <button 
                 onClick={fetchTracking}
-                className="px-4 py-2 bg-[#f7f4ed]/5 hover:bg-[#f7f4ed]/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-blue-400 border border-[#f7f4ed]/10 transition-all disabled:opacity-50"
+                className="px-4 py-2 bg-[#f6f7f2]/5 hover:bg-[#f6f7f2]/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-blue-400 border border-[#f6f7f2]/10 transition-all disabled:opacity-50"
                 disabled={historyLoading}
               >
                 Force Sync
@@ -222,28 +222,28 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
                 const isLatest = i === 0;
                 return (
                   <div key={i} className="flex gap-3 sm:gap-6 relative">
-                    <div className="w-[2px] bg-[#f7f4ed]/10 absolute left-[7px] top-4 bottom-[-32px] last:hidden" />
+                    <div className="w-[2px] bg-[#f6f7f2]/10 absolute left-[7px] top-4 bottom-[-32px] last:hidden" />
                     <div className={cn(
                       "w-4 h-4 rounded-full border-2 border-[#1c1c1c] ring-2 z-10 mt-1 shrink-0 transition-all",
-                      isLatest ? "bg-blue-500 ring-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.5)] scale-125" : "bg-[#f7f4ed]/20 ring-[#f7f4ed]/5"
+                      isLatest ? "bg-blue-500 ring-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.5)] scale-125" : "bg-[#f6f7f2]/20 ring-[#f6f7f2]/5"
                     )} />
                     <div className="flex-1">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-6">
-                        <p className={cn("text-[11px] font-black uppercase tracking-tight leading-snug", isLatest ? "text-[#f7f4ed]" : "text-[#f7f4ed]/40")}>
+                        <p className={cn("text-[11px] font-black uppercase tracking-tight leading-snug", isLatest ? "text-[#f6f7f2]" : "text-[#f6f7f2]/40")}>
                           {step.activity}
                         </p>
-                        <span className="text-[9px] text-[#f7f4ed]/40 font-black tabular-nums bg-[#f7f4ed]/5 px-2.5 py-1 rounded-lg">
+                        <span className="text-[9px] text-[#f6f7f2]/40 font-black tabular-nums bg-[#f6f7f2]/5 px-2.5 py-1 rounded-lg">
                           {step.date && mounted ? new Date(step.date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : "—"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mt-1.5">
                         <span className={cn(
                           "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter",
-                          isLatest ? "bg-blue-500/20 text-blue-400" : "bg-[#f7f4ed]/5 text-[#f7f4ed]/20"
+                          isLatest ? "bg-blue-500/20 text-blue-400" : "bg-[#f6f7f2]/5 text-[#f6f7f2]/20"
                         )}>
                           {step.status || "TRANSIT"}
                         </span>
-                        <p className="text-[10px] text-[#f7f4ed]/40 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                        <p className="text-[10px] text-[#f6f7f2]/40 font-bold uppercase tracking-widest flex items-center gap-1.5">
                           <MapPin className="w-3 h-3" /> {step.location || "Central Hub"}
                         </p>
                       </div>
@@ -283,13 +283,13 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
                 className={cn(
                   "flex items-start gap-4 p-4 rounded-2xl border transition-all text-left group",
                   action === act.id 
-                    ? "bg-[#1c1c1c] border-[#1c1c1c] text-[#f7f4ed] shadow-xl" 
-                    : "bg-[#f7f4ed] border-[#eceae4] text-[#1c1c1c] hover:bg-[#eceae4] hover:shadow-sm"
+                    ? "bg-[#1c1c1c] border-[#1c1c1c] text-[#f6f7f2] shadow-xl" 
+                    : "bg-[#f6f7f2] border-[#ebece6] text-[#1c1c1c] hover:bg-[#ebece6] hover:shadow-sm"
                 )}
               >
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors",
-                  action === act.id ? "bg-[#f7f4ed]/10" : "bg-[#eceae4] group-hover:bg-[#f7f4ed]"
+                  action === act.id ? "bg-[#f6f7f2]/10" : "bg-[#ebece6] group-hover:bg-[#f6f7f2]"
                 )}>
                   <act.icon className="w-5 h-5" />
                 </div>
@@ -297,7 +297,7 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
                   <p className="text-[11px] font-black uppercase tracking-tight">{act.label}</p>
                   <p className={cn(
                     "text-[10px] font-bold leading-tight mt-1 transition-colors",
-                    action === act.id ? "text-[#f7f4ed]/40" : "text-[#5f5f5d]/60"
+                    action === act.id ? "text-[#f6f7f2]/40" : "text-[#5f5f5d]/60"
                   )}>{act.description}</p>
                 </div>
               </button>
@@ -306,37 +306,37 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
         </div>
 
         {showAddressFields && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-500 bg-[#eceae4]/30 p-6 rounded-[24px] border border-[#eceae4]">
+          <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-500 bg-[#ebece6]/30 p-6 rounded-[24px] border border-[#ebece6]">
             <h4 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-[0.2em] mb-2">Refined Destination Parameters</h4>
             <div className="space-y-3">
               <input 
                 placeholder="Full Street Address" 
-                className="w-full bg-[#f7f4ed] border border-[#eceae4] rounded-xl px-4 py-3.5 text-xs font-black focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all" 
+                className="w-full bg-[#f6f7f2] border border-[#ebece6] rounded-xl px-4 py-3.5 text-xs font-black focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all" 
                 value={addressData.address}
                 onChange={e => setAddressData({...addressData, address: e.target.value})}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input 
                   placeholder="City" 
-                  className="bg-[#f7f4ed] border border-[#eceae4] rounded-xl px-4 py-3.5 text-xs font-black focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all" 
+                  className="bg-[#f6f7f2] border border-[#ebece6] rounded-xl px-4 py-3.5 text-xs font-black focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all" 
                   value={addressData.city}
                   onChange={e => setAddressData({...addressData, city: e.target.value})}
                 />
                 <input 
                   placeholder="State" 
-                  className="bg-[#f7f4ed] border border-[#eceae4] rounded-xl px-4 py-3.5 text-xs font-black focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all" 
+                  className="bg-[#f6f7f2] border border-[#ebece6] rounded-xl px-4 py-3.5 text-xs font-black focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all" 
                   value={addressData.state}
                   onChange={e => setAddressData({...addressData, state: e.target.value})}
                 />
                 <input 
                   placeholder="Pincode" 
-                  className="bg-[#f7f4ed] border border-[#eceae4] rounded-xl px-4 py-3.5 text-xs font-black focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all" 
+                  className="bg-[#f6f7f2] border border-[#ebece6] rounded-xl px-4 py-3.5 text-xs font-black focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all" 
                   value={addressData.pincode}
                   onChange={e => setAddressData({...addressData, pincode: e.target.value})}
                 />
                 <input 
                   placeholder="Secondary Phone" 
-                  className="bg-[#f7f4ed] border border-[#eceae4] rounded-xl px-4 py-3.5 text-xs font-black focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all" 
+                  className="bg-[#f6f7f2] border border-[#ebece6] rounded-xl px-4 py-3.5 text-xs font-black focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all" 
                   value={addressData.phone}
                   onChange={e => setAddressData({...addressData, phone: e.target.value})}
                 />
@@ -348,7 +348,7 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
         <div className="space-y-3">
           <label className="text-[10px] font-black text-[#1c1c1c]/40 uppercase tracking-[0.2em] px-1">Operational Brief / Comments</label>
           <textarea 
-            className="w-full bg-[#f7f4ed] border border-[#eceae4] rounded-2xl px-4 py-4 text-xs font-black min-h-[100px] focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all placeholder:text-[#5f5f5d]/20" 
+            className="w-full bg-[#f6f7f2] border border-[#ebece6] rounded-2xl px-4 py-4 text-xs font-black min-h-[100px] focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/10 transition-all placeholder:text-[#5f5f5d]/20" 
             placeholder="Specify landmarks, delivery time-windows, or specific customer requests..."
             value={comments}
             onChange={e => setComments(e.target.value)}
@@ -358,7 +358,7 @@ export default function NDRActionModal({ open, onClose, shipmentId: initialShipm
         <button
           onClick={handleSubmit}
           disabled={loading || !action}
-          className="w-full py-5 bg-[#1c1c1c] text-[#f7f4ed] rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-2xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
+          className="w-full py-5 bg-[#1c1c1c] text-[#f6f7f2] rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-2xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
         >
           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-current" />}
           Execute Protocol

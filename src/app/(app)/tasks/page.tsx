@@ -1032,9 +1032,9 @@ export default function TasksPage() {
         {[
           { label: "Due Today", count: counts.due, color: "bg-amber-50 text-amber-700 border-amber-200" },
           { label: "Overdue", count: counts.overdue, color: "bg-rose-50 text-rose-700 border-rose-200" },
-          { label: "Pending", count: counts.pending, color: "bg-[#eceae4] text-[#1c1c1c] border-[#eceae4]" },
+          { label: "Pending", count: counts.pending, color: "bg-[#ebece6] text-[#1c1c1c] border-[#ebece6]" },
           { label: "Flagged", count: (counts as any).flagged || 0, color: "bg-rose-50 text-rose-600 border-rose-100" },
-          { label: "Done", count: counts.done, color: "bg-[#eceae4] text-[#1c1c1c] border-[#eceae4]" },
+          { label: "Done", count: counts.done, color: "bg-[#ebece6] text-[#1c1c1c] border-[#ebece6]" },
         ].map(s => (
           <div key={s.label} className={cn("px-3 py-1.5 rounded-lg border text-xs font-medium", s.color)}>
             {s.label}: <strong>{s.count}</strong>
@@ -1093,7 +1093,7 @@ export default function TasksPage() {
         <div className="fixed bottom-6 left-[calc(50%+2rem)] lg:left-1/2 -translate-x-1/2 z-40 animate-slide-up w-[calc(100%-6rem)] md:w-auto">
           <div className="bg-[#1c1c1c] text-white flex flex-wrap items-center gap-3 md:gap-4 px-4 md:px-6 py-3 rounded-2xl shadow-2xl min-w-0 md:min-w-[480px]">
             <div className="flex items-center gap-2 md:gap-3 border-r border-white/10 pr-3 md:pr-4">
-              <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#f7f4ed] text-[#1c1c1c] flex items-center justify-center text-[9px] md:text-[10px] font-bold">
+              <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#f6f7f2] text-[#1c1c1c] flex items-center justify-center text-[9px] md:text-[10px] font-bold">
                 {selectedIds.length}
               </div>
               <span className="hidden xs:inline text-[9px] md:text-[10px] font-bold uppercase tracking-widest opacity-60">Selected</span>
@@ -1110,7 +1110,7 @@ export default function TasksPage() {
             <button
               onClick={handleBulkReassign}
               disabled={!bulkReassignTo || bulkActing}
-              className="text-[10px] font-bold uppercase tracking-widest hover:text-[#eceae4] transition-colors disabled:opacity-30"
+              className="text-[10px] font-bold uppercase tracking-widest hover:text-[#ebece6] transition-colors disabled:opacity-30"
             >
               Apply
             </button>

@@ -12,7 +12,7 @@ type Coupon = {
   max_redemptions: number | null; redeemed_count: number; valid_until: string | null; is_active: boolean;
 };
 
-const input = "h-9 px-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
+const input = "h-9 px-3 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 
 export default function SuperAdminCoupons() {
   const supabase = useMemo(() => createClient(), []);
@@ -95,7 +95,7 @@ export default function SuperAdminCoupons() {
               <span className="text-xs text-[#5f5f5d] w-28 tabular-nums">{c.redeemed_count}{c.max_redemptions ? ` / ${c.max_redemptions}` : ""} used</span>
               <span className="text-xs text-[#5f5f5d] w-36">{c.valid_until ? `Until ${new Date(c.valid_until).toLocaleDateString()}` : "No end date"}</span>
               <span className="text-xs text-[#5f5f5d] flex-1 min-w-0 truncate">{c.description}</span>
-              <button onClick={() => toggle(c)} className="text-xs px-3 py-1.5 rounded-lg border border-[#eceae4] text-[#5f5f5d] hover:bg-[#f7f4ed]">
+              <button onClick={() => toggle(c)} className="text-xs px-3 py-1.5 rounded-lg border border-[#ebece6] text-[#5f5f5d] hover:bg-[#f6f7f2]">
                 {c.is_active ? "Switch off" : "Switch on"}
               </button>
             </div>

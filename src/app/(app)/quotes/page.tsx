@@ -68,7 +68,7 @@ function QuotesList({ canCreate }: { canCreate: boolean }) {
             </tr></thead>
             <tbody>
               {quotes.map(q => (
-                <tr key={q.id} onClick={() => setOpenId(q.id)} className="border-b border-gray-50 last:border-0 cursor-pointer hover:bg-[#f7f4ed]">
+                <tr key={q.id} onClick={() => setOpenId(q.id)} className="border-b border-gray-50 last:border-0 cursor-pointer hover:bg-[#f6f7f2]">
                   <td className="p-3 font-semibold">{q.number}</td>
                   <td className="p-3">{q.customer_name}</td>
                   <td className="p-3 text-gray-500">{new Date(q.issue_date).toLocaleDateString()}</td>
@@ -221,7 +221,7 @@ function QuoteEditor({ id, onClose }: { id: string; onClose: () => void }) {
             {!locked && <button onClick={removeQuote} className="ml-auto text-xs text-rose-600">Delete</button>}
           </div>
 
-          <div className="divide-y divide-[#eceae4] border border-[#eceae4] rounded-lg">
+          <div className="divide-y divide-[#ebece6] border border-[#ebece6] rounded-lg">
             {lines.length === 0 && <p className="p-3 text-xs text-gray-500">No items yet.</p>}
             {lines.map(l => (
               <div key={l.id} className="p-3 flex items-start gap-2">
@@ -236,7 +236,7 @@ function QuoteEditor({ id, onClose }: { id: string; onClose: () => void }) {
           </div>
 
           {!locked && (
-            <div className="rounded-lg bg-[#f7f4ed] p-3 space-y-2">
+            <div className="rounded-lg bg-[#f6f7f2] p-3 space-y-2">
               {products.length > 0 && (
                 <select className="input text-xs" value={draft.product_id} onChange={e => pickProduct(e.target.value)}>
                   <option value="">Pick a product, or type below</option>
@@ -307,7 +307,7 @@ function Products({ canEdit }: { canEdit: boolean }) {
         </div>
       )}
       {rows.length === 0 ? <EmptyState icon={<FileText className="w-6 h-6" />} title="No products yet" desc="Products fill quote lines with the right price and GST." /> : (
-        <div className="card divide-y divide-[#eceae4]">
+        <div className="card divide-y divide-[#ebece6]">
           {rows.map(p => (
             <div key={p.id} className={"p-3 flex items-center gap-3 text-sm" + (p.is_active ? "" : " opacity-50")}>
               <div className="flex-1 min-w-0"><div className="font-medium">{p.name}</div><div className="text-[11px] text-gray-500">{[p.sku, p.hsn && `HSN ${p.hsn}`, `GST ${p.tax_rate}%`].filter(Boolean).join(" · ")}</div></div>

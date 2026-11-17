@@ -129,15 +129,15 @@ export default function CallRecordingsPage() {
               placeholder="Search agent or phone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-white border border-[#eceae4] rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold focus:ring-[#1c1c1c] shadow-sm text-[#1c1c1c]"
+              className="w-full bg-white border border-[#ebece6] rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold focus:ring-[#1c1c1c] shadow-sm text-[#1c1c1c]"
             />
           </div>
           </div>
         }
       />
 
-      <div className="card bg-white border border-[#eceae4] shadow-sm rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#eceae4] flex items-center justify-between bg-[#fcfbf8]">
+      <div className="card bg-white border border-[#ebece6] shadow-sm rounded-2xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#ebece6] flex items-center justify-between bg-[#fcfbf8]">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-[0.2em]">Recent Recordings</h3>
@@ -164,7 +164,7 @@ export default function CallRecordingsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-[#eceae4]">
+                <tr className="border-b border-[#ebece6]">
                   <th className="px-6 py-4 text-[9px] font-black text-[#5f5f5d] uppercase tracking-[0.2em]">Agent</th>
                   <th className="px-6 py-4 text-[9px] font-black text-[#5f5f5d] uppercase tracking-[0.2em]">Customer</th>
                   <th className="px-6 py-4 text-[9px] font-black text-[#5f5f5d] uppercase tracking-[0.2em]">Duration</th>
@@ -172,7 +172,7 @@ export default function CallRecordingsPage() {
                   <th className="px-6 py-4 text-[9px] font-black text-[#5f5f5d] uppercase tracking-[0.2em]">Recording</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#eceae4]/60">
+              <tbody className="divide-y divide-[#ebece6]/60">
                 {filteredLogs.map(log => (
                   <tr key={log.id} className="hover:bg-[#fcfbf8] transition-colors group">
                     <td className="px-6 py-4">
@@ -186,14 +186,14 @@ export default function CallRecordingsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-[#eceae4] flex items-center justify-center flex-shrink-0">
+                        <div className="w-6 h-6 rounded-lg bg-[#ebece6] flex items-center justify-center flex-shrink-0">
                           <User className="w-3 h-3 text-[#5f5f5d]" />
                         </div>
                         <span className="text-xs font-bold text-[#1c1c1c]">{log.customer_phone || "Unknown Number"}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs font-bold tabular-nums text-[#1c1c1c] px-2.5 py-1 bg-[#eceae4] rounded-lg">
+                      <span className="text-xs font-bold tabular-nums text-[#1c1c1c] px-2.5 py-1 bg-[#ebece6] rounded-lg">
                         {formatDuration(log.duration_seconds)}
                       </span>
                     </td>
@@ -207,7 +207,7 @@ export default function CallRecordingsPage() {
                     </td>
                     <td className="px-6 py-4">
                       {log.recording_url ? (
-                        <div className="flex items-center gap-3 bg-[#eceae4]/30 p-2 rounded-xl border border-[#eceae4] group-hover:border-[#1c1c1c]/20 transition-all">
+                        <div className="flex items-center gap-3 bg-[#ebece6]/30 p-2 rounded-xl border border-[#ebece6] group-hover:border-[#1c1c1c]/20 transition-all">
                           <div className="w-8 h-8 rounded-lg bg-[#1c1c1c] flex items-center justify-center shadow-md flex-shrink-0">
                             <Headphones className="w-3.5 h-3.5 text-white" />
                           </div>
@@ -229,7 +229,7 @@ export default function CallRecordingsPage() {
         )}
 
         {!loading && hasMore && (
-          <div className="px-6 py-4 border-t border-[#eceae4] bg-[#fcfbf8] flex items-center justify-center">
+          <div className="px-6 py-4 border-t border-[#ebece6] bg-[#fcfbf8] flex items-center justify-center">
             <button
               onClick={loadMore}
               disabled={loadingMore}

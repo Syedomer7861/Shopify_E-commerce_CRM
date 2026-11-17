@@ -16,8 +16,8 @@ import { DASH_COLS, layoutProblems, type Dashboard } from "@/lib/dashboards";
 
 type Meta = { name: string; category: string; description: string };
 type Version = { version: number; note: string; published_at: string; published_by: string | null };
-const input = "h-9 px-2 bg-white border border-[#eceae4] rounded-lg text-xs focus:outline-none focus:border-[#1c1c1c]/30";
-const small = "inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#eceae4] disabled:opacity-40";
+const input = "h-9 px-2 bg-white border border-[#ebece6] rounded-lg text-xs focus:outline-none focus:border-[#1c1c1c]/30";
+const small = "inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#ebece6] disabled:opacity-40";
 const CATEGORIES = Array.from(new Set(HOME_WIDGETS.map(w => w.category)));
 const KNOWN = new Set(HOME_WIDGETS.map(w => w.key));
 const newId = () => `w${Math.random().toString(36).slice(2, 9)}`;
@@ -132,7 +132,7 @@ export default function DashboardBuilderPage() {
   return (
     <div className="animate-fade-in pb-10">
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        <Link href="/dashboards" className="p-2 rounded-lg border border-[#eceae4]" aria-label="Back"><ArrowLeft className="w-4 h-4" /></Link>
+        <Link href="/dashboards" className="p-2 rounded-lg border border-[#ebece6]" aria-label="Back"><ArrowLeft className="w-4 h-4" /></Link>
         <input aria-label="Dashboard name" disabled={!editable} className={cn(input, "text-sm font-bold w-56")} maxLength={120} value={meta.name} onChange={e => { setMeta({ ...meta, name: e.target.value }); setDirty(true); }} />
         <input aria-label="Category" disabled={!editable} className={cn(input, "w-36")} maxLength={60} placeholder="Category" value={meta.category} onChange={e => { setMeta({ ...meta, category: e.target.value }); setDirty(true); }} />
         <span className="text-[10px] font-bold uppercase text-[#5f5f5d]">{dash.status}{dash.version ? ` · live v${dash.version}` : ""}{dirty ? " · unsaved" : ""}</span>
@@ -146,7 +146,7 @@ export default function DashboardBuilderPage() {
         </div>
       </div>
       {problems.length > 0 && <div className="card p-3 mb-3 text-xs text-amber-700">{problems.join(" · ")}</div>}
-      <textarea aria-label="Description" disabled={!editable} className="w-full mb-4 p-2 bg-white border border-[#eceae4] rounded-lg text-xs h-14" maxLength={500} placeholder="What this dashboard is for" value={meta.description} onChange={e => { setMeta({ ...meta, description: e.target.value }); setDirty(true); }} />
+      <textarea aria-label="Description" disabled={!editable} className="w-full mb-4 p-2 bg-white border border-[#ebece6] rounded-lg text-xs h-14" maxLength={500} placeholder="What this dashboard is for" value={meta.description} onChange={e => { setMeta({ ...meta, description: e.target.value }); setDirty(true); }} />
 
       {previewing ? (
         <div className="card p-4">
@@ -163,9 +163,9 @@ export default function DashboardBuilderPage() {
                 <div className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d] mb-1">{c}</div>
                 {HOME_WIDGETS.filter(w => w.category === c).map(w => (
                   <div key={w.key} draggable={editable} onDragStart={() => setDrag({ widget: w.key })} onDragEnd={() => setDrag(null)}
-                    className="flex items-center gap-1 text-xs py-1.5 px-2 rounded-lg hover:bg-[#f7f4ed] cursor-grab" title={w.description}>
+                    className="flex items-center gap-1 text-xs py-1.5 px-2 rounded-lg hover:bg-[#f6f7f2] cursor-grab" title={w.description}>
                     <span className="flex-1 truncate">{w.label}</span>
-                    {editable && <button aria-label={`Add ${w.label}`} onClick={() => add(w.key)} className="p-0.5 rounded border border-[#eceae4]"><Plus className="w-3 h-3" /></button>}
+                    {editable && <button aria-label={`Add ${w.label}`} onClick={() => add(w.key)} className="p-0.5 rounded border border-[#ebece6]"><Plus className="w-3 h-3" /></button>}
                   </div>
                 ))}
               </div>
@@ -174,7 +174,7 @@ export default function DashboardBuilderPage() {
 
           {/* Canvas */}
           <section className="card p-3 min-h-[320px]" onDragOver={e => e.preventDefault()} onDrop={() => { if (drag?.widget) add(drag.widget); setDrag(null); }}>
-            {items.length === 0 ? <div className="h-full min-h-[280px] flex items-center justify-center text-xs text-[#5f5f5d] border-2 border-dashed border-[#eceae4] rounded-xl">Drag widgets here, or use + in the list.</div> : (
+            {items.length === 0 ? <div className="h-full min-h-[280px] flex items-center justify-center text-xs text-[#5f5f5d] border-2 border-dashed border-[#ebece6] rounded-xl">Drag widgets here, or use + in the list.</div> : (
               <div className="grid grid-cols-1 lg:grid-cols-6 gap-3">
                 {items.map((it, i) => {
                   const w = WIDGET_BY_KEY.get(it.widget);
@@ -184,7 +184,7 @@ export default function DashboardBuilderPage() {
                       onDragOver={e => e.preventDefault()}
                       onDrop={e => { e.stopPropagation(); if (drag?.from !== undefined) move(drag.from, i); else if (drag?.widget) add(drag.widget, i); setDrag(null); }}
                       className={cn(WIDGET_SIZES.find(s => s.value === it.size)?.cls, "rounded-xl border p-3 bg-white cursor-pointer min-h-[84px]",
-                        selected === it.id ? "border-[#1c1c1c] ring-1 ring-[#1c1c1c]" : "border-[#eceae4]", !w && "border-rose-300")}>
+                        selected === it.id ? "border-[#1c1c1c] ring-1 ring-[#1c1c1c]" : "border-[#ebece6]", !w && "border-rose-300")}>
                       <div className="flex items-center gap-1.5 text-xs">
                         <GripVertical className="w-3.5 h-3.5 text-[#5f5f5d]" />
                         <span className="font-semibold text-[#1c1c1c] truncate flex-1">{it.title || w?.label || `Unknown widget "${it.widget}"`}</span>

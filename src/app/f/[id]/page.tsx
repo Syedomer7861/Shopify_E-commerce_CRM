@@ -14,7 +14,7 @@ export default async function FormPage({ params }: { params: { id: string } }) {
   const { data } = await createAdminClient().rpc("web_form_public", { p_form: params.id });
   if (!data) notFound();
   return (
-    <main className="min-h-screen bg-[#f7f4ed] px-4 py-10">
+    <main className="min-h-screen bg-[#f6f7f2] px-4 py-10">
       <PublicForm id={params.id} spec={data as PublicFormSpec} />
     </main>
   );

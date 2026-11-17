@@ -13,8 +13,8 @@ type Assignment = {
   status: "suggested" | "active" | "ended"; reason: string; kpi_plans: { name: string } | null;
 };
 
-const input = "h-9 px-2 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
-const small = "text-xs px-3 py-1.5 rounded-lg border border-[#eceae4] disabled:opacity-40";
+const input = "h-9 px-2 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
+const small = "text-xs px-3 py-1.5 rounded-lg border border-[#ebece6] disabled:opacity-40";
 const STATUS: Record<Assignment["status"], string> = { suggested: "bg-sky-50 text-sky-700", active: "bg-emerald-50 text-emerald-700", ended: "bg-gray-100 text-[#5f5f5d]" };
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 const day = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -91,7 +91,7 @@ export function AssignmentsTab({ me, departments, designations, canManage, canAp
           <input type="checkbox" checked={all} onChange={() => setBulk({ ...bulk, picked: all ? bulk.picked.filter(id => !pool.some(p => p.id === id)) : Array.from(new Set([...bulk.picked, ...pool.map(p => p.id)])) })} />
           Select all shown ({pool.length})
         </label>
-        <div className="max-h-72 overflow-y-auto border border-[#eceae4] rounded-lg divide-y divide-[#eceae4]">
+        <div className="max-h-72 overflow-y-auto border border-[#ebece6] rounded-lg divide-y divide-[#ebece6]">
           {pool.map(p => (
             <label key={p.id} className="flex items-center gap-2 px-3 py-2 text-xs">
               <input type="checkbox" checked={bulk.picked.includes(p.id)} onChange={() => setBulk({ ...bulk, picked: bulk.picked.includes(p.id) ? bulk.picked.filter(x => x !== p.id) : [...bulk.picked, p.id] })} />
@@ -140,7 +140,7 @@ export function AssignmentsTab({ me, departments, designations, canManage, canAp
         <EmptyState icon={<UserCheck className="w-6 h-6" />} title={show === "suggested" ? "Nothing awaiting approval" : show === "active" ? "No one has a plan yet" : "No history yet"}
           desc="New and moved employees get the matching active plan suggested here automatically." />
       ) : (
-        <div className="card divide-y divide-[#eceae4]">
+        <div className="card divide-y divide-[#ebece6]">
           {shown.map(a => {
             const p = person(a.employee_id);
             const self = a.employee_id === me;

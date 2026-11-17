@@ -61,7 +61,7 @@ export default function CreativeRequestPage() {
         subtitle="Ask the marketing team for an asset, campaign, or content piece — and follow up here."
       />
 
-      <div className="space-y-5 bg-white border border-[#eceae4] rounded-2xl p-5">
+      <div className="space-y-5 bg-white border border-[#ebece6] rounded-2xl p-5">
         <div>
           <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-1.5">What do you need</label>
           <input
@@ -69,7 +69,7 @@ export default function CreativeRequestPage() {
             value={form.title}
             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
             placeholder="e.g. WhatsApp broadcast image for Diwali offer"
-            className="w-full text-sm font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-3 py-2.5"
+            className="w-full text-sm font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-3 py-2.5"
           />
         </div>
         <div>
@@ -79,7 +79,7 @@ export default function CreativeRequestPage() {
             onChange={(e) => setForm((f) => ({ ...f, details: e.target.value }))}
             rows={5}
             placeholder="Audience, key message, references, sizes, anything useful…"
-            className="w-full text-[13px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-xl px-3 py-2.5 resize-y"
+            className="w-full text-[13px] font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-xl px-3 py-2.5 resize-y"
           />
         </div>
         <div>
@@ -88,7 +88,7 @@ export default function CreativeRequestPage() {
             type="date"
             value={form.desired_date}
             onChange={(e) => setForm((f) => ({ ...f, desired_date: e.target.value }))}
-            className="text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+            className="text-xs font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
           />
         </div>
         <div className="flex items-center gap-3 pt-1">
@@ -111,11 +111,11 @@ export default function CreativeRequestPage() {
         {loading ? (
           <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-[#5f5f5d]" /></div>
         ) : mine.length === 0 ? (
-          <div className="bg-white border border-[#eceae4] rounded-2xl p-8 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
+          <div className="bg-white border border-[#ebece6] rounded-2xl p-8 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
             Nothing yet
           </div>
         ) : (
-          <div className="bg-white border border-[#eceae4] rounded-2xl divide-y divide-[#eceae4]">
+          <div className="bg-white border border-[#ebece6] rounded-2xl divide-y divide-[#ebece6]">
             {mine.map((r) => (
               <div key={r.id} className="p-4">
                 <div className="flex items-start justify-between gap-3">

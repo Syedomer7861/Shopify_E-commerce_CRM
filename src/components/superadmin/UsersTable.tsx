@@ -62,14 +62,14 @@ export function UsersTable({ orgId, showOrg = true }: { orgId?: string; showOrg?
   return (
     <div>
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="Filter by name, email, organisation or role..."
-        className="w-full h-10 px-3 mb-4 bg-white border border-[#eceae4] rounded-xl text-sm focus:outline-none focus:border-[#1c1c1c]/30" />
+        className="w-full h-10 px-3 mb-4 bg-white border border-[#ebece6] rounded-xl text-sm focus:outline-none focus:border-[#1c1c1c]/30" />
       {shown.length === 0 ? (
         <EmptyState icon={<Users className="w-6 h-6" />} title="No users here" desc="Nothing matched." />
       ) : (
         <div className="card overflow-x-auto">
           <table className="w-full text-sm min-w-[820px]">
             <thead>
-              <tr className="text-left text-[10px] uppercase tracking-widest text-[#5f5f5d] border-b border-[#eceae4]">
+              <tr className="text-left text-[10px] uppercase tracking-widest text-[#5f5f5d] border-b border-[#ebece6]">
                 <th className="p-3">User</th>
                 {showOrg && <th className="p-3">Organisation</th>}
                 <th className="p-3">Role</th>
@@ -107,7 +107,7 @@ export function UsersTable({ orgId, showOrg = true }: { orgId?: string; showOrg?
                     {u.is_platform_admin ? null : busyId === u.user_id ? <Loader2 className="w-4 h-4 animate-spin inline" /> : (
                       <div className="inline-flex gap-1.5">
                         <button onClick={() => run(u, "signout")} title="Sign out everywhere"
-                          className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#eceae4] text-[#5f5f5d] hover:bg-[#f7f4ed]">
+                          className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#ebece6] text-[#5f5f5d] hover:bg-[#f6f7f2]">
                           <LogOut className="w-3 h-3" /> Sign out
                         </button>
                         {u.suspended ? (

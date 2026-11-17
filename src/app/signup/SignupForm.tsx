@@ -6,7 +6,7 @@ import type { Cycle, PublicPlan } from "@/lib/billing-server";
 import { PlanPicker } from "@/components/billing/PlanPicker";
 import { GoogleButton } from "@/components/auth/GoogleButton";
 
-const input = "w-full h-12 bg-[#fcfbf8] border border-[#eceae4] rounded-2xl px-4 text-sm text-[#1c1c1c] placeholder:text-[#1c1c1c]/35 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/15 focus:border-[#1c1c1c]/40";
+const input = "w-full h-12 bg-[#fcfbf8] border border-[#ebece6] rounded-2xl px-4 text-sm text-[#1c1c1c] placeholder:text-[#1c1c1c]/35 focus:outline-none focus:ring-2 focus:ring-[#1c1c1c]/15 focus:border-[#1c1c1c]/40";
 const label = "text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest ml-1";
 
 export default function SignupForm({ plans, initialVersionId, initialCycle, googleEnabled }: {
@@ -38,20 +38,20 @@ export default function SignupForm({ plans, initialVersionId, initialCycle, goog
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f4ed] flex items-center justify-center p-4 py-10">
+    <div className="min-h-screen bg-[#f6f7f2] flex items-center justify-center p-4 py-10">
       <div className="w-full max-w-[520px]">
         <div className="text-center mb-8">
           <img src="/logo-mark.png" alt="" className="w-12 h-12 rounded-full mx-auto mb-4" />
           <h1 className="text-2xl font-black text-[#1c1c1c] tracking-tight">Start your CodeCrest workspace</h1>
           <p className="text-sm text-[#5f5f5d] mt-2">Create your admin account, then set up auto-pay. <a href="/pricing" className="underline underline-offset-2">Compare plans</a></p>
         </div>
-        <form onSubmit={submit} className="bg-white rounded-[2rem] p-6 sm:p-8 border border-[#eceae4] space-y-6">
+        <form onSubmit={submit} className="bg-white rounded-[2rem] p-6 sm:p-8 border border-[#ebece6] space-y-6">
           <PlanPicker plans={plans} versionId={versionId} cycle={cycle} onChange={(v, c) => { setVersionId(v); setCycle(c); }} />
           {googleEnabled && (
             <div className="space-y-4">
               <GoogleButton label="Sign up with Google" next={`/billing?plan=${encodeURIComponent(planCode)}&cycle=${cycle}`} />
               <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[#1c1c1c]/40">
-                <div className="h-px flex-1 bg-[#eceae4]" />or with email<div className="h-px flex-1 bg-[#eceae4]" />
+                <div className="h-px flex-1 bg-[#ebece6]" />or with email<div className="h-px flex-1 bg-[#ebece6]" />
               </div>
             </div>
           )}
@@ -78,7 +78,7 @@ export default function SignupForm({ plans, initialVersionId, initialCycle, goog
           </div>
           {error && <p role="alert" className="text-sm text-red-700 bg-red-50 rounded-xl px-4 py-3">{error}</p>}
           <button type="submit" disabled={busy}
-            className="w-full h-12 bg-[#1c1c1c] text-[#f7f4ed] font-black uppercase tracking-widest text-xs rounded-2xl disabled:opacity-50">
+            className="w-full h-12 bg-[#1c1c1c] text-[#f6f7f2] font-black uppercase tracking-widest text-xs rounded-2xl disabled:opacity-50">
             {busy ? "Creating workspace…" : "Continue to payment"}
           </button>
           <p className="text-[11px] text-center text-[#5f5f5d]">

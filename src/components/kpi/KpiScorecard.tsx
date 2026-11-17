@@ -38,7 +38,7 @@ const BAND: Record<Band, { label: string; cls: string }> = {
   below: { label: "Below expectations", cls: "bg-rose-50 text-rose-700" },
 };
 const fmt = (n: number | null | undefined, unit = "") => (n == null ? "—" : `${unit === "₹" ? "₹" : ""}${Number(n).toLocaleString("en-IN", { maximumFractionDigits: 2 })}${unit && unit !== "₹" ? ` ${unit}` : ""}`);
-const input = "h-8 px-2 bg-white border border-[#eceae4] rounded-lg text-xs w-24 focus:outline-none focus:border-[#1c1c1c]/30";
+const input = "h-8 px-2 bg-white border border-[#ebece6] rounded-lg text-xs w-24 focus:outline-none focus:border-[#1c1c1c]/30";
 
 export function KpiScorecard({ employeeId, viewer }: { employeeId: string; viewer: Profile | null }) {
   const supabase = useMemo(() => createClient(), []);
@@ -172,7 +172,7 @@ export function KpiScorecard({ employeeId, viewer }: { employeeId: string; viewe
           <div className="text-sm font-bold text-[#1c1c1c]">{plan.name}</div>
           <div className="text-[10px] text-[#5f5f5d]">KPI plan since {new Date(assignment.effective_from + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</div>
         </div>
-        <select className="h-8 px-2 bg-white border border-[#eceae4] rounded-lg text-xs" value={periodIdx} onChange={e => setPeriodIdx(Number(e.target.value))} aria-label="Review period">
+        <select className="h-8 px-2 bg-white border border-[#ebece6] rounded-lg text-xs" value={periodIdx} onChange={e => setPeriodIdx(Number(e.target.value))} aria-label="Review period">
           {periods.map((p, i) => <option key={p.from} value={i}>{p.label}</option>)}
         </select>
       </div>
@@ -196,7 +196,7 @@ export function KpiScorecard({ employeeId, viewer }: { employeeId: string; viewe
               <thead><tr className="text-left text-[#5f5f5d]"><th className="py-1">KPI</th><th>Target</th><th>Actual</th><th>Achievement</th><th className="text-right">Weight</th><th className="text-right">Score</th></tr></thead>
               <tbody>
                 {lines.map(l => (
-                  <tr key={l.id} className="border-t border-[#eceae4]">
+                  <tr key={l.id} className="border-t border-[#ebece6]">
                     <td className="py-1.5 pr-2 font-semibold text-[#1c1c1c]">{l.name}</td>
                     <td className="pr-2">{fmt(l.target, l.unit)}</td>
                     <td className="pr-2">{l.actual != null ? fmt(l.actual, l.unit) : <span className="text-amber-700">{l.note ?? "No data"}</span>}</td>
@@ -210,7 +210,7 @@ export function KpiScorecard({ employeeId, viewer }: { employeeId: string; viewe
           </div>
 
           {!frozen && canEnter && manualItems.length > 0 && (
-            <div className="mt-4 border-t border-[#eceae4] pt-3">
+            <div className="mt-4 border-t border-[#ebece6] pt-3">
               <div className="text-xs font-bold text-[#1c1c1c] mb-2">Manual KPIs for {period.label}</div>
               <div className="flex flex-wrap gap-3">
                 {manualItems.map(i => (
@@ -225,16 +225,16 @@ export function KpiScorecard({ employeeId, viewer }: { employeeId: string; viewe
                   </label>
                 ))}
               </div>
-              <button onClick={saveManual} disabled={busy} className="mt-2 text-xs px-3 py-1.5 rounded-lg border border-[#eceae4] disabled:opacity-50">Save values</button>
+              <button onClick={saveManual} disabled={busy} className="mt-2 text-xs px-3 py-1.5 rounded-lg border border-[#ebece6] disabled:opacity-50">Save values</button>
             </div>
           )}
 
           {history.length > 0 && (
-            <div className="mt-4 border-t border-[#eceae4] pt-3">
+            <div className="mt-4 border-t border-[#ebece6] pt-3">
               <div className="text-xs font-bold text-[#1c1c1c] mb-2">Finalised history</div>
               <div className="flex flex-wrap gap-2">
                 {history.map(h => (
-                  <span key={h.period_start + h.period_end} className="text-[10px] px-2 py-1 rounded-lg border border-[#eceae4]">
+                  <span key={h.period_start + h.period_end} className="text-[10px] px-2 py-1 rounded-lg border border-[#ebece6]">
                     {h.period_start} to {h.period_end}: <b>{h.overall == null ? "—" : `${h.overall}%`}</b>{h.band ? ` · ${BAND[h.band].label}` : ""}
                   </span>
                 ))}
@@ -243,15 +243,15 @@ export function KpiScorecard({ employeeId, viewer }: { employeeId: string; viewe
           )}
 
           {(canEnter || evaluation) && (
-            <div className="mt-4 border-t border-[#eceae4] pt-3">
+            <div className="mt-4 border-t border-[#ebece6] pt-3">
               <div className="text-xs font-bold text-[#1c1c1c] mb-2">Evaluation {evaluation ? `(${evaluation.status})` : ""}</div>
               {frozen || !canEnter ? (
                 <p className="text-xs text-[#5f5f5d] whitespace-pre-wrap">{evaluation?.comments || "No comments."}</p>
               ) : (
                 <>
-                  <textarea className="w-full h-16 p-2 bg-white border border-[#eceae4] rounded-lg text-xs" maxLength={2000} placeholder="Manager comments" value={comments} onChange={e => setComments(e.target.value)} />
+                  <textarea className="w-full h-16 p-2 bg-white border border-[#ebece6] rounded-lg text-xs" maxLength={2000} placeholder="Manager comments" value={comments} onChange={e => setComments(e.target.value)} />
                   <div className="flex gap-2 mt-2">
-                    <button onClick={() => saveEvaluation("draft")} disabled={busy} className="text-xs px-3 py-1.5 rounded-lg border border-[#eceae4] disabled:opacity-50">Save draft</button>
+                    <button onClick={() => saveEvaluation("draft")} disabled={busy} className="text-xs px-3 py-1.5 rounded-lg border border-[#ebece6] disabled:opacity-50">Save draft</button>
                     {canFinalise && <button onClick={() => saveEvaluation("finalised")} disabled={busy || result.overall == null} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#1c1c1c] text-white disabled:opacity-50">Finalise</button>}
                   </div>
                 </>

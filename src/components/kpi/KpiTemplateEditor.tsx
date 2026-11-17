@@ -31,7 +31,7 @@ export const toPayload = (d: KpiTemplateDraft) => ({
 
 export const MEASUREMENTS: Measurement[] = ["numeric", "percentage", "currency", "time", "rating", "boolean", "milestone"];
 export const PERIODS = ["weekly", "monthly", "quarterly", "half_yearly", "yearly"];
-const input = "h-9 px-2 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
+const input = "h-9 px-2 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 const num = (v: string) => (v.trim() === "" || !Number.isFinite(Number(v)) ? null : Number(v));
 
 export const blankItem = (): KpiItem => ({
@@ -93,7 +93,7 @@ export function KpiTemplateEditor({ value, onChange, global = false }: { value: 
       {value.items.map((it, i) => {
         const src = it.source_key ? SOURCE_BY_KEY.get(it.source_key) : null;
         return (
-          <div key={i} className="border border-[#eceae4] rounded-lg p-3 space-y-2">
+          <div key={i} className="border border-[#ebece6] rounded-lg p-3 space-y-2">
             <div className="flex flex-wrap gap-2">
               <input className={cn(input, "flex-1 min-w-[180px]")} maxLength={120} placeholder="KPI name" value={it.name} onChange={e => setItem(i, { name: e.target.value })} />
               <select className={cn(input, "min-w-[200px]")} value={it.source_key ?? ""} onChange={e => pickSource(i, e.target.value)} aria-label="Data source">
@@ -103,8 +103,8 @@ export function KpiTemplateEditor({ value, onChange, global = false }: { value: 
                 ))}
                 {it.source_key && !src && <option value={it.source_key}>{it.source_key} (not configured)</option>}
               </select>
-              <button onClick={() => i > 0 && move(i)} disabled={i === 0} aria-label="Move up" className="px-2 rounded-lg border border-[#eceae4] disabled:opacity-30"><ArrowUp className="w-3.5 h-3.5" /></button>
-              <button onClick={() => set({ items: value.items.filter((_, j) => j !== i) })} aria-label="Remove KPI" className="px-2 rounded-lg border border-[#eceae4] text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
+              <button onClick={() => i > 0 && move(i)} disabled={i === 0} aria-label="Move up" className="px-2 rounded-lg border border-[#ebece6] disabled:opacity-30"><ArrowUp className="w-3.5 h-3.5" /></button>
+              <button onClick={() => set({ items: value.items.filter((_, j) => j !== i) })} aria-label="Remove KPI" className="px-2 rounded-lg border border-[#ebece6] text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
             <div className="flex flex-wrap gap-2 text-[10px] text-[#5f5f5d]">
               <label>Type<br /><select className={input} value={it.measurement} disabled={!!src} onChange={e => setItem(i, { measurement: e.target.value as Measurement })}>
@@ -123,7 +123,7 @@ export function KpiTemplateEditor({ value, onChange, global = false }: { value: 
           </div>
         );
       })}
-      <button onClick={() => set({ items: [...value.items, blankItem()] })} className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-[#eceae4]">
+      <button onClick={() => set({ items: [...value.items, blankItem()] })} className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-[#ebece6]">
         <Plus className="w-3.5 h-3.5" /> Add KPI
       </button>
     </div>

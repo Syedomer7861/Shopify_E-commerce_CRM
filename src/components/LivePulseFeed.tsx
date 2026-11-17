@@ -101,7 +101,7 @@ export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[
     <div className="animate-in slide-in-from-right-8 duration-700">
       <div className="flex items-center justify-between mb-5 px-1">
         <h2 className="text-[11px] font-black text-[#1c1c1c] flex items-center gap-3 uppercase tracking-[0.2em]">
-          <div className="p-2 bg-[#eceae4] rounded-xl">
+          <div className="p-2 bg-[#ebece6] rounded-xl">
             <Activity className="w-4 h-4 text-[#1c1c1c]/40" />
           </div>
           Live Intelligence Stream
@@ -112,14 +112,14 @@ export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[
         </div>
       </div>
       
-      <div className="card bg-[#f7f4ed] border border-[#eceae4] rounded-[32px] overflow-hidden shadow-sm">
-        <div className="divide-y divide-[#eceae4]/40">
+      <div className="card bg-[#f6f7f2] border border-[#ebece6] rounded-[32px] overflow-hidden shadow-sm">
+        <div className="divide-y divide-[#ebece6]/40">
           {logs.map((log, i) => {
             const details = getLogDetails(log);
             return (
               <div 
                 key={log.id || i} 
-                className="px-6 py-4 flex items-start gap-4 transition-all duration-300 hover:bg-[#eceae4] group animate-in fade-in slide-in-from-top-2"
+                className="px-6 py-4 flex items-start gap-4 transition-all duration-300 hover:bg-[#ebece6] group animate-in fade-in slide-in-from-top-2"
                 style={{ animationDelay: `${i * 40}ms` }}
               >
                 <div className={cn(
@@ -153,9 +153,9 @@ export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[
             );
           })}
           {logs.length === 0 && (
-            <div className="px-6 py-16 text-center bg-[#f7f4ed]">
+            <div className="px-6 py-16 text-center bg-[#f6f7f2]">
               <div className="flex justify-center mb-4">
-                 <div className="p-4 bg-[#eceae4] rounded-2xl">
+                 <div className="p-4 bg-[#ebece6] rounded-2xl">
                     <RefreshCw className="w-6 h-6 text-[#1c1c1c]/20 animate-spin-slow" />
                  </div>
               </div>

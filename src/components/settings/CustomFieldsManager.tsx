@@ -15,7 +15,7 @@ const TYPES = [["text", "Short text"], ["textarea", "Long text"], ["number", "Nu
 type Def = { id: string; entity: string; key: string; label: string; field_type: string; options: string[]; required: boolean; show_in_list: boolean; sort_order: number; is_active: boolean };
 
 const toKey = (label: string) => label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").replace(/^(\d)/, "f_$1").slice(0, 40);
-const input = "h-9 px-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
+const input = "h-9 px-3 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 
 /**
  * Workspace admins add their own fields to built-in records. Row security
@@ -92,7 +92,7 @@ export function CustomFieldsManager({ canEdit }: { canEdit: boolean }) {
         <p className="text-xs text-[#5f5f5d]">Add your own fields to records. They appear in the add and edit forms, and in the list if you choose.</p>
       </div>
       {canEdit && templates.length > 0 && (
-        <div className="flex flex-wrap items-end gap-2 rounded-lg bg-[#f7f4ed] p-3">
+        <div className="flex flex-wrap items-end gap-2 rounded-lg bg-[#f6f7f2] p-3">
           <label className="text-[10px] text-[#5f5f5d] flex-1 min-w-[200px]">Start from your industry<br />
             <select className={cn(input, "w-full")} value={template} onChange={e => setTemplate(e.target.value)}>
               <option value="">Choose an industry</option>
@@ -106,14 +106,14 @@ export function CustomFieldsManager({ canEdit }: { canEdit: boolean }) {
       <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
         {ENTITIES.map(([k, l]) => (
           <button key={k} onClick={() => setEntity(k)} aria-pressed={entity === k}
-            className={cn("px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap border", entity === k ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-gray-600 border-[#eceae4]")}>{l}</button>
+            className={cn("px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap border", entity === k ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-gray-600 border-[#ebece6]")}>{l}</button>
         ))}
       </div>
 
       {loading ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : defs.length === 0 ? (
         <p className="text-xs text-[#5f5f5d]">No custom fields on this record yet.</p>
       ) : (
-        <div className="divide-y divide-[#eceae4] border border-[#eceae4] rounded-lg">
+        <div className="divide-y divide-[#ebece6] border border-[#ebece6] rounded-lg">
           {defs.map(d => (
             <div key={d.id} className={cn("flex flex-wrap items-center gap-3 p-3 text-sm", !d.is_active && "opacity-50")}>
               <div className="flex-1 min-w-[140px]">
@@ -133,7 +133,7 @@ export function CustomFieldsManager({ canEdit }: { canEdit: boolean }) {
       )}
 
       {canEdit ? (
-        <div className="border-t border-[#eceae4] pt-4 flex flex-wrap items-end gap-2">
+        <div className="border-t border-[#ebece6] pt-4 flex flex-wrap items-end gap-2">
           <label className="text-[10px] text-[#5f5f5d] flex-1 min-w-[160px]">Field name<br /><input className={cn(input, "w-full")} maxLength={80} value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. Budget, Course, Property type" /></label>
           <label className="text-[10px] text-[#5f5f5d]">Type<br />
             <select className={input} value={type} onChange={e => setType(e.target.value)}>{TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>

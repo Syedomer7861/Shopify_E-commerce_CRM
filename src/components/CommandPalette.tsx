@@ -149,7 +149,7 @@ export function CommandPalette() {
       <button
         onClick={() => setOpen(true)}
         aria-label="Search"
-        className="fixed bottom-6 right-4 lg:right-6 z-40 w-11 h-11 rounded-full bg-[#1c1c1c] text-[#f7f4ed] shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+        className="fixed bottom-6 right-4 lg:right-6 z-40 w-11 h-11 rounded-full bg-[#1c1c1c] text-[#f6f7f2] shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
       >
         <Search className="w-4 h-4" />
       </button>
@@ -159,8 +159,8 @@ export function CommandPalette() {
   return (
     <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4">
       <div className="absolute inset-0 bg-[#1c1c1c]/40 backdrop-blur-[2px]" onClick={() => setOpen(false)} />
-      <div className="relative w-full max-w-xl bg-[#f7f4ed] rounded-2xl shadow-2xl border border-[#eceae4] overflow-hidden animate-slide-up">
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#eceae4]">
+      <div className="relative w-full max-w-xl bg-[#f6f7f2] rounded-2xl shadow-2xl border border-[#ebece6] overflow-hidden animate-slide-up">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#ebece6]">
           {loading ? <Loader2 className="w-4 h-4 text-[#5f5f5d] animate-spin" /> : <Search className="w-4 h-4 text-[#5f5f5d]" />}
           <input
             ref={inputRef}
@@ -175,7 +175,7 @@ export function CommandPalette() {
             placeholder="Search customers, orders, leads, deals, tickets, invoices, people..."
             className="flex-1 bg-transparent outline-none text-sm font-medium text-[#1c1c1c] placeholder:text-[#1c1c1c]/30"
           />
-          <kbd className="text-[9px] font-black text-[#5f5f5d] bg-[#eceae4] px-1.5 py-0.5 rounded uppercase tracking-widest">Esc</kbd>
+          <kbd className="text-[9px] font-black text-[#5f5f5d] bg-[#ebece6] px-1.5 py-0.5 rounded uppercase tracking-widest">Esc</kbd>
         </div>
 
         <div className="max-h-[50vh] overflow-y-auto">
@@ -185,11 +185,11 @@ export function CommandPalette() {
             <div className="p-8 text-center text-[#5f5f5d] text-xs font-medium">Nothing matched.</div>
           ) : (
             groups.map((s, gi) => (
-              <div key={s.key} className={`py-2 ${gi ? "border-t border-[#eceae4]" : ""}`}>
+              <div key={s.key} className={`py-2 ${gi ? "border-t border-[#ebece6]" : ""}`}>
                 <div className="px-5 pb-1 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/60">{s.label}</div>
                 {results[s.key].map(r => (
                   <button key={r.id} onClick={() => goTo(s.href(r, cleanQuery))}
-                    className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-[#eceae4]/50 transition-colors text-left">
+                    className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-[#ebece6]/50 transition-colors text-left">
                     <s.icon className="w-3.5 h-3.5 text-[#5f5f5d] shrink-0" />
                     <span className="text-sm font-bold text-[#1c1c1c] truncate">{s.title(r) || "Untitled"}</span>
                     <span className="text-[10px] text-[#5f5f5d] truncate">{s.sub(r)}</span>
@@ -200,7 +200,7 @@ export function CommandPalette() {
           )}
           {cleanQuery.length >= 2 && (
             <button onClick={() => goTo(`/tasks?id=${encodeURIComponent(cleanQuery)}`)}
-              className="w-full flex items-center gap-3 px-5 py-3 border-t border-[#eceae4] hover:bg-[#eceae4]/50 transition-colors text-left">
+              className="w-full flex items-center gap-3 px-5 py-3 border-t border-[#ebece6] hover:bg-[#ebece6]/50 transition-colors text-left">
               <ListChecks className="w-3.5 h-3.5 text-[#5f5f5d] shrink-0" />
               <span className="text-xs font-bold text-[#1c1c1c]">Search tasks for &quot;{cleanQuery}&quot;</span>
             </button>

@@ -138,7 +138,7 @@ export default function SpaceSettingsModal({ open, space, members, canManage, on
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={!canManage}
-                className="w-full text-sm font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-3 py-2 disabled:opacity-60"
+                className="w-full text-sm font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-3 py-2 disabled:opacity-60"
               />
             </div>
             <input
@@ -146,12 +146,12 @@ export default function SpaceSettingsModal({ open, space, members, canManage, on
               value={color}
               onChange={(e) => setColor(e.target.value)}
               disabled={!canManage}
-              className="w-10 h-9 rounded-lg border border-[#eceae4] bg-white p-0.5"
+              className="w-10 h-9 rounded-lg border border-[#ebece6] bg-white p-0.5"
             />
           </div>
 
           {canManage && (
-            <div className="flex items-center justify-between border-t border-[#eceae4] pt-4">
+            <div className="flex items-center justify-between border-t border-[#ebece6] pt-4">
               {confirmArchive ? (
                 <button onClick={archive} className="px-3 py-2 rounded-lg bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest">
                   Archive — sure?
@@ -159,7 +159,7 @@ export default function SpaceSettingsModal({ open, space, members, canManage, on
               ) : (
                 <button
                   onClick={() => setConfirmArchive(true)}
-                  className="px-3 py-2 rounded-lg border border-[#eceae4] text-rose-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+                  className="px-3 py-2 rounded-lg border border-[#ebece6] text-rose-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Archive Space
                 </button>
@@ -177,7 +177,7 @@ export default function SpaceSettingsModal({ open, space, members, canManage, on
       ) : (
         <div className="space-y-2">
           {spaceMembers.map((m) => (
-            <div key={m.user_id} className="flex items-center gap-2 p-2 rounded-xl border border-[#eceae4]">
+            <div key={m.user_id} className="flex items-center gap-2 p-2 rounded-xl border border-[#ebece6]">
               <span className="w-6 h-6 rounded-full bg-[#1c1c1c] text-white text-[9px] font-black flex items-center justify-center flex-shrink-0">
                 {(nameOf(m.user_id).slice(0, 2)).toUpperCase()}
               </span>
@@ -206,7 +206,7 @@ export default function SpaceSettingsModal({ open, space, members, canManage, on
               <select
                 value={addPick}
                 onChange={(e) => setAddPick(e.target.value)}
-                className="flex-1 text-xs font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                className="flex-1 text-xs font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
               >
                 <option value="">Add someone…</option>
                 {members

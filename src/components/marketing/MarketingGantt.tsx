@@ -54,24 +54,24 @@ export default function MarketingGantt({ list, tasks, onOpenTask }: Props) {
 
   if (!model) {
     return (
-      <div className="bg-white border border-[#eceae4] rounded-2xl p-10 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
+      <div className="bg-white border border-[#ebece6] rounded-2xl p-10 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
         No tasks with a start or due date
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-[#eceae4] rounded-2xl overflow-hidden">
+    <div className="bg-white border border-[#ebece6] rounded-2xl overflow-hidden">
       <div className="overflow-x-auto">
         <div style={{ width: model.width + 220 }}>
           {/* Header */}
-          <div className="flex border-b border-[#eceae4] bg-[#faf9f6] sticky top-0">
+          <div className="flex border-b border-[#ebece6] bg-[#faf9f6] sticky top-0">
             <div className="w-[220px] flex-shrink-0 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50">
               Task
             </div>
             <div className="relative flex-1" style={{ height: 28 }}>
               {model.ticks.map((tk, i) => (
-                <div key={i} className="absolute top-0 h-full border-l border-[#eceae4] pl-1 text-[9px] font-bold text-[#5f5f5d]/60" style={{ left: tk.left }}>
+                <div key={i} className="absolute top-0 h-full border-l border-[#ebece6] pl-1 text-[9px] font-bold text-[#5f5f5d]/60" style={{ left: tk.left }}>
                   {tk.label}
                 </div>
               ))}
@@ -87,7 +87,7 @@ export default function MarketingGantt({ list, tasks, onOpenTask }: Props) {
               const left = ((start - model.minMs) / DAY) * COL_W;
               const width = Math.max(COL_W * 0.7, ((end - start) / DAY + 1) * COL_W);
               return (
-                <div key={task.id} className="flex items-center border-b border-[#f2efe8] hover:bg-[#f7f4ed]">
+                <div key={task.id} className="flex items-center border-b border-[#f2efe8] hover:bg-[#f6f7f2]">
                   <button
                     onClick={() => onOpenTask(task.id)}
                     className="w-[220px] flex-shrink-0 px-3 py-2 text-left text-[12px] font-semibold text-[#1c1c1c] truncate"
@@ -113,13 +113,13 @@ export default function MarketingGantt({ list, tasks, onOpenTask }: Props) {
       </div>
 
       {unscheduled.length > 0 && (
-        <div className="border-t border-[#eceae4] px-3 py-2.5 flex flex-wrap gap-1.5">
+        <div className="border-t border-[#ebece6] px-3 py-2.5 flex flex-wrap gap-1.5">
           <span className="text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50 mr-1 py-1">Unscheduled</span>
           {unscheduled.map((t) => (
             <button
               key={t.id}
               onClick={() => onOpenTask(t.id)}
-              className="text-[10px] font-bold px-2 py-1 rounded-lg bg-[#f7f4ed] border border-[#eceae4] text-[#5f5f5d]"
+              className="text-[10px] font-bold px-2 py-1 rounded-lg bg-[#f6f7f2] border border-[#ebece6] text-[#5f5f5d]"
             >
               {t.title}
             </button>

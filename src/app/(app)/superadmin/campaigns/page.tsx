@@ -14,7 +14,7 @@ type Campaign = {
 type Spend = { id: string; campaign_id: string; spend_date: string; amount_minor: number; source: string; note: string };
 type ReportRow = { campaign_id: string; spend_minor: number; requests_first: number; requests_last: number; provisioned_first: number };
 
-const input = "h-9 px-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
+const input = "h-9 px-3 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 const TAG = /^[a-z0-9][a-z0-9_.-]{0,99}$/;
 const RANGES = [{ v: "30", l: "Last 30 days" }, { v: "90", l: "Last 90 days" }, { v: "365", l: "Last 12 months" }, { v: "all", l: "All time" }];
 const today = () => new Date().toISOString().slice(0, 10);
@@ -48,7 +48,7 @@ function SpendPanel({ c, spend, onChange }: { c: Campaign; spend: Spend[]; onCha
   }
 
   return (
-    <div className="mt-3 border-t border-[#eceae4] pt-3 space-y-2">
+    <div className="mt-3 border-t border-[#ebece6] pt-3 space-y-2">
       <div className="flex flex-wrap items-end gap-2">
         <label className="text-[10px] text-[#5f5f5d]">Date<br /><input type="date" max={today()} className={cn(input, "w-40")} value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></label>
         <label className="text-[10px] text-[#5f5f5d]">Amount ({c.currency})<br /><input className={cn(input, "w-28")} inputMode="decimal" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} /></label>
@@ -139,7 +139,7 @@ export default function SuperAdminCampaigns() {
 
       <div className="flex flex-wrap items-center gap-2 mb-3">
         {RANGES.map(r => (
-          <button key={r.v} onClick={() => setRange(r.v)} className={cn("text-xs px-3 py-1.5 rounded-full border", range === r.v ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "border-[#eceae4] text-[#5f5f5d]")}>{r.l}</button>
+          <button key={r.v} onClick={() => setRange(r.v)} className={cn("text-xs px-3 py-1.5 rounded-full border", range === r.v ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "border-[#ebece6] text-[#5f5f5d]")}>{r.l}</button>
         ))}
         <label className="ml-auto text-xs text-[#5f5f5d] flex items-center gap-1.5"><input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} /> Show archived</label>
       </div>
@@ -158,8 +158,8 @@ export default function SuperAdminCampaigns() {
                   <button onClick={() => setOpen(open === c.id ? null : c.id)} className="font-bold text-[#1c1c1c] text-left flex-1 min-w-[160px]">{c.name}</button>
                   <span className="font-mono text-[11px] text-[#5f5f5d]">{[c.utm_source, c.utm_medium, c.utm_campaign].filter(Boolean).join(" / ")}</span>
                   <button onClick={() => navigator.clipboard.writeText(trackedLink(c)).then(() => toast.success("Tracked link copied"))}
-                    className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-[#eceae4] text-[#5f5f5d]"><Copy className="w-3 h-3" /> Link</button>
-                  <button onClick={() => setArchived(c, !c.is_archived)} className="text-xs px-2 py-1 rounded-lg text-[#5f5f5d] hover:bg-[#f7f4ed]">{c.is_archived ? "Restore" : "Archive"}</button>
+                    className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-[#ebece6] text-[#5f5f5d]"><Copy className="w-3 h-3" /> Link</button>
+                  <button onClick={() => setArchived(c, !c.is_archived)} className="text-xs px-2 py-1 rounded-lg text-[#5f5f5d] hover:bg-[#f6f7f2]">{c.is_archived ? "Restore" : "Archive"}</button>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-3 text-xs">
                   <div><div className="text-[#5f5f5d]">Spend</div><div className="font-bold tabular-nums">{formatMinor(spent, c.currency)}</div></div>

@@ -13,7 +13,7 @@ type Notice = {
 type Option = { id: string; name: string };
 type Form = { id: string | null; title: string; body: string; level: "info" | "warning"; starts: string; ends: string; plans: string[]; orgs: string[] };
 
-const input = "h-9 px-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
+const input = "h-9 px-3 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 // <input type="datetime-local"> works in local time without a zone.
 const toLocal = (iso: string) => { const d = new Date(iso); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
 const blank = (): Form => ({ id: null, title: "", body: "", level: "info", starts: toLocal(new Date().toISOString()), ends: "", plans: [], orgs: [] });
@@ -102,7 +102,7 @@ export default function SuperAdminNotices() {
         <div className="flex flex-wrap gap-2">
           {plans.map(p => (
             <button key={p.code} type="button" onClick={() => setForm({ ...form, plans: toggle(form.plans, p.code) })}
-              className={cn("text-xs px-3 py-1.5 rounded-full border", form.plans.includes(p.code) ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "border-[#eceae4] text-[#5f5f5d]")}>
+              className={cn("text-xs px-3 py-1.5 rounded-full border", form.plans.includes(p.code) ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "border-[#ebece6] text-[#5f5f5d]")}>
               {p.name}
             </button>
           ))}
@@ -110,7 +110,7 @@ export default function SuperAdminNotices() {
         <div className="text-[10px] text-[#5f5f5d]">Organisations (none = every organisation)</div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           {form.orgs.map(id => (
-            <span key={id} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#f7f4ed]">
+            <span key={id} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#f6f7f2]">
               {orgName(id)}<button onClick={() => setForm({ ...form, orgs: form.orgs.filter(x => x !== id) })} aria-label={`Remove ${orgName(id)}`} className="ml-1 font-bold">×</button>
             </span>
           ))}
@@ -118,11 +118,11 @@ export default function SuperAdminNotices() {
             <option value="">Organisation...</option>
             {orgs.filter(o => !form.orgs.includes(o.id)).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
           </select>
-          <button disabled={!orgPick} onClick={() => { setForm({ ...form, orgs: [...form.orgs, orgPick] }); setOrgPick(""); }} className="px-2 py-1 rounded-lg border border-[#eceae4] disabled:opacity-40">Add</button>
+          <button disabled={!orgPick} onClick={() => { setForm({ ...form, orgs: [...form.orgs, orgPick] }); setOrgPick(""); }} className="px-2 py-1 rounded-lg border border-[#ebece6] disabled:opacity-40">Add</button>
         </div>
         <div className="flex gap-2">
           <button onClick={() => save(form, null)} disabled={busy} className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#1c1c1c] text-white disabled:opacity-50">{form.id ? "Save" : "Publish"}</button>
-          {form.id && <button onClick={() => setForm(blank())} className="text-xs px-3 py-2 rounded-lg border border-[#eceae4]">Cancel</button>}
+          {form.id && <button onClick={() => setForm(blank())} className="text-xs px-3 py-2 rounded-lg border border-[#ebece6]">Cancel</button>}
         </div>
       </div>
 
@@ -142,9 +142,9 @@ export default function SuperAdminNotices() {
                   </div>
                   <div className="text-xs text-[#5f5f5d] mt-1">{when(n.starts_at)}{n.ends_at ? ` to ${when(n.ends_at)}` : ", no end"} · {audience(n)}</div>
                 </div>
-                <button onClick={() => setForm(toForm(n))} className="text-xs px-3 py-1.5 rounded-lg border border-[#eceae4]">Edit</button>
+                <button onClick={() => setForm(toForm(n))} className="text-xs px-3 py-1.5 rounded-lg border border-[#ebece6]">Edit</button>
                 <button onClick={() => save(toForm(n), !n.is_archived)}
-                  disabled={busy} className="text-xs px-3 py-1.5 rounded-lg border border-[#eceae4] disabled:opacity-50">
+                  disabled={busy} className="text-xs px-3 py-1.5 rounded-lg border border-[#ebece6] disabled:opacity-50">
                   {n.is_archived ? "Restore" : "Archive"}
                 </button>
               </div>

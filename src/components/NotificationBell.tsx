@@ -204,7 +204,7 @@ export function NotificationBell() {
       <button
         onClick={() => setOpen(o => !o)}
         aria-label="Notifications"
-        className="relative w-11 h-11 rounded-full bg-white border border-[#eceae4] shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+        className="relative w-11 h-11 rounded-full bg-white border border-[#ebece6] shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
       >
         <Bell className="w-4 h-4 text-[#1c1c1c]" />
         {unreadCount > 0 && (
@@ -215,8 +215,8 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute left-0 bottom-full mb-2 lg:left-auto lg:bottom-auto lg:mb-0 lg:right-0 lg:mt-2 w-80 max-w-[calc(100vw-1.5rem)] bg-[#f7f4ed] rounded-2xl shadow-2xl border border-[#eceae4] overflow-hidden animate-slide-up">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[#eceae4]">
+        <div className="absolute left-0 bottom-full mb-2 lg:left-auto lg:bottom-auto lg:mb-0 lg:right-0 lg:mt-2 w-80 max-w-[calc(100vw-1.5rem)] bg-[#f6f7f2] rounded-2xl shadow-2xl border border-[#ebece6] overflow-hidden animate-slide-up">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#ebece6]">
             <h3 className="text-xs font-black uppercase tracking-widest text-[#1c1c1c]">Notifications</h3>
             {unreadCount > 0 && (
               <button onClick={markAllRead} className="flex items-center gap-1 text-[10px] font-bold text-[#5f5f5d] hover:text-[#1c1c1c] transition-colors">
@@ -228,13 +228,13 @@ export function NotificationBell() {
             <button
               onClick={pushSubscribed ? disablePush : enablePush}
               disabled={pushBusy}
-              className="w-full flex items-center gap-2 px-4 py-2.5 border-b border-[#eceae4] text-[10px] font-bold text-[#5f5f5d] hover:text-[#1c1c1c] hover:bg-[#eceae4]/30 transition-colors disabled:opacity-50"
+              className="w-full flex items-center gap-2 px-4 py-2.5 border-b border-[#ebece6] text-[10px] font-bold text-[#5f5f5d] hover:text-[#1c1c1c] hover:bg-[#ebece6]/30 transition-colors disabled:opacity-50"
             >
               {pushSubscribed ? <BellOff className="w-3 h-3" /> : <BellRing className="w-3 h-3" />}
               {pushSubscribed ? "Turn off push on this device" : "Get notified even when the app's closed"}
             </button>
           )}
-          <div className="max-h-[60vh] overflow-y-auto divide-y divide-[#eceae4]">
+          <div className="max-h-[60vh] overflow-y-auto divide-y divide-[#ebece6]">
             {items.length === 0 ? (
               <div className="p-8 text-center text-[#5f5f5d] text-xs font-medium">You&apos;re all caught up.</div>
             ) : (
@@ -242,7 +242,7 @@ export function NotificationBell() {
                 <button
                   key={n.id}
                   onClick={() => openNotification(n)}
-                  className={cn("w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[#eceae4]/50 transition-colors", !n.read && "bg-[#eceae4]/30")}
+                  className={cn("w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[#ebece6]/50 transition-colors", !n.read && "bg-[#ebece6]/30")}
                 >
                   <span className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", TYPE_DOT[n.type])} />
                   <div className="min-w-0 flex-1">

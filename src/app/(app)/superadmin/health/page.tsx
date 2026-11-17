@@ -63,7 +63,7 @@ export default function SuperAdminHealth() {
       <PageHeader title="Health" subtitle="Database size, scheduled jobs and integration traffic. Read-only." />
       <div className="flex items-center gap-2 text-[11px] text-[#5f5f5d]">
         Checked {new Date(data.generated_at).toLocaleString()}
-        <button onClick={load} disabled={busy} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[#eceae4] disabled:opacity-50">
+        <button onClick={load} disabled={busy} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[#ebece6] disabled:opacity-50">
           <RefreshCw className={cn("w-3 h-3", busy && "animate-spin")} /> Run again
         </button>
       </div>
@@ -116,7 +116,7 @@ export default function SuperAdminHealth() {
         <div className="card p-4 lg:col-span-2">
           <div className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Recent failures</div>
           {data.failures.length === 0 ? <p className="text-xs text-[#5f5f5d]">None in 7 days.</p> : data.failures.map((f, i) => (
-            <div key={i} className="text-xs py-1 border-b border-[#eceae4] last:border-0">
+            <div key={i} className="text-xs py-1 border-b border-[#ebece6] last:border-0">
               <span className="font-semibold">{f.source} · {f.topic}</span> <span className="text-[#5f5f5d]">{ago(f.at)}</span>
               {f.error && <div className="text-red-700 break-words">{f.error}</div>}
             </div>

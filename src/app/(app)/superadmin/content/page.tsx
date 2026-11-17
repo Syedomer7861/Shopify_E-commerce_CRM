@@ -10,7 +10,7 @@ import { CONTENT_KEYS, contentSchema, resolveContent, type ContentKey } from "@/
 type Row = { key: string; draft: Record<string, unknown> | null; published: Record<string, unknown> | null; version: number; published_at: string | null };
 type Version = { key: string; version: number; value: Record<string, unknown>; published_at: string };
 
-const input = "w-full px-3 py-2 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
+const input = "w-full px-3 py-2 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 
 async function refreshSite() {
   const res = await fetch("/api/superadmin/content/revalidate", { method: "POST" });
@@ -92,28 +92,28 @@ function Editor({ k, row, versions, onChange }: { k: ContentKey; row: Row | unde
       </div>
       <div className="flex flex-wrap gap-2 mt-4">
         <button onClick={async () => { if (await saveDraft()) { toast.success("Draft saved"); onChange(); } }} disabled={busy || !dirty}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-[#eceae4] disabled:opacity-50">
+          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-[#ebece6] disabled:opacity-50">
           <Save className="w-3.5 h-3.5" /> Save draft
         </button>
         <button onClick={publish} disabled={busy || (!dirty && !row?.draft)}
           className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-[#1c1c1c] text-white disabled:opacity-50">
           {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Publish
         </button>
-        <button onClick={() => setValue({ ...CONTENT_KEYS[k].defaults })} className="text-xs px-3 py-2 rounded-lg text-[#5f5f5d] hover:bg-[#f7f4ed]">Reset to built-in text</button>
+        <button onClick={() => setValue({ ...CONTENT_KEYS[k].defaults })} className="text-xs px-3 py-2 rounded-lg text-[#5f5f5d] hover:bg-[#f6f7f2]">Reset to built-in text</button>
         {versions.length > 0 && (
-          <button onClick={() => setShowHistory(!showHistory)} className="inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg text-[#5f5f5d] hover:bg-[#f7f4ed] ml-auto">
+          <button onClick={() => setShowHistory(!showHistory)} className="inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg text-[#5f5f5d] hover:bg-[#f6f7f2] ml-auto">
             <History className="w-3.5 h-3.5" /> History ({versions.length})
           </button>
         )}
       </div>
       {showHistory && (
-        <div className="mt-3 border-t border-[#eceae4] pt-3 space-y-2">
+        <div className="mt-3 border-t border-[#ebece6] pt-3 space-y-2">
           {versions.map(v => (
             <div key={v.version} className="flex items-start gap-3 text-xs">
               <span className="font-bold w-10">v{v.version}</span>
               <span className="text-[#5f5f5d] w-40 shrink-0">{new Date(v.published_at).toLocaleString()}</span>
               <span className="text-[#5f5f5d] flex-1 min-w-0 truncate">{Object.values(v.value).filter(x => typeof x === "string" && x).join(" · ")}</span>
-              {v.version !== row?.version && <button onClick={() => restore(v.version)} className="px-2 py-1 rounded-lg border border-[#eceae4]">Restore</button>}
+              {v.version !== row?.version && <button onClick={() => restore(v.version)} className="px-2 py-1 rounded-lg border border-[#ebece6]">Restore</button>}
             </div>
           ))}
         </div>

@@ -26,8 +26,8 @@ export function SuspendedGate() {
 
   if (!suspended) return null;
   return (
-    <div className="fixed inset-0 z-[110] bg-[#f7f4ed] flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-white rounded-3xl p-8 border border-[#eceae4] text-center">
+    <div className="fixed inset-0 z-[110] bg-[#f6f7f2] flex items-center justify-center p-4">
+      <div className="w-full max-w-sm bg-white rounded-3xl p-8 border border-[#ebece6] text-center">
         <PauseCircle className="w-10 h-10 text-amber-500 mx-auto" />
         <h2 className="mt-4 text-lg font-bold text-[#1c1c1c]">Workspace paused</h2>
         <p className="mt-2 text-sm text-[#5f5f5d]">
@@ -35,7 +35,7 @@ export function SuspendedGate() {
         </p>
         <button
           onClick={async () => { await createClient().auth.signOut(); window.location.href = "/login"; }}
-          className="mt-6 h-10 px-5 rounded-xl border border-[#eceae4] text-sm font-medium text-[#1c1c1c]"
+          className="mt-6 h-10 px-5 rounded-xl border border-[#ebece6] text-sm font-medium text-[#1c1c1c]"
         >
           Sign out
         </button>

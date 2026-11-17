@@ -295,7 +295,7 @@ export default function CustomersPage() {
               <input type="date" className="input text-xs bg-[#fcfbf8]" value={lastOrderEnd} onChange={e => setLastOrderEnd(e.target.value)} />
             </div>
           </div>
-          <div className="flex justify-end mt-6 pt-6 border-t border-[#eceae4] gap-4">
+          <div className="flex justify-end mt-6 pt-6 border-t border-[#ebece6] gap-4">
             <button 
               onClick={() => {
                 setMinOrders("");
@@ -328,11 +328,11 @@ export default function CustomersPage() {
           <input type="text" placeholder="Search customers..." className="input pl-9 text-xs"
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="flex items-center gap-1 bg-[#eceae4]/30 rounded-xl border border-[#eceae4] p-1 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center gap-1 bg-[#ebece6]/30 rounded-xl border border-[#ebece6] p-1 overflow-x-auto scrollbar-hide">
           {SEGS.map(s => (
             <button key={s.value} onClick={() => setSeg(s.value)}
               className={cn("px-4 md:px-5 py-2 rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap",
-                seg === s.value ? "bg-[#1c1c1c] text-white shadow-md" : "text-[#5f5f5d] hover:bg-[#eceae4]/50"
+                seg === s.value ? "bg-[#1c1c1c] text-white shadow-md" : "text-[#5f5f5d] hover:bg-[#ebece6]/50"
               )}>
               {s.label}
             </button>
@@ -359,7 +359,7 @@ export default function CustomersPage() {
       <div className="card overflow-hidden p-0">
         <div className="overflow-x-auto scrollbar-hide">
           <div className="min-w-[800px]">
-            <div className="grid grid-cols-[40px_2fr_1.5fr_1fr_1fr_1fr_80px] bg-[#eceae4]/30 border-b border-[#eceae4] px-4 py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">
+            <div className="grid grid-cols-[40px_2fr_1.5fr_1fr_1fr_1fr_80px] bg-[#ebece6]/30 border-b border-[#ebece6] px-4 py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">
               <div className="flex items-center justify-center">
                 <input type="checkbox" className="checkbox w-3.5 h-3.5" 
                   checked={selectedIds.length === customers.length && customers.length > 0} 
@@ -379,7 +379,7 @@ export default function CustomersPage() {
               <EmptyState icon={<Search className="w-5 h-5" />} title="No customers found" desc="Try a different search" />
             ) : (
               customers.map(c => (
-                <div key={c.id} className={cn("grid grid-cols-[40px_2fr_1.5fr_1fr_1fr_1fr_80px] px-4 py-4 border-b border-[#eceae4]/50 group transition-colors", selectedIds.includes(c.id) ? "bg-[#eceae4]/40" : "hover:bg-[rgba(28,28,28,0.02)]")}>
+                <div key={c.id} className={cn("grid grid-cols-[40px_2fr_1.5fr_1fr_1fr_1fr_80px] px-4 py-4 border-b border-[#ebece6]/50 group transition-colors", selectedIds.includes(c.id) ? "bg-[#ebece6]/40" : "hover:bg-[rgba(28,28,28,0.02)]")}>
                   <div className="flex items-center justify-center">
                     <input type="checkbox" className="checkbox w-3.5 h-3.5" 
                       checked={selectedIds.includes(c.id)} 
@@ -406,7 +406,7 @@ export default function CustomersPage() {
                   <div className="flex items-center text-[10px] text-[#5f5f5d] font-bold">{c.last_order_date ? formatDate(c.last_order_date) : "—"}</div>
                   <div className="flex items-center gap-2">
                     <a aria-label="Call" href={`tel:${c.phone}`} 
-                      className="w-7 h-7 rounded-lg bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">
+                      className="w-7 h-7 rounded-lg bg-[#ebece6] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">
                       <Phone className="w-3.5 h-3.5" />
                     </a>
                   </div>

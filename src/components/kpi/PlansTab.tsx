@@ -19,8 +19,8 @@ type Plan = {
 };
 type Draft = Omit<Plan, "id" | "status" | "approved_at" | "version" | "previous_plan_id" | "kpi_plan_items" | "kpi_assignments"> & { id: string | null; items: PlanItem[] };
 
-const input = "h-9 px-2 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
-const small = "text-xs px-3 py-1.5 rounded-lg border border-[#eceae4] disabled:opacity-40";
+const input = "h-9 px-2 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
+const small = "text-xs px-3 py-1.5 rounded-lg border border-[#ebece6] disabled:opacity-40";
 const STATUS: Record<Plan["status"], string> = { draft: "bg-sky-50 text-sky-700", active: "bg-emerald-50 text-emerald-700", archived: "bg-gray-100 text-[#5f5f5d]" };
 const num = (v: string) => (v.trim() === "" || !Number.isFinite(Number(v)) ? null : Number(v));
 
@@ -119,14 +119,14 @@ export function PlansTab({ templates, departments, designations, canManage, canA
             <thead><tr className="text-left text-[#5f5f5d]"><th className="py-1">KPI</th><th>Measured from</th><th>Target</th><th>Weight %</th><th /></tr></thead>
             <tbody>
               {draft.items.map((it, i) => (
-                <tr key={i} className="border-t border-[#eceae4]">
+                <tr key={i} className="border-t border-[#ebece6]">
                   <td className="py-1 pr-2"><input className={cn(input, "w-full min-w-[140px]")} value={it.name} onChange={e => setItem(i, { name: e.target.value })} /></td>
                   <td className="pr-2">{!it.source_key ? "Manual evaluation" : SOURCE_BY_KEY.get(it.source_key)?.label ?? "Data source not configured"}</td>
                   <td className="pr-2 whitespace-nowrap">{it.measurement === "boolean" ? "Yes / no" : (
                     <><input className={cn(input, "w-24")} inputMode="decimal" value={it.target ?? ""} onChange={e => setItem(i, { target: num(e.target.value) })} /> <span className="text-[#5f5f5d]">{it.unit}{it.direction === "lower" ? " or less" : ""}</span></>
                   )}</td>
                   <td className="pr-2"><input className={cn(input, "w-20")} inputMode="decimal" value={it.weight} onChange={e => setItem(i, { weight: num(e.target.value) ?? 0 })} /></td>
-                  <td><button aria-label="Remove KPI" onClick={() => setDraft({ ...draft, items: draft.items.filter((_, j) => j !== i) })} className="p-1.5 rounded-lg border border-[#eceae4] text-red-600"><Trash2 className="w-3.5 h-3.5" /></button></td>
+                  <td><button aria-label="Remove KPI" onClick={() => setDraft({ ...draft, items: draft.items.filter((_, j) => j !== i) })} className="p-1.5 rounded-lg border border-[#ebece6] text-red-600"><Trash2 className="w-3.5 h-3.5" /></button></td>
                 </tr>
               ))}
             </tbody>

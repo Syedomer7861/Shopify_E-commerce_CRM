@@ -138,20 +138,20 @@ export function ChatInput() {
   if (!activeChannel) return null;
 
   return (
-    <div className="p-4 bg-[#f8f7f4] border-t border-[#eceae4] relative">
+    <div className="p-4 bg-[#f8f7f4] border-t border-[#ebece6] relative">
       {/* Emoji Picker Popover */}
       {showEmojis && (
-        <div className="absolute bottom-full left-4 mb-2 p-2 bg-white border border-[#eceae4] rounded-2xl shadow-xl flex flex-wrap gap-1 max-w-[200px] z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="absolute bottom-full left-4 mb-2 p-2 bg-white border border-[#ebece6] rounded-2xl shadow-xl flex flex-wrap gap-1 max-w-[200px] z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
           {POPULAR_EMOJIS.map(emoji => (
             <button 
               key={emoji}
               onClick={() => addEmoji(emoji)}
-              className="w-8 h-8 flex items-center justify-center hover:bg-[#eceae4] rounded-lg transition-colors text-lg"
+              className="w-8 h-8 flex items-center justify-center hover:bg-[#ebece6] rounded-lg transition-colors text-lg"
             >
               {emoji}
             </button>
           ))}
-          <div className="w-full h-px bg-[#eceae4] my-1" />
+          <div className="w-full h-px bg-[#ebece6] my-1" />
           <button 
             onClick={() => setShowEmojis(false)}
             className="w-full py-1 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest hover:text-[#1c1c1c]"
@@ -168,12 +168,12 @@ export function ChatInput() {
         onChange={(e) => handleFileUpload(e)}
       />
 
-      <div className="max-w-4xl mx-auto flex items-end gap-3 bg-white border border-[#eceae4] rounded-2xl p-2 shadow-sm focus-within:ring-2 focus-within:ring-[#1c1c1c]/5 transition-all">
+      <div className="max-w-4xl mx-auto flex items-end gap-3 bg-white border border-[#ebece6] rounded-2xl p-2 shadow-sm focus-within:ring-2 focus-within:ring-[#1c1c1c]/5 transition-all">
         <div className="flex items-center gap-1 pb-1">
           <button 
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="p-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg transition-colors disabled:opacity-50"
+            className="p-2 text-[#5f5f5d] hover:bg-[#ebece6] rounded-lg transition-colors disabled:opacity-50"
           >
             {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
           </button>
@@ -185,7 +185,7 @@ export function ChatInput() {
               }
             }}
             disabled={uploading}
-            className="p-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg transition-colors disabled:opacity-50"
+            className="p-2 text-[#5f5f5d] hover:bg-[#ebece6] rounded-lg transition-colors disabled:opacity-50"
           >
             <ImageIcon className="w-4 h-4" />
           </button>
@@ -206,7 +206,7 @@ export function ChatInput() {
             onClick={() => setShowEmojis(!showEmojis)}
             className={cn(
               "p-2 rounded-lg transition-colors",
-              showEmojis ? "bg-[#eceae4] text-[#1c1c1c]" : "text-[#5f5f5d] hover:bg-[#eceae4]"
+              showEmojis ? "bg-[#ebece6] text-[#1c1c1c]" : "text-[#5f5f5d] hover:bg-[#ebece6]"
             )}
           >
             <Smile className="w-4 h-4" />
@@ -219,7 +219,7 @@ export function ChatInput() {
               "p-2.5 rounded-xl transition-all shadow-lg shadow-[#1c1c1c]/10",
               content.trim() 
                 ? "bg-[#1c1c1c] text-[#fcfbf8] hover:scale-105 active:scale-95" 
-                : "bg-[#eceae4] text-[#5f5f5d] cursor-not-allowed opacity-50"
+                : "bg-[#ebece6] text-[#5f5f5d] cursor-not-allowed opacity-50"
             )}
           >
             <Send className="w-4 h-4" />

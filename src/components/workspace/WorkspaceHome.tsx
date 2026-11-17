@@ -155,8 +155,8 @@ export function WorkspaceHome({ profile }: { profile: Profile }) {
         subtitle={
           <span className="flex flex-wrap items-center gap-2 mt-1">
             {profile.designation && <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold">{profile.designation}</span>}
-            {profile.department && <span className="px-2.5 py-1 rounded-full bg-[#eceae4] text-[#1c1c1c] text-xs font-medium">{profile.department}</span>}
-            <span className="px-2.5 py-1 rounded-full border border-[#eceae4] text-xs text-[#5f5f5d]">
+            {profile.department && <span className="px-2.5 py-1 rounded-full bg-[#ebece6] text-[#1c1c1c] text-xs font-medium">{profile.department}</span>}
+            <span className="px-2.5 py-1 rounded-full border border-[#ebece6] text-xs text-[#5f5f5d]">
               {new Date().toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
             </span>
           </span>

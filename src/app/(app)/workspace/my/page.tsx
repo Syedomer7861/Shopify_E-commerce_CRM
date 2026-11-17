@@ -88,7 +88,7 @@ export default function MyWorkPage() {
       />
 
       {total === 0 && (
-        <div className="bg-white border border-[#eceae4] rounded-2xl p-10 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
+        <div className="bg-white border border-[#ebece6] rounded-2xl p-10 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
           Nothing on your plate
         </div>
       )}
@@ -101,7 +101,7 @@ export default function MyWorkPage() {
             <div className={cn("text-[10px] font-black uppercase tracking-widest mb-2", label === "Overdue" ? "text-rose-500" : "text-[#5f5f5d]/60")}>
               {label} · {items.length}
             </div>
-            <div className="bg-white border border-[#eceae4] rounded-2xl divide-y divide-[#eceae4]">
+            <div className="bg-white border border-[#ebece6] rounded-2xl divide-y divide-[#ebece6]">
               {items.map((t) => {
                 const l = listById.get(t.list_id);
                 const col = l?.statuses?.find((s) => s.id === t.status);
@@ -109,7 +109,7 @@ export default function MyWorkPage() {
                   <Link
                     key={t.id}
                     href={`/workspace?space=${l?.space_id ?? ""}&list=${t.list_id}&task=${t.id}`}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-[#f7f4ed]"
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-[#f6f7f2]"
                   >
                     <span
                       className={cn(

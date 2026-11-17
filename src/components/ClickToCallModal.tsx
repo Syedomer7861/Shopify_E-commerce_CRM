@@ -125,7 +125,7 @@ export default function ClickToCallModal({
       <div className="space-y-6 py-2">
         {status === "idle" && (
           <div className="space-y-4">
-            <div className="bg-[#f7f4ed] border border-[#eceae4] p-4 rounded-xl">
+            <div className="bg-[#f6f7f2] border border-[#ebece6] p-4 rounded-xl">
               <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">CALL RECIPIENT</div>
               <div className="text-sm font-bold text-[#1c1c1c]">{customerName}</div>
               <div className="text-xs font-semibold text-gray-500 mt-0.5">{customerPhone}</div>
@@ -168,7 +168,7 @@ export default function ClickToCallModal({
           <div className="flex flex-col items-center justify-center py-6 text-center space-y-6">
             {/* Pulsing Visual Call Ring */}
             <div className="relative">
-              <div className={`w-20 h-20 rounded-full flex items-center justify-center border-2 border-[#1c1c1c]/10 bg-[#f7f4ed] z-10 relative ${status !== "live" ? "animate-pulse" : ""}`}>
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center border-2 border-[#1c1c1c]/10 bg-[#f6f7f2] z-10 relative ${status !== "live" ? "animate-pulse" : ""}`}>
                 <Phone className={`w-8 h-8 text-[#1c1c1c] ${status === "live" ? "animate-bounce" : ""}`} />
               </div>
               
@@ -263,7 +263,7 @@ export default function ClickToCallModal({
               </button>
               <button
                 onClick={handleNativeFallback}
-                className="flex-1 btn-primary bg-[#1c1c1c] text-[#f7f4ed] text-[10px] py-3 uppercase tracking-widest font-black"
+                className="flex-1 btn-primary bg-[#1c1c1c] text-[#f6f7f2] text-[10px] py-3 uppercase tracking-widest font-black"
               >
                 Fallback to Direct Dial
               </button>

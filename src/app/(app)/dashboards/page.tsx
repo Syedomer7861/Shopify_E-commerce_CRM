@@ -16,7 +16,7 @@ import { AssignDialog } from "@/components/dashboards/AssignDialog";
 import { loadDirectory, resolveFor, targetLabel, type Dashboard, type Directory } from "@/lib/dashboards";
 
 const STATUS_CLS = { draft: "bg-sky-50 text-sky-700", published: "bg-emerald-50 text-emerald-700", archived: "bg-gray-100 text-[#5f5f5d]" };
-const small = "inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#eceae4] disabled:opacity-40";
+const small = "inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#ebece6] disabled:opacity-40";
 
 export default function AllDashboardsPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -88,18 +88,18 @@ export default function AllDashboardsPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            <nav className="flex gap-1 border-b border-[#eceae4] mr-auto">
+            <nav className="flex gap-1 border-b border-[#ebece6] mr-auto">
               {(["ours", "templates"] as const).map(v => (
                 <button key={v} onClick={() => setView(v)} className={cn("px-3 py-2 text-xs font-semibold border-b-2 -mb-px", view === v ? "border-[#1c1c1c] text-[#1c1c1c]" : "border-transparent text-[#5f5f5d]")}>
                   {v === "ours" ? `Our dashboards (${ours.length})` : `Templates (${templates.length})`}
                 </button>
               ))}
             </nav>
-            <label className="relative"><Search className="w-3.5 h-3.5 absolute left-2 top-2.5 text-[#5f5f5d]" /><input value={q} onChange={e => setQ(e.target.value)} placeholder="Search" className="h-9 pl-7 pr-2 bg-white border border-[#eceae4] rounded-lg text-xs w-40" /></label>
-            <select aria-label="Status" value={status} onChange={e => setStatus(e.target.value as typeof status)} className="h-9 px-2 bg-white border border-[#eceae4] rounded-lg text-xs">
+            <label className="relative"><Search className="w-3.5 h-3.5 absolute left-2 top-2.5 text-[#5f5f5d]" /><input value={q} onChange={e => setQ(e.target.value)} placeholder="Search" className="h-9 pl-7 pr-2 bg-white border border-[#ebece6] rounded-lg text-xs w-40" /></label>
+            <select aria-label="Status" value={status} onChange={e => setStatus(e.target.value as typeof status)} className="h-9 px-2 bg-white border border-[#ebece6] rounded-lg text-xs">
               <option value="all">Any status</option><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option>
             </select>
-            <select aria-label="Sort" value={sort} onChange={e => setSort(e.target.value as typeof sort)} className="h-9 px-2 bg-white border border-[#eceae4] rounded-lg text-xs">
+            <select aria-label="Sort" value={sort} onChange={e => setSort(e.target.value as typeof sort)} className="h-9 px-2 bg-white border border-[#ebece6] rounded-lg text-xs">
               <option value="name">Name</option><option value="updated">Last modified</option><option value="people">People assigned</option>
             </select>
           </div>

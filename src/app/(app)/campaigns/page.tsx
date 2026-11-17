@@ -407,7 +407,7 @@ export default function CampaignManager() {
                         {c.total_recipients ? Math.round(((c.delivered_count + (c.failed_count || 0)) / c.total_recipients) * 100) : 0}%
                       </span>
                     </div>
-                    <div className="w-full bg-[#eceae4] h-1.5 rounded-full overflow-hidden">
+                    <div className="w-full bg-[#ebece6] h-1.5 rounded-full overflow-hidden">
                       <div 
                         className={cn(
                           "h-full transition-all duration-1000", 
@@ -431,9 +431,9 @@ export default function CampaignManager() {
                 <td className="px-6 py-4">
                   <div className={cn(
                     "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border",
-                    c.status === "running" ? "bg-[#f7f4ed] border-[#1c1c1c]/20 text-[#1c1c1c]" :
-                    c.status === "completed" ? "bg-[#eceae4] border-[#eceae4] text-[#1c1c1c]" :
-                    "bg-[#f7f4ed] border-[#eceae4] text-[#5f5f5d]"
+                    c.status === "running" ? "bg-[#f6f7f2] border-[#1c1c1c]/20 text-[#1c1c1c]" :
+                    c.status === "completed" ? "bg-[#ebece6] border-[#ebece6] text-[#1c1c1c]" :
+                    "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]"
                   )}>
                     {c.status === "running" && <div className="w-1 h-1 rounded-full bg-[#1c1c1c] animate-ping" />}
                     {c.status}
@@ -526,7 +526,7 @@ export default function CampaignManager() {
         title="Delete Campaign Permanently"
         footer={<>
           <button className="btn-secondary" onClick={() => setDeleteCampaignId(null)}>Cancel</button>
-          <button className="btn-primary bg-rose-600 border-rose-600 hover:bg-rose-700 hover:border-rose-700 text-[#f7f4ed] font-bold" onClick={handleConfirmDelete}>
+          <button className="btn-primary bg-rose-600 border-rose-600 hover:bg-rose-700 hover:border-rose-700 text-[#f6f7f2] font-bold" onClick={handleConfirmDelete}>
             Delete Permanently
           </button>
         </>}
@@ -600,7 +600,7 @@ export default function CampaignManager() {
             </div>
 
             {/* Anti-Ban Safeguard Speed Config */}
-            <div className="border border-[#eceae4] rounded-lg p-3 bg-[#f7f4ed]/30 space-y-3">
+            <div className="border border-[#ebece6] rounded-lg p-3 bg-[#f6f7f2]/30 space-y-3">
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#1c1c1c]">
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
                 Anti-Ban Sending Speed Safeguard
@@ -658,7 +658,7 @@ export default function CampaignManager() {
             </div>
 
             {/* Campaign Scheduling & Sending Window */}
-            <div className="border border-[#eceae4] rounded-lg p-3 bg-[#f7f4ed]/30 space-y-3">
+            <div className="border border-[#ebece6] rounded-lg p-3 bg-[#f6f7f2]/30 space-y-3">
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#1c1c1c]">
                 <Clock className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
                 Campaign Schedule & Sending Window
@@ -693,7 +693,7 @@ export default function CampaignManager() {
                 )}
               </div>
 
-              <div className="border-t border-[#eceae4] pt-2 mt-2">
+              <div className="border-t border-[#ebece6] pt-2 mt-2">
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-[10px] font-bold text-gray-700 block">Daily Active Sending Hours</label>
                   <span className="text-[9px] text-[#5f5f5d] font-bold">Local Time</span>

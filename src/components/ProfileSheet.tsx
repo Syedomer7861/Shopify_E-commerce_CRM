@@ -109,7 +109,7 @@ export function ProfileSheet({ open, onClose, profile, onPhotoChange }: {
         <div className="flex flex-col items-center gap-3">
           <button onClick={() => fileRef.current?.click()} disabled={busy} aria-label="Change profile photo" className="relative group">
             <UserAvatar profile={profile} className="w-24 h-24 text-2xl" />
-            <span className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-white border border-[#eceae4] shadow flex items-center justify-center">
+            <span className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-white border border-[#ebece6] shadow flex items-center justify-center">
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4 text-[#1c1c1c]" />}
             </span>
           </button>
@@ -119,7 +119,7 @@ export function ProfileSheet({ open, onClose, profile, onPhotoChange }: {
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
         </div>
 
-        <dl className="divide-y divide-[#eceae4] rounded-xl border border-[#eceae4] bg-white">
+        <dl className="divide-y divide-[#ebece6] rounded-xl border border-[#ebece6] bg-white">
           {rows.map(([k, v]) => (
             <div key={k} className="flex items-center justify-between gap-4 px-4 py-3">
               <dt className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]/70 flex-shrink-0">{k}</dt>

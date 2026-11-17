@@ -70,7 +70,7 @@ export default function SuperAdminSecurity() {
       <PageHeader title="Security" subtitle="Live checks on accounts, sessions and tenant isolation. Read-only: nothing here changes data." />
       <div className="flex items-center gap-2 text-[11px] text-[#5f5f5d]">
         Checked {new Date(data.generated_at).toLocaleString()}
-        <button onClick={load} disabled={busy} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[#eceae4] disabled:opacity-50">
+        <button onClick={load} disabled={busy} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[#ebece6] disabled:opacity-50">
           <RefreshCw className={cn("w-3 h-3", busy && "animate-spin")} /> Run again
         </button>
       </div>

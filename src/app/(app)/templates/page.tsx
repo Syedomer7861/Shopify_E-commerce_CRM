@@ -172,7 +172,7 @@ export default function TemplateManager() {
           <div key={tpl.id} className="card group hover:shadow-lg transition-all border-l-4 border-l-[#1c1c1c] flex flex-col h-full">
             <div className="p-5 flex-1">
               <div className="flex justify-between items-start mb-3">
-                <div className="px-2 py-0.5 rounded bg-[#eceae4] text-[#1c1c1c] text-[10px] font-bold uppercase tracking-wider border border-[#eceae4]">
+                <div className="px-2 py-0.5 rounded bg-[#ebece6] text-[#1c1c1c] text-[10px] font-bold uppercase tracking-wider border border-[#ebece6]">
                   {tpl.category}
                 </div>
                 <div className="flex items-center gap-1">
@@ -221,7 +221,7 @@ export default function TemplateManager() {
                   <button
                     key={i}
                     onClick={() => setFormData({ ...formData, name: p.name, category: p.category, body: p.body })}
-                    className="shrink-0 px-3 py-1.5 bg-[#f7f4ed] border border-[#eceae4] rounded-lg text-[10px] font-bold text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] transition-colors"
+                    className="shrink-0 px-3 py-1.5 bg-[#f6f7f2] border border-[#ebece6] rounded-lg text-[10px] font-bold text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-[#f6f7f2] transition-colors"
                   >
                     {p.name}
                   </button>
@@ -262,7 +262,7 @@ export default function TemplateManager() {
                     <button 
                       key={v.key}
                       onClick={() => setFormData({ ...formData, body: formData.body + v.key })}
-                      className="text-[9px] font-bold bg-[#eceae4] text-[#1c1c1c] px-1.5 py-0.5 rounded border border-[#eceae4] hover:bg-[#1c1c1c] hover:text-[#f7f4ed] transition-all"
+                      className="text-[9px] font-bold bg-[#ebece6] text-[#1c1c1c] px-1.5 py-0.5 rounded border border-[#ebece6] hover:bg-[#1c1c1c] hover:text-[#f6f7f2] transition-all"
                     >
                       {v.key}
                     </button>

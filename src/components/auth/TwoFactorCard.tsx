@@ -64,7 +64,7 @@ export function TwoFactorCard({ onEnabled }: { onEnabled?: () => void } = {}) {
   if (loading) return null;
 
   return (
-    <div className="bg-white border border-[#eceae4] rounded-2xl p-5">
+    <div className="bg-white border border-[#ebece6] rounded-2xl p-5">
       <div className="flex items-center gap-2">
         {factorId ? <ShieldCheck className="w-5 h-5 text-emerald-600" /> : <ShieldOff className="w-5 h-5 text-gray-400" />}
         <h3 className="text-sm font-bold text-[#1c1c1c]">Two-factor sign-in</h3>
@@ -87,10 +87,10 @@ export function TwoFactorCard({ onEnabled }: { onEnabled?: () => void } = {}) {
           <p className="text-xs text-[#1c1c1c]">2. Enter the 6-digit code it shows:</p>
           <input inputMode="numeric" autoComplete="one-time-code" maxLength={6} required value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-            className="w-full h-11 text-center tracking-[0.4em] font-semibold border border-[#eceae4] rounded-xl" placeholder="000000" />
+            className="w-full h-11 text-center tracking-[0.4em] font-semibold border border-[#ebece6] rounded-xl" placeholder="000000" />
           <div className="flex gap-2">
             <button type="submit" disabled={busy || code.length !== 6} className="flex-1 h-10 bg-[#1c1c1c] text-white text-sm font-semibold rounded-xl disabled:opacity-50">Turn on</button>
-            <button type="button" onClick={() => setPending(null)} className="h-10 px-4 border border-[#eceae4] text-sm rounded-xl">Cancel</button>
+            <button type="button" onClick={() => setPending(null)} className="h-10 px-4 border border-[#ebece6] text-sm rounded-xl">Cancel</button>
           </div>
         </form>
       ) : factorId ? (

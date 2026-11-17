@@ -43,7 +43,7 @@ export function SetupProgress({ data }: { data: OrgOverview }) {
         </div>
         <span className="text-lg font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg">{pct}%</span>
       </div>
-      <div className="h-2 rounded-full bg-[#eceae4] overflow-hidden mb-5">
+      <div className="h-2 rounded-full bg-[#ebece6] overflow-hidden mb-5">
         <div className="h-full bg-emerald-600 rounded-full transition-[width] duration-1000 ease-out" style={{ width: `${shown}%` }} />
       </div>
       <ul className="grid grid-cols-3 sm:grid-cols-5 gap-y-4 gap-x-2">

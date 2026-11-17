@@ -26,7 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProfileProvider>
     <ChatProvider>
-      <div className="app-ui flex flex-col lg:flex-row h-screen overflow-hidden bg-[#f8f7f4]">
+      <div className="app-ui flex flex-col lg:flex-row h-screen overflow-hidden bg-[#f2f3ee]">
         <AgentHeartbeat />
         <ModuleGuard />
         <MfaGate />
@@ -35,7 +35,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <CommandPalette />
         <NotificationBell />
         <KeyboardShortcutsHelp />
-        <Suspense fallback={<div className="fixed lg:static left-0 top-0 w-16 lg:w-64 h-screen bg-[#f7f4ed] animate-pulse" />}>
+        <Suspense fallback={<div className="fixed lg:static left-0 top-0 w-16 lg:w-64 h-screen bg-[#f6f7f2] animate-pulse" />}>
           <Sidebar />
         </Suspense>
         <main id="main-application-content" className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden pl-16 lg:pl-0">

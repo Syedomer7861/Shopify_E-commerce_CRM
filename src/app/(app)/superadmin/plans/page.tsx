@@ -10,7 +10,7 @@ import { formatMinor, toMinor } from "@/lib/money";
 type Version = { id: string; plan_id: string; version: number; currency: string; price_monthly_minor: number; price_yearly_minor: number; trial_days: number; published_at: string };
 type Plan = { id: string; code: string; name: string; description: string; is_public: boolean; is_active: boolean; sort_order: number; max_users: number | null };
 
-const input = "h-9 px-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
+const input = "h-9 px-3 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 const btn = "inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-[#1c1c1c] text-white disabled:opacity-50";
 
 function SeatLimit({ plan, onDone }: { plan: Plan; onDone: () => void }) {
@@ -31,7 +31,7 @@ function SeatLimit({ plan, onDone }: { plan: Plan; onDone: () => void }) {
     <label className="text-[10px] text-[#5f5f5d]">Team members (empty = unlimited)<br />
       <span className="inline-flex gap-1">
         <input className={cn(input, "w-24")} value={value} onChange={e => setValue(e.target.value)} inputMode="numeric" placeholder="Unlimited" />
-        <button onClick={save} disabled={busy} className="text-xs font-semibold px-2 rounded-lg border border-[#eceae4] disabled:opacity-50">Save</button>
+        <button onClick={save} disabled={busy} className="text-xs font-semibold px-2 rounded-lg border border-[#ebece6] disabled:opacity-50">Save</button>
       </span>
     </label>
   );
@@ -61,7 +61,7 @@ function PriceForm({ plan, onDone }: { plan: Plan; onDone: () => void }) {
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-2 mt-3 pt-3 border-t border-[#eceae4]">
+    <div className="flex flex-wrap items-end gap-2 mt-3 pt-3 border-t border-[#ebece6]">
       <label className="text-[10px] text-[#5f5f5d]">Currency<br /><input className={cn(input, "w-20")} value={currency} onChange={e => setCurrency(e.target.value.toUpperCase())} maxLength={3} /></label>
       <label className="text-[10px] text-[#5f5f5d]">Monthly<br /><input className={cn(input, "w-28")} value={monthly} onChange={e => setMonthly(e.target.value)} inputMode="decimal" placeholder="0.00" /></label>
       <label className="text-[10px] text-[#5f5f5d]">Yearly<br /><input className={cn(input, "w-28")} value={yearly} onChange={e => setYearly(e.target.value)} inputMode="decimal" placeholder="0.00" /></label>

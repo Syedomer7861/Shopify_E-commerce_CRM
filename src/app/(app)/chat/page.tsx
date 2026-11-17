@@ -95,11 +95,11 @@ export default function ChatPage() {
   return (
     <div className="fixed inset-0 left-16 lg:left-64 flex flex-col bg-white overflow-hidden">
       {/* Top Header */}
-      <header className="h-16 border-b border-[#eceae4] bg-[#f8f7f4] flex items-center justify-between px-6 z-10">
+      <header className="h-16 border-b border-[#ebece6] bg-[#f8f7f4] flex items-center justify-between px-6 z-10">
         <div className="flex items-center gap-2 sm:gap-3">
           <button aria-label="Back" 
             onClick={() => router.back()}
-            className="lg:hidden p-2 -ml-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg"
+            className="lg:hidden p-2 -ml-2 text-[#5f5f5d] hover:bg-[#ebece6] rounded-lg"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -122,7 +122,7 @@ export default function ChatPage() {
             </>
           ) : (
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#eceae4] flex items-center justify-center">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#ebece6] flex items-center justify-center">
                 <Hash className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#5f5f5d]" />
               </div>
               <h1 className="text-xs sm:text-sm font-bold text-[#1c1c1c] tracking-tight">Internal Communications</h1>
@@ -132,7 +132,7 @@ export default function ChatPage() {
 
         <div className="flex items-center gap-1 sm:gap-2">
           {isSearchOpen && (
-            <div className="hidden sm:flex items-center bg-white border border-[#eceae4] rounded-lg px-2 py-1 mx-2">
+            <div className="hidden sm:flex items-center bg-white border border-[#ebece6] rounded-lg px-2 py-1 mx-2">
               <Search className="w-3 h-3 text-[#5f5f5d] mr-2" />
               <input 
                 type="text" 
@@ -161,8 +161,8 @@ export default function ChatPage() {
           <button aria-label="Search" 
             onClick={() => setIsSearchOpen(!isSearchOpen)}
             className={cn(
-              "p-1.5 sm:p-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg transition-colors hidden sm:block",
-              isSearchOpen && "bg-[#eceae4] text-[#1c1c1c]"
+              "p-1.5 sm:p-2 text-[#5f5f5d] hover:bg-[#ebece6] rounded-lg transition-colors hidden sm:block",
+              isSearchOpen && "bg-[#ebece6] text-[#1c1c1c]"
             )}
           >
             <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -170,16 +170,16 @@ export default function ChatPage() {
           <button aria-label="Details" 
             onClick={() => setShowRightPanel(!showRightPanel)}
             className={cn(
-              "p-1.5 sm:p-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg transition-colors hidden lg:block",
-              showRightPanel && "bg-[#eceae4] text-[#1c1c1c]"
+              "p-1.5 sm:p-2 text-[#5f5f5d] hover:bg-[#ebece6] rounded-lg transition-colors hidden lg:block",
+              showRightPanel && "bg-[#ebece6] text-[#1c1c1c]"
             )}
           >
             <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
-          <div className="w-[1px] h-4 bg-[#eceae4] mx-0.5 sm:mx-1" />
+          <div className="w-[1px] h-4 bg-[#ebece6] mx-0.5 sm:mx-1" />
           <button aria-label="Settings" 
             onClick={() => setShowSettings(true)}
-            className="p-1.5 sm:p-2 text-[#5f5f5d] hover:bg-[#eceae4] rounded-lg transition-colors"
+            className="p-1.5 sm:p-2 text-[#5f5f5d] hover:bg-[#ebece6] rounded-lg transition-colors"
           >
             <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
@@ -199,11 +199,11 @@ export default function ChatPage() {
 
         {/* Right Info Panel (Contextual) */}
         {showRightPanel && (
-          <div className="w-80 border-l border-[#eceae4] bg-[#f7f4ed] p-6 hidden lg:block overflow-y-auto">
+          <div className="w-80 border-l border-[#ebece6] bg-[#f6f7f2] p-6 hidden lg:block overflow-y-auto">
             {activeChannel?.type === 'task' ? (
               <>
                 <h2 className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-6 opacity-60">Linked Task</h2>
-                <div className="p-4 bg-white border border-[#eceae4] rounded-2xl shadow-sm mb-6">
+                <div className="p-4 bg-white border border-[#ebece6] rounded-2xl shadow-sm mb-6">
                   <div className="text-xs font-bold text-[#1c1c1c] mb-2">{activeChannel.metadata?.task_title || "CRM Task Thread"}</div>
                   <p className="text-[10px] text-[#5f5f5d] leading-relaxed mb-4">This discussion is linked to a specific CRM task for full context.</p>
                   <button
@@ -217,7 +217,7 @@ export default function ChatPage() {
             ) : (
               <>
                 <h2 className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-6 opacity-60">Channel Information</h2>
-                <div className="p-4 bg-white border border-[#eceae4] rounded-2xl shadow-sm mb-6">
+                <div className="p-4 bg-white border border-[#ebece6] rounded-2xl shadow-sm mb-6">
                   <div className="text-xs font-bold text-[#1c1c1c] mb-2">{activeChannel?.name || "Internal Communications"}</div>
                   <p className="text-[10px] text-[#5f5f5d] leading-relaxed">Official channel for real-time team collaboration and internal updates.</p>
                 </div>
@@ -226,7 +226,7 @@ export default function ChatPage() {
 
             <div className="space-y-4">
               <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Shared Files</h3>
-              <div className="py-8 text-center border-2 border-dashed border-[#eceae4] rounded-2xl">
+              <div className="py-8 text-center border-2 border-dashed border-[#ebece6] rounded-2xl">
                 <p className="text-[10px] text-[#5f5f5d] font-bold opacity-40">No shared files yet</p>
               </div>
             </div>
@@ -238,7 +238,7 @@ export default function ChatPage() {
       {showSettings && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
-            <div className="p-6 border-b border-[#eceae4] flex justify-between items-center">
+            <div className="p-6 border-b border-[#ebece6] flex justify-between items-center">
               <h2 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest">Chat Settings</h2>
               <button onClick={() => setShowSettings(false)} className="text-[#5f5f5d] hover:text-[#1c1c1c]">✕</button>
             </div>
@@ -249,7 +249,7 @@ export default function ChatPage() {
                   onClick={() => setNotifEnabled(!notifEnabled)}
                   className={cn(
                     "w-10 h-5 rounded-full relative transition-colors duration-200",
-                    notifEnabled ? "bg-emerald-500" : "bg-[#eceae4]"
+                    notifEnabled ? "bg-emerald-500" : "bg-[#ebece6]"
                   )}
                 >
                   <div className={cn(
@@ -264,7 +264,7 @@ export default function ChatPage() {
                   onClick={() => setSoundEnabled(!soundEnabled)}
                   className={cn(
                     "w-10 h-5 rounded-full relative transition-colors duration-200",
-                    soundEnabled ? "bg-emerald-500" : "bg-[#eceae4]"
+                    soundEnabled ? "bg-emerald-500" : "bg-[#ebece6]"
                   )}
                 >
                   <div className={cn(
@@ -274,7 +274,7 @@ export default function ChatPage() {
                 </button>
               </div>
               {canClearHistory && (
-                <div className="pt-4 border-t border-[#eceae4]">
+                <div className="pt-4 border-t border-[#ebece6]">
                   <button
                     onClick={handleClearHistory}
                     className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:opacity-80 transition-opacity"

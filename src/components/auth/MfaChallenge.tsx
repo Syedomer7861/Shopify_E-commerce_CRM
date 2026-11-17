@@ -55,7 +55,7 @@ export function MfaChallenge({ onDone, onCancel }: { onDone: () => void; onCance
         required
         value={code}
         onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-        className="w-full h-14 text-center tracking-[0.5em] text-xl font-semibold bg-[#fcfbf8] border border-[#eceae4] rounded-2xl focus:outline-none focus:border-[#1c1c1c]/30"
+        className="w-full h-14 text-center tracking-[0.5em] text-xl font-semibold bg-[#fcfbf8] border border-[#ebece6] rounded-2xl focus:outline-none focus:border-[#1c1c1c]/30"
         placeholder="000000"
       />
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -83,8 +83,8 @@ export function MfaGate() {
   }, []);
   if (!blocked) return null;
   return (
-    <div className="fixed inset-0 z-[100] bg-[#f7f4ed] flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-white rounded-3xl p-8 border border-[#eceae4]">
+    <div className="fixed inset-0 z-[100] bg-[#f6f7f2] flex items-center justify-center p-4">
+      <div className="w-full max-w-sm bg-white rounded-3xl p-8 border border-[#ebece6]">
         <MfaChallenge
           onDone={() => window.location.reload()}
           onCancel={async () => { await createClient().auth.signOut(); window.location.href = "/login"; }}

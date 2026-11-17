@@ -132,7 +132,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full text-sm font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-3 py-2"
+              className="w-full text-sm font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-3 py-2"
             />
           </div>
           <div>
@@ -141,7 +141,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
               type="color"
               value={color}
               onChange={(e) => setColor(e.target.value)}
-              className="w-10 h-9 rounded-lg border border-[#eceae4] bg-white p-0.5"
+              className="w-10 h-9 rounded-lg border border-[#ebece6] bg-white p-0.5"
             />
           </div>
         </div>
@@ -159,17 +159,17 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
                   type="color"
                   value={s.color}
                   onChange={(e) => setStatus(i, { color: e.target.value })}
-                  className="w-7 h-7 rounded border border-[#eceae4] bg-white p-0.5 flex-shrink-0"
+                  className="w-7 h-7 rounded border border-[#ebece6] bg-white p-0.5 flex-shrink-0"
                 />
                 <input
                   value={s.name}
                   onChange={(e) => setStatus(i, { name: e.target.value })}
-                  className="flex-1 text-xs font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-1.5 min-w-0"
+                  className="flex-1 text-xs font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-1.5 min-w-0"
                 />
                 <select
                   value={s.type}
                   onChange={(e) => setStatus(i, { type: e.target.value as MktStatusType })}
-                  className="text-[10px] font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5"
+                  className="text-[10px] font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-1.5 py-1.5"
                 >
                   {TYPES.map((t) => (
                     <option key={t} value={t}>{t === "not_started" ? "to do" : t}</option>
@@ -192,7 +192,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
           </p>
         </div>
 
-        <div className="border-t border-[#eceae4] pt-4">
+        <div className="border-t border-[#ebece6] pt-4">
           <div className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest mb-2">Custom fields</div>
           <div className="space-y-1.5">
             {fields.map((f, i) => (
@@ -201,12 +201,12 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
                   <input
                     value={f.name}
                     onChange={(e) => setField(i, { name: e.target.value })}
-                    className="flex-1 text-xs font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-1.5 min-w-0"
+                    className="flex-1 text-xs font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-1.5 min-w-0"
                   />
                   <select
                     value={f.type}
                     onChange={(e) => setField(i, { type: e.target.value as MktFieldType })}
-                    className="text-[10px] font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5 capitalize"
+                    className="text-[10px] font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-1.5 py-1.5 capitalize"
                   >
                     {FIELD_TYPES.map((t) => (
                       <option key={t} value={t}>{t}</option>
@@ -224,7 +224,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
                     value={(f.options ?? []).join(", ")}
                     onChange={(e) => setField(i, { options: e.target.value.split(",").map((s) => s.trim()) })}
                     placeholder="Options, comma separated"
-                    className="w-full text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-1.5"
+                    className="w-full text-[11px] font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-1.5"
                   />
                 )}
               </div>
@@ -238,7 +238,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
           </button>
         </div>
 
-        <div className="flex items-center justify-between border-t border-[#eceae4] pt-4">
+        <div className="flex items-center justify-between border-t border-[#ebece6] pt-4">
           {confirmArchive ? (
             <button onClick={archive} className="px-3 py-2 rounded-lg bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest">
               Archive — sure?
@@ -246,7 +246,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
           ) : (
             <button
               onClick={() => setConfirmArchive(true)}
-              className="px-3 py-2 rounded-lg border border-[#eceae4] text-rose-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+              className="px-3 py-2 rounded-lg border border-[#ebece6] text-rose-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
             >
               <Trash2 className="w-3.5 h-3.5" /> Archive list
             </button>

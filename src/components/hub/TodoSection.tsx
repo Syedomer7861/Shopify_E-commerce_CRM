@@ -165,7 +165,7 @@ export function TodoSection() {
   }
 
   return (
-    <div className="card p-8 bg-white shadow-sm border-[#eceae4]">
+    <div className="card p-8 bg-white shadow-sm border-[#ebece6]">
       <div className="flex items-center gap-4 mb-8">
         <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center">
           <ListTodo className="w-6 h-6 text-emerald-500" />
@@ -216,7 +216,7 @@ export function TodoSection() {
                 "flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 group",
                 todo.is_completed 
                   ? "bg-gray-50 border-gray-100 opacity-60" 
-                  : "bg-white border-[#eceae4] hover:border-gray-300 hover:shadow-lg hover:shadow-gray-100"
+                  : "bg-white border-[#ebece6] hover:border-gray-300 hover:shadow-lg hover:shadow-gray-100"
               )}
             >
               <button aria-label="Mark done"

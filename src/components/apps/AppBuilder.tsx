@@ -83,7 +83,7 @@ export function AppBuilder({ open, editing, onClose, onSaved }: { open: boolean;
             <div className="flex flex-wrap gap-1.5">
               {APP_TEMPLATES.map(t => (
                 <button key={t.label} type="button" onClick={() => setDraft(toDraft(t))}
-                  className="px-2.5 py-1.5 rounded-full border border-[#eceae4] text-[11px] font-bold text-[#1c1c1c] hover:bg-white">{t.label}</button>
+                  className="px-2.5 py-1.5 rounded-full border border-[#ebece6] text-[11px] font-bold text-[#1c1c1c] hover:bg-white">{t.label}</button>
               ))}
             </div>
           </div>
@@ -117,7 +117,7 @@ export function AppBuilder({ open, editing, onClose, onSaved }: { open: boolean;
           <p className="text-xs font-medium text-gray-700 mb-1.5">Fields</p>
           <div className="space-y-2">
             {draft.fields.map((f, i) => (
-              <div key={i} className="rounded-lg border border-[#eceae4] p-2.5 space-y-2">
+              <div key={i} className="rounded-lg border border-[#ebece6] p-2.5 space-y-2">
                 <div className="flex gap-2">
                   <input aria-label={`Field ${i + 1} name`} className="input flex-1 min-w-0" placeholder="Field name" maxLength={40} value={f.label} onChange={e => setField(i, { label: e.target.value })} />
                   <button type="button" aria-label={`Remove field ${i + 1}`} disabled={draft.fields.length === 1}

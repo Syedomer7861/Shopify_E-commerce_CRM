@@ -19,7 +19,7 @@ type Template = {
 const STATUS_STYLE: Record<Template["status"], string> = {
   draft: "bg-sky-50 text-sky-700", published: "bg-emerald-50 text-emerald-700", archived: "bg-gray-100 text-[#5f5f5d]",
 };
-const small = "text-xs px-3 py-1.5 rounded-lg border border-[#eceae4] disabled:opacity-40";
+const small = "text-xs px-3 py-1.5 rounded-lg border border-[#ebece6] disabled:opacity-40";
 
 /** Imported JSON is untrusted: keep known fields only and let the DB checks do the rest. */
 function parseImport(raw: unknown): KpiTemplateDraft | null {
@@ -140,8 +140,8 @@ export default function SuperAdminKpiLibrary() {
           </button>
           <button onClick={() => fileRef.current?.click()} className={cn(small, "inline-flex items-center gap-1.5")}><Upload className="w-3.5 h-3.5" /> Import JSON</button>
           <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) importJson(f); }} />
-          <input className="h-9 px-3 bg-white border border-[#eceae4] rounded-lg text-sm flex-1 min-w-[160px]" placeholder="Search templates" value={q} onChange={e => setQ(e.target.value)} />
-          <select className="h-9 px-2 bg-white border border-[#eceae4] rounded-lg text-sm" value={show} onChange={e => setShow(e.target.value as typeof show)}>
+          <input className="h-9 px-3 bg-white border border-[#ebece6] rounded-lg text-sm flex-1 min-w-[160px]" placeholder="Search templates" value={q} onChange={e => setQ(e.target.value)} />
+          <select className="h-9 px-2 bg-white border border-[#ebece6] rounded-lg text-sm" value={show} onChange={e => setShow(e.target.value as typeof show)}>
             <option value="active">Published and drafts</option>
             <option value="archived">Archived</option>
           </select>
@@ -191,7 +191,7 @@ export default function SuperAdminKpiLibrary() {
                     <thead><tr className="text-left text-[#5f5f5d]"><th className="py-1">KPI</th><th>Source</th><th>Type</th><th>Better</th><th className="text-right">Weight</th></tr></thead>
                     <tbody>
                       {[...t.kpi_template_items].sort((a, b) => a.sort_order - b.sort_order).map(i => (
-                        <tr key={i.sort_order} className="border-t border-[#eceae4]">
+                        <tr key={i.sort_order} className="border-t border-[#ebece6]">
                           <td className="py-1">{i.name}</td>
                           <td>{!i.source_key ? "Manual evaluation" : SOURCE_BY_KEY.get(i.source_key)?.label ?? "Data source not configured"}</td>
                           <td>{i.measurement}</td><td>{i.direction}</td><td className="text-right">{i.weight}</td>

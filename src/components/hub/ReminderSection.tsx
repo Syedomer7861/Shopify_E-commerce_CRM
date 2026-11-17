@@ -237,7 +237,7 @@ export function ReminderSection() {
             return (
               <div key={reminder.id} className={cn(
                 "flex items-center gap-3 sm:gap-6 p-4 sm:p-5 rounded-2xl border transition-all group",
-                isPast ? "bg-gray-50 border-gray-100 opacity-60" : "bg-white border-[#eceae4] hover:border-rose-200 hover:shadow-lg hover:shadow-rose-500/5"
+                isPast ? "bg-gray-50 border-gray-100 opacity-60" : "bg-white border-[#ebece6] hover:border-rose-200 hover:shadow-lg hover:shadow-rose-500/5"
               )}>
                 <div className={cn(
                   "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",

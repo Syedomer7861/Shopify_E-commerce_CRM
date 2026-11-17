@@ -42,7 +42,7 @@ export function PlatformNotices() {
         return (
           <div key={n.id} role={n.level === "warning" ? "alert" : "status"}
             className={cn("flex gap-3 rounded-xl border px-4 py-3 text-sm",
-              n.level === "warning" ? "bg-amber-50 border-amber-200" : "bg-white border-[#eceae4]")}>
+              n.level === "warning" ? "bg-amber-50 border-amber-200" : "bg-white border-[#ebece6]")}>
             <Icon className={cn("w-4 h-4 mt-0.5 shrink-0", n.level === "warning" ? "text-amber-600" : "text-[#5f5f5d]")} aria-hidden />
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-[#1c1c1c]">{n.title}</div>

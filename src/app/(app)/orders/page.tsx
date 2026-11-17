@@ -466,7 +466,7 @@ export default function OrdersPage() {
             <input type="number" placeholder="99999" className="input text-xs h-9 bg-[#fcfbf8]" value={maxAmount} onChange={e => setMaxAmount(e.target.value)} />
           </div>
         </div>
-        <div className="flex justify-end mt-4 pt-4 border-t border-[#eceae4] items-center gap-4">
+        <div className="flex justify-end mt-4 pt-4 border-t border-[#ebece6] items-center gap-4">
           <button 
             onClick={() => {
               setStartDate("");
@@ -488,11 +488,11 @@ export default function OrdersPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#5f5f5d]" />
           <input placeholder="Search orders or tracking..." className="input pl-9 text-xs" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="flex items-center gap-1 bg-[#eceae4]/30 rounded-xl border border-[#eceae4] p-1 overflow-x-auto scroller-hide">
+        <div className="flex items-center gap-1 bg-[#ebece6]/30 rounded-xl border border-[#ebece6] p-1 overflow-x-auto scroller-hide">
           {STATUSES.map(s => (
             <button key={s.value} onClick={() => setStatus(s.value)}
               className={cn("px-4 md:px-5 py-2 rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap",
-                status === s.value ? "bg-[#1c1c1c] text-white shadow-md" : "text-[#5f5f5d] hover:bg-[#eceae4]/50"
+                status === s.value ? "bg-[#1c1c1c] text-white shadow-md" : "text-[#5f5f5d] hover:bg-[#ebece6]/50"
               )}>
               {s.label}
             </button>
@@ -504,7 +504,7 @@ export default function OrdersPage() {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-10">
         {[
           { label: "Delivered", value: "delivered", count: stats.delivered, color: "border-l-[#1c1c1c]", active: "shadow-xl border-[#1c1c1c]" },
-          { label: "Transit", value: "in_transit", count: stats.in_transit, color: "border-l-[#eceae4]", active: "shadow-xl border-[#1c1c1c]" },
+          { label: "Transit", value: "in_transit", count: stats.in_transit, color: "border-l-[#ebece6]", active: "shadow-xl border-[#1c1c1c]" },
           { label: "Out for Delivery", value: "out_for_delivery", count: stats.out_for_delivery, color: "border-l-sky-500", active: "shadow-xl border-[#1c1c1c]" },
           { label: "RTO", value: "rto", count: stats.rto, color: "border-l-rose-500", active: "shadow-xl border-[#1c1c1c]" },
           { label: "Pending", value: "pending", count: stats.pending, color: "border-l-amber-500", active: "shadow-xl border-[#1c1c1c]" },
@@ -531,7 +531,7 @@ export default function OrdersPage() {
       <div className="card overflow-hidden p-0">
         <div className="overflow-x-auto scrollbar-hide">
           <div className="min-w-[1000px]">
-            <div className="grid grid-cols-[40px_100px_2fr_2fr_1.5fr_1fr_1fr_1fr_120px] bg-[#eceae4]/30 border-b border-[#eceae4] px-4 py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">
+            <div className="grid grid-cols-[40px_100px_2fr_2fr_1.5fr_1fr_1fr_1fr_120px] bg-[#ebece6]/30 border-b border-[#ebece6] px-4 py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">
               <div className="flex items-center justify-center">
                 <input type="checkbox" className="checkbox w-3.5 h-3.5" 
                   checked={selectedIds.length === orders.length && orders.length > 0} 
@@ -555,8 +555,8 @@ export default function OrdersPage() {
           <div className="min-h-[400px]">
             {orders.map((o) => (
               <div key={o.id} className={cn(
-                "grid grid-cols-[40px_100px_2fr_2fr_1.5fr_1fr_1fr_1fr_120px] px-4 py-4 border-b border-[#eceae4]/50 group transition-colors",
-                selectedIds.includes(o.id) ? "bg-[#eceae4]/40" : "hover:bg-[rgba(28,28,28,0.02)]"
+                "grid grid-cols-[40px_100px_2fr_2fr_1.5fr_1fr_1fr_1fr_120px] px-4 py-4 border-b border-[#ebece6]/50 group transition-colors",
+                selectedIds.includes(o.id) ? "bg-[#ebece6]/40" : "hover:bg-[rgba(28,28,28,0.02)]"
               )}>
                 <div className="flex items-center justify-center">
                   <input type="checkbox" className="checkbox w-3.5 h-3.5" 
@@ -595,7 +595,7 @@ export default function OrdersPage() {
                     <Link 
                       href={`https://wa.me/${o.customer.phone.replace(/\D/g, '')}?text=Hi ${o.customer.name}, regarding your order ${o.order_number}...`}
                       target="_blank"
-                      className="w-7 h-7 rounded-lg bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
+                      className="w-7 h-7 rounded-lg bg-[#ebece6] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
                       title="WhatsApp"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
@@ -605,7 +605,7 @@ export default function OrdersPage() {
                     <Link 
                       href={`https://shiprocket.co/tracking/${o.tracking_number}`}
                       target="_blank"
-                      className="w-7 h-7 rounded-lg bg-[#eceae4] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
+                      className="w-7 h-7 rounded-lg bg-[#ebece6] text-[#1c1c1c] flex items-center justify-center hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
                       title="Track"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -653,7 +653,7 @@ export default function OrdersPage() {
         <div className="fixed bottom-6 left-[calc(50%+2rem)] lg:left-1/2 -translate-x-1/2 z-40 animate-slide-up w-[calc(100%-6rem)] md:w-auto">
           <div className="bg-[#1c1c1c] text-white flex items-center gap-4 md:gap-6 px-4 md:px-6 py-3 rounded-2xl shadow-2xl min-w-0 md:min-w-[450px]">
             <div className="flex items-center gap-2 md:gap-3 border-r border-white/10 pr-4 md:pr-6">
-              <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#f7f4ed] text-[#1c1c1c] flex items-center justify-center text-[9px] md:text-[10px] font-bold">
+              <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#f6f7f2] text-[#1c1c1c] flex items-center justify-center text-[9px] md:text-[10px] font-bold">
                 {selectedIds.length}
               </div>
               <span className="hidden xs:inline text-[9px] md:text-[10px] font-bold uppercase tracking-widest opacity-60">Selection</span>
@@ -662,7 +662,7 @@ export default function OrdersPage() {
             <div className="flex items-center gap-3 flex-1">
               <button 
                 onClick={handleExportCsv}
-                className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest hover:text-[#eceae4] transition-colors"
+                className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest hover:text-[#ebece6] transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
                 Export

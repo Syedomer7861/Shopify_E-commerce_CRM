@@ -81,7 +81,7 @@ export function AssignTaskWidget() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="group relative px-6 py-3 rounded-2xl bg-white border border-[#eceae4] overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] hover:border-[#1c1c1c]/20 flex items-center gap-3"
+        className="group relative px-6 py-3 rounded-2xl bg-white border border-[#ebece6] overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] hover:border-[#1c1c1c]/20 flex items-center gap-3"
       >
         <div className="w-8 h-8 rounded-xl bg-[#1c1c1c]/5 flex items-center justify-center">
           <ClipboardPlus className="w-4 h-4 text-[#1c1c1c]" />

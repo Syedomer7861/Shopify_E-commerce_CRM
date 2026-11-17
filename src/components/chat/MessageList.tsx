@@ -209,7 +209,7 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
                     "px-4 py-2.5 rounded-2xl text-xs leading-relaxed shadow-sm",
                     isMe
                       ? "bg-[#1c1c1c] text-[#fcfbf8] rounded-tr-none"
-                      : "bg-white border border-[#eceae4] text-[#1c1c1c] rounded-tl-none"
+                      : "bg-white border border-[#ebece6] text-[#1c1c1c] rounded-tl-none"
                   )}>
                     {msg.type === 'image' && msg.file_url && (
                       <div className="mb-2 -mx-1">
@@ -244,7 +244,7 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
                       else setMessages(prev => prev.filter(m => m.id !== msg.id));
                     }}
                     className={cn(
-                      "absolute top-0 opacity-0 group-hover/msg:opacity-100 p-1 bg-white/90 shadow-sm border border-[#eceae4] rounded-lg text-rose-500 hover:bg-rose-500 hover:text-white transition-all z-10",
+                      "absolute top-0 opacity-0 group-hover/msg:opacity-100 p-1 bg-white/90 shadow-sm border border-[#ebece6] rounded-lg text-rose-500 hover:bg-rose-500 hover:text-white transition-all z-10",
                       isMe ? "-left-8" : "-right-8"
                     )}
                   >
@@ -262,7 +262,7 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
             <div className="w-8 flex-shrink-0">
               <Avatar name={typingUsers[0].userName} size="sm" />
             </div>
-            <div className="bg-white border border-[#eceae4] rounded-2xl rounded-tl-none px-4 py-2.5 shadow-sm flex items-center gap-1.5">
+            <div className="bg-white border border-[#ebece6] rounded-2xl rounded-tl-none px-4 py-2.5 shadow-sm flex items-center gap-1.5">
               <span className="text-[10px] text-[#5f5f5d] font-medium">
                 {typingUsers.map(u => u.userName).join(", ")} {typingUsers.length > 1 ? "are" : "is"} typing
               </span>

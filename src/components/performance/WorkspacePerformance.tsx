@@ -241,7 +241,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
                         <span className="font-bold text-[#1c1c1c] truncate pr-3">{g.title}</span>
                         <span className="font-bold text-[#5f5f5d] tabular-nums shrink-0">{g.progress}/{g.target}</span>
                       </div>
-                      <div className="h-2 rounded-full bg-[#eceae4] overflow-hidden">
+                      <div className="h-2 rounded-full bg-[#ebece6] overflow-hidden">
                         <div className={cn("h-full rounded-full transition-all", pct >= 100 ? "bg-emerald-500" : "bg-[#1c1c1c]")} style={{ width: `${pct}%` }} />
                       </div>
                     </div>
@@ -262,7 +262,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
                 {(["urgent", "high", "normal", "low"] as const).map((k) => (
                   <div key={k} className="flex items-center gap-3 text-xs">
                     <span className="w-14 font-bold text-[#5f5f5d] uppercase text-[10px] tracking-widest">{k}</span>
-                    <div className="flex-1 h-2.5 rounded-full bg-[#eceae4] overflow-hidden">
+                    <div className="flex-1 h-2.5 rounded-full bg-[#ebece6] overflow-hidden">
                       <div className={cn("h-full rounded-full", PRIORITY_STYLE[k])} style={{ width: `${Math.round((pm[k] / pmTotal) * 100)}%` }} />
                     </div>
                     <span className="w-8 text-right font-bold text-[#1c1c1c] tabular-nums">{pm[k]}</span>
@@ -307,7 +307,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
           <div className="text-2xl font-black text-[#1c1c1c] tabular-nums">
             {openH}h <span className="text-[10px] text-gray-400 font-bold">/ {weeklyCap}h wk</span>
           </div>
-          <div className="h-2 rounded-full bg-[#eceae4] overflow-hidden mt-2">
+          <div className="h-2 rounded-full bg-[#ebece6] overflow-hidden mt-2">
             <div className={cn("h-full rounded-full", capPct > 100 ? "bg-rose-500" : capPct > 80 ? "bg-amber-500" : "bg-emerald-500")} style={{ width: `${Math.min(100, capPct)}%` }} />
           </div>
         </div>
@@ -330,7 +330,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 0, right: 8, left: -18, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eceae4" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ebece6" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 9, fontWeight: 700, fill: "#5f5f5d" }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 9, fontWeight: 700, fill: "#5f5f5d" }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ background: "#1c1c1c", border: "none", borderRadius: 8, fontSize: 10 }} itemStyle={{ color: "#fcfbf8" }} labelStyle={{ color: "#fcfbf8" }} />
@@ -372,11 +372,11 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-[#eceae4] text-[9px] font-black text-[#5f5f5d]/50 uppercase tracking-widest">
+                  <tr className="border-b border-[#ebece6] text-[9px] font-black text-[#5f5f5d]/50 uppercase tracking-widest">
                     <th className="py-2">Date</th><th className="py-2">In</th><th className="py-2">Out</th><th className="py-2 text-right">Net</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#eceae4]/50">
+                <tbody className="divide-y divide-[#ebece6]/50">
                   {attendance.map((d: any, i: number) => (
                     <tr key={`${d.date}-${i}`}>
                       <td className="py-2.5 text-xs font-bold text-[#1c1c1c]">{d.date}</td>
@@ -396,7 +396,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
           {actEntries.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {actEntries.map(([k, v]) => (
-                <span key={k} className="text-[10px] font-bold text-[#5f5f5d] bg-[#eceae4]/60 px-2.5 py-1 rounded-full">
+                <span key={k} className="text-[10px] font-bold text-[#5f5f5d] bg-[#ebece6]/60 px-2.5 py-1 rounded-full">
                   {prettyAction(k)} <span className="text-[#1c1c1c] tabular-nums">{v}</span>
                 </span>
               ))}

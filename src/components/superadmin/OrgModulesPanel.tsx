@@ -48,7 +48,7 @@ export function OrgModulesPanel({ orgId }: { orgId: string }) {
     <div className="card overflow-x-auto">
       <table className="w-full text-sm min-w-[560px]">
         <thead>
-          <tr className="text-left text-[10px] uppercase tracking-widest text-[#5f5f5d] border-b border-[#eceae4]">
+          <tr className="text-left text-[10px] uppercase tracking-widest text-[#5f5f5d] border-b border-[#ebece6]">
             <th className="p-3">Module</th><th className="p-3">Your setting</th><th className="p-3">Result</th>
           </tr>
         </thead>
@@ -61,10 +61,10 @@ export function OrgModulesPanel({ orgId }: { orgId: string }) {
               <tr key={m.key} className="border-b border-gray-50 last:border-0">
                 <td className="p-3 font-semibold text-[#1c1c1c]">{m.name}</td>
                 <td className="p-3">
-                  <div className="inline-flex rounded-lg border border-[#eceae4] overflow-hidden text-xs">
+                  <div className="inline-flex rounded-lg border border-[#ebece6] overflow-hidden text-xs">
                     {(["default", "on", "off"] as const).map(c => (
                       <button key={c} disabled={busy === m.key} onClick={() => c !== choice && choose(m.key, c)}
-                        className={cn("px-2.5 py-1 capitalize", c === choice ? "bg-[#1c1c1c] text-white" : "text-[#5f5f5d] hover:bg-[#f7f4ed]")}>
+                        className={cn("px-2.5 py-1 capitalize", c === choice ? "bg-[#1c1c1c] text-white" : "text-[#5f5f5d] hover:bg-[#f6f7f2]")}>
                         {c === "default" ? "Plan" : c}
                       </button>
                     ))}
@@ -76,7 +76,7 @@ export function OrgModulesPanel({ orgId }: { orgId: string }) {
           })}
         </tbody>
       </table>
-      <p className="text-[11px] text-[#5f5f5d] p-3 border-t border-[#eceae4]">&quot;Plan&quot; follows the organisation&apos;s plan (all modules if it has none). On or Off here overrides the plan for this organisation only. A module off platform-wide stays off.</p>
+      <p className="text-[11px] text-[#5f5f5d] p-3 border-t border-[#ebece6]">&quot;Plan&quot; follows the organisation&apos;s plan (all modules if it has none). On or Off here overrides the plan for this organisation only. A module off platform-wide stays off.</p>
     </div>
   );
 }

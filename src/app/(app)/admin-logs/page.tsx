@@ -256,14 +256,14 @@ export default function AdminLogs() {
             onClick={() => setHistoryOpen(o => !o)}
             className={cn(
               "flex items-center gap-2 px-3 h-full w-full rounded-xl text-xs font-bold border transition-colors",
-              activeRange ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-gray-500 border-[#eceae4] hover:border-gray-300"
+              activeRange ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-gray-500 border-[#ebece6] hover:border-gray-300"
             )}
           >
             <Clock className="w-3.5 h-3.5" />
             {activeRange ? `${activeRange.start} → ${activeRange.end}` : "History View"}
           </button>
           {historyOpen && (
-            <div className="absolute right-0 mt-2 w-72 bg-white border border-[#eceae4] rounded-xl shadow-lg p-4 z-20 space-y-3">
+            <div className="absolute right-0 mt-2 w-72 bg-white border border-[#ebece6] rounded-xl shadow-lg p-4 z-20 space-y-3">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Browse a date range</p>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -314,7 +314,7 @@ export default function AdminLogs() {
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-right">Context</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#eceae4]">
+            <tbody className="divide-y divide-[#ebece6]">
               {loading && logs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-10 text-center">

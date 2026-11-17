@@ -137,7 +137,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
             <p className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50 py-2 text-center">No rules yet</p>
           )}
           {rules.map((r) => (
-            <div key={r.id} className="p-3 rounded-xl border border-[#eceae4] flex items-start gap-3">
+            <div key={r.id} className="p-3 rounded-xl border border-[#ebece6] flex items-start gap-3">
               <input type="checkbox" checked={r.enabled} onChange={() => toggle(r)} className="mt-1" />
               <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-bold text-[#1c1c1c]">{r.name}</div>
@@ -156,7 +156,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
           ))}
         </div>
 
-        <div className="border-t border-[#eceae4] pt-4 space-y-3">
+        <div className="border-t border-[#ebece6] pt-4 space-y-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]/60 flex items-center gap-1.5">
             <Zap className="w-3.5 h-3.5" /> New rule {list ? `· ${list.name}` : ""}
           </div>
@@ -164,14 +164,14 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Rule name — e.g. Route to review"
-            className="w-full text-xs font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-3 py-2"
+            className="w-full text-xs font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-3 py-2"
           />
           <div className="flex items-center gap-2 text-[11px] font-bold text-[#5f5f5d] flex-wrap">
             When
             <select
               value={event}
               onChange={(e) => setEvent(e.target.value as any)}
-              className="text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-1.5"
+              className="text-xs font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-1.5"
             >
               <option value="status_changed">status changes to</option>
               <option value="task_created">a task is created</option>
@@ -180,7 +180,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
               <select
                 value={toStatus}
                 onChange={(e) => setToStatus(e.target.value)}
-                className="text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-1.5"
+                className="text-xs font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-1.5"
               >
                 {list?.statuses.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
@@ -190,11 +190,11 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
           </div>
 
           {actions.map((a, i) => (
-            <div key={i} className="flex flex-wrap items-center gap-1.5 border border-[#eceae4] rounded-lg p-1.5">
+            <div key={i} className="flex flex-wrap items-center gap-1.5 border border-[#ebece6] rounded-lg p-1.5">
               <select
                 value={a.type}
                 onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { type: e.target.value as ActionType } : x)))}
-                className="text-[10px] font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5"
+                className="text-[10px] font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-1.5 py-1.5"
               >
                 {(Object.keys(ACTION_LABEL) as ActionType[]).map((t) => (
                   <option key={t} value={t}>{ACTION_LABEL[t]}</option>
@@ -205,7 +205,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
                 <select
                   value={a.to ?? ""}
                   onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { ...x, to: e.target.value || undefined } : x)))}
-                  className="flex-1 text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5"
+                  className="flex-1 text-[11px] font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-1.5 py-1.5"
                 >
                   <option value="">{a.type === "notify" ? "Assignees" : "Pick person…"}</option>
                   {members.map((m) => (
@@ -217,7 +217,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
                 <select
                   value={a.priority ?? "high"}
                   onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { ...x, priority: e.target.value } : x)))}
-                  className="flex-1 text-[11px] font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5 capitalize"
+                  className="flex-1 text-[11px] font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-1.5 py-1.5 capitalize"
                 >
                   {["urgent", "high", "normal", "low"].map((p) => (
                     <option key={p} value={p}>{p}</option>
@@ -229,14 +229,14 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
                   value={a.title ?? ""}
                   onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))}
                   placeholder="Subtask title"
-                  className="flex-1 text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5"
+                  className="flex-1 text-[11px] font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-1.5 py-1.5"
                 />
               )}
               {a.type === "move_to_list" && (
                 <select
                   value={a.list_id ?? ""}
                   onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { ...x, list_id: e.target.value || undefined } : x)))}
-                  className="flex-1 text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5"
+                  className="flex-1 text-[11px] font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-1.5 py-1.5"
                 >
                   <option value="">Pick a list…</option>
                   {lists.filter((l) => l.id !== list?.id).map((l) => (
@@ -249,7 +249,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
                   <select
                     value={a.field ?? ""}
                     onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { ...x, field: e.target.value || undefined } : x)))}
-                    className="text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5"
+                    className="text-[11px] font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-1.5 py-1.5"
                   >
                     <option value="">Field…</option>
                     {(list?.custom_fields ?? []).map((f) => (
@@ -260,7 +260,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
                     value={a.value ?? ""}
                     onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))}
                     placeholder="Value"
-                    className="flex-1 text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5 min-w-0"
+                    className="flex-1 text-[11px] font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-1.5 py-1.5 min-w-0"
                   />
                 </>
               )}
@@ -271,7 +271,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
                     type="number"
                     value={a.days ?? "0"}
                     onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { ...x, days: e.target.value } : x)))}
-                    className="w-16 text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5"
+                    className="w-16 text-[11px] font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-1.5 py-1.5"
                   />
                   days
                 </div>
@@ -281,7 +281,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
                   value={a.segment ?? ""}
                   onChange={(e) => setActions((prev) => prev.map((x, j) => (j === i ? { ...x, segment: e.target.value } : x)))}
                   placeholder="Target segment (e.g. repeat)"
-                  className="flex-1 text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5 min-w-0"
+                  className="flex-1 text-[11px] font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-1.5 py-1.5 min-w-0"
                 />
               )}
 

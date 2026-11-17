@@ -69,7 +69,7 @@ export default function SuperAdminModules() {
         <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-3">Platform-wide</div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {mods.map(m => (
-            <div key={m.key} className="flex items-start gap-3 p-3 rounded-lg border border-[#eceae4]">
+            <div key={m.key} className="flex items-start gap-3 p-3 rounded-lg border border-[#ebece6]">
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold text-[#1c1c1c]">{m.name}</div>
                 <div className="text-[11px] text-[#5f5f5d]">{m.description}</div>
@@ -89,7 +89,7 @@ export default function SuperAdminModules() {
         {plans.length === 0 ? <p className="text-sm text-[#5f5f5d]">Create a plan first.</p> : (
           <>
             <select value={planId} onChange={e => { setPlanId(e.target.value); setDraft(null); }}
-              className="h-9 px-3 mb-3 bg-white border border-[#eceae4] rounded-lg text-sm">
+              className="h-9 px-3 mb-3 bg-white border border-[#ebece6] rounded-lg text-sm">
               <option value="">Choose a plan...</option>
               {plans.map(p => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
             </select>
@@ -100,7 +100,7 @@ export default function SuperAdminModules() {
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-3">
                   {mods.map(m => (
-                    <label key={m.key} className="flex items-center gap-2 p-2 rounded-lg border border-[#eceae4] text-xs cursor-pointer">
+                    <label key={m.key} className="flex items-center gap-2 p-2 rounded-lg border border-[#ebece6] text-xs cursor-pointer">
                       <input type="checkbox" checked={included.includes(m.key)}
                         onChange={() => setDraft(included.includes(m.key) ? included.filter(k => k !== m.key) : [...included, m.key])} />
                       {m.name}

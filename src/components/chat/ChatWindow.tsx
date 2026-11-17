@@ -35,7 +35,7 @@ export function ChatWindow() {
 
   return (
     <div className={cn(
-      "fixed bottom-4 right-4 z-[100] bg-white border border-[#eceae4] rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 flex flex-col",
+      "fixed bottom-4 right-4 z-[100] bg-white border border-[#ebece6] rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 flex flex-col",
       isMinimized ? "h-14 w-72" : "h-[550px] w-[380px]"
     )}>
       {/* Header */}
@@ -92,10 +92,10 @@ export function ChatWindow() {
         <div className="flex-1 flex flex-col overflow-hidden bg-[#f8f7f4]">
           {!activeChannel ? (
             <div className="flex-1 flex flex-col overflow-hidden">
-              <div className="p-3 border-b border-[#eceae4]">
+              <div className="p-3 border-b border-[#ebece6]">
                  <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-[#5f5f5d]" />
-                    <input type="text" placeholder="Find people or channels..." className="w-full bg-[#eceae4]/50 border-none rounded-lg py-1.5 pl-8 pr-4 text-[11px] font-medium placeholder:text-[#5f5f5d]/50" />
+                    <input type="text" placeholder="Find people or channels..." className="w-full bg-[#ebece6]/50 border-none rounded-lg py-1.5 pl-8 pr-4 text-[11px] font-medium placeholder:text-[#5f5f5d]/50" />
                  </div>
               </div>
               <div className="flex-1 overflow-y-auto">

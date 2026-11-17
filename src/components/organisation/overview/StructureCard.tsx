@@ -23,7 +23,7 @@ export function StructureCard({ data }: { data: OrgOverview }) {
   const branches = data.branches.filter(b => b.is_active);
 
   const box = (d: Unit, small = false) => (
-    <div className={`rounded-xl border border-[#eceae4] bg-white text-center ${small ? "px-2 py-1.5" : "px-3 py-2"} shadow-sm transition-transform hover:-translate-y-0.5`} title={d.head_id ? `Head: ${data.names[d.head_id] ?? "—"}` : "No head set"}>
+    <div className={`rounded-xl border border-[#ebece6] bg-white text-center ${small ? "px-2 py-1.5" : "px-3 py-2"} shadow-sm transition-transform hover:-translate-y-0.5`} title={d.head_id ? `Head: ${data.names[d.head_id] ?? "—"}` : "No head set"}>
       <div className={`font-semibold text-[#1c1c1c] truncate ${small ? "text-[10px]" : "text-[11px]"}`}>{d.name}</div>
       <div className="inline-flex items-center gap-1 text-[10px] text-[#5f5f5d]"><Users className="w-3 h-3" />{total(d)}</div>
     </div>
@@ -54,12 +54,12 @@ export function StructureCard({ data }: { data: OrgOverview }) {
         </div>
       )}
       {(unplaced > 0 || branches.length > 0) && (
-        <div className="mt-auto pt-3 border-t border-[#eceae4] space-y-2">
+        <div className="mt-auto pt-3 border-t border-[#ebece6] space-y-2">
           {unplaced > 0 && <div className="text-[11px] text-amber-700">{unplaced} active employee(s) without a department</div>}
           {branches.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {branches.map(b => (
-                <span key={b.id} className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg border border-[#eceae4]">
+                <span key={b.id} className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg border border-[#ebece6]">
                   <Building2 className="w-3 h-3" />{b.name}{b.is_head_office ? " (HQ)" : ""}{b.city ? ` · ${b.city}` : ""} · {byBranch.get(b.id) ?? 0}
                 </span>
               ))}

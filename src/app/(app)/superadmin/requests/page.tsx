@@ -74,7 +74,7 @@ export default function SuperAdminRequests() {
             <div className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Requests by first source</div>
             <div className="flex flex-wrap gap-2">
               {bySource.map(([label, n]) => (
-                <span key={label} className="text-xs px-2.5 py-1 rounded-full bg-[#f7f4ed] text-[#1c1c1c]">{label} <b>{n}</b></span>
+                <span key={label} className="text-xs px-2.5 py-1 rounded-full bg-[#f6f7f2] text-[#1c1c1c]">{label} <b>{n}</b></span>
               ))}
             </div>
             <p className="text-[11px] text-[#5f5f5d] mt-2">Recorded only for visitors who allowed analytics cookies, from UTM tags or the referring site. Requests before this was added show as direct / unknown.</p>

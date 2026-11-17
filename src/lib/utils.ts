@@ -46,9 +46,9 @@ export function toDbDateString(date: Date | string) {
 }
 
 export const SEGMENT_CONFIG: Record<CustomerSegment, { label: string; color: string; bg: string; dot: string }> = {
-  repeat:         { label: "Repeat",         color: "text-[#1c1c1c]",  bg: "bg-[#eceae4] border-[#eceae4]",   dot: "bg-[#1c1c1c]" },
-  one_time:       { label: "One-time",       color: "text-[#1c1c1c]",  bg: "bg-[#eceae4] border-[#eceae4]",   dot: "bg-[#1c1c1c]" },
-  inactive:       { label: "Inactive",       color: "text-[#5f5f5d]",  bg: "bg-[#fcfbf8] border-[#eceae4]",   dot: "bg-[#5f5f5d]" },
+  repeat:         { label: "Repeat",         color: "text-[#1c1c1c]",  bg: "bg-[#ebece6] border-[#ebece6]",   dot: "bg-[#1c1c1c]" },
+  one_time:       { label: "One-time",       color: "text-[#1c1c1c]",  bg: "bg-[#ebece6] border-[#ebece6]",   dot: "bg-[#1c1c1c]" },
+  inactive:       { label: "Inactive",       color: "text-[#5f5f5d]",  bg: "bg-[#fcfbf8] border-[#ebece6]",   dot: "bg-[#5f5f5d]" },
   risky:          { label: "Risky",          color: "text-rose-700",   bg: "bg-rose-50 border-rose-100",      dot: "bg-rose-500" },
   whale:          { label: "VVIP Whale 👑",  color: "text-amber-700",  bg: "bg-amber-50 border-amber-200",    dot: "bg-amber-500" },
   loyalist:       { label: "Loyalist ⭐",    color: "text-blue-700",   bg: "bg-blue-50 border-blue-200",      dot: "bg-blue-500" },
@@ -58,9 +58,9 @@ export const SEGMENT_CONFIG: Record<CustomerSegment, { label: string; color: str
 
 export const DELIVERY_CONFIG: Record<DeliveryStatus, { label: string; color: string; bg: string }> = {
   pending:          { label: "Pending",          color: "text-[#5f5f5d]",   bg: "bg-[#fcfbf8]" },
-  in_transit:       { label: "In Transit",       color: "text-[#1c1c1c]",    bg: "bg-[#eceae4]" },
-  out_for_delivery: { label: "Out for Delivery", color: "text-[#1c1c1c]",  bg: "bg-[#eceae4]/60" },
-  delivered:        { label: "Delivered",        color: "text-[#1c1c1c]", bg: "bg-[#eceae4]" },
+  in_transit:       { label: "In Transit",       color: "text-[#1c1c1c]",    bg: "bg-[#ebece6]" },
+  out_for_delivery: { label: "Out for Delivery", color: "text-[#1c1c1c]",  bg: "bg-[#ebece6]/60" },
+  delivered:        { label: "Delivered",        color: "text-[#1c1c1c]", bg: "bg-[#ebece6]" },
   rto:              { label: "RTO",              color: "text-rose-700",    bg: "bg-rose-50" },
   failed:           { label: "Failed",           color: "text-red-700",     bg: "bg-red-50" },
 };
@@ -71,7 +71,7 @@ export const TASK_TYPE_CONFIG: Record<TaskType, { label: string; color: string; 
   final_followup:{ label: "Final Follow-up",color: "text-[#5f5f5d]",    bg: "bg-[#fcfbf8]",       accent: "border-l-[#5f5f5d]" },
   recovery:      { label: "Recovery Call",   color: "text-[#1c1c1c]",   bg: "bg-[#1c1c1c]/5",   accent: "border-l-[#1c1c1c]" },
   issue_resolution:{ label: "Issue Resolution", color: "text-rose-700", bg: "bg-rose-50",     accent: "border-l-rose-500" },
-  transit_update: { label: "Transit Inform", color: "text-[#1c1c1c]",    bg: "bg-[#eceae4]",       accent: "border-l-[#1c1c1c]" },
+  transit_update: { label: "Transit Inform", color: "text-[#1c1c1c]",    bg: "bg-[#ebece6]",       accent: "border-l-[#1c1c1c]" },
   ndr:            { label: "NDR Resolution", color: "text-amber-700", bg: "bg-amber-50",     accent: "border-l-amber-500" },
   cod_verify:     { label: "COD Verify",     color: "text-[#1c1c1c]",    bg: "bg-[#1c1c1c]/5",   accent: "border-l-[#1c1c1c]" },
   manager_audit:  { label: "Manager Audit",  color: "text-indigo-700", bg: "bg-indigo-50",     accent: "border-l-indigo-500" },
@@ -84,7 +84,7 @@ export const TASK_TYPE_CONFIG: Record<TaskType, { label: string; color: string; 
 export const TASK_STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; bg: string }> = {
   pending:     { label: "Pending",     color: "text-[#5f5f5d]",   bg: "bg-[#fcfbf8]" },
   due:         { label: "Due Today",   color: "text-amber-700",   bg: "bg-amber-50" },
-  done:        { label: "Done",        color: "text-[#1c1c1c]", bg: "bg-[#eceae4]" },
+  done:        { label: "Done",        color: "text-[#1c1c1c]", bg: "bg-[#ebece6]" },
   rescheduled: { label: "Rescheduled", color: "text-[#1c1c1c]",    bg: "bg-[#1c1c1c]/5" },
   skipped:     { label: "Skipped",     color: "text-[#5f5f5d]",    bg: "bg-[#fcfbf8]" },
   cancelled:   { label: "Cancelled",   color: "text-[#5f5f5d]",    bg: "bg-[#fcfbf8]" },

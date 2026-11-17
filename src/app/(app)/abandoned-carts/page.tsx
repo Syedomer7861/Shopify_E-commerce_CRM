@@ -300,7 +300,7 @@ export default function AbandonedCartsPage() {
                   </td>
                   <td className="py-4 px-6">
                      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                       cart.recovery_status === "recovered" ? "bg-[#eceae4] text-[#1c1c1c]" : "bg-amber-100 text-amber-600"
+                       cart.recovery_status === "recovered" ? "bg-[#ebece6] text-[#1c1c1c]" : "bg-amber-100 text-amber-600"
                      )}>
                       {cart.recovery_status}
                     </span>

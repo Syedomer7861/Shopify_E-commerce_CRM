@@ -64,7 +64,7 @@ export default function SuperAdminOrganisations() {
         {(["all", "active", "suspended"] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className={cn("px-3 py-1.5 rounded-full text-xs font-semibold border capitalize",
-              filter === f ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#5f5f5d] border-[#eceae4]")}>
+              filter === f ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#5f5f5d] border-[#ebece6]")}>
             {f} ({orgs.filter(o => f === "all" || (f === "active" ? o.is_active : !o.is_active)).length})
           </button>
         ))}
@@ -78,7 +78,7 @@ export default function SuperAdminOrganisations() {
         <div className="card overflow-x-auto">
           <table className="w-full text-sm min-w-[760px]">
             <thead>
-              <tr className="text-left text-[10px] uppercase tracking-widest text-[#5f5f5d] border-b border-[#eceae4]">
+              <tr className="text-left text-[10px] uppercase tracking-widest text-[#5f5f5d] border-b border-[#ebece6]">
                 <th className="p-3">Organisation</th>
                 <th className="p-3">Admin</th>
                 <th className="p-3">Members</th>

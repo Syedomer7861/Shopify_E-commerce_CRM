@@ -121,7 +121,7 @@ export function AssignedTasksPanel({ userId, compact = false }: { userId?: strin
           <div key={t.id}>
           <button
             onClick={() => openTask(t)}
-            className="w-full text-left p-3.5 rounded-xl border border-[#eceae4] bg-white hover:border-[#1c1c1c]/20 transition-colors"
+            className="w-full text-left p-3.5 rounded-xl border border-[#ebece6] bg-white hover:border-[#1c1c1c]/20 transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">

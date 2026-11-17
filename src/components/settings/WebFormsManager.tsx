@@ -14,7 +14,7 @@ const EMPTY: Omit<Form, "id" | "submissions" | "last_submission_at"> = {
   name: "", title: "Get in touch", intro: "", fields: ["email", "phone"], source: "Website form",
   assign_to: null, success_message: "Thank you. We will get back to you soon.", is_active: true,
 };
-const input = "h-9 px-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
+const input = "h-9 px-3 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 
 /** Web-to-lead forms. Admins write them (row security); submissions arrive as leads. */
 export function WebFormsManager() {
@@ -77,7 +77,7 @@ export function WebFormsManager() {
       </div>
 
       {editing && (
-        <div className="rounded-lg border border-[#eceae4] p-4 space-y-3">
+        <div className="rounded-lg border border-[#ebece6] p-4 space-y-3">
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="text-[10px] text-[#5f5f5d]">Form name (only you see this)<input className={cn(input, "w-full mt-1")} maxLength={80} value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Website contact form" /></label>
             <label className="text-[10px] text-[#5f5f5d]">Heading on the form<input className={cn(input, "w-full mt-1")} maxLength={120} value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} /></label>
@@ -87,7 +87,7 @@ export function WebFormsManager() {
             <div className="text-[10px] text-[#5f5f5d] mb-1">Fields to ask (name is always asked)</div>
             <div className="flex flex-wrap gap-2">
               {[...BUILT_IN, ...custom.map(c => [`cf:${c.key}`, c.label] as [string, string])].map(([k, l]) => (
-                <label key={k} className="flex items-center gap-1 text-xs border border-[#eceae4] rounded-full px-2.5 py-1">
+                <label key={k} className="flex items-center gap-1 text-xs border border-[#ebece6] rounded-full px-2.5 py-1">
                   <input type="checkbox" checked={draft.fields.includes(k)} onChange={() => toggleField(k)} /> {l}
                 </label>
               ))}
@@ -107,7 +107,7 @@ export function WebFormsManager() {
           <label className="flex items-center gap-2 text-xs text-[#5f5f5d]"><input type="checkbox" checked={draft.is_active} onChange={e => setDraft({ ...draft, is_active: e.target.checked })} /> Accepting responses</label>
           <div className="flex gap-2">
             <button onClick={save} disabled={busy} className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 h-9 rounded-lg bg-[#1c1c1c] text-white disabled:opacity-50">{busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Save form</button>
-            <button onClick={() => { setEditing(false); setDraft(EMPTY); }} className="text-xs font-semibold px-3 h-9 rounded-lg border border-[#eceae4]">Cancel</button>
+            <button onClick={() => { setEditing(false); setDraft(EMPTY); }} className="text-xs font-semibold px-3 h-9 rounded-lg border border-[#ebece6]">Cancel</button>
           </div>
         </div>
       )}
@@ -115,7 +115,7 @@ export function WebFormsManager() {
       {loading ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : forms.length === 0 && !editing ? (
         <p className="text-xs text-[#5f5f5d]">No forms yet.</p>
       ) : (
-        <div className="divide-y divide-[#eceae4] border border-[#eceae4] rounded-lg">
+        <div className="divide-y divide-[#ebece6] border border-[#ebece6] rounded-lg">
           {forms.map(f => {
             const link = `${origin}/f/${f.id}`;
             const embed = `<iframe src="${link}" style="width:100%;min-height:640px;border:0" title="${f.title.replace(/"/g, "&quot;")}"></iframe>`;
@@ -124,13 +124,13 @@ export function WebFormsManager() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold text-sm text-[#1c1c1c] flex-1 min-w-[140px]">{f.name}</span>
                   <span className="text-[11px] text-[#5f5f5d]">{f.submissions} response{f.submissions === 1 ? "" : "s"}{!f.is_active && " · paused"}</span>
-                  <button onClick={() => { setDraft({ ...f }); setEditing(true); }} className="text-[11px] font-semibold px-2 py-1 rounded border border-[#eceae4]">Edit</button>
+                  <button onClick={() => { setDraft({ ...f }); setEditing(true); }} className="text-[11px] font-semibold px-2 py-1 rounded border border-[#ebece6]">Edit</button>
                   <button onClick={() => remove(f)} aria-label="Delete form" className="p-1 text-rose-600"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
                 <div className="flex flex-wrap gap-2 text-[11px]">
-                  <a href={link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#f7f4ed]"><ExternalLink className="w-3 h-3" /> Open form</a>
-                  <button onClick={() => copy(link)} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#f7f4ed]"><Copy className="w-3 h-3" /> Copy link</button>
-                  <button onClick={() => copy(embed)} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#f7f4ed]"><Copy className="w-3 h-3" /> Copy embed code</button>
+                  <a href={link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#f6f7f2]"><ExternalLink className="w-3 h-3" /> Open form</a>
+                  <button onClick={() => copy(link)} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#f6f7f2]"><Copy className="w-3 h-3" /> Copy link</button>
+                  <button onClick={() => copy(embed)} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#f6f7f2]"><Copy className="w-3 h-3" /> Copy embed code</button>
                 </div>
               </div>
             );

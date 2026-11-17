@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 type Plan = { id: string; code: string; name: string; description: string; highlights: string[] | null; is_featured: boolean | null; is_public: boolean; sort_order: number };
 type Row = { id: string | null; section: string; label: string; plan_values: Record<string, string>; sort_order: number };
 
-const input = "h-9 px-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
+const input = "h-9 px-3 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 const btn = "inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-[#1c1c1c] text-white disabled:opacity-50";
 
 function PlanCard({ plan, onSaved }: { plan: Plan; onSaved: () => void }) {
@@ -101,9 +101,9 @@ export default function SuperAdminPricing() {
     <div>
       <PageHeader title="Pricing page" subtitle="What visitors see on /pricing. Prices come from Plans; which modules each plan includes comes from Modules." />
       <div className="flex flex-wrap gap-2 mb-6 text-xs">
-        <a href="/pricing" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-[#eceae4]">Open /pricing <ExternalLink className="w-3 h-3" /></a>
-        <Link href="/superadmin/plans" className="px-3 py-2 rounded-lg border border-[#eceae4]">Edit prices</Link>
-        <Link href="/superadmin/modules" className="px-3 py-2 rounded-lg border border-[#eceae4]">Choose modules per plan</Link>
+        <a href="/pricing" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-[#ebece6]">Open /pricing <ExternalLink className="w-3 h-3" /></a>
+        <Link href="/superadmin/plans" className="px-3 py-2 rounded-lg border border-[#ebece6]">Edit prices</Link>
+        <Link href="/superadmin/modules" className="px-3 py-2 rounded-lg border border-[#ebece6]">Choose modules per plan</Link>
       </div>
 
       <h2 className="text-sm font-bold text-[#1c1c1c] mb-3">Plan cards</h2>
@@ -130,7 +130,7 @@ export default function SuperAdminPricing() {
           <tbody>
             {rows.length === 0 && <tr><td colSpan={plans.length + 4} className="p-4 text-xs text-[#5f5f5d]">No extra rows. The comparison still lists modules per plan.</td></tr>}
             {rows.map((r, i) => (
-              <tr key={r.id ?? `new-${i}`} className="border-t border-[#eceae4]">
+              <tr key={r.id ?? `new-${i}`} className="border-t border-[#ebece6]">
                 <td className="p-2"><input className={cn(input, "w-32")} maxLength={60} value={r.section} onChange={e => edit(i, { section: e.target.value })} /></td>
                 <td className="p-2"><input className={cn(input, "w-44")} maxLength={120} value={r.label} onChange={e => edit(i, { label: e.target.value })} placeholder="Users included" /></td>
                 {plans.map(p => (
@@ -139,7 +139,7 @@ export default function SuperAdminPricing() {
                 ))}
                 <td className="p-2"><input type="number" className={cn(input, "w-16")} value={r.sort_order} onChange={e => edit(i, { sort_order: Number(e.target.value) || 0 })} /></td>
                 <td className="p-2 whitespace-nowrap">
-                  <button onClick={() => saveRow(r)} disabled={busy} className="text-xs font-semibold px-2 py-1 rounded-lg border border-[#eceae4] disabled:opacity-50">Save</button>
+                  <button onClick={() => saveRow(r)} disabled={busy} className="text-xs font-semibold px-2 py-1 rounded-lg border border-[#ebece6] disabled:opacity-50">Save</button>
                   <button onClick={() => removeRow(r)} aria-label="Delete row" className="ml-1 p-1 text-rose-600"><Trash2 className="w-3.5 h-3.5" /></button>
                 </td>
               </tr>

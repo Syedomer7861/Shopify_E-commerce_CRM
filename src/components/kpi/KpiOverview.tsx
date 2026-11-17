@@ -111,10 +111,10 @@ export function KpiOverview({ viewer, departments }: { viewer: Profile | null; d
 
       <div className="card overflow-x-auto">
         <table className="w-full text-xs">
-          <thead><tr className="text-left text-[#5f5f5d] border-b border-[#eceae4]"><th className="p-3">Department</th><th>People</th><th>On a plan</th><th>Evaluated</th><th className="pr-3 text-right">Average score</th></tr></thead>
+          <thead><tr className="text-left text-[#5f5f5d] border-b border-[#ebece6]"><th className="p-3">Department</th><th>People</th><th>On a plan</th><th>Evaluated</th><th className="pr-3 text-right">Average score</th></tr></thead>
           <tbody>
             {deptRows.map(d => (
-              <tr key={d.id ?? "none"} className="border-b border-[#eceae4] last:border-0">
+              <tr key={d.id ?? "none"} className="border-b border-[#ebece6] last:border-0">
                 <td className="p-3 font-semibold text-[#1c1c1c]">{d.name}</td><td>{d.members}</td>
                 <td className={d.planned < d.members ? "text-amber-700" : ""}>{d.planned}</td><td>{d.scored}</td>
                 <td className="pr-3 text-right">{d.avg == null ? "—" : `${d.avg}%`}</td>
@@ -140,7 +140,7 @@ export function KpiOverview({ viewer, departments }: { viewer: Profile | null; d
             <table className="w-full text-xs">
               <tbody>
                 {recent.map(e => (
-                  <tr key={e.assignment_id + e.period_start} className="border-t border-[#eceae4] first:border-0">
+                  <tr key={e.assignment_id + e.period_start} className="border-t border-[#ebece6] first:border-0">
                     <td className="py-1 font-semibold">{name(e.employee_id)}</td>
                     <td className="text-[#5f5f5d]">{e.period_start} to {e.period_end}</td>
                     <td>{e.overall == null ? "—" : `${e.overall}%`}</td>

@@ -19,7 +19,7 @@ type Row = TemplateRow & {
   source_template_id: string | null; source_version: number | null;
 };
 const COLS = "id, org_id, family_id, version, source_template_id, source_version, name, collection, description, department_hint, designation_hints, industry, period, status, visibility, kpi_template_items(name, description, source_key, measurement, direction, unit, default_target, weight, cap, threshold, missing_rule, sort_order)";
-const small = "text-xs px-3 py-1.5 rounded-lg border border-[#eceae4] disabled:opacity-40";
+const small = "text-xs px-3 py-1.5 rounded-lg border border-[#ebece6] disabled:opacity-40";
 const tab = (on: boolean) => cn("px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px", on ? "border-[#1c1c1c] text-[#1c1c1c]" : "border-transparent text-[#5f5f5d]");
 
 function Items({ t }: { t: Row }) {
@@ -30,7 +30,7 @@ function Items({ t }: { t: Row }) {
         <thead><tr className="text-left text-[#5f5f5d]"><th className="py-1">KPI</th><th>Measured from</th><th>Better</th><th>Target</th><th className="text-right">Weight</th></tr></thead>
         <tbody>
           {[...t.kpi_template_items].sort((a, b) => a.sort_order - b.sort_order).map(i => (
-            <tr key={i.sort_order} className="border-t border-[#eceae4]">
+            <tr key={i.sort_order} className="border-t border-[#ebece6]">
               <td className="py-1">{i.name}</td>
               <td>{!i.source_key ? "Manual evaluation" : SOURCE_BY_KEY.get(i.source_key)?.label ?? "Data source not configured"}</td>
               <td>{i.direction}</td>
@@ -131,7 +131,7 @@ export default function KpiPage() {
         </div>
       ) : (
         <>
-          <nav className="flex gap-1 mb-4 border-b border-[#eceae4] overflow-x-auto whitespace-nowrap">
+          <nav className="flex gap-1 mb-4 border-b border-[#ebece6] overflow-x-auto whitespace-nowrap">
             <button className={tab(view === "overview")} onClick={() => setView("overview")}>Overview</button>
             <button className={tab(view === "plans")} onClick={() => setView("plans")}>Plans</button>
             <button className={tab(view === "assignments")} onClick={() => setView("assignments")}>Assignments</button>

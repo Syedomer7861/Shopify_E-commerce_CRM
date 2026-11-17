@@ -67,7 +67,7 @@ export default function MyHubPage() {
               "flex-1 flex items-center gap-3 p-4 rounded-2xl border transition-all duration-300 group",
               activeTab === tab.id 
                 ? "bg-[#1c1c1c] border-[#1c1c1c] text-white shadow-xl shadow-[#1c1c1c]/10 translate-y-[-2px]" 
-                : "bg-white border-[#eceae4] text-[#5f5f5d] hover:border-gray-300 hover:bg-gray-50"
+                : "bg-white border-[#ebece6] text-[#5f5f5d] hover:border-gray-300 hover:bg-gray-50"
             )}
           >
             <div className={cn(

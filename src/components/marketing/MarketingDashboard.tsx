@@ -82,7 +82,7 @@ export default function MarketingDashboard({ lists, tasks, members }: Props) {
     <div className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {tiles.map((t) => (
-          <div key={t.label} className="bg-white border border-[#eceae4] rounded-2xl p-4">
+          <div key={t.label} className="bg-white border border-[#ebece6] rounded-2xl p-4">
             <div className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]/60">{t.label}</div>
             <div className={cn("text-3xl font-black mt-1", t.alert ? "text-rose-500" : "text-[#1c1c1c]")}>{t.value}</div>
           </div>
@@ -90,7 +90,7 @@ export default function MarketingDashboard({ lists, tasks, members }: Props) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white border border-[#eceae4] rounded-2xl p-4">
+        <div className="bg-white border border-[#ebece6] rounded-2xl p-4">
           <div className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]/60 mb-3">Open tasks by assignee</div>
           {byAssignee.length === 0 ? (
             <p className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/40 py-8 text-center">No open tasks</p>
@@ -106,7 +106,7 @@ export default function MarketingDashboard({ lists, tasks, members }: Props) {
           )}
         </div>
 
-        <div className="bg-white border border-[#eceae4] rounded-2xl p-4">
+        <div className="bg-white border border-[#ebece6] rounded-2xl p-4">
           <div className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]/60 mb-3">All tasks by stage</div>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={byType} margin={{ left: -20, right: 8 }}>

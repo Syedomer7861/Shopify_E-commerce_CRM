@@ -342,7 +342,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                 </a>
               )}
               {/* WhatsApp Toggle */}
-              <div className="flex items-center gap-2 px-3 py-1 bg-[#eceae4] text-[#1c1c1c] rounded-full border border-[#eceae4]">
+              <div className="flex items-center gap-2 px-3 py-1 bg-[#ebece6] text-[#1c1c1c] rounded-full border border-[#ebece6]">
                 <span className="text-[10px] font-bold uppercase tracking-wider">WhatsApp Reminders</span>
                 <button 
                   onClick={async () => {
@@ -405,7 +405,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
 
       {/* Customer Details Card */}
       {(customer.address || customer.city || customer.state || customer.zip) && (
-        <div className="card p-5 mb-5 border-l-4 border-l-[#1c1c1c] bg-[#eceae4]/10 animate-fade-in shadow-sm">
+        <div className="card p-5 mb-5 border-l-4 border-l-[#1c1c1c] bg-[#ebece6]/10 animate-fade-in shadow-sm">
           <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
             <MapPin className="w-4 h-4 text-[#1c1c1c]" /> Address & Location
           </h3>
@@ -635,7 +635,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                     <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1.5">
                       <span>by {cl.agent_name}</span>
                       {cl.agent_name.includes("System") && (
-                        <span className="text-[9px] bg-[#eceae4] text-[#1c1c1c] px-1.5 py-0.5 rounded border border-[#eceae4] font-bold uppercase leading-none">Automated</span>
+                        <span className="text-[9px] bg-[#ebece6] text-[#1c1c1c] px-1.5 py-0.5 rounded border border-[#ebece6] font-bold uppercase leading-none">Automated</span>
                       )}
                     </div>
                   )}
@@ -649,7 +649,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
 
       {tab === "recordings" && (
         <div className="space-y-4">
-          <div className="card divide-y divide-[#eceae4]/60">
+          <div className="card divide-y divide-[#ebece6]/60">
             {recordings.length === 0 && <div className="p-8 text-center text-[#5f5f5d] text-sm">No recordings found for this customer.</div>}
             {recordings.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(rec => (
               <div key={rec.id} className="p-4 flex items-start gap-4 hover:bg-[#fcfbf8] transition-colors group">
@@ -663,13 +663,13 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                       <div className="text-[10px] font-black text-[#5f5f5d] uppercase tracking-widest">{formatDateTime(rec.created_at)}</div>
                     </div>
                     {rec.duration_seconds && (
-                      <span className="text-[10px] font-black tabular-nums text-[#1c1c1c] px-2 py-1 bg-[#eceae4]/50 rounded-md uppercase tracking-wider self-start md:self-auto">
+                      <span className="text-[10px] font-black tabular-nums text-[#1c1c1c] px-2 py-1 bg-[#ebece6]/50 rounded-md uppercase tracking-wider self-start md:self-auto">
                         Duration: {Math.floor(rec.duration_seconds / 60)}:{String(rec.duration_seconds % 60).padStart(2, "0")}
                       </span>
                     )}
                   </div>
                   {rec.recording_url && (
-                    <div className="mt-2 p-2 bg-[#eceae4]/30 rounded-xl border border-[#eceae4] group-hover:border-[#1c1c1c]/20 transition-all inline-block">
+                    <div className="mt-2 p-2 bg-[#ebece6]/30 rounded-xl border border-[#ebece6] group-hover:border-[#1c1c1c]/20 transition-all inline-block">
                       <audio 
                         controls 
                         src={rec.recording_url} 

@@ -274,7 +274,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
         <div className="flex gap-1.5 mb-3 overflow-x-auto scrollbar-hide">
           {[[null, all.length] as const, ...Object.entries(statusCounts)].map(([s, n]) => (
             <button key={s ?? "all"} onClick={() => setStatusFilter(s)} aria-pressed={statusFilter === s}
-              className={"px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap border " + (statusFilter === s ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-gray-600 border-[#eceae4]")}>
+              className={"px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap border " + (statusFilter === s ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-gray-600 border-[#ebece6]")}>
               {s === null ? "All" : label(s)} <span className="opacity-60">{n}</span>
             </button>
           ))}
@@ -311,7 +311,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
                     )}
                   </td>
                   <td className="p-3 text-gray-500">{people[row[ownerCol]] || "—"}</td>
-                  <td className="p-3 text-right whitespace-nowrap sticky right-0 bg-[#f7f4ed]">
+                  <td className="p-3 text-right whitespace-nowrap sticky right-0 bg-[#f6f7f2]">
                     {config.rowActions?.(row, load)}
                     {config.editable && canEditRow(row) && (
                       <button onClick={() => openEdit(row)} aria-label={`Edit ${noun}`} className="text-gray-400 hover:text-[#1c1c1c] ml-2 align-middle"><Pencil className="w-3.5 h-3.5" /></button>
@@ -365,7 +365,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
 export function ModuleTabs<T extends string>({ tabs, active, onChange }: { tabs: { key: T; label: string }[]; active: T; onChange: (k: T) => void }) {
   if (tabs.length < 2) return null;
   return (
-    <div className="flex gap-1 mb-5 border-b border-[#eceae4] overflow-x-auto scrollbar-hide">
+    <div className="flex gap-1 mb-5 border-b border-[#ebece6] overflow-x-auto scrollbar-hide">
       {tabs.map(t => (
         <button key={t.key} onClick={() => onChange(t.key)}
           className={`px-3 py-2.5 text-xs font-bold border-b-2 -mb-px transition-colors whitespace-nowrap ${active === t.key ? "border-[#1c1c1c] text-[#1c1c1c]" : "border-transparent text-gray-400 hover:text-[#1c1c1c]"}`}>

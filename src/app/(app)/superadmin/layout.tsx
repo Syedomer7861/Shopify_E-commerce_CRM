@@ -70,7 +70,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="animate-fade-in">
-      <nav className="flex gap-1 overflow-x-auto mb-6 border-b border-[#eceae4] -mx-1 px-1">
+      <nav className="flex gap-1 overflow-x-auto mb-6 border-b border-[#ebece6] -mx-1 px-1">
         {SECTIONS.map(s => {
           const on = s.href === "/superadmin" ? pathname === s.href : pathname.startsWith(s.href);
           return (

@@ -115,8 +115,8 @@ export default function FloorViewPage() {
         title="Live Operations Floor" 
         subtitle="Real-time monitoring of team availability and productivity"
         actions={
-          <div className="flex items-center gap-2 bg-[#eceae4]/30 p-1 rounded-lg border border-[#eceae4]">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white shadow-sm border border-[#eceae4]">
+          <div className="flex items-center gap-2 bg-[#ebece6]/30 p-1 rounded-lg border border-[#ebece6]">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white shadow-sm border border-[#ebece6]">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">{stats.online} Active</span>
             </div>
@@ -133,7 +133,7 @@ export default function FloorViewPage() {
           <input 
             type="text" 
             placeholder="Search agents by name or email..." 
-            className="input pl-10 h-12 bg-white border-[#eceae4] text-sm"
+            className="input pl-10 h-12 bg-white border-[#ebece6] text-sm"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -152,8 +152,8 @@ export default function FloorViewPage() {
           <AgentCard key={agent.id} agent={agent} mounted={mounted} />
         ))}
         {filteredAgents.length === 0 && !loading && (
-          <div className="col-span-full py-20 text-center bg-white rounded-2xl border border-dashed border-[#eceae4]">
-             <Users className="w-10 h-10 text-[#eceae4] mx-auto mb-3" />
+          <div className="col-span-full py-20 text-center bg-white rounded-2xl border border-dashed border-[#ebece6]">
+             <Users className="w-10 h-10 text-[#ebece6] mx-auto mb-3" />
              <div className="text-[#1c1c1c] font-bold">No agents found</div>
              <div className="text-xs text-[#5f5f5d] mt-1">Try adjusting your search criteria</div>
           </div>
@@ -217,7 +217,7 @@ function AgentCard({ agent, mounted }: { agent: AgentStatus, mounted: boolean })
         <div className="text-[10px] text-[#5f5f5d] truncate mb-2">{agent.email}</div>
         
         {agent.lastReason && (
-           <div className="text-[10px] font-medium bg-[#eceae4]/40 px-2 py-1 rounded text-[#1c1c1c] mb-2 inline-block">
+           <div className="text-[10px] font-medium bg-[#ebece6]/40 px-2 py-1 rounded text-[#1c1c1c] mb-2 inline-block">
              Reason: <span className="font-bold">{agent.lastReason}</span>
            </div>
         )}
@@ -227,7 +227,7 @@ function AgentCard({ agent, mounted }: { agent: AgentStatus, mounted: boolean })
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#eceae4]">
+      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#ebece6]">
         <div>
           <div className="text-[9px] text-[#5f5f5d] font-bold uppercase tracking-widest opacity-60 mb-1">Productive</div>
           <div className="text-xs font-bold text-[#1c1c1c] flex items-center gap-1.5">
@@ -245,11 +245,11 @@ function AgentCard({ agent, mounted }: { agent: AgentStatus, mounted: boolean })
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-4">
-        <div className="p-2 rounded-lg bg-[#f7f4ed] border border-[#eceae4]">
+        <div className="p-2 rounded-lg bg-[#f6f7f2] border border-[#ebece6]">
           <div className="text-[8px] text-[#5f5f5d] font-bold uppercase tracking-widest mb-0.5 text-center">Tasks</div>
           <div className="text-sm font-bold text-[#1c1c1c] text-center">{agent.taskCount}</div>
         </div>
-        <div className="p-2 rounded-lg bg-[#f7f4ed] border border-[#eceae4]">
+        <div className="p-2 rounded-lg bg-[#f6f7f2] border border-[#ebece6]">
           <div className="text-[8px] text-[#5f5f5d] font-bold uppercase tracking-widest mb-0.5 text-center">Revenue</div>
           <div className="text-sm font-bold text-[#1c1c1c] text-center">₹{Math.round(agent.revenue).toLocaleString()}</div>
         </div>

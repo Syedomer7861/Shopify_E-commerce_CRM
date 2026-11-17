@@ -175,7 +175,7 @@ export function ChannelList() {
           ) : (
             <div className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
-              isSelected ? "bg-[#fcfbf8]/10" : "bg-[#eceae4]"
+              isSelected ? "bg-[#fcfbf8]/10" : "bg-[#ebece6]"
             )}>
               <Hash className={cn("w-4 h-4", isSelected ? "text-[#fcfbf8]" : "text-[#5f5f5d]")} />
             </div>
@@ -277,7 +277,7 @@ export function ChannelList() {
           <div className="flex items-center justify-between px-3 mb-2">
             <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Channels</span>
             {isAdmin && (
-              <button aria-label="Add" onClick={() => setIsNewChatOpen(true)} className="p-1 hover:bg-[#eceae4] rounded transition-colors">
+              <button aria-label="Add" onClick={() => setIsNewChatOpen(true)} className="p-1 hover:bg-[#ebece6] rounded transition-colors">
                 <Plus className="w-3.5 h-3.5 text-[#5f5f5d]" />
               </button>
             )}
@@ -289,7 +289,7 @@ export function ChannelList() {
         <div className="space-y-1">
           <div className="flex items-center justify-between px-3 mb-2">
             <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Direct Messages</span>
-            <button aria-label="Add member" onClick={() => setIsNewChatOpen(true)} className="p-1 hover:bg-[#eceae4] rounded transition-colors">
+            <button aria-label="Add member" onClick={() => setIsNewChatOpen(true)} className="p-1 hover:bg-[#ebece6] rounded transition-colors">
               <UserPlus className="w-3.5 h-3.5 text-[#5f5f5d]" />
             </button>
           </div>

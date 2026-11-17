@@ -251,7 +251,7 @@ export default function AnnouncementFeed() {
               </div>
             </div>
 
-            <div className="bg-white/50 border border-[#eceae4] p-6 rounded-[24px] text-sm text-[#1c1c1c] font-medium leading-relaxed break-words whitespace-pre-wrap shadow-inner">
+            <div className="bg-white/50 border border-[#ebece6] p-6 rounded-[24px] text-sm text-[#1c1c1c] font-medium leading-relaxed break-words whitespace-pre-wrap shadow-inner">
               {selectedAnnouncement.body}
             </div>
 

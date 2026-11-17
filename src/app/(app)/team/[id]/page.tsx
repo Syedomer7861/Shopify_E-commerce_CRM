@@ -117,7 +117,7 @@ export default function AgentDetailPage() {
     return (
         <div className="animate-fade-in p-6 lg:p-10 space-y-10 bg-[#fcfbf8] min-h-screen">
             <div className="flex items-center gap-4">
-                <button aria-label="Back" onClick={() => router.back()} className="p-2 rounded-full hover:bg-[#eceae4] transition-all">
+                <button aria-label="Back" onClick={() => router.back()} className="p-2 rounded-full hover:bg-[#ebece6] transition-all">
                     <ArrowLeft className="w-5 h-5 text-[#1c1c1c]" />
                 </button>
                 <div className="flex items-center gap-4">
@@ -165,21 +165,21 @@ export default function AgentDetailPage() {
                         <SectionTitle>
                             <ListChecks className="w-4 h-4 text-[#1c1c1c]" />
                             Live Task Queue
-                            <span className="ml-auto text-[10px] text-gray-400 font-bold bg-[#eceae4] px-2 py-0.5 rounded-full">
+                            <span className="ml-auto text-[10px] text-gray-400 font-bold bg-[#ebece6] px-2 py-0.5 rounded-full">
                                 {activeTasks.length} PENDING
                             </span>
                         </SectionTitle>
                         <div className="overflow-x-auto mt-6">
                             <table className="w-full text-left">
                                 <thead>
-                                    <tr className="border-b border-[#eceae4]">
+                                    <tr className="border-b border-[#ebece6]">
                                         <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Customer</th>
                                         <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Task Type</th>
                                         <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Due</th>
                                         <th className="py-3 text-right text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Status</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#eceae4]/50">
+                                <tbody className="divide-y divide-[#ebece6]/50">
                                     {activeTasks.map((task: any) => (
                                         <tr key={task.id} className="hover:bg-[rgba(28,28,28,0.02)] transition-colors">
                                             <td className="py-4">
@@ -222,7 +222,7 @@ export default function AgentDetailPage() {
                         <div className="overflow-x-auto mt-6">
                             <table className="w-full text-left">
                                 <thead>
-                                    <tr className="border-b border-[#eceae4]">
+                                    <tr className="border-b border-[#ebece6]">
                                         <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Date</th>
                                         <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Status</th>
                                         <th className="py-3 text-center text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">In</th>
@@ -230,7 +230,7 @@ export default function AgentDetailPage() {
                                         <th className="py-3 text-right text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Work Hours</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#eceae4]/50">
+                                <tbody className="divide-y divide-[#ebece6]/50">
                                     {stats?.attendance?.slice(0, 15).map((log: any, idx: number) => (
                                         <tr key={idx} className="hover:bg-[rgba(28,28,28,0.02)] transition-colors">
                                             <td className="py-4 text-xs font-bold text-[#1c1c1c]">{format(new Date(log.date), "MMM dd, yyyy")}</td>

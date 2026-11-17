@@ -43,7 +43,7 @@ export function WorkforceCard({ data }: { data: OrgOverview }) {
     <div className={cn(PANEL, "h-full")}>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <h3 className="text-sm font-bold text-[#1c1c1c] flex items-center gap-2"><PieIcon className="w-4 h-4" /> Employee distribution</h3>
-        <select aria-label="Group by" className="h-8 px-2 bg-white border border-[#eceae4] rounded-lg text-xs" value={dim} onChange={e => setDim(e.target.value as typeof dim)}>
+        <select aria-label="Group by" className="h-8 px-2 bg-white border border-[#ebece6] rounded-lg text-xs" value={dim} onChange={e => setDim(e.target.value as typeof dim)}>
           {DIMS.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
         </select>
       </div>
@@ -58,7 +58,7 @@ export function WorkforceCard({ data }: { data: OrgOverview }) {
                 <Pie data={rows} dataKey="n" nameKey="label" innerRadius="62%" outerRadius="100%" paddingAngle={rows.length > 1 ? 2 : 0} stroke="none" animationDuration={700}>
                   {rows.map(r => <Cell key={r.label} fill={r.color} />)}
                 </Pie>
-                <Tooltip formatter={(v: number, n: string) => [`${v} (${Math.round((v / total) * 100)}%)`, n]} contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #eceae4" }} />
+                <Tooltip formatter={(v: number, n: string) => [`${v} (${Math.round((v / total) * 100)}%)`, n]} contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #ebece6" }} />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">

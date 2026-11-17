@@ -185,7 +185,7 @@ export default function WorkflowManager() {
              <div className="flex items-center gap-5">
                 <div className={cn(
                    "w-12 h-12 rounded-xl flex items-center justify-center transition-all",
-                   wf.is_active ? "bg-[#1c1c1c] text-[#f7f4ed] shadow-lg shadow-black/10" : "bg-[#eceae4] text-[#5f5f5d]"
+                   wf.is_active ? "bg-[#1c1c1c] text-[#f6f7f2] shadow-lg shadow-black/10" : "bg-[#ebece6] text-[#5f5f5d]"
                 )}>
                   <Zap className={cn("w-5 h-5", wf.is_active && "fill-current")} />
                 </div>
@@ -210,7 +210,7 @@ export default function WorkflowManager() {
                    {wf.is_active ? "Active" : "Paused"}
                  </button>
                  <div className="flex items-center gap-1">
-                   <button aria-label="Edit" onClick={() => handleEdit(wf)} className="w-8 h-8 flex items-center justify-center hover:bg-[#eceae4] rounded-lg text-[#5f5f5d] transition-colors">
+                   <button aria-label="Edit" onClick={() => handleEdit(wf)} className="w-8 h-8 flex items-center justify-center hover:bg-[#ebece6] rounded-lg text-[#5f5f5d] transition-colors">
                      <Edit3 className="w-4 h-4" />
                    </button>
                    <button aria-label="Delete" onClick={() => handleDelete(wf.id)} className="w-8 h-8 flex items-center justify-center hover:bg-rose-50 rounded-lg text-[#5f5f5d] hover:text-rose-600 transition-colors">
@@ -222,8 +222,8 @@ export default function WorkflowManager() {
         ))}
 
         {workflows.length === 0 && (
-          <div className="py-24 text-center flex flex-col items-center justify-center gap-6 bg-[#eceae4]/10 rounded-3xl border border-dashed border-[#eceae4]">
-             <div className="w-20 h-20 bg-[#eceae4]/30 rounded-full flex items-center justify-center shadow-inner">
+          <div className="py-24 text-center flex flex-col items-center justify-center gap-6 bg-[#ebece6]/10 rounded-3xl border border-dashed border-[#ebece6]">
+             <div className="w-20 h-20 bg-[#ebece6]/30 rounded-full flex items-center justify-center shadow-inner">
                <Zap className="w-10 h-10 text-[#5f5f5d] opacity-20" />
              </div>
              <div className="max-w-xs">
@@ -255,7 +255,7 @@ export default function WorkflowManager() {
             />
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-[#eceae4]/20 rounded-2xl border border-[#eceae4]/50">
+          <div className="flex items-center justify-between p-4 bg-[#ebece6]/20 rounded-2xl border border-[#ebece6]/50">
              <div>
                 <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block">Workflow Status</label>
                 <p className="text-[9px] text-[#5f5f5d] mt-1 font-medium italic opacity-60">Enable or disable this automation globally</p>
@@ -264,7 +264,7 @@ export default function WorkflowManager() {
                onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
                className={cn(
                  "relative w-10 h-6 rounded-full transition-all duration-300",
-                 formData.is_active ? "bg-emerald-500" : "bg-[#eceae4]"
+                 formData.is_active ? "bg-emerald-500" : "bg-[#ebece6]"
                )}
              >
                 <div className={cn(
@@ -284,7 +284,7 @@ export default function WorkflowManager() {
                     onClick={() => setFormData({ ...formData, trigger_event: t.id })}
                      className={cn(
                        "w-full text-left p-4 rounded-xl border transition-all relative overflow-hidden group",
-                       formData.trigger_event === t.id ? "bg-[#1c1c1c] text-white border-[#1c1c1c] shadow-lg" : "bg-[#fcfbf8] border-[#eceae4] hover:border-[#1c1c1c]/30"
+                       formData.trigger_event === t.id ? "bg-[#1c1c1c] text-white border-[#1c1c1c] shadow-lg" : "bg-[#fcfbf8] border-[#ebece6] hover:border-[#1c1c1c]/30"
                      )}
                   >
                     <div className="text-[10px] font-bold uppercase tracking-widest">{t.label}</div>
@@ -299,7 +299,7 @@ export default function WorkflowManager() {
               <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-4">2. Define Actions</label>
               <div className="space-y-4">
                 {formData.actions.map((action, idx) => (
-                  <div key={idx} className="p-4 rounded-xl border border-[#eceae4] bg-[#fcfbf8] relative group">
+                  <div key={idx} className="p-4 rounded-xl border border-[#ebece6] bg-[#fcfbf8] relative group">
                     <div className="flex justify-between items-start mb-3">
                        <span className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-[0.2em]">{action.type.replace("_", " ")}</span>
                        <button aria-label="Delete" onClick={() => setFormData({ ...formData, actions: formData.actions.filter((_, i) => i !== idx) })} className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -310,10 +310,10 @@ export default function WorkflowManager() {
                     <div className="space-y-3">
                        {action.type === "create_task" && (
                          <>
-                            <div className="flex items-center justify-between gap-2 border-b border-[#eceae4]/50 pb-2">
+                            <div className="flex items-center justify-between gap-2 border-b border-[#ebece6]/50 pb-2">
                                <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Task Type</span>
                                <select 
-                                 className="bg-[#fcfbf8] border border-[#eceae4] rounded-lg px-2.5 py-1 text-[10px] font-bold text-[#1c1c1c] focus:outline-none focus:border-[#1c1c1c]/30 hover:border-[#1c1c1c]/20 transition-all cursor-pointer shadow-sm text-right max-w-[150px]"
+                                 className="bg-[#fcfbf8] border border-[#ebece6] rounded-lg px-2.5 py-1 text-[10px] font-bold text-[#1c1c1c] focus:outline-none focus:border-[#1c1c1c]/30 hover:border-[#1c1c1c]/20 transition-all cursor-pointer shadow-sm text-right max-w-[150px]"
                                  value={action.params?.task_type || "review"}
                                  onChange={e => {
                                    const newActions = [...formData.actions];
@@ -336,7 +336,7 @@ export default function WorkflowManager() {
                                   <option value="flagged" className="bg-[#fcfbf8] text-[#1c1c1c]">Flagged</option>
                                </select>
                             </div>
-                           <div className="flex items-center justify-between gap-2 border-b border-[#eceae4]/50 pb-2">
+                           <div className="flex items-center justify-between gap-2 border-b border-[#ebece6]/50 pb-2">
                               <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Delay (Days)</span>
                               <input 
                                 type="number" 
@@ -367,10 +367,10 @@ export default function WorkflowManager() {
 
                        {action.type === "message" && (
                          <>
-                           <div className="flex flex-col gap-2 border-b border-[#eceae4]/50 pb-2">
+                           <div className="flex flex-col gap-2 border-b border-[#ebece6]/50 pb-2">
                               <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Template Reference</span>
                               <select 
-                                className="w-full bg-[#fcfbf8] border border-[#eceae4] rounded-lg px-3 py-2 text-[10px] font-bold text-[#1c1c1c] focus:outline-none focus:border-[#1c1c1c]/30 hover:border-[#1c1c1c]/20 transition-all cursor-pointer shadow-sm mt-1"
+                                className="w-full bg-[#fcfbf8] border border-[#ebece6] rounded-lg px-3 py-2 text-[10px] font-bold text-[#1c1c1c] focus:outline-none focus:border-[#1c1c1c]/30 hover:border-[#1c1c1c]/20 transition-all cursor-pointer shadow-sm mt-1"
                                 value={action.params?.template_name || "Review Reminder"}
                                 onChange={e => {
                                   const newActions = [...formData.actions];
@@ -387,7 +387,7 @@ export default function WorkflowManager() {
                            <div className="flex flex-col gap-2">
                               <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Custom Text (Overrides Template)</span>
                               <textarea 
-                                className="w-full bg-[#f7f4ed]/50 border border-[#eceae4] rounded-lg p-2 text-[10px] font-medium min-h-[60px]"
+                                className="w-full bg-[#f6f7f2]/50 border border-[#ebece6] rounded-lg p-2 text-[10px] font-medium min-h-[60px]"
                                 placeholder="Enter custom WhatsApp text..."
                                 value={action.params?.message_text || ""}
                                 onChange={e => {
@@ -406,7 +406,7 @@ export default function WorkflowManager() {
                  <div className="grid grid-cols-2 gap-3">
                    <button 
                      onClick={handleCreateTaskAction}
-                     className="py-4 rounded-xl border border-dashed border-[#eceae4] text-[#5f5f5d] hover:text-[#1c1c1c] hover:border-[#1c1c1c] transition-all flex flex-col items-center justify-center gap-1 group bg-[#eceae4]/10"
+                     className="py-4 rounded-xl border border-dashed border-[#ebece6] text-[#5f5f5d] hover:text-[#1c1c1c] hover:border-[#1c1c1c] transition-all flex flex-col items-center justify-center gap-1 group bg-[#ebece6]/10"
                    >
                      <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                        <Plus className="w-3 h-3" />
@@ -415,7 +415,7 @@ export default function WorkflowManager() {
                    </button>
                    <button 
                      onClick={handleWhatsAppAction}
-                     className="py-4 rounded-xl border border-dashed border-[#eceae4] text-[#5f5f5d] hover:text-[#1c1c1c] hover:border-[#1c1c1c] transition-all flex flex-col items-center justify-center gap-1 group bg-[#eceae4]/10"
+                     className="py-4 rounded-xl border border-dashed border-[#ebece6] text-[#5f5f5d] hover:text-[#1c1c1c] hover:border-[#1c1c1c] transition-all flex flex-col items-center justify-center gap-1 group bg-[#ebece6]/10"
                    >
                      <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                        <Send className="w-3 h-3" />

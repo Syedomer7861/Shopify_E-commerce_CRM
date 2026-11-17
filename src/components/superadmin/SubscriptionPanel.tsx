@@ -14,7 +14,7 @@ type Sub = {
 };
 type Option = { id: string; label: string; trial_days: number };
 
-const input = "h-9 px-3 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
+const input = "h-9 px-3 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString() : "—");
 
 /** One organisation's subscription: current, history, assign, cancel. Self-serve (Razorpay) ones have their auto-debit stopped first. */
@@ -125,7 +125,7 @@ export function SubscriptionPanel({ orgId }: { orgId: string }) {
         </div>
       ) : <p className="text-sm text-[#5f5f5d]">No subscription.</p>}
 
-      <div className="border-t border-[#eceae4] pt-3 flex flex-wrap items-end gap-2">
+      <div className="border-t border-[#ebece6] pt-3 flex flex-wrap items-end gap-2">
         {options.length === 0 ? <p className="text-xs text-[#5f5f5d]">Publish a price on the Plans page first.</p> : (
           <>
             <label className="text-[10px] text-[#5f5f5d] flex-1 min-w-[220px]">{current ? "Change plan" : "Put on plan"}<br />
@@ -152,7 +152,7 @@ export function SubscriptionPanel({ orgId }: { orgId: string }) {
       </div>
 
       {history.length > 0 && (
-        <div className="border-t border-[#eceae4] pt-3">
+        <div className="border-t border-[#ebece6] pt-3">
           <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">History</div>
           {history.map(h => (
             <div key={h.id} className="text-xs text-[#5f5f5d] py-1">

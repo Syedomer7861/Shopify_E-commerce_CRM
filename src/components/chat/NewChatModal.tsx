@@ -193,7 +193,7 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
     <Modal open={open} onClose={onClose} title="New Conversation" maxWidth="max-w-md">
       <div className="space-y-4">
         {isAdmin && (
-          <div className="flex bg-[#eceae4]/50 p-1 rounded-xl">
+          <div className="flex bg-[#ebece6]/50 p-1 rounded-xl">
             <button 
               onClick={() => setTab('dm')}
               className={cn(
@@ -257,7 +257,7 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
         ) : (
           <div className="space-y-6 py-4">
             <div className="text-center space-y-2">
-              <div className="w-12 h-12 bg-[#eceae4] rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 bg-[#ebece6] rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Megaphone className="w-6 h-6 text-[#1c1c1c]" />
               </div>
               <h3 className="text-sm font-bold text-[#1c1c1c]">Create Announcement Group</h3>

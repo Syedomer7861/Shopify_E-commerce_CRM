@@ -86,7 +86,7 @@ export function OrdersSummary({ range }: { range?: DateRange }) {
         ) : (
           <div className="space-y-2">
             {recentOrders.map(o => (
-              <div key={o.id} className="flex items-center justify-between p-3 rounded-xl border border-[#eceae4]">
+              <div key={o.id} className="flex items-center justify-between p-3 rounded-xl border border-[#ebece6]">
                 <div>
                   <div className="text-xs font-bold text-[#1c1c1c]">#{o.order_number || o.shopify_order_id}</div>
                   <div className="text-[10px] text-gray-400">{(o as any).customer?.name || "Customer"}</div>

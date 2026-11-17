@@ -55,7 +55,7 @@ export default function RequestsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {items.map(({ key, title, desc, href, icon: Icon }) => (
             <Link key={key} href={href} className="card p-4 flex items-start gap-3 hover:border-[#1c1c1c]/30 transition-colors">
-              <span className="w-9 h-9 rounded-lg bg-white border border-[#eceae4] flex items-center justify-center shrink-0"><Icon className="w-4 h-4 text-[#1c1c1c]" /></span>
+              <span className="w-9 h-9 rounded-lg bg-white border border-[#ebece6] flex items-center justify-center shrink-0"><Icon className="w-4 h-4 text-[#1c1c1c]" /></span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-bold text-[#1c1c1c]">{title}</span>
                 <span className="block text-[11px] text-gray-500 mt-0.5">{desc}</span>

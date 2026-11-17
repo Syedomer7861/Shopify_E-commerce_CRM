@@ -62,19 +62,19 @@ export default function MarketingBoard({ list, tasks, columns, groupOf, showWip,
           const items = byColumn[col.id] ?? [];
           const overLimit = showWip && list.wip_limit != null && items.length > list.wip_limit;
           return (
-            <div key={col.id} className="w-72 flex-shrink-0 bg-[#f2efe8] rounded-2xl border border-[#eceae4] flex flex-col">
+            <div key={col.id} className="w-72 flex-shrink-0 bg-[#f2efe8] rounded-2xl border border-[#ebece6] flex flex-col">
               <div className="flex items-center justify-between px-3 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: col.color }} />
                   <span className="text-[11px] font-black uppercase tracking-widest text-[#1c1c1c]">{col.name}</span>
-                  <span className={cn("text-[10px] font-bold px-1.5 rounded-full", overLimit ? "bg-rose-100 text-rose-600" : "bg-[#eceae4] text-[#5f5f5d]")}>
+                  <span className={cn("text-[10px] font-bold px-1.5 rounded-full", overLimit ? "bg-rose-100 text-rose-600" : "bg-[#ebece6] text-[#5f5f5d]")}>
                     {items.length}
                     {showWip && list.wip_limit != null ? `/${list.wip_limit}` : ""}
                   </span>
                 </div>
                 <button
                   onClick={() => setAdding(col.id)}
-                  className="w-6 h-6 rounded-lg hover:bg-[#eceae4] flex items-center justify-center text-[#5f5f5d]"
+                  className="w-6 h-6 rounded-lg hover:bg-[#ebece6] flex items-center justify-center text-[#5f5f5d]"
                   aria-label={`Add task to ${col.name}`}
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -117,7 +117,7 @@ export default function MarketingBoard({ list, tasks, columns, groupOf, showWip,
                             {...dp.dragHandleProps}
                             onClick={() => onOpenTask(t.id)}
                             className={cn(
-                              "group/card bg-white rounded-xl border border-[#eceae4] p-3 cursor-pointer hover:border-[#1c1c1c]/30 transition-all",
+                              "group/card bg-white rounded-xl border border-[#ebece6] p-3 cursor-pointer hover:border-[#1c1c1c]/30 transition-all",
                               ds.isDragging && "shadow-lg rotate-1"
                             )}
                           >

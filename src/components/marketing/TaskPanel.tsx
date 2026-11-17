@@ -323,7 +323,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
     <div className="fixed inset-0 z-[60] flex justify-end">
       <div className="absolute inset-0 bg-black/20" onClick={onClose} />
       <div className="relative w-full max-w-lg h-full bg-white shadow-2xl overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-[#eceae4] px-5 py-3 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white border-b border-[#ebece6] px-5 py-3 flex items-center justify-between z-10">
           <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]">
             {list?.name ?? "Task"}
             {saving && <Loader2 className="w-3 h-3 animate-spin" />}
@@ -369,7 +369,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                 <select
                   value={task.status}
                   onChange={(e) => patch({ status: e.target.value })}
-                  className="w-full text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                  className="w-full text-xs font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
                 >
                   {list?.statuses.map((s) => (
                     <option key={s.id} value={s.id}>{s.name}</option>
@@ -380,7 +380,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                 <select
                   value={task.priority}
                   onChange={(e) => patch({ priority: e.target.value as MktPriority })}
-                  className="w-full text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2 capitalize"
+                  className="w-full text-xs font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2 capitalize"
                 >
                   {PRIORITIES.map((p) => (
                     <option key={p} value={p}>{p}</option>
@@ -392,7 +392,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                   type="date"
                   value={task.start_date ?? ""}
                   onChange={(e) => patch({ start_date: e.target.value || null })}
-                  className="w-full text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                  className="w-full text-xs font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
                 />
               </Field>
               <Field label="Due">
@@ -400,7 +400,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                   type="date"
                   value={task.due_date ?? ""}
                   onChange={(e) => patch({ due_date: e.target.value || null })}
-                  className="w-full text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                  className="w-full text-xs font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
                 />
               </Field>
             </div>
@@ -417,7 +417,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                       const v = e.target.value === "" ? null : Math.max(0, Math.round(Number(e.target.value)));
                       if (v !== (task.estimate_minutes ?? null)) patch({ estimate_minutes: v });
                     }}
-                    className="w-32 text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                    className="w-32 text-xs font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
                   />
                   <span className="text-[11px] font-bold text-[#5f5f5d]">
                     {fmtMins(loggedTotal)} logged
@@ -425,7 +425,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                   </span>
                 </div>
                 {task.estimate_minutes ? (
-                  <div className="h-1.5 rounded-full bg-[#eceae4] overflow-hidden">
+                  <div className="h-1.5 rounded-full bg-[#ebece6] overflow-hidden">
                     <div
                       className={cn("h-full rounded-full", loggedTotal > task.estimate_minutes ? "bg-rose-500" : "bg-emerald-500")}
                       style={{ width: `${Math.min(100, (loggedTotal / task.estimate_minutes) * 100)}%` }}
@@ -447,7 +447,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                   )}
                   {[15, 30, 60].map((m) => (
                     <button key={m} onClick={() => setLogMins(String(m))}
-                      className="text-[10px] font-bold px-2 py-1.5 rounded-lg bg-white border border-[#eceae4] text-[#5f5f5d]">
+                      className="text-[10px] font-bold px-2 py-1.5 rounded-lg bg-white border border-[#ebece6] text-[#5f5f5d]">
                       +{m}m
                     </button>
                   ))}
@@ -457,12 +457,12 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                   <input
                     type="number" min={1} placeholder="min" value={logMins}
                     onChange={(e) => setLogMins(e.target.value)}
-                    className="w-16 text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                    className="w-16 text-xs font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
                   />
                   <input
                     placeholder="Note (optional)" value={logNote}
                     onChange={(e) => setLogNote(e.target.value)}
-                    className="flex-1 min-w-0 text-xs font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                    className="flex-1 min-w-0 text-xs font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
                   />
                   <button onClick={submitLog}
                     className="text-[10px] font-black uppercase tracking-widest px-2.5 py-2 rounded-lg bg-[#1c1c1c] text-white flex-shrink-0">
@@ -506,7 +506,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                       }
                       className={cn(
                         "text-[10px] font-bold px-2 py-1 rounded-lg border transition-all",
-                        on ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#5f5f5d] border-[#eceae4]"
+                        on ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#5f5f5d] border-[#ebece6]"
                       )}
                     >
                       {m.name || m.email}
@@ -520,7 +520,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
               <select
                 value={(task.recurrence as any)?.freq ?? ""}
                 onChange={(e) => patch({ recurrence: e.target.value ? ({ freq: e.target.value } as any) : null })}
-                className="w-full text-xs font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                className="w-full text-xs font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
               >
                 <option value="">No repeat</option>
                 <option value="daily">Daily</option>
@@ -538,14 +538,14 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                 onBlur={(e) =>
                   patch({ tags: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })
                 }
-                className="w-full text-xs font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2"
+                className="w-full text-xs font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
               />
             </Field>
 
             {(list?.custom_fields ?? []).map((f: MktCustomField) => {
               const val = (task.custom_fields ?? {})[f.id];
               const setVal = (v: any) => patch({ custom_fields: { ...(task.custom_fields ?? {}), [f.id]: v } });
-              const cls = "w-full text-xs font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-2";
+              const cls = "w-full text-xs font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2";
               return (
                 <Field key={f.id} label={f.name}>
                   {f.type === "checkbox" ? (
@@ -580,7 +580,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                 onBlur={(e) => e.target.value !== (task.description ?? "") && patch({ description: e.target.value || null })}
                 rows={5}
                 placeholder="Add detail, links, checklist notes…"
-                className="w-full text-[13px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-xl px-3 py-2.5 resize-y"
+                className="w-full text-[13px] font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-xl px-3 py-2.5 resize-y"
               />
             </Field>
 
@@ -598,7 +598,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                     onChange={(e) => setNewSub(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addSubtask()}
                     placeholder="New subtask"
-                    className="flex-1 text-xs font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-2 py-1.5"
+                    className="flex-1 text-xs font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-1.5"
                   />
                   <button onClick={addSubtask} aria-label="Add subtask" className="w-7 h-7 rounded-lg bg-[#1c1c1c] text-white flex items-center justify-center">
                     <Plus className="w-3.5 h-3.5" />
@@ -658,7 +658,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                   <select
                     value={linkKind}
                     onChange={(e) => setLinkKind(e.target.value as any)}
-                    className="text-[10px] font-bold bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5"
+                    className="text-[10px] font-bold bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-1.5 py-1.5"
                   >
                     <option value="blocked_by">Blocked by</option>
                     <option value="blocks">Blocks</option>
@@ -667,7 +667,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                   <select
                     value={linkTarget}
                     onChange={(e) => setLinkTarget(e.target.value)}
-                    className="flex-1 text-[11px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-lg px-1.5 py-1.5"
+                    className="flex-1 text-[11px] font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-1.5 py-1.5"
                   >
                     <option value="">Pick a task…</option>
                     {siblingTasks
@@ -686,7 +686,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
             <Field label={`Comments (${comments.length})`}>
               <div className="space-y-3">
                 {comments.map((c) => (
-                  <div key={c.id} className="bg-[#f7f4ed] rounded-xl p-3">
+                  <div key={c.id} className="bg-[#f6f7f2] rounded-xl p-3">
                     <div className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d] mb-1">
                       {c.author?.name || c.author?.email || "User"} ·{" "}
                       {new Date(c.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
@@ -704,11 +704,11 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                       onBlur={() => setTimeout(() => setAc(null), 120)}
                       rows={2}
                       placeholder="Comment… @ to mention, / for a saved message, ⌘/Ctrl+Enter to send"
-                      className="w-full text-[13px] font-medium bg-[#f7f4ed] border border-[#eceae4] rounded-xl px-3 py-2 resize-none"
+                      className="w-full text-[13px] font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-xl px-3 py-2 resize-none"
                     />
                     {ac && acItems.length > 0 && (
-                      <div className="absolute left-0 bottom-full mb-1 w-full max-w-xs bg-white border border-[#eceae4] rounded-xl shadow-lg z-30 overflow-hidden">
-                        <div className="px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50 border-b border-[#eceae4]">
+                      <div className="absolute left-0 bottom-full mb-1 w-full max-w-xs bg-white border border-[#ebece6] rounded-xl shadow-lg z-30 overflow-hidden">
+                        <div className="px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50 border-b border-[#ebece6]">
                           {ac.kind === "@" ? "Mention" : "Saved message"}
                         </div>
                         {acItems.map((it, i) => (
@@ -717,7 +717,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                             onMouseDown={(e) => { e.preventDefault(); pickAc(i); }}
                             className={cn(
                               "w-full text-left px-2.5 py-1.5 flex flex-col",
-                              i === ac.index ? "bg-[#1c1c1c] text-white" : "hover:bg-[#f7f4ed]"
+                              i === ac.index ? "bg-[#1c1c1c] text-white" : "hover:bg-[#f6f7f2]"
                             )}
                           >
                             <span className="text-[12px] font-bold truncate">{it.label}</span>

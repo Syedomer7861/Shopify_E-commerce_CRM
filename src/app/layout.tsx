@@ -51,7 +51,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f7f4ed",
+  themeColor: "#f6f7f2",
   width: "device-width",
   initialScale: 1,
 };
@@ -59,7 +59,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable} ${instrument.variable}`}>
-      <body suppressHydrationWarning className="antialiased" style={{ background: '#f7f4ed' }}>
+      <body suppressHydrationWarning className="antialiased" style={{ background: '#f6f7f2' }}>
         <PHProvider>
           <Suspense fallback={null}>
             <PostHogPageView />

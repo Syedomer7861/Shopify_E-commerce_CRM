@@ -232,7 +232,7 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
             <ul className="space-y-2.5">
               {view.deadlines.map(t => (
                 <li key={t.id}>
-                  <Link href={linkFor(t)} className="flex items-center gap-3 hover:bg-[#f7f4ed] rounded-lg p-1 -m-1">
+                  <Link href={linkFor(t)} className="flex items-center gap-3 hover:bg-[#f6f7f2] rounded-lg p-1 -m-1">
                     <span className="w-12 shrink-0 text-center rounded-lg bg-gray-100 py-1 leading-tight">
                       <span className="block text-[10px] text-gray-500">{new Date(`${t.due_date}T00:00:00`).toLocaleDateString(undefined, { month: "short" })}</span>
                       <span className="block text-sm font-bold">{new Date(`${t.due_date}T00:00:00`).getDate()}</span>
