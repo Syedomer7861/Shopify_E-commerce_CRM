@@ -15,6 +15,7 @@ import toast from "react-hot-toast";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
 import { logAuditEvent } from "@/lib/audit";
+import { OrdersInsights } from "@/components/charts/LiveCharts";
 
 const STATUSES: { label: string; value: string }[] = [
   { label: "All", value: "all" },
@@ -499,6 +500,8 @@ export default function OrdersPage() {
           ))}
         </div>
       </div>
+
+      <OrdersInsights stats={stats} loading={loading} />
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-10">

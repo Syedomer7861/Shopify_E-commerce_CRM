@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
 import { logAuditEvent } from "@/lib/audit";
+import { CustomersInsights } from "@/components/charts/LiveCharts";
 
 const SEGS: { label: string; value: string }[] = [
   { label: "All", value: "all" },
@@ -267,6 +268,7 @@ export default function CustomersPage() {
           </div>
         }
       />
+      <CustomersInsights />
 
       <AddCustomerModal 
         open={addModal} 
