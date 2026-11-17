@@ -12,6 +12,7 @@ import { AssignedTasksPanel } from "@/components/dashboard/AssignedTasksPanel";
 import { OrdersSummary } from "@/components/dashboard/OrdersSummary";
 import { ApprovalsInbox } from "./ApprovalsInbox";
 import { MyWorkOverview } from "./MyWorkOverview";
+import { DevToolsFeed } from "./DevToolsFeed";
 
 /** Live counts for the modules this person can open. RLS scopes every number to what they may see. */
 function Pulse({ profile }: { profile: Profile }) {
@@ -53,6 +54,8 @@ function Pulse({ profile }: { profile: Profile }) {
 export const HOME_WIDGETS: { key: string; label: string; allowed: (p: Profile) => boolean; wide?: boolean; title?: string; href?: string; render: (p: Profile) => ReactNode }[] = [
   // Own Workspace tasks, projects, deadlines and logged hours. Shown to anyone in a Space (or a workspace admin).
   { key: "my-work", label: "My work overview", wide: true, allowed: () => true, render: p => <MyWorkOverview profile={p} /> },
+  // Live GitHub / Vercel / Supabase data once an admin connects them (Settings > Developer Tools). Renders nothing otherwise.
+  { key: "dev-tools", label: "Developer live feed", wide: true, allowed: () => true, render: () => <DevToolsFeed /> },
   { key: "pulse", label: "Module counts", wide: true, allowed: p => visibleModules(p).length > 0, render: p => <Pulse profile={p} /> },
   {
     key: "orders", label: "Orders & revenue", wide: true,

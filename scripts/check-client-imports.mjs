@@ -11,7 +11,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 
 const ROOT = resolve("src");
-const SERVER_ONLY = ["lib/server-settings.ts", "lib/whatsapp.ts", "lib/wa-bridge-proxy.ts", "lib/google-org.ts", "lib/google-sheets.ts", "lib/google-drive.ts"].map((f) => join(ROOT, f));
+const SERVER_ONLY = ["lib/server-settings.ts", "lib/whatsapp.ts", "lib/wa-bridge-proxy.ts", "lib/google-org.ts", "lib/google-sheets.ts", "lib/google-drive.ts", "lib/dev-tools.ts"].map((f) => join(ROOT, f));
 
 const files = [];
 (function walk(d) {
