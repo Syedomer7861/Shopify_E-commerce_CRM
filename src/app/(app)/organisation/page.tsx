@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Building2, Network, BadgeCheck, Users, Plus, Loader2, AlertTriangle, Pencil, Trash2, Check, X } from "lucide-react";
+import { Building2, Network, BadgeCheck, Users, Plus, Loader2, AlertTriangle, Pencil, Trash2, Check, X, LayoutTemplate } from "lucide-react";
 import { PageHeader, AccessDenied, Select } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -9,13 +9,16 @@ import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission, isAdmin } from "@/lib/permissions";
 import { can } from "@/lib/access";
 import { SWITCHABLE_MODULES } from "@/lib/modules";
+import { loadCatalog, loadTemplates, loadUnits, sameName, SENIORITY, unitError, type AnyUnit, type CatalogEntry, type StructureTemplate, type UnitTable } from "@/lib/org-structure";
+import { UnitCombobox, type ComboOption } from "@/components/organisation/UnitCombobox";
+import { UnitFormModal } from "@/components/organisation/UnitFormModal";
+import { TemplatePicker } from "@/components/organisation/TemplatePicker";
 
-type Unit = { id: string; name: string; is_active: boolean; is_head_office?: boolean };
+type Unit = AnyUnit;
 type Member = {
   id: string; name: string | null; role: string; is_active: boolean;
   branch_id: string | null; department_id: string | null; designation_id: string | null; manager_id: string | null;
 };
-type UnitTable = "branches" | "departments" | "designations";
 type PlacementField = "branch_id" | "department_id" | "designation_id" | "manager_id";
 
 const SECTIONS: { table: UnitTable; title: string; icon: typeof Building2; hint: string }[] = [
@@ -39,6 +42,12 @@ export default function OrganisationPage() {
   const [timeoutMin, setTimeoutMin] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  // Structure engine (migration 20261117b). false = old free-text add only.
+  const [engine, setEngine] = useState(false);
+  const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
+  const [templates, setTemplates] = useState<StructureTemplate[]>([]);
+  const [form, setForm] = useState<{ table: UnitTable; initial: Partial<Unit> } | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   const canView = hasPermission(profile, "manage_team") || can(profile, "organisation", "view") !== null;
   const canEdit = can(profile, "organisation", "manage") !== null; // branches, departments, designations
@@ -46,19 +55,24 @@ export default function OrganisationPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [b, d, g, p] = await Promise.all([
-      supabase.from("branches").select("id,name,is_active,is_head_office").order("name"),
-      supabase.from("departments").select("id,name,is_active").order("name"),
-      supabase.from("designations").select("id,name,is_active").order("name"),
+    const [b, d, g, p, cat, tpl] = await Promise.all([
+      loadUnits(supabase, "branches"),
+      loadUnits(supabase, "departments"),
+      loadUnits(supabase, "designations"),
       supabase.from("profiles").select("id,name,role,is_active,branch_id,department_id,designation_id,manager_id").order("name"),
+      loadCatalog(supabase),
+      loadTemplates(supabase),
     ]);
     // Tables arrive with supabase/APPLY_PHASE1.sql; until then show a notice instead of erroring.
     if (b.error || d.error || g.error || p.error) {
       setNotReady(true);
     } else {
       setNotReady(false);
-      setUnits({ branches: b.data as Unit[], departments: d.data as Unit[], designations: g.data as Unit[] });
+      setUnits({ branches: b.rows, departments: d.rows, designations: g.rows });
       setMembers(p.data as Member[]);
+      setEngine(b.engine && d.engine && g.engine && cat.length > 0);
+      setCatalog(cat);
+      setTemplates(tpl);
     }
     setLoading(false);
   }, [supabase]);
@@ -91,12 +105,52 @@ export default function OrganisationPage() {
   }
 
   async function toggleUnit(table: UnitTable, unit: Unit) {
+    const count = peopleIn(table, unit.id);
+    if (unit.is_active && !window.confirm(`Retire "${unit.name}"?${count ? ` ${count} ${count === 1 ? "person keeps" : "people keep"} it until moved, but it can't be picked for anyone new.` : ""} You can restore it later.`)) return;
     setBusy(unit.id);
     const { error } = await supabase.from(table).update({ is_active: !unit.is_active }).eq("id", unit.id);
     if (error) toast.error(error.message);
     else setUnits(prev => ({ ...prev, [table]: prev[table].map(u => u.id === unit.id ? { ...u, is_active: !u.is_active } : u) }));
     setBusy(null);
   }
+
+  /** Pick a starter entry: departments / designations are added directly, a branch type opens the full form. */
+  async function addFromCatalog(table: UnitTable, entry: CatalogEntry) {
+    if (table === "branches") return setForm({ table, initial: { branch_type: entry.name, name: entry.name } });
+    const existing = units[table].find(u => sameName(u.name, entry.name));
+    if (existing) return toast.error(`"${existing.name}" already exists${existing.is_active ? "" : " (retired). Restore it instead"}.`);
+    setBusy(table);
+    const row = table === "departments" ? { name: entry.name, category: entry.category } : { name: entry.name, category: entry.category, seniority: entry.seniority };
+    const { error } = await supabase.from(table).insert(row);
+    if (error) toast.error(unitError(error, entry.name));
+    else { toast.success(`${entry.name} added`); await load(); }
+    setBusy(null);
+  }
+
+  const catalogOptions = (table: UnitTable): ComboOption[] => {
+    const kind = table === "branches" ? "branch_type" : table === "departments" ? "department" : "designation";
+    return catalog.filter(c => c.kind === kind).map(c => {
+      const added = table !== "branches" && units[table].some(u => sameName(u.name, c.name));
+      return { value: c.id, label: c.name, group: c.category || undefined, hint: added ? "Added" : undefined, disabled: added };
+    });
+  };
+
+  const rowMeta = (table: UnitTable, u: Unit) => {
+    const person = (id?: string | null) => members.find(m => m.id === id)?.name;
+    const bits = table === "branches" ? [u.branch_type, u.code, u.city, person(u.manager_id) && `Mgr: ${person(u.manager_id)}`]
+      : table === "departments" ? [u.category, person(u.head_id) && `Head: ${person(u.head_id)}`]
+      : [SENIORITY.find(x => x.value === u.seniority)?.label, units.departments.find(d => d.id === u.department_id)?.name];
+    return bits.filter(Boolean).join(" · ");
+  };
+
+  // Teams (departments with a parent) sit right under their parent.
+  const ordered = (table: UnitTable): { u: Unit; depth: number }[] => {
+    const list = units[table];
+    if (table !== "departments") return list.map(u => ({ u, depth: 0 }));
+    const ids = new Set(list.map(u => u.id));
+    const roots = list.filter(u => !u.parent_id || !ids.has(u.parent_id));
+    return roots.flatMap(r => [{ u: r, depth: 0 }, ...list.filter(c => c.parent_id === r.id).map(c => ({ u: c, depth: 1 }))]);
+  };
 
   const fieldOf = (table: UnitTable) => (table === "branches" ? "branch_id" : table === "departments" ? "department_id" : "designation_id");
   const peopleIn = (table: UnitTable, id: string) => members.filter(m => m[fieldOf(table)] === id).length;
@@ -169,6 +223,40 @@ export default function OrganisationPage() {
         </div>
       ) : (
         <>
+          {canEdit && engine && templates.length > 0 && (
+            <div className="flex justify-end mb-3">
+              <button onClick={() => setShowTemplates(true)} className="btn-secondary text-xs px-3 flex items-center gap-1.5">
+                <LayoutTemplate className="w-3.5 h-3.5" /> Start from industry template
+              </button>
+            </div>
+          )}
+          <UnitFormModal
+            table={form?.table ?? "departments"}
+            open={Boolean(form)}
+            initial={form?.initial ?? null}
+            units={units}
+            people={members.filter(m => m.is_active)}
+            catalog={catalog}
+            onClose={() => setForm(null)}
+            onSaved={async saved => {
+              const t = form?.table;
+              const before = form?.initial;
+              setForm(null);
+              // HR screens still read the free-text copy on profiles; keep it in step on rename.
+              if (t && t !== "branches" && canPlace && before?.id && before.name !== saved.name) {
+                await supabase.from("profiles").update({ [t === "departments" ? "department" : "designation"]: saved.name }).eq(fieldOf(t), saved.id);
+              }
+              load();
+            }}
+          />
+          <TemplatePicker
+            open={showTemplates}
+            onClose={() => setShowTemplates(false)}
+            templates={templates}
+            departments={units.departments}
+            designations={units.designations}
+            onDone={() => { setShowTemplates(false); load(); }}
+          />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
             {SECTIONS.map(({ table, title, icon: Icon, hint }) => (
               <div key={table} className="card p-4">
@@ -176,7 +264,7 @@ export default function OrganisationPage() {
                 <p className="text-[11px] text-gray-400 mb-3">{hint}</p>
                 <div className="space-y-1.5 mb-3">
                   {units[table].length === 0 && <div className="text-xs text-gray-400 py-2">None yet.</div>}
-                  {units[table].map(u => editing === u.id ? (
+                  {ordered(table).map(({ u, depth }) => editing === u.id ? (
                     <form key={u.id} onSubmit={e => { e.preventDefault(); renameUnit(table, u); }} className="flex items-center gap-1.5">
                       <input
                         autoFocus
@@ -195,15 +283,18 @@ export default function OrganisationPage() {
                       </button>
                     </form>
                   ) : (
-                    <div key={u.id} className="flex items-center justify-between gap-2 text-xs py-1.5 px-2 rounded-lg bg-gray-50">
-                      <span className={cn("truncate", !u.is_active && "line-through text-gray-400")}>
-                        {u.name}{u.is_head_office && <span className="ml-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-600">HQ</span>}
+                    <div key={u.id} className={cn("flex items-center justify-between gap-2 text-xs py-1.5 px-2 rounded-lg bg-gray-50", depth > 0 && "ml-4")}>
+                      <span className="min-w-0">
+                        <span className={cn("block truncate", !u.is_active && "line-through text-gray-400")}>
+                          {depth > 0 ? "↳ " : ""}{u.name}{u.is_head_office && <span className="ml-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-600">HQ</span>}
+                        </span>
+                        {engine && rowMeta(table, u) && <span className="block truncate text-[10px] text-gray-400">{rowMeta(table, u)}</span>}
                       </span>
                       <span className="shrink-0 flex items-center gap-2">
                         <span className="text-gray-400" title="People assigned">{peopleIn(table, u.id)}</span>
                         {canEdit && (
                           <>
-                            <button onClick={() => { setEditing(u.id); setEditName(u.name); }} disabled={busy === u.id} className="text-gray-400 hover:text-[#1c1c1c]" aria-label={`Rename ${u.name}`} title="Rename">
+                            <button onClick={() => { if (engine) setForm({ table, initial: u }); else { setEditing(u.id); setEditName(u.name); } }} disabled={busy === u.id} className="text-gray-400 hover:text-[#1c1c1c]" aria-label={`Rename ${u.name}`} title="Rename">
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button onClick={() => toggleUnit(table, u)} disabled={busy === u.id} className="text-[10px] text-gray-500 hover:text-[#1c1c1c] underline">
@@ -220,7 +311,25 @@ export default function OrganisationPage() {
                     </div>
                   ))}
                 </div>
-                {canEdit && (
+                {canEdit && engine && (
+                  <div className="flex gap-2">
+                    <div className="flex-1 min-w-0">
+                      <UnitCombobox
+                        value={null}
+                        options={catalogOptions(table)}
+                        placeholder={table === "branches" ? "Pick a branch type" : `Search or select ${title.toLowerCase().replace(/e?s$/, "")}`}
+                        onChange={id => { const c = catalog.find(x => x.id === id); if (c) addFromCatalog(table, c); }}
+                        addLabel={`Add custom ${title.toLowerCase().replace(/e?s$/, "")}`}
+                        onAdd={q => setForm({ table, initial: { name: q } })}
+                        disabled={busy === table}
+                      />
+                    </div>
+                    <button type="button" onClick={() => setForm({ table, initial: {} })} className="btn-primary px-2.5 text-xs" aria-label={`Add custom ${title}`} title="Add custom">
+                      {busy === table ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                )}
+                {canEdit && !engine && (
                   <form onSubmit={e => { e.preventDefault(); addUnit(table); }} className="flex gap-2">
                     <input
                       value={draft[table]}

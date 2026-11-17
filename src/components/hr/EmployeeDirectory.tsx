@@ -5,6 +5,14 @@ import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui";
 import toast from "react-hot-toast";
 import { isDemoMode } from "@/lib/demo";
+import { EmployeePlacementFields, EMPTY_PLACEMENT, placementFrom, type Placement } from "@/components/organisation/EmployeePlacementFields";
+
+/** Profile columns for a placement. Employment fields only once migration 20261117b is applied. */
+const placementPayload = (pl: Placement, legacy: { department?: string; designation?: string }, engine: boolean) => ({
+  branch_id: pl.branch_id, department_id: pl.department_id, designation_id: pl.designation_id, manager_id: pl.manager_id,
+  ...(engine ? { employment_type: pl.employment_type, work_arrangement: pl.work_arrangement, employee_grade: pl.employee_grade?.trim() || null, employment_status: pl.employment_status } : {}),
+  ...legacy,
+});
 
 type EmpStatus = "Active" | "Notice Period" | "Offboarded";
 interface Employee {
@@ -13,6 +21,7 @@ interface Employee {
   salary: number; location: string; emergencyContact: string; dob?: string;
   onboarding: { task: string; done: boolean }[];
   offboarding: { task: string; done: boolean }[];
+  placement?: Placement;
 }
 
 const ONBOARDING_TASKS = [
@@ -22,16 +31,6 @@ const ONBOARDING_TASKS = [
 const OFFBOARDING_TASKS = [
   "Resignation Accepted", "Notice Period Confirmed", "Knowledge Transfer",
   "System Access Revoked", "Final Settlement Calculated", "Experience Letter Issued", "Exit Interview Done"
-];
-const DEPARTMENTS = ["IT", "Sales", "Support", "Operations", "HR", "Marketing", "Finance", "Logistics"];
-const DESIGNATIONS = [
-  "Account Executive", "Accountant", "Admin", "Agent", "Backend Engineer", "CEO", 
-  "Content Writer", "Customer Support Agent", "Delivery Manager", "Director", 
-  "Finance Manager", "Frontend Engineer", "HR Executive", "HR Manager", 
-  "IT Administrator", "Logistics Coordinator", "Manager", "Marketing Specialist", 
-  "Operations Executive", "Operations Manager", "Recruiter", "Sales Executive", 
-  "Sales Manager", "SEO Expert", "Senior Agent", "Senior Support Agent", 
-  "Support Team Lead", "Team Lead", "Website Developer"
 ];
 export const INDIAN_STATES = [
   "Andaman & Nicobar", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chandigarh", "Chhattisgarh", 
@@ -94,13 +93,17 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
   const [showAdd, setShowAdd] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", role: "", designation: "", department: "", joinDate: "", dob: "", salary: "", location: "", emergencyContact: "", city: "", state: "", country: "India" });
-  const [newEmp, setNewEmp] = useState({ name: "", email: "", phone: "", role: "agent", designation: "", department: "IT", joinDate: "", dob: "", salary: "", location: "", city: "", state: "", country: "India" });
+  const [newEmp, setNewEmp] = useState({ name: "", email: "", phone: "", role: "agent", designation: "", department: "", joinDate: "", dob: "", salary: "", location: "", city: "", state: "", country: "India" });
   const [customDept, setCustomDept] = useState({ add: false, edit: false });
   const [customDeptValue, setCustomDeptValue] = useState({ add: "", edit: "" });
   const [customDesig, setCustomDesig] = useState({ add: false, edit: false });
   const [customDesigValue, setCustomDesigValue] = useState({ add: "", edit: "" });
   const [customCity, setCustomCity] = useState({ add: false, edit: false });
   const [customCityValue, setCustomCityValue] = useState({ add: "", edit: "" });
+  // Branch / department / designation / manager / employment, by id (Organisation records).
+  const [newPlace, setNewPlace] = useState<{ p: Placement; legacy: { department?: string; designation?: string }; engine: boolean }>({ p: EMPTY_PLACEMENT, legacy: {}, engine: false });
+  const [editPlace, setEditPlace] = useState<{ p: Placement; legacy: { department?: string; designation?: string }; engine: boolean }>({ p: EMPTY_PLACEMENT, legacy: {}, engine: false });
+  const people = useMemo(() => data.map(p => ({ id: p.id, name: p.name || p.email, is_active: p.is_active })), [data]);
 
   const mappedEmployees = useMemo(() => {
     return data.map(p => ({
@@ -119,6 +122,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
       dob: p.date_of_birth || "",
       onboarding: (p.onboarding_progress && p.onboarding_progress.length > 0) ? p.onboarding_progress : ONBOARDING_TASKS.map(t => ({ task: t, done: false })),
       offboarding: (p.offboarding_progress && p.offboarding_progress.length > 0) ? p.offboarding_progress : OFFBOARDING_TASKS.map(t => ({ task: t, done: false })),
+      placement: placementFrom(p),
     }));
   }, [data]);
 
@@ -232,7 +236,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
       setEmployees(prev => [optimisticEmployee, ...prev]);
       toast.success("Demo: employee added (local only)");
       setShowAdd(false);
-      setNewEmp({ name: "", email: "", phone: "", role: "agent", designation: "", department: "IT", joinDate: "", dob: "", salary: "", location: "", city: "", state: "", country: "India" });
+      setNewEmp({ name: "", email: "", phone: "", role: "agent", designation: "", department: "", joinDate: "", dob: "", salary: "", location: "", city: "", state: "", country: "India" });
       return;
     }
 
@@ -249,8 +253,9 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
             email: newEmp.email,
             phone: newEmp.phone,
             role: newEmp.role,
-            designation: newEmp.designation,
-            department: newEmp.department,
+            designation: newPlace.legacy.designation || newEmp.designation,
+            department: newPlace.legacy.department || newEmp.department,
+            ...placementPayload(newPlace.p, {}, newPlace.engine),
             joining_date: newEmp.joinDate,
             ...(newEmp.dob ? { date_of_birth: newEmp.dob } : {}),
             monthly_salary: Number(newEmp.salary),
@@ -287,13 +292,14 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
 
       toast.success("Employee added successfully! Default password: Welcome@123");
       setShowAdd(false);
-      setNewEmp({ name: "", email: "", phone: "", role: "agent", designation: "", department: "IT", joinDate: "", dob: "", salary: "", location: "", city: "", state: "", country: "India" });
+      setNewEmp({ name: "", email: "", phone: "", role: "agent", designation: "", department: "", joinDate: "", dob: "", salary: "", location: "", city: "", state: "", country: "India" });
       setCustomDept({ add: false, edit: false });
       setCustomDeptValue({ add: "", edit: "" });
       setCustomDesig({ add: false, edit: false });
       setCustomDesigValue({ add: "", edit: "" });
       setCustomCity({ add: false, edit: false });
       setCustomCityValue({ add: "", edit: "" });
+      setNewPlace({ p: EMPTY_PLACEMENT, legacy: {}, engine: false });
 
       // Background sync to get the canonical DB record
       onRefresh();
@@ -444,79 +450,6 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                                 <option value="manager">Manager</option>
                                 <option value="admin">Admin</option>
                               </select>
-                              {!customDesig.edit ? (
-                                <select 
-                                  className="input py-1 text-[10px] font-bold w-1/2 bg-white" 
-                                  value={editForm.designation} 
-                                  onChange={e => {
-                                    if (e.target.value === "CUSTOM") {
-                                      setCustomDesig({ ...customDesig, edit: true });
-                                    } else {
-                                      setEditForm({ ...editForm, designation: e.target.value });
-                                    }
-                                  }} 
-                                >
-                                  <option value="">Select Designation...</option>
-                                  {Array.from(new Set([...DESIGNATIONS, editForm.designation].filter(Boolean))).map(d => <option key={d as string} value={d as string}>{d as string}</option>)}
-                                  <option value="CUSTOM">+ Custom Designation...</option>
-                                </select>
-                              ) : (
-                                <div className="flex gap-1 w-1/2">
-                                  <input 
-                                    className="input py-1 text-[10px] font-bold flex-1" 
-                                    value={customDesigValue.edit} 
-                                    onChange={e => {
-                                      setCustomDesigValue({ ...customDesigValue, edit: e.target.value });
-                                      setEditForm({ ...editForm, designation: e.target.value });
-                                    }} 
-                                    placeholder="Enter Designation"
-                                    autoFocus
-                                  />
-                                  <button aria-label="Remove" 
-                                    className="p-1 hover:bg-gray-100 rounded text-gray-400"
-                                    onClick={() => setCustomDesig({ ...customDesig, edit: false })}
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              )}
-                           </div>
-                           <div className="mt-1">
-                              {!customDept.edit ? (
-                                <select 
-                                  className="input py-1 text-[10px] font-bold w-full bg-white" 
-                                  value={editForm.department} 
-                                  onChange={e => {
-                                    if (e.target.value === "CUSTOM") {
-                                      setCustomDept({ ...customDept, edit: true });
-                                    } else {
-                                      setEditForm({ ...editForm, department: e.target.value });
-                                    }
-                                  }} 
-                                >
-                                  {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
-                                  <option value="CUSTOM">+ Custom Department...</option>
-                                </select>
-                              ) : (
-                                <div className="flex gap-1">
-                                  <input 
-                                    className="input py-1 text-[10px] font-bold flex-1" 
-                                    value={customDeptValue.edit} 
-                                    onChange={e => {
-                                      setCustomDeptValue({ ...customDeptValue, edit: e.target.value });
-                                      setEditForm({ ...editForm, department: e.target.value });
-                                    }} 
-                                    placeholder="Enter Dept Name"
-                                    autoFocus
-                                  />
-                                  <button aria-label="Remove" 
-                                    className="p-1 hover:bg-gray-100 rounded text-gray-400"
-                                    onClick={() => setCustomDept({ ...customDept, edit: false })}
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              )}
                            </div>
                         </div>
                       ) : (
@@ -560,6 +493,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                           state: pState,
                           country: pCountry
                         });
+                        setEditPlace({ p: placementFrom(selected.placement), legacy: {}, engine: false });
                         setIsEditing(true);
                       }}
                       className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-[#1c1c1c]"
@@ -640,6 +574,15 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                   ))}
                 </div>
 
+                {isEditing && (
+                  <EmployeePlacementFields
+                    value={editPlace.p}
+                    selfId={selected.id}
+                    people={people}
+                    onChange={(p, legacy, engine) => setEditPlace({ p, legacy, engine })}
+                  />
+                )}
+
                 {isEditing ? (
                   <div className="flex gap-2 pt-2">
                     <button 
@@ -649,8 +592,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                           email: editForm.email,
                           phone: editForm.phone,
                           role: editForm.role,
-                          designation: editForm.designation,
-                          department: editForm.department,
+                          ...placementPayload(editPlace.p, editPlace.legacy, editPlace.engine),
                           joining_date: editForm.joinDate,
                           ...(editForm.dob || selected.dob ? { date_of_birth: editForm.dob || null } : {}),
                           monthly_salary: Number(editForm.salary),
@@ -753,7 +695,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
       {/* Add Employee Modal (inline) */}
       {showAdd && (
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={() => setShowAdd(false)}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center">
               <h3 className="font-black text-[#1c1c1c] uppercase tracking-widest text-sm">Add New Employee</h3>
               <button aria-label="Close" onClick={() => setShowAdd(false)}><X className="w-4 h-4 text-gray-400" /></button>
@@ -779,60 +721,12 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                   <option value="admin">Admin</option>
                 </select>
               </div>
-              <div>
-                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Designation</label>
-                {!customDesig.add ? (
-                  <select className="input w-full text-xs bg-white" value={(newEmp as any).designation || ""}
-                    onChange={e => {
-                      if (e.target.value === "CUSTOM") {
-                        setCustomDesig({ ...customDesig, add: true });
-                      } else {
-                        setNewEmp(prev => ({ ...prev, designation: e.target.value }));
-                      }
-                    }}>
-                    <option value="">Select Designation...</option>
-                    {DESIGNATIONS.map(d => <option key={d} value={d}>{d}</option>)}
-                    <option value="CUSTOM">+ Custom...</option>
-                  </select>
-                ) : (
-                  <div className="flex gap-1">
-                    <input className="input flex-1 text-xs" placeholder="e.g. Website Developer" value={customDesigValue.add}
-                      onChange={e => {
-                        setCustomDesigValue({ ...customDesigValue, add: e.target.value });
-                        setNewEmp(prev => ({ ...prev, designation: e.target.value }));
-                      }} 
-                      autoFocus
-                    />
-                    <button aria-label="Close" className="p-1 hover:bg-gray-100 rounded" onClick={() => setCustomDesig({ ...customDesig, add: false })}><X className="w-4 h-4" /></button>
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Department</label>
-                {!customDept.add ? (
-                  <select className="input w-full text-xs bg-white" value={newEmp.department}
-                    onChange={e => {
-                      if (e.target.value === "CUSTOM") {
-                        setCustomDept({ ...customDept, add: true });
-                      } else {
-                        setNewEmp(prev => ({ ...prev, department: e.target.value }));
-                      }
-                    }}>
-                    {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
-                    <option value="CUSTOM">+ Custom...</option>
-                  </select>
-                ) : (
-                  <div className="flex gap-1">
-                    <input className="input flex-1 text-xs" placeholder="e.g. Research" value={customDeptValue.add}
-                      onChange={e => {
-                        setCustomDeptValue({ ...customDeptValue, add: e.target.value });
-                        setNewEmp(prev => ({ ...prev, department: e.target.value }));
-                      }} 
-                      autoFocus
-                    />
-                    <button aria-label="Close" className="p-1 hover:bg-gray-100 rounded" onClick={() => setCustomDept({ ...customDept, add: false })}><X className="w-4 h-4" /></button>
-                  </div>
-                )}
+              <div className="col-span-2">
+                <EmployeePlacementFields
+                  value={newPlace.p}
+                  people={people}
+                  onChange={(p, legacy, engine) => setNewPlace({ p, legacy, engine })}
+                />
               </div>
               {[
                 { key: "phone", label: "Phone", placeholder: "+91 98765 43210", type: "text" },
