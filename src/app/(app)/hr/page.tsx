@@ -879,7 +879,7 @@ function HRDashboardContent() {
       )}
 
       {activeTab === 'documents' && (
-        <HRDocuments policies={data.policies} onRefresh={fetchData} />
+        <HRDocuments policies={data.policies} onRefresh={fetchData} employees={data.employees} attendance={data.attendance} />
       )}
 
       {activeTab === 'announcements' && (

@@ -4,6 +4,7 @@ import { FileText, Shield, BookOpen, Download, Search, Plus, ChevronRight, Uploa
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { isDemoMode } from "@/lib/demo";
+import { DocStudio } from "@/components/hr/documents/DocStudio";
 
 type DocType = "Offer Letter" | "Appointment Letter" | "Relieving Letter" | "Experience Letter" | "Warning Letter" | "Salary Certificate";
 interface PolicyDoc { id: string; name: string; category: string; uploadedOn: string; size: string; fileUrl: string | null; }
@@ -30,10 +31,10 @@ const TEMPLATES: Record<DocType, (data: any) => string> = {
   "Salary Certificate": (d) => `SALARY CERTIFICATE\n\nDate: ${d.date}\n\nThis is to certify that ${d.name} is employed as ${d.role} and draws a monthly salary of ₹${d.salary}.\n\nFor ${d.company}`,
 };
 
-interface Props { policies: any[]; onRefresh: () => void; }
+interface Props { policies: any[]; onRefresh: () => void; employees?: any[]; attendance?: any[]; }
 
-export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) {
-  const [tab, setTab] = useState<"generator" | "library" | "manuals">("generator");
+export default function HRDocuments({ policies: dbPolicies, onRefresh, employees = [], attendance = [] }: Props) {
+  const [tab, setTab] = useState<"designer" | "generator" | "library" | "manuals">("designer");
   const [docType, setDocType] = useState<DocType>("Offer Letter");
   const [formData, setFormData] = useState({ name: "", role: "", salary: "", joiningDate: "", endDate: "", reason: "", company: "CureForever Wellness Pvt. Ltd.", date: new Date().toLocaleDateString("en-IN") });
   const [preview, setPreview] = useState("");
@@ -155,15 +156,17 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
 
   return (
     <div className="space-y-5">
-      <div className="flex gap-1 bg-[#f0f0ec] p-1 rounded-xl w-fit">
-        {(["generator", "library"] as const).map(t => (
+      <div className="flex flex-wrap gap-1 bg-[#f0f0ec] p-1 rounded-xl w-fit">
+        {(["designer", "generator", "library"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={cn("px-4 py-1.5 text-xs font-bold rounded-lg capitalize transition-all",
               tab === t ? "bg-[#1c1c1c] text-white" : "text-[#6b6b67] hover:text-[#1c1c1c]")}>
-            {t === "generator" ? "Document Generator" : "Policy Library"}
+            {t === "designer" ? "Document Designer" : t === "generator" ? "Quick Letters" : "Policy Library"}
           </button>
         ))}
       </div>
+
+      {tab === "designer" && <DocStudio employees={employees} attendance={attendance} />}
 
       {/* ── Document Generator ── */}
       {tab === "generator" && (
