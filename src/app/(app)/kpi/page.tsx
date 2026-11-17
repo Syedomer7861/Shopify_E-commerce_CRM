@@ -9,6 +9,8 @@ import { can } from "@/lib/access";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { SOURCE_BY_KEY } from "@/lib/kpi/sources";
 import { weightCheck } from "@/lib/kpi/score";
+import { PlansTab, type Named } from "@/components/kpi/PlansTab";
+import { AssignmentsTab } from "@/components/kpi/AssignmentsTab";
 import { KpiTemplateEditor, blankDraft, draftProblems, toDraft, toPayload, type KpiTemplateDraft, type TemplateRow } from "@/components/kpi/KpiTemplateEditor";
 
 type Row = TemplateRow & {
@@ -46,19 +48,26 @@ export default function KpiPage() {
   const { profile, loading: profileLoading } = useCurrentProfile();
   const canView = can(profile, "kpi", "view") !== null;
   const canManage = can(profile, "kpi", "manage") !== null;
-  const [view, setView] = useState<"ours" | "library">("ours");
+  const canApprove = can(profile, "kpi", "approve") !== null;
+  const [view, setView] = useState<"plans" | "assignments" | "ours" | "library">("plans");
   const [ours, setOurs] = useState<Row[]>([]);
   const [library, setLibrary] = useState<Row[]>([]);
+  const [departments, setDepartments] = useState<Named[]>([]);
+  const [designations, setDesignations] = useState<Named[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [editing, setEditing] = useState<{ id: string | null; draft: KpiTemplateDraft } | null>(null);
 
   const load = useCallback(async () => {
-    const [o, g] = await Promise.all([
+    const [o, g, d, ds] = await Promise.all([
       supabase.from("kpi_templates").select(COLS).not("org_id", "is", null).order("name"),
       supabase.from("kpi_templates").select(COLS).is("org_id", null).eq("status", "published").order("collection"),
+      supabase.from("departments").select("id, name").order("name"),
+      supabase.from("designations").select("id, name").order("name"),
     ]);
+    setDepartments((d.data || []) as Named[]);
+    setDesignations((ds.data || []) as Named[]);
     if (o.error || g.error) toast.error((o.error || g.error)!.message);
     setOurs((o.data || []) as Row[]);
     setLibrary((g.data || []) as Row[]);
@@ -107,7 +116,7 @@ export default function KpiPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="KPI Plans" subtitle="KPI templates for your organisation: adopt from the library, set your targets and weights." />
+      <PageHeader title="KPI Plans" subtitle="Plans with targets and weights for each department or designation, who is on which plan, and the templates behind them." />
 
       {editing ? (
         <div className="card p-4 mb-4 space-y-3">
@@ -121,13 +130,19 @@ export default function KpiPage() {
         </div>
       ) : (
         <>
-          <nav className="flex gap-1 mb-4 border-b border-[#eceae4]">
+          <nav className="flex gap-1 mb-4 border-b border-[#eceae4] overflow-x-auto whitespace-nowrap">
+            <button className={tab(view === "plans")} onClick={() => setView("plans")}>Plans</button>
+            <button className={tab(view === "assignments")} onClick={() => setView("assignments")}>Assignments</button>
             <button className={tab(view === "ours")} onClick={() => setView("ours")}>Our templates ({ours.filter(t => t.status !== "archived").length})</button>
             <button className={tab(view === "library")} onClick={() => setView("library")}>Template library ({shownLibrary.length})</button>
           </nav>
 
           {loading ? <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
-          : view === "ours" ? (
+          : view === "plans" ? (
+            <PlansTab templates={ours.filter(t => t.status !== "archived")} departments={departments} designations={designations} canManage={canManage} canApprove={canApprove} />
+          ) : view === "assignments" ? (
+            <AssignmentsTab me={profile?.id ?? ""} departments={departments} designations={designations} canManage={canManage} canApprove={canApprove} />
+          ) : view === "ours" ? (
             <>
               <div className="flex flex-wrap gap-2 mb-4">
                 {canManage && (
