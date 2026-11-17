@@ -7,7 +7,8 @@ import { createClient } from "@/lib/supabase";
 import type { Order } from "@/types";
 import { applyDateRange, rangeLabel, type DateRange } from "@/components/DateRangeFilter";
 
-// Sums every matching row: PostgREST caps one select at 1000, so page through.
+// Fallback only (before migration 20261117j is applied): page through rows,
+// since PostgREST caps one select at 1000.
 async function sumRevenue(make: () => any): Promise<number> {
   let total = 0;
   for (let from = 0; from < 100_000; from += 1000) {
@@ -17,6 +18,18 @@ async function sumRevenue(make: () => any): Promise<number> {
     if (data.length < 1000) break;
   }
   return total;
+}
+
+/** Revenue summed in the database (orders_revenue_sum, RLS applies); same bounds as applyDateRange. */
+async function revenueSum(supabase: ReturnType<typeof createClient>, range: DateRange | null, startOfMonth: string): Promise<number> {
+  const b: { from?: string; to?: string } = { from: range ? undefined : startOfMonth };
+  if (range) {
+    const cap = { gte: (_: string, v: string) => ((b.from = v), cap), lt: (_: string, v: string) => ((b.to = v), cap), lte: (_: string, v: string) => ((b.to = v), cap) };
+    applyDateRange(cap, "created_at", range);
+  }
+  const { data, error } = await supabase.rpc("orders_revenue_sum", { p_from: b.from ?? null, p_to: b.to ?? null });
+  if (!error && data != null) return Number(data) || 0;
+  return sumRevenue(() => range ? applyDateRange(supabase.from("orders").select("total_price"), "created_at", range) : supabase.from("orders").select("total_price").gte("created_at", startOfMonth));
 }
 
 /**
@@ -42,7 +55,7 @@ export function OrdersSummary({ range }: { range?: DateRange }) {
       const countQ = supabase.from("orders").select("id", { count: "exact", head: true });
       const [todayRes, monthRes, pendingRes, rtoRes, recentRes] = await Promise.all([
         dated ? applyDateRange(countQ, "created_at", range!) : countQ.gte("created_at", startOfToday),
-        sumRevenue(() => dated ? applyDateRange(supabase.from("orders").select("total_price"), "created_at", range!) : supabase.from("orders").select("total_price").gte("created_at", startOfMonth)),
+        revenueSum(supabase, dated ? range! : null, startOfMonth),
         supabase.from("orders").select("id", { count: "exact", head: true }).eq("delivery_status", "pending"),
         supabase.from("orders").select("id", { count: "exact", head: true }).eq("delivery_status", "rto"),
         supabase.from("orders").select("*, customer:customers(name)").order("created_at", { ascending: false }).limit(5),
