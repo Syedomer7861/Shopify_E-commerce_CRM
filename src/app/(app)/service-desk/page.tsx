@@ -9,11 +9,11 @@ import { can } from "@/lib/access";
 
 function sla(due: string | null, row: RecordRow) {
   if (!due) return "—";
-  if (row.status === "resolved" || row.status === "closed") return <span className="text-gray-400">Done</span>;
+  if (row.status === "resolved" || row.status === "closed") return <span className="text-[#9a9a94]">Done</span>;
   const hours = Math.round((new Date(due).getTime() - Date.now()) / 3600000);
   return hours < 0
     ? <span className="font-bold text-rose-600">{-hours}h over</span>
-    : <span className={hours <= 2 ? "font-bold text-amber-600" : "text-gray-600"}>{hours}h left</span>;
+    : <span className={hours <= 2 ? "font-bold text-amber-600" : "text-[#55554f]"}>{hours}h left</span>;
 }
 
 export default function ServiceDeskPage() {
@@ -42,7 +42,7 @@ export default function ServiceDeskPage() {
       { key: "description", label: "Details", type: "textarea" },
     ],
     rowActions: (row, reload) =>
-      row.assignee_id === profile?.id ? <span className="text-[10px] font-bold text-emerald-600">Yours</span>
+      row.assignee_id === profile?.id ? <span className="text-[10px] font-bold text-[#3fa877]">Yours</span>
       : canAssign && !row.assignee_id ? <button onClick={() => take(row, reload)} className="text-[10px] font-bold underline text-[#1c1c1c]">Take</button>
       : null,
   };

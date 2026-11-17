@@ -69,7 +69,7 @@ function Editor({ k, row, versions, onChange }: { k: ContentKey; row: Row | unde
         <span className="text-[11px] text-[#5f5f5d]">
           {row?.version ? `v${row.version} live since ${new Date(row.published_at!).toLocaleString()}` : "Built-in text (never published)"}
         </span>
-        {row?.draft && <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">Unpublished draft</span>}
+        {row?.draft && <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">Unpublished draft</span>}
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
         {def.fields.map(f => (
@@ -141,7 +141,7 @@ export default function SuperAdminContent() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (!rows) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (!rows) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
 
   return (
     <div className="space-y-4">

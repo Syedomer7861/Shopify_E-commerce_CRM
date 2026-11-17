@@ -90,7 +90,7 @@ export default function DevToolsCard() {
               <div className="flex items-center gap-3">
                 <t.icon className="w-5 h-5 text-[#1c1c1c]" />
                 <h3 className="text-sm font-bold text-[#1c1c1c]">{t.name}</h3>
-                {c && <span className="flex items-center gap-1 text-xs text-emerald-700"><CheckCircle2 className="w-3.5 h-3.5" /> {c.config.label}</span>}
+                {c && <span className="flex items-center gap-1 text-xs text-[#2f8a5f]"><CheckCircle2 className="w-3.5 h-3.5" /> {c.config.label}</span>}
               </div>
               {c && <button onClick={() => disconnect(t.key)} disabled={busy === t.key} className="text-xs font-semibold text-rose-600 hover:underline">Disconnect</button>}
             </div>

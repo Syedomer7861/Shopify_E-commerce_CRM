@@ -154,7 +154,7 @@ export function ChatInput() {
           <div className="w-full h-px bg-[#ebece6] my-1" />
           <button 
             onClick={() => setShowEmojis(false)}
-            className="w-full py-1 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest hover:text-[#1c1c1c]"
+            className="w-full py-1 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider hover:text-[#1c1c1c]"
           >
             Close
           </button>

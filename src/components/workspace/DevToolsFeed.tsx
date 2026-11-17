@@ -27,9 +27,9 @@ const ago = (iso: string | null) => {
 };
 
 const STATE_COLOR: Record<string, string> = {
-  READY: "bg-emerald-50 text-emerald-700", ERROR: "bg-rose-50 text-rose-700", CANCELED: "bg-[#ebece6] text-[#5f5f5d]",
+  READY: "bg-[#ecf8f1] text-[#2f8a5f]", ERROR: "bg-rose-50 text-rose-700", CANCELED: "bg-[#ebece6] text-[#5f5f5d]",
   BUILDING: "bg-amber-50 text-amber-700", QUEUED: "bg-amber-50 text-amber-700", INITIALIZING: "bg-amber-50 text-amber-700",
-  ACTIVE_HEALTHY: "bg-emerald-50 text-emerald-700", INACTIVE: "bg-[#ebece6] text-[#5f5f5d]",
+  ACTIVE_HEALTHY: "bg-[#ecf8f1] text-[#2f8a5f]", INACTIVE: "bg-[#ebece6] text-[#5f5f5d]",
 };
 const Badge = ({ s }: { s: string | null }) => <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${STATE_COLOR[s ?? ""] ?? "bg-rose-50 text-rose-700"}`}>{(s ?? "unknown").replace(/_/g, " ").toLowerCase()}</span>;
 

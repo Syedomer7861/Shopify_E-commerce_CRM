@@ -40,7 +40,7 @@ export function MfaChallenge({ onDone, onCancel }: { onDone: () => void; onCance
   return (
     <form onSubmit={submit} className="space-y-5">
       <div className="flex items-center gap-3">
-        <ShieldCheck className="w-6 h-6 text-emerald-600" />
+        <ShieldCheck className="w-6 h-6 text-[#3fa877]" />
         <div>
           <h2 className="text-lg font-bold text-[#1c1c1c]">Two-factor check</h2>
           <p className="text-xs text-[#5f5f5d]">Enter the 6-digit code from your authenticator app.</p>

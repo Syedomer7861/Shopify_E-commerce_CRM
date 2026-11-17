@@ -873,7 +873,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           cfg.accent,
           isDone && "opacity-60",
           isOverdue && "border-l-rose-500",
-          "hover:shadow-md hover:border-r hover:border-r-gray-100 hover:scale-[1.005]"
+          "hover:shadow-md hover:border-r hover:border-r-[#ebece6] hover:scale-[1.005]"
         )}
       >
         <div className="flex items-start gap-4">
@@ -883,20 +883,20 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className={cn(
-                    "text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border",
+                    "text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border",
                     task.customer?.segment === 'whale' ? "bg-amber-50 text-amber-700 border-amber-100" :
                     task.customer?.segment === 'risky' ? "bg-rose-50 text-rose-700 border-rose-100" :
-                    "bg-gray-50 text-gray-600 border-gray-100"
+                    "bg-[#f6f7f2] text-[#55554f] border-[#ebece6]"
                   )}>
                     {task.customer?.segment?.toUpperCase() || 'STANDARD'}
                   </div>
                   {(task as any).is_urgent && (
-                    <div className="flex items-center gap-1 bg-rose-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-lg shadow-rose-500/20">
+                    <div className="flex items-center gap-1 bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse shadow-lg shadow-rose-500/20">
                        <Zap className="w-2.5 h-2.5" /> URGENT
                     </div>
                   )}
                   {(task as any).sentiment === 'negative' && (
-                    <div className="flex items-center gap-1 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                    <div className="flex items-center gap-1 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                        <AlertCircle className="w-2.5 h-2.5" /> NEGATIVE SENTIMENT
                     </div>
                   )}
@@ -907,8 +907,8 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   className="font-bold text-[#1c1c1c] text-sm group-hover/card:text-[#1c1c1c]/80 transition-colors flex items-center gap-2 hover:underline"
                 >
                   {task.customer.name}
-                  {task.status === "done" && <span className="badge bg-blue-50 text-blue-600 text-[10px]">DONE</span>}
-                  {task.status === "cancelled" && <span className="badge bg-gray-50 text-gray-400 text-[10px]">CANCELLED</span>}
+                  {task.status === "done" && <span className="badge bg-[#eef4fc] text-[#4f7fc8] text-[10px]">DONE</span>}
+                  {task.status === "cancelled" && <span className="badge bg-[#f6f7f2] text-[#9a9a94] text-[10px]">CANCELLED</span>}
                 </Link>
                 <div 
                   onClick={(e) => e.stopPropagation()} 
@@ -922,11 +922,11 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                         e.stopPropagation();
                         setShowClickToCall(true);
                       }}
-                      className="text-[11px] text-gray-500 hover:text-[#1c1c1c] flex items-center gap-1"
+                      className="text-[11px] text-[#6b6b67] hover:text-[#1c1c1c] flex items-center gap-1"
                     >
                       <Phone className="w-2.5 h-2.5" /> {task.customer.phone}
                     </a>
-                    <a href={`sms:${task.customer.phone}`} className="text-[11px] text-gray-500 hover:text-[#1c1c1c] flex items-center gap-1 border-l border-gray-200 pl-2">
+                    <a href={`sms:${task.customer.phone}`} className="text-[11px] text-[#6b6b67] hover:text-[#1c1c1c] flex items-center gap-1 border-l border-[#ebece6] pl-2">
                       <Mail className="w-2.5 h-2.5" /> SMS
                     </a>
                   </div>
@@ -935,11 +935,11 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
               <div className="flex items-center gap-1.5 flex-wrap">
                 {isOverdue ? <span className="badge bg-rose-50 border-rose-200 text-rose-700">Overdue</span> : <TaskTypeBadge type={task.task_type} />}
                 {typeof task.priority_score === "number" && task.priority_score > 0 && (
-                  <span className="badge bg-gray-50 border-gray-200 text-gray-700">Priority {task.priority_score}</span>
+                  <span className="badge bg-[#f6f7f2] border-[#ebece6] text-[#3a3a36]">Priority {task.priority_score}</span>
                 )}
                 {(task as any).assigned_profile?.name && !isAdmin && (
                   <div className="flex items-center gap-1.5">
-                    <span className="badge bg-sky-50 border-sky-200 text-sky-700">Owner {(task as any).assigned_profile.name}</span>
+                    <span className="badge bg-[#eef4fc] border-[#c7dbf5] text-[#3d66a6]">Owner {(task as any).assigned_profile.name}</span>
                     {(task as any).assigned_profile?.live_state?.action === 'on_call' && (task as any).assigned_profile?.live_state?.entityId === task.id && (
                       <span className="badge bg-rose-500 border-rose-600 text-white animate-pulse flex items-center gap-1">
                         <div className="w-1.5 h-1.5 rounded-full bg-white" /> LIVE CALL
@@ -953,19 +953,19 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                       value={task.assigned_to || ""}
                       onChange={(newOwnerId) => onReassign?.(task.id, newOwnerId)}
                       placeholder="Unassigned"
-                      triggerClassName="badge bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100 font-medium"
+                      triggerClassName="badge bg-[#eef4fc] border-[#c7dbf5] text-[#3d66a6] hover:bg-[#dfeafa] font-medium"
                       options={agents.map(a => ({ value: a.id, label: `Owner ${a.name}` }))}
                     />
                   </div>
                 )}
                 {daysSince !== null && (
-                  <span className="badge bg-gray-50 border-gray-200 text-gray-500">{daysSince}d since delivery</span>
+                  <span className="badge bg-[#f6f7f2] border-[#ebece6] text-[#6b6b67]">{daysSince}d since delivery</span>
                 )}
               </div>
             </div>
 
-            <div className="mt-2 text-[9px] md:text-xs text-gray-400 font-medium flex flex-wrap items-center gap-y-1.5 min-w-0">
-              <span className="text-gray-600 flex-shrink-0 flex items-center gap-1">
+            <div className="mt-2 text-[9px] md:text-xs text-[#9a9a94] font-medium flex flex-wrap items-center gap-y-1.5 min-w-0">
+              <span className="text-[#55554f] flex-shrink-0 flex items-center gap-1">
                 {task.order ? (
                   <>Order: {task.order.order_number || task.order.shopify_order_id?.slice(-8)}</>
                 ) : task.abandoned_cart ? (
@@ -977,11 +977,11 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
               <span className="hidden md:inline mx-1.5 flex-shrink-0">·</span> 
               <span className="truncate w-full md:w-auto md:max-w-[200px] min-w-0 md:px-0 order-3 md:order-none text-[#1c1c1c]/70" title={product}>{product}</span> 
               <span className="hidden md:inline mx-1.5 flex-shrink-0">·</span> 
-              <span className="flex-shrink-0 whitespace-nowrap ml-auto md:ml-0 bg-[#ebece6] md:bg-transparent px-1.5 md:px-0 py-0.5 md:py-0 rounded-md md:rounded-none text-[#1c1c1c] md:text-gray-400 font-bold md:font-medium text-[10px] md:text-xs">Due: {mounted ? formatDate(task.due_date) : "—"}</span>
+              <span className="flex-shrink-0 whitespace-nowrap ml-auto md:ml-0 bg-[#ebece6] md:bg-transparent px-1.5 md:px-0 py-0.5 md:py-0 rounded-md md:rounded-none text-[#1c1c1c] md:text-[#9a9a94] font-bold md:font-medium text-[10px] md:text-xs">Due: {mounted ? formatDate(task.due_date) : "—"}</span>
               {task.order?.delivered_at && (
                 <>
-                  <span className="hidden md:inline mx-1.5 flex-shrink-0 text-blue-400">·</span>
-                  <span className="flex-shrink-0 whitespace-nowrap text-blue-600 font-bold ml-1.5 md:ml-0">Delivered: {mounted ? formatDate(task.order.delivered_at) : "—"}</span>
+                  <span className="hidden md:inline mx-1.5 flex-shrink-0 text-[#8fb3e8]">·</span>
+                  <span className="flex-shrink-0 whitespace-nowrap text-[#4f7fc8] font-bold ml-1.5 md:ml-0">Delivered: {mounted ? formatDate(task.order.delivered_at) : "—"}</span>
                 </>
               )}
             </div>
@@ -990,14 +990,14 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
               <div className="flex items-center gap-2 mt-3 flex-wrap sm:flex-nowrap" onClick={(e) => e.stopPropagation()}>
                 {task.task_type === 'manager_audit' ? (
                   <>
-                    <button onClick={(e) => handleManagerAction(e, 'rejected')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-[#f6f7f2] border border-rose-100 text-rose-500 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm">
+                    <button onClick={(e) => handleManagerAction(e, 'rejected')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-[#f6f7f2] border border-rose-100 text-rose-500 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-rose-50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm">
                       <AlertCircle className="w-3 h-3" /> Flag Revision
                     </button>
-                    <button onClick={(e) => handleManagerAction(e, 'approved')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-[#1c1c1c] text-[#f6f7f2] rounded-lg text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50" style={{ boxShadow: "rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px" }}>
+                    <button onClick={(e) => handleManagerAction(e, 'approved')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-[#1c1c1c] text-[#f6f7f2] rounded-lg text-[10px] font-bold uppercase tracking-wider hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50" style={{ boxShadow: "rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px" }}>
                       {processingManager ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve Resolution
                     </button>
                     {(task.order || task.order_id) && (
-                      <button onClick={(e) => { e.stopPropagation(); setShowNDRModal(true); }} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-amber-500 text-[#f6f7f2] rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all active:scale-[0.98] shadow-sm shadow-amber-100">
+                      <button onClick={(e) => { e.stopPropagation(); setShowNDRModal(true); }} className="flex items-center justify-center gap-1.5 px-3 h-8 bg-amber-500 text-[#f6f7f2] rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-amber-600 transition-all active:scale-[0.98] shadow-sm shadow-amber-100">
                         <Zap className="w-3 h-3 fill-current" /> Trigger Shiprocket Action
                       </button>
                     )}
@@ -1037,12 +1037,12 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           <div className="flex items-center gap-3 md:gap-6 flex-wrap">
             <span className="font-bold">Task Details — {task.customer.name}</span>
             <div className="flex flex-wrap items-center gap-3 md:gap-4">
-              <div className="flex items-center bg-gray-100 p-0.5 rounded-lg [&>button]:whitespace-nowrap">
+              <div className="flex items-center bg-[#f0f0ec] p-0.5 rounded-lg [&>button]:whitespace-nowrap">
                  <button 
                    onClick={() => setActiveTab('details')}
                    className={cn(
                      "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all",
-                     activeTab === 'details' ? "bg-white text-[#1c1c1c] shadow-sm" : "text-gray-400 hover:text-gray-600"
+                     activeTab === 'details' ? "bg-white text-[#1c1c1c] shadow-sm" : "text-[#9a9a94] hover:text-[#55554f]"
                    )}
                  >
                    Overview
@@ -1051,25 +1051,25 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                    onClick={() => setActiveTab('chat')}
                    className={cn(
                      "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all flex items-center gap-1.5",
-                     activeTab === 'chat' ? "bg-white text-emerald-600 shadow-sm" : "text-gray-400 hover:text-emerald-500"
+                     activeTab === 'chat' ? "bg-white text-[#3fa877] shadow-sm" : "text-[#9a9a94] hover:text-[#55c08f]"
                    )}
                  >
-                   <MessageSquare className="w-3 h-3 text-emerald-500" /> Live Chat
+                   <MessageSquare className="w-3 h-3 text-[#55c08f]" /> Live Chat
                  </button>
               </div>
 
               {!isDone && (
-                <div className="flex flex-wrap items-center gap-2 md:border-l md:pl-4 border-gray-200 [&>button]:whitespace-nowrap">
+                <div className="flex flex-wrap items-center gap-2 md:border-l md:pl-4 border-[#ebece6] [&>button]:whitespace-nowrap">
                   {task.task_type === 'manager_audit' ? (
                     <>
-                      <button onClick={(e) => handleManagerAction(e, 'rejected')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f6f7f2] border border-rose-100 text-rose-500 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm">
+                      <button onClick={(e) => handleManagerAction(e, 'rejected')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f6f7f2] border border-rose-100 text-rose-500 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-rose-50 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm">
                         <AlertCircle className="w-3 h-3" /> Flag Revision
                       </button>
-                      <button onClick={(e) => handleManagerAction(e, 'approved')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#1c1c1c] text-[#f6f7f2] rounded-lg text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50" style={{ boxShadow: "rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px" }}>
+                      <button onClick={(e) => handleManagerAction(e, 'approved')} disabled={processingManager} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#1c1c1c] text-[#f6f7f2] rounded-lg text-[10px] font-bold uppercase tracking-wider hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50" style={{ boxShadow: "rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px" }}>
                         {processingManager ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve Resolution
                       </button>
                       {(task.order || task.order_id) && (
-                        <button onClick={(e) => { e.stopPropagation(); setShowNDRModal(true); }} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-500 text-[#f6f7f2] rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all active:scale-[0.98] shadow-sm shadow-amber-100">
+                        <button onClick={(e) => { e.stopPropagation(); setShowNDRModal(true); }} className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-500 text-[#f6f7f2] rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-amber-600 transition-all active:scale-[0.98] shadow-sm shadow-amber-100">
                           <Zap className="w-3 h-3 fill-current" /> Trigger Shiprocket Action
                         </button>
                       )}
@@ -1111,16 +1111,16 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           ) : (
             <div className="flex flex-col gap-6 lg:gap-8 pb-8">
                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
-                  <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4 h-full">
+                  <div className="bg-white p-5 rounded-2xl border border-[#ebece6] shadow-sm space-y-4 h-full">
                     <div className="flex items-center justify-between">
-                      <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Customer Profile</div>
-                      <Link href={`/customers/${task.customer_id}`} className="text-[10px] font-bold text-blue-600 hover:underline">View Full Profile</Link>
+                      <div className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Customer Profile</div>
+                      <Link href={`/customers/${task.customer_id}`} className="text-[10px] font-bold text-[#4f7fc8] hover:underline">View Full Profile</Link>
                     </div>
-                    <div className="flex items-center gap-3 pb-4 border-b border-gray-50">
+                    <div className="flex items-center gap-3 pb-4 border-b border-[#f6f7f2]">
                       <Avatar name={task.customer.name} className="w-10 h-10" />
                       <div>
-                        <div className="font-bold text-gray-900">{task.customer.name}</div>
-                        <div className="text-[10px] font-medium text-gray-500 flex items-center gap-1">
+                        <div className="font-bold text-[#1c1c1c]">{task.customer.name}</div>
+                        <div className="text-[10px] font-medium text-[#6b6b67] flex items-center gap-1">
                           <MapPin className="w-2.5 h-2.5" /> {task.customer.city || "Unknown City"}
                         </div>
                       </div>
@@ -1128,18 +1128,18 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                     <div className="space-y-3">
                       {trafficSource && (
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-gray-400">SOURCE</span>
-                          <span className="text-[10px] font-bold text-gray-700">{trafficSource}</span>
+                          <span className="text-[10px] font-bold text-[#9a9a94]">SOURCE</span>
+                          <span className="text-[10px] font-bold text-[#3a3a36]">{trafficSource}</span>
                         </div>
                       )}
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-gray-400">PHONE</span>
-                        <a href={`tel:${task.customer.phone}`} className="text-[10px] font-bold text-blue-600">{task.customer.phone}</a>
+                        <span className="text-[10px] font-bold text-[#9a9a94]">PHONE</span>
+                        <a href={`tel:${task.customer.phone}`} className="text-[10px] font-bold text-[#4f7fc8]">{task.customer.phone}</a>
                       </div>
                       {task.customer.email && (
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-gray-400">EMAIL</span>
-                          <span className="text-[10px] font-bold text-gray-700 truncate max-w-[120px]">{task.customer.email}</span>
+                          <span className="text-[10px] font-bold text-[#9a9a94]">EMAIL</span>
+                          <span className="text-[10px] font-bold text-[#3a3a36] truncate max-w-[120px]">{task.customer.email}</span>
                         </div>
                       )}
                     </div>
@@ -1151,16 +1151,16 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                      )}>
                         <div className="flex items-center justify-between">
                            <div className={cn(
-                             "text-[10px] font-black uppercase tracking-widest flex items-center gap-2",
+                             "text-[10px] font-bold uppercase tracking-wider flex items-center gap-2",
                              (task as any).metadata.risk_level === 'CRITICAL' ? "text-rose-600" : "text-amber-600"
                            )}>
                               <AlertCircle className="w-4 h-4" /> {(task as any).metadata.risk_level} RISK
                            </div>
-                           <div className="text-[10px] font-bold text-gray-400">SCORE: {((task.priority_score || 0) - 110)}%</div>
+                           <div className="text-[10px] font-bold text-[#9a9a94]">SCORE: {((task.priority_score || 0) - 110)}%</div>
                         </div>
                         <div className="space-y-1.5">
                           {(task as any).metadata.risk_reasons?.map((reason: string, i: number) => (
-                            <div key={i} className="text-[10px] font-bold text-gray-700 flex items-start gap-2 leading-tight">
+                            <div key={i} className="text-[10px] font-bold text-[#3a3a36] flex items-start gap-2 leading-tight">
                               <span className="text-rose-400 flex-shrink-0 mt-0.5">•</span> {reason}
                             </div>
                           ))}
@@ -1168,14 +1168,14 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                      </div>
                   )}
                   {logistics && logisticsMetrics && (
-                    <div className="bg-sky-50 border border-sky-100 p-5 rounded-2xl space-y-4 h-full">
+                    <div className="bg-[#eef4fc] border border-[#dfeafa] p-5 rounded-2xl space-y-4 h-full">
                       <div className="flex items-center justify-between">
-                        <div className="text-[10px] font-black text-sky-600 uppercase tracking-widest flex items-center gap-2">
+                        <div className="text-[10px] font-bold text-[#4f7fc8] uppercase tracking-wider flex items-center gap-2">
                           <Truck className="w-4 h-4" /> Logistics Intel
                         </div>
                         <div className={cn(
-                          "text-[9px] font-black px-2 py-0.5 rounded-full",
-                          logisticsMetrics.riskLevel === 'low' ? "bg-emerald-100 text-emerald-700" : 
+                          "text-[9px] font-bold px-2 py-0.5 rounded-full",
+                          logisticsMetrics.riskLevel === 'low' ? "bg-[#d5f0e1] text-[#2f8a5f]" : 
                           logisticsMetrics.riskLevel === 'medium' ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"
                         )}>
                           {logisticsMetrics.riskLevel.toUpperCase()} RTO RISK
@@ -1183,18 +1183,18 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                       </div>
                       <div className="space-y-3">
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-gray-500 font-medium">Historical Success Rate</span>
-                          <span className="font-black text-sky-700">{logisticsMetrics.successRate}%</span>
+                          <span className="text-[#6b6b67] font-medium">Historical Success Rate</span>
+                          <span className="font-bold text-[#3d66a6]">{logisticsMetrics.successRate}%</span>
                         </div>
-                        <div className="pt-3 border-t border-sky-200/50">
-                          <div className="text-[9px] font-black text-sky-400 uppercase mb-2">Recommended Carrier</div>
+                        <div className="pt-3 border-t border-[#c7dbf5]/50">
+                          <div className="text-[9px] font-bold text-[#8fb3e8] uppercase mb-2">Recommended Carrier</div>
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                              <Truck className="w-4 h-4 text-sky-600" />
+                              <Truck className="w-4 h-4 text-[#4f7fc8]" />
                             </div>
                             <div>
-                              <div className="text-xs font-bold text-sky-900">{logistics.best_carrier}</div>
-                              <div className="text-[9px] font-medium text-sky-600">Based on {logistics.rto_probability}% probability</div>
+                              <div className="text-xs font-bold text-[#233b60]">{logistics.best_carrier}</div>
+                              <div className="text-[9px] font-medium text-[#4f7fc8]">Based on {logistics.rto_probability}% probability</div>
                             </div>
                           </div>
                         </div>
@@ -1202,18 +1202,18 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                     </div>
                   )}
                   {upsells.length > 0 && (
-                    <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl space-y-4 h-full">
-                      <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                    <div className="bg-[#ecf8f1] border border-[#d5f0e1] p-5 rounded-2xl space-y-4 h-full">
+                      <div className="text-[10px] font-bold text-[#3fa877] uppercase tracking-wider flex items-center gap-2">
                         <TrendingUp className="w-4 h-4" /> Perfect Pair Upsell
                       </div>
                       <div className="space-y-3">
                         {upsells.map((upsell, i) => (
-                          <div key={i} className="bg-white p-3 rounded-xl border border-emerald-100 shadow-sm space-y-2">
+                          <div key={i} className="bg-white p-3 rounded-xl border border-[#d5f0e1] shadow-sm space-y-2">
                             <div className="flex items-center justify-between">
-                              <div className="text-xs font-bold text-gray-900">{upsell.product_name}</div>
-                              <div className="text-[10px] font-black text-emerald-600">₹{upsell.price}</div>
+                              <div className="text-xs font-bold text-[#1c1c1c]">{upsell.product_name}</div>
+                              <div className="text-[10px] font-bold text-[#3fa877]">₹{upsell.price}</div>
                             </div>
-                            <div className="text-[10px] text-gray-500 font-medium leading-relaxed italic">
+                            <div className="text-[10px] text-[#6b6b67] font-medium leading-relaxed italic">
                               &ldquo;{upsell.script}&rdquo;
                             </div>
                           </div>
@@ -1221,57 +1221,57 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                       </div>
                     </div>
                   )}
-                  <div className="bg-gradient-to-br from-[#111] via-[#1a1a1a] to-[#242424] text-white p-5 rounded-2xl border border-gray-800 shadow-2xl relative overflow-hidden group flex flex-col h-full">
+                  <div className="bg-gradient-to-br from-[#111] via-[#1a1a1a] to-[#242424] text-white p-5 rounded-2xl border border-[#262624] shadow-2xl relative overflow-hidden group flex flex-col h-full">
                     <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                      <Zap className="w-12 h-12 text-blue-400" />
+                      <Zap className="w-12 h-12 text-[#8fb3e8]" />
                     </div>
                     
                     <div className="flex items-center justify-between mb-4">
-                      <div className="text-[10px] font-black text-blue-400 uppercase tracking-[0.25em] flex items-center gap-2">
-                        <Zap className="w-3.5 h-3.5 fill-current animate-pulse text-blue-400" /> Advanced AI Script
+                      <div className="text-[10px] font-bold text-[#8fb3e8] uppercase tracking-[0.25em] flex items-center gap-2">
+                        <Zap className="w-3.5 h-3.5 fill-current animate-pulse text-[#8fb3e8]" /> Advanced AI Script
                       </div>
-                      <div className="flex items-center gap-1.5 bg-blue-950/40 border border-blue-900/30 px-2 py-0.5 rounded-md">
-                        <div className="w-1 h-1 rounded-full bg-emerald-500 animate-ping" />
-                        <span className="text-[8px] font-black text-blue-300 uppercase tracking-widest">Compiler Live</span>
+                      <div className="flex items-center gap-1.5 bg-[#1a2c48]/40 border border-[#233b60]/30 px-2 py-0.5 rounded-md">
+                        <div className="w-1 h-1 rounded-full bg-[#55c08f] animate-ping" />
+                        <span className="text-[8px] font-bold text-[#a9c6ef] uppercase tracking-wider">Compiler Live</span>
                       </div>
                     </div>
 
                     {/* Active dynamic indicators */}
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {/* Greeting indicator */}
-                      <span className="text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded bg-white/5 border border-white/10 text-gray-300 flex items-center gap-1">
-                        <Clock className="w-2.5 h-2.5 text-blue-400" /> 
+                      <span className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-white/5 border border-white/10 text-[#d4d5cd] flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5 text-[#8fb3e8]" /> 
                         {new Date().getHours() < 12 ? "Morning" : new Date().getHours() < 17 ? "Afternoon" : "Evening"} Active
                       </span>
 
                       {/* Sentiment indicator */}
                       {((task as any).sentiment === 'negative') ? (
-                        <span className="text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded bg-rose-950/40 border border-rose-900/30 text-rose-300 flex items-center gap-1">
+                        <span className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-rose-950/40 border border-rose-900/30 text-rose-300 flex items-center gap-1">
                           <AlertCircle className="w-2.5 h-2.5 text-rose-400" /> Empathy Mode Engaged
                         </span>
                       ) : (
-                        <span className="text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded bg-emerald-950/40 border border-emerald-900/30 text-emerald-300 flex items-center gap-1">
-                          <CheckCircle className="w-2.5 h-2.5 text-emerald-400" /> Positive Tone Active
+                        <span className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-[#123c29]/40 border border-[#1b553a]/30 text-[#8fd6b0] flex items-center gap-1">
+                          <CheckCircle className="w-2.5 h-2.5 text-[#6fcb9d]" /> Positive Tone Active
                         </span>
                       )}
 
                       {/* Urgency indicator */}
                       {(task as any).is_urgent && (
-                        <span className="text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded bg-amber-950/40 border border-amber-900/30 text-amber-300 flex items-center gap-1 animate-pulse">
+                        <span className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-amber-950/40 border border-amber-900/30 text-amber-300 flex items-center gap-1 animate-pulse">
                           <Zap className="w-2.5 h-2.5 fill-amber-400 text-amber-400" /> Priority Hook Applied
                         </span>
                       )}
 
                       {/* Logistics indicator */}
                       {task.task_type === 'cod_verify' && logistics?.rto_probability && logistics.rto_probability > 30 && (
-                        <span className="text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded bg-indigo-950/40 border border-indigo-900/30 text-indigo-300 flex items-center gap-1">
-                          <TrendingUp className="w-2.5 h-2.5 text-indigo-400" /> Prepaid Conversion Up
+                        <span className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-[#1a2c48]/40 border border-[#233b60]/30 text-[#a9c6ef] flex items-center gap-1">
+                          <TrendingUp className="w-2.5 h-2.5 text-[#8fb3e8]" /> Prepaid Conversion Up
                         </span>
                       )}
                     </div>
                     
                     <div className="bg-[#0b0b0b]/60 border border-[#222] p-4 rounded-xl mb-4 flex-1 flex flex-col justify-center">
-                      <p className="text-xs font-bold leading-relaxed italic text-gray-200">
+                      <p className="text-xs font-bold leading-relaxed italic text-[#e6e7e0]">
                         {aiScriptLoading && !aiScript ? "Generating personalized script..." : <>&ldquo;{effectiveScript}&rdquo;</>}
                       </p>
                     </div>
@@ -1281,7 +1281,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                         navigator.clipboard.writeText(effectiveScript);
                         toast.success("Script copied!");
                       }}
-                      className="w-full text-[9px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 hover:scale-[1.01] active:scale-[0.99] border border-white/5 px-3 py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
+                      className="w-full text-[9px] font-bold uppercase tracking-wider bg-white/10 hover:bg-white/20 hover:scale-[1.01] active:scale-[0.99] border border-white/5 px-3 py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
                     >
                       <Zap className="w-3.5 h-3.5 fill-current" /> Copy AI Battle Script
                     </button>
@@ -1294,53 +1294,53 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                       const oId = [orderObj.shopify_order_id, orderObj.order_number, orderObj.id].find(id => id && String(id).trim().length > 0);
                       if (oId) {
                         return (
-                          <div className="bg-gray-50 -m-5 md:-m-0 rounded-2xl overflow-hidden min-h-[50vh] border border-gray-100 shadow-sm">
+                          <div className="bg-[#f6f7f2] -m-5 md:-m-0 rounded-2xl overflow-hidden min-h-[50vh] border border-[#ebece6] shadow-sm">
                             <ShiprocketOrderView orderId={String(oId)} />
                           </div>
                         );
                       }
                     }
                     return (
-                      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                        <div className="px-5 py-4 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
+                      <div className="bg-white rounded-2xl border border-[#ebece6] shadow-sm overflow-hidden">
+                        <div className="px-5 py-4 bg-[#f6f7f2]/50 border-b border-[#ebece6] flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+                            <div className="w-8 h-8 rounded-lg bg-[#dfeafa] flex items-center justify-center text-[#4f7fc8]">
                                <CheckSquare className="w-4 h-4" />
                             </div>
-                            <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">Abandoned Cart Detail</h4>
+                            <h4 className="text-xs font-bold text-[#1c1c1c] uppercase tracking-wider">Abandoned Cart Detail</h4>
                           </div>
-                          <div className="text-[10px] font-bold text-gray-400">ID: {abandonedCart?.cart_token?.slice(-12) || "—"}</div>
+                          <div className="text-[10px] font-bold text-[#9a9a94]">ID: {abandonedCart?.cart_token?.slice(-12) || "—"}</div>
                         </div>
                         <div className="p-6">
-                           <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-50">
+                           <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#f6f7f2]">
                               <div>
-                                <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Abandoned At</div>
-                                <div className="text-xs font-bold text-gray-900">{formatDate(abandonedCart?.abandoned_at || task.created_at)}</div>
+                                <div className="text-[10px] text-[#9a9a94] font-bold uppercase tracking-wider mb-1">Abandoned At</div>
+                                <div className="text-xs font-bold text-[#1c1c1c]">{formatDate(abandonedCart?.abandoned_at || task.created_at)}</div>
                               </div>
                               <div className="text-right">
-                                <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Status</div>
-                                <div className="text-[10px] bg-rose-50 text-rose-600 px-2 py-0.5 rounded-full font-black">ABANDONED</div>
+                                <div className="text-[10px] text-[#9a9a94] font-bold uppercase tracking-wider mb-1">Status</div>
+                                <div className="text-[10px] bg-rose-50 text-rose-600 px-2 py-0.5 rounded-full font-bold">ABANDONED</div>
                               </div>
                            </div>
                            <div className="space-y-4">
                               {items.map((item: any, idx: number) => (
                                 <div key={idx} className="flex items-center gap-4 group">
-                                  <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0 group-hover:bg-blue-50 transition-colors">
+                                  <div className="w-12 h-12 rounded-xl bg-[#f6f7f2] border border-[#ebece6] flex items-center justify-center text-[#9a9a94] flex-shrink-0 group-hover:bg-[#eef4fc] transition-colors">
                                     <Paperclip className="w-5 h-5" />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-bold text-gray-900 truncate">{item.name || item.title}</div>
-                                    <div className="text-[10px] font-medium text-gray-500">{item.variant || "Default Variant"}</div>
+                                    <div className="text-sm font-bold text-[#1c1c1c] truncate">{item.name || item.title}</div>
+                                    <div className="text-[10px] font-medium text-[#6b6b67]">{item.variant || "Default Variant"}</div>
                                   </div>
                                   <div className="text-right">
-                                    <div className="text-sm font-black text-gray-900">₹{item.price || 0}</div>
-                                    <div className="text-[10px] font-bold text-gray-400">Qty: {item.quantity || 1}</div>
+                                    <div className="text-sm font-bold text-[#1c1c1c]">₹{item.price || 0}</div>
+                                    <div className="text-[10px] font-bold text-[#9a9a94]">Qty: {item.quantity || 1}</div>
                                   </div>
                                 </div>
                               ))}
                            </div>
-                           <div className="mt-8 pt-6 border-t border-gray-100 space-y-2">
-                              <div className="flex justify-between text-xs font-medium text-gray-500">
+                           <div className="mt-8 pt-6 border-t border-[#ebece6] space-y-2">
+                              <div className="flex justify-between text-xs font-medium text-[#6b6b67]">
                                 <span>Subtotal</span>
                                 <span>₹{subtotal}</span>
                               </div>
@@ -1350,9 +1350,9 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                                   <span>-₹{discountAmount}</span>
                                 </div>
                               )}
-                              <div className="flex justify-between text-base font-black text-gray-900 pt-2">
+                              <div className="flex justify-between text-base font-bold text-[#1c1c1c] pt-2">
                                 <span>Total Recoverable</span>
-                                <span className="text-blue-600">₹{totalAmount}</span>
+                                <span className="text-[#4f7fc8]">₹{totalAmount}</span>
                               </div>
                            </div>
                         </div>
@@ -1361,19 +1361,19 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   })()}
                   <div className="flex flex-wrap gap-4">
                      {checkoutUrl && (
-                        <a href={checkoutUrl} target="_blank" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20 group w-fit">
+                        <a href={checkoutUrl} target="_blank" className="bg-[#1c1c1c] hover:bg-[#151515] text-white px-6 py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#6f9bdd]/20 group w-fit">
                            <ExternalLink className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                           <span className="text-xs font-black uppercase tracking-widest">Open Recovery Link</span>
+                           <span className="text-xs font-bold uppercase tracking-wider">Open Recovery Link</span>
                         </a>
                      )}
-                     <button onClick={() => setWaModal(true)} className="bg-[#25D366] hover:bg-[#128C7E] text-white px-6 py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20 group w-fit">
+                     <button onClick={() => setWaModal(true)} className="bg-[#25D366] hover:bg-[#128C7E] text-white px-6 py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#55c08f]/20 group w-fit">
                         <MessageSquare className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                        <span className="text-xs font-black uppercase tracking-widest">WhatsApp Customer</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">WhatsApp Customer</span>
                      </button>
                   </div>
                   {task.manager_action === 'rejected' && (
                     <div className="bg-rose-50 border-2 border-rose-100 p-5 rounded-2xl">
-                      <div className="flex items-center gap-2 text-rose-700 font-black text-[10px] uppercase tracking-widest mb-2">
+                      <div className="flex items-center gap-2 text-rose-700 font-bold text-[10px] uppercase tracking-wider mb-2">
                         <AlertTriangle className="w-4 h-4" /> Manager Revision Requested
                       </div>
                       <p className="text-sm font-bold text-rose-900 leading-relaxed italic bg-white/50 p-3 rounded-xl">
@@ -1409,14 +1409,14 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         </>}
       >
         <div className="space-y-4">
-          <div className="text-[11px] text-gray-400">Sending to: <a href={`tel:${task.customer.phone}`} className="font-bold text-gray-700 hover:text-blue-600 transition-colors">{task.customer.phone}</a></div>
+          <div className="text-[11px] text-[#9a9a94]">Sending to: <a href={`tel:${task.customer.phone}`} className="font-bold text-[#3a3a36] hover:text-[#4f7fc8] transition-colors">{task.customer.phone}</a></div>
           
           {/* Quick Presets */}
           <div className="flex flex-wrap gap-2">
             <button 
               className={cn(
-                "text-[10px] px-2.5 py-1 rounded bg-blue-600 text-white font-black uppercase tracking-wider hover:bg-blue-700 transition-all flex items-center gap-1 shadow-sm",
-                waMessage === effectiveScript && "ring-2 ring-blue-400"
+                "text-[10px] px-2.5 py-1 rounded bg-[#1c1c1c] text-white font-bold uppercase tracking-wider hover:bg-[#151515] transition-all flex items-center gap-1 shadow-sm",
+                waMessage === effectiveScript && "ring-2 ring-[#8fb3e8]"
               )}
               onClick={() => setWaMessage(effectiveScript)}
             >
@@ -1436,9 +1436,9 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                 <button 
                   key={key} 
                   className={cn(
-                    "text-[10px] px-2 py-1 rounded bg-gray-50 border border-gray-200 text-gray-500 uppercase font-bold tracking-wider hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all",
+                    "text-[10px] px-2 py-1 rounded bg-[#f6f7f2] border border-[#ebece6] text-[#6b6b67] uppercase font-bold tracking-wider hover:bg-[#eef4fc] hover:text-[#4f7fc8] hover:border-[#c7dbf5] transition-all",
                     // Highlight current task type by default
-                    task.task_type === key && "bg-blue-50 border-blue-200 text-blue-700",
+                    task.task_type === key && "bg-[#eef4fc] border-[#c7dbf5] text-[#3d66a6]",
                     waMessage === tpl.replace("{{name}}", task.customer.name || "there").replace("{{product}}", product) && "bg-[#1c1c1c] text-white border-[#1c1c1c]"
                   )} 
                   onClick={() => {
@@ -1460,7 +1460,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           
           {/* File Attachment */}
           <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 px-3 py-2 rounded bg-gray-50 border border-dashed border-gray-300 text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/50 cursor-pointer transition-all">
+            <label className="flex items-center gap-2 px-3 py-2 rounded bg-[#f6f7f2] border border-dashed border-[#d4d5cd] text-[#6b6b67] hover:text-[#4f7fc8] hover:border-[#c7dbf5] hover:bg-[#eef4fc]/50 cursor-pointer transition-all">
               <Paperclip className="w-3.5 h-3.5" />
               <span className="text-xs font-medium">{waFile ? "Change File" : "Attach File (Media/PDF)"}</span>
               <input 
@@ -1471,11 +1471,11 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
             </label>
             
             {waFile && (
-              <div className="flex items-center gap-2 px-2 py-1.5 rounded bg-blue-50 border border-blue-100 text-blue-700">
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded bg-[#eef4fc] border border-[#dfeafa] text-[#3d66a6]">
                 <span className="text-[10px] font-bold truncate max-w-[150px]">{waFile.name}</span>
                 <button aria-label="Remove" 
                   onClick={() => setWaFile(null)}
-                  className="p-0.5 hover:bg-blue-100 rounded-full transition-colors"
+                  className="p-0.5 hover:bg-[#dfeafa] rounded-full transition-colors"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -1496,14 +1496,14 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         </>}
       >
         <div className="space-y-4">
-          <div className="text-[11px] text-gray-400">Sending to: <span className="font-bold text-gray-700">{task.customer.email || "No email provided"}</span></div>
+          <div className="text-[11px] text-[#9a9a94]">Sending to: <span className="font-bold text-[#3a3a36]">{task.customer.email || "No email provided"}</span></div>
           
           {/* Quick Presets */}
           <div className="flex flex-wrap gap-2">
             <button 
               className={cn(
-                "text-[10px] px-2.5 py-1 rounded bg-blue-600 text-white font-black uppercase tracking-wider hover:bg-blue-700 transition-all flex items-center gap-1 shadow-sm",
-                emailMessage === effectiveScript && "ring-2 ring-blue-400"
+                "text-[10px] px-2.5 py-1 rounded bg-[#1c1c1c] text-white font-bold uppercase tracking-wider hover:bg-[#151515] transition-all flex items-center gap-1 shadow-sm",
+                emailMessage === effectiveScript && "ring-2 ring-[#8fb3e8]"
               )}
               onClick={() => {
                 setEmailMessage(effectiveScript);
@@ -1526,7 +1526,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                 <button 
                   key={key} 
                   className={cn(
-                    "text-[10px] px-2 py-1 rounded bg-gray-50 border border-gray-200 text-gray-500 uppercase font-bold tracking-wider hover:bg-[#1c1c1c] hover:text-white transition-all",
+                    "text-[10px] px-2 py-1 rounded bg-[#f6f7f2] border border-[#ebece6] text-[#6b6b67] uppercase font-bold tracking-wider hover:bg-[#1c1c1c] hover:text-white transition-all",
                     task.task_type === key && "bg-[#1c1c1c] text-white",
                     emailMessage === tpl.replace("{{name}}", task.customer.name || "there").replace("{{product}}", product) && "ring-2 ring-[#1c1c1c]"
                   )} 
@@ -1547,17 +1547,17 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
           </div>
 
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Subject</label>
+            <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Subject</label>
             <input type="text" className="input text-sm" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
           </div>
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Message</label>
+            <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Message</label>
             <textarea className="input resize-none h-48 text-sm" value={emailMessage} onChange={e => setEmailMessage(e.target.value)} />
           </div>
 
           {/* File Attachment */}
           <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 px-3 py-2 rounded bg-gray-50 border border-dashed border-gray-300 text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/50 cursor-pointer transition-all">
+            <label className="flex items-center gap-2 px-3 py-2 rounded bg-[#f6f7f2] border border-dashed border-[#d4d5cd] text-[#6b6b67] hover:text-[#4f7fc8] hover:border-[#c7dbf5] hover:bg-[#eef4fc]/50 cursor-pointer transition-all">
               <Paperclip className="w-3.5 h-3.5" />
               <span className="text-xs font-medium">{emailFile ? "Change Attachment" : "Attach Document/Image"}</span>
               <input 
@@ -1568,11 +1568,11 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
             </label>
             
             {emailFile && (
-              <div className="flex items-center gap-2 px-2 py-1.5 rounded bg-blue-50 border border-blue-100 text-blue-700">
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded bg-[#eef4fc] border border-[#dfeafa] text-[#3d66a6]">
                 <span className="text-[10px] font-bold truncate max-w-[150px]">{emailFile.name}</span>
                 <button aria-label="Remove" 
                   onClick={() => setEmailFile(null)}
-                  className="p-0.5 hover:bg-blue-100 rounded-full transition-colors"
+                  className="p-0.5 hover:bg-[#dfeafa] rounded-full transition-colors"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -1592,7 +1592,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
       >
         <div className="space-y-4">
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">⚡ Quick Actions</label>
+            <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">⚡ Quick Actions</label>
             <div className="flex flex-wrap gap-2">
               <button 
                 type="button"
@@ -1606,7 +1606,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                     setLogWaMessage(tpl.replace("{{name}}", task.customer.name).replace("{{product}}", product));
                   }
                 }}
-                className="px-2.5 py-1.5 rounded bg-orange-50 border border-orange-100 text-[10px] font-bold text-orange-700 hover:bg-orange-600 hover:text-white transition-all flex items-center gap-1.5"
+                className="px-2.5 py-1.5 rounded bg-[#fdf5e4] border border-[#fbeac6] text-[10px] font-bold text-[#a8741c] hover:bg-[#d4962a] hover:text-white transition-all flex items-center gap-1.5"
               >
                 📞 No Answer + WA
               </button>
@@ -1617,7 +1617,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   setDisposition("busy_call_later");
                   setNote("Customer was busy, requested a callback later.");
                 }}
-                className="px-2.5 py-1.5 rounded bg-blue-50 border border-blue-100 text-[10px] font-bold text-blue-700 hover:bg-blue-600 hover:text-white transition-all flex items-center gap-1.5"
+                className="px-2.5 py-1.5 rounded bg-[#eef4fc] border border-[#dfeafa] text-[10px] font-bold text-[#3d66a6] hover:bg-[#1c1c1c] hover:text-white transition-all flex items-center gap-1.5"
               >
                 ⏳ Busy / Call Later
               </button>
@@ -1628,7 +1628,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                   setDisposition("connected_bought");
                   setNote("Customer confirmed they have already purchased. Workflow complete.");
                 }}
-                className="px-2.5 py-1.5 rounded bg-blue-50 border border-blue-100 text-[10px] font-bold text-blue-700 hover:bg-[#1c1c1c] hover:text-white transition-all flex items-center gap-1.5"
+                className="px-2.5 py-1.5 rounded bg-[#eef4fc] border border-[#dfeafa] text-[10px] font-bold text-[#3d66a6] hover:bg-[#1c1c1c] hover:text-white transition-all flex items-center gap-1.5"
               >
                 ✅ Already Bought
               </button>
@@ -1648,7 +1648,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Outcome</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Outcome</label>
               <Select
                 triggerClassName="py-1 text-xs font-semibold"
                 value={outcome}
@@ -1661,7 +1661,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Disposition</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Disposition</label>
               <Select
                 triggerClassName="py-1 text-xs"
                 value={disposition}
@@ -1683,7 +1683,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
             </div>
           </div>
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Internal Note / Agent Comments</label>
+            <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Internal Note / Agent Comments</label>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {(function() {
                 const type = task.task_type;
@@ -1736,7 +1736,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                     key={p.label}
                     type="button"
                     onClick={() => setNote(p.text)}
-                    className="px-2 py-1 rounded bg-gray-50 border border-gray-100 text-[10px] font-bold text-gray-500 hover:bg-[#1c1c1c] hover:text-white hover:border-[#1c1c1c] transition-all"
+                    className="px-2 py-1 rounded bg-[#f6f7f2] border border-[#ebece6] text-[10px] font-bold text-[#6b6b67] hover:bg-[#1c1c1c] hover:text-white hover:border-[#1c1c1c] transition-all"
                   >
                     {p.label}
                   </button>
@@ -1746,11 +1746,11 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
             <textarea className="input resize-none h-20 text-xs" placeholder="Add detailed call notes for future reference..." value={note} onChange={e => setNote(e.target.value)} />
           </div>
 
-          <div className="pt-2 border-t border-gray-50">
+          <div className="pt-2 border-t border-[#f6f7f2]">
              <label className="flex items-center gap-2 cursor-pointer group mb-2">
                 <input 
                   type="checkbox" 
-                  className="rounded border-gray-300 text-[#1c1c1c] focus:ring-[#1c1c1c] cursor-pointer"
+                  className="rounded border-[#d4d5cd] text-[#1c1c1c] focus:ring-[#1c1c1c] cursor-pointer"
                   checked={sendWaInLog}
                   onChange={e => {
                     setSendWaInLog(e.target.checked);
@@ -1760,7 +1760,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                     }
                   }}
                 />
-                <span className="text-xs font-bold text-gray-600 group-hover:text-[#1c1c1c] transition-colors">Follow up via WhatsApp?</span>
+                <span className="text-xs font-bold text-[#55554f] group-hover:text-[#1c1c1c] transition-colors">Follow up via WhatsApp?</span>
              </label>
              
              {sendWaInLog && (
@@ -1774,8 +1774,8 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                                 setLogWaMessage(tpl.replace("{{name}}", task.customer.name).replace("{{product}}", product));
                             }}
                             className={cn(
-                                "whitespace-nowrap px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter transition-all",
-                                logWaMessage.includes(key.replace("_", " ")) ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                "whitespace-nowrap px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-tighter transition-all",
+                                logWaMessage.includes(key.replace("_", " ")) ? "bg-[#1c1c1c] text-white" : "bg-[#f0f0ec] text-[#6b6b67] hover:bg-[#e6e7e0]"
                             )}
                          >
                             {key.replace("_", " ")}
@@ -1783,7 +1783,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                       ))}
                    </div>
                    <textarea 
-                     className="input resize-none h-24 text-xs bg-blue-50/20 border-blue-100" 
+                     className="input resize-none h-24 text-xs bg-[#eef4fc]/20 border-[#dfeafa]" 
                      placeholder="Type follow-up message..." 
                      value={logWaMessage} 
                      onChange={e => setLogWaMessage(e.target.value)} 
@@ -1803,11 +1803,11 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
       >
         <div className="space-y-3">
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">New Date</label>
+            <label className="text-xs font-medium text-[#3a3a36] block mb-1">New Date</label>
             <input type="date" className="input" value={newDate} onChange={e => setNewDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">Reason</label>
+            <label className="text-xs font-medium text-[#3a3a36] block mb-1">Reason</label>
             <input type="text" className="input" placeholder="Reason for rescheduling..." value={reason} onChange={e => setReason(e.target.value)} />
           </div>
         </div>

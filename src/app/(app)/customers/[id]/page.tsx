@@ -268,7 +268,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
 
   return (
     <div className="animate-fade-in">
-      <Link href="/customers" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#1c1c1c] mb-4 transition-colors">
+      <Link href="/customers" className="inline-flex items-center gap-1.5 text-sm text-[#6b6b67] hover:text-[#1c1c1c] mb-4 transition-colors">
         <ArrowLeft className="w-4 h-4" /> Back to Customers
       </Link>
 
@@ -282,7 +282,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                 <h1 className="text-xl md:text-2xl font-display text-[#1c1c1c] break-words line-clamp-2">{customer.name}</h1>
               <SegmentBadge segment={customer.segment} rto={customer.rto_flag} />
               {customer.rto_flag && (
-                <button onClick={() => setClearRtoModal(true)} className="text-xs text-orange-600 hover:text-orange-800 underline">
+                <button onClick={() => setClearRtoModal(true)} className="text-xs text-[#d4962a] hover:text-[#7f5715] underline">
                   Clear RTO Flag
                 </button>
               )}
@@ -290,7 +290,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
             <div className="flex items-center gap-4 mt-2 flex-wrap">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
-                  <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline">
+                  <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 text-sm text-[#4f7fc8] hover:underline">
                     <Phone className="w-3.5 h-3.5" /> {customer.phone}
                   </a>
                   {(customer.phone.includes("x") || customer.phone.includes("X") || customer.phone.includes("_SR_")) && (
@@ -298,8 +298,8 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                       onClick={handleUnmask}
                       disabled={unmasking}
                       className={cn(
-                        "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-black uppercase transition-all",
-                        unmasking ? "bg-gray-100 text-gray-400" : "bg-[#1c1c1c]/10 text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white"
+                        "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase transition-all",
+                        unmasking ? "bg-[#f0f0ec] text-[#9a9a94]" : "bg-[#1c1c1c]/10 text-[#1c1c1c] hover:bg-[#1c1c1c] hover:text-white"
                       )}
                     >
                       {unmasking ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : <Smartphone className="w-2.5 h-2.5" />}
@@ -308,13 +308,13 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                   )}
                 </div>
                 {customer.alt_phone && (
-                  <a href={`tel:${customer.alt_phone}`} className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:underline">
+                  <a href={`tel:${customer.alt_phone}`} className="flex items-center gap-1.5 text-[11px] text-[#6b6b67] hover:underline">
                     <Phone className="w-3 h-3" /> {customer.alt_phone} (Alt)
                   </a>
                 )}
               </div>
               {customer.email && (
-                <a href={`mailto:${customer.email}`} className="flex items-center gap-1.5 text-sm text-gray-500 hover:underline">
+                <a href={`mailto:${customer.email}`} className="flex items-center gap-1.5 text-sm text-[#6b6b67] hover:underline">
                   <Mail className="w-3.5 h-3.5" /> {customer.email}
                 </a>
               )}
@@ -361,7 +361,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                 </button>
               </div>
             </div>
-            <div className="text-xs text-gray-400 mt-1">Customer since {formatDate(customer.created_at)}</div>
+            <div className="text-xs text-[#9a9a94] mt-1">Customer since {formatDate(customer.created_at)}</div>
           </div>
           </div>
           {/* Stats sit beside the info row on desktop and below it on phones (they used to be nested inside it, squeezing the name column). */}
@@ -371,9 +371,9 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
               { label: "Total Spent", value: formatCurrency(totalSpent) },
               { label: "RTO Count", value: customer.rto_count },
             ].map(s => (
-              <div key={s.label} className="text-center bg-gray-50 rounded-xl px-2 md:px-4 py-3 border border-gray-100/50 min-w-0">
+              <div key={s.label} className="text-center bg-[#f6f7f2] rounded-xl px-2 md:px-4 py-3 border border-[#ebece6]/50 min-w-0">
                 <div className="text-base md:text-lg font-bold text-[#1c1c1c] truncate">{s.value}</div>
-                <div className="text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-widest text-gray-400 mt-1">{s.label}</div>
+                <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider md:tracking-wider text-[#9a9a94] mt-1">{s.label}</div>
               </div>
             ))}
           </div>
@@ -383,35 +383,35 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
       {/* Customer Details Card */}
       {(customer.address || customer.city || customer.state || customer.zip) && (
         <div className="card p-5 mb-5 border-l-4 border-l-[#1c1c1c] bg-[#ebece6]/10 animate-fade-in shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-[#3a3a36] mb-3 flex items-center gap-2">
             <MapPin className="w-4 h-4 text-[#1c1c1c]" /> Address & Location
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {customer.address && (
               <div className="flex items-start gap-2">
-                <Home className="w-3.5 h-3.5 text-gray-400 mt-0.5" />
+                <Home className="w-3.5 h-3.5 text-[#9a9a94] mt-0.5" />
                 <div>
-                  <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Street Address</div>
-                  <div className="text-sm text-gray-700">{customer.address}</div>
+                  <div className="text-[10px] text-[#9a9a94] uppercase font-bold tracking-wider">Street Address</div>
+                  <div className="text-sm text-[#3a3a36]">{customer.address}</div>
                 </div>
               </div>
             )}
             {customer.city && (
               <div>
-                <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">City</div>
-                <div className="text-sm text-gray-700">{customer.city}</div>
+                <div className="text-[10px] text-[#9a9a94] uppercase font-bold tracking-wider">City</div>
+                <div className="text-sm text-[#3a3a36]">{customer.city}</div>
               </div>
             )}
             {customer.state && (
               <div>
-                <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">State / Province</div>
-                <div className="text-sm text-gray-700">{customer.state}</div>
+                <div className="text-[10px] text-[#9a9a94] uppercase font-bold tracking-wider">State / Province</div>
+                <div className="text-sm text-[#3a3a36]">{customer.state}</div>
               </div>
             )}
             {customer.zip && (
               <div>
-                <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">ZIP / Pin Code</div>
-                <div className="text-sm text-gray-700 font-mono">{customer.zip}</div>
+                <div className="text-[10px] text-[#9a9a94] uppercase font-bold tracking-wider">ZIP / Pin Code</div>
+                <div className="text-sm text-[#3a3a36] font-mono">{customer.zip}</div>
               </div>
             )}
           </div>
@@ -420,9 +420,9 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
 
       {/* Dynamic Metadata Card */}
       {customer.custom_meta && Object.keys(customer.custom_meta).length > 0 && (
-        <div className="card p-5 mb-5 border-l-4 border-l-purple-400 bg-purple-50/10 animate-fade-in shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-            <Info className="w-4 h-4 text-purple-500" /> Additional Information
+        <div className="card p-5 mb-5 border-l-4 border-l-[#8fb3e8] bg-[#eef4fc]/10 animate-fade-in shadow-sm">
+          <h3 className="text-sm font-semibold text-[#3a3a36] mb-4 flex items-center gap-2">
+            <Info className="w-4 h-4 text-[#6f9bdd]" /> Additional Information
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -456,16 +456,16 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
               
               return (
                 <div key={group.title} className="space-y-3">
-                  <h4 className="text-[10px] font-bold text-purple-600 uppercase tracking-widest border-b border-purple-100 pb-1">{group.title}</h4>
+                  <h4 className="text-[10px] font-bold text-[#4f7fc8] uppercase tracking-wider border-b border-[#dfeafa] pb-1">{group.title}</h4>
                   <div className="space-y-2">
                     {items.map(([key, value]) => (
                       <div key={key} className="flex flex-col">
-                        <span className="text-[10px] text-gray-400 uppercase font-medium truncate mb-0.5" title={key}>
+                        <span className="text-[10px] text-[#9a9a94] uppercase font-medium truncate mb-0.5" title={key}>
                           {key.replace(/_/g, " ").replace(/RECOVER/i, "").trim() || key}
                         </span>
-                        <div className="text-xs text-gray-700 font-semibold truncate max-w-full">
+                        <div className="text-xs text-[#3a3a36] font-semibold truncate max-w-full">
                           {key.toUpperCase() === "ABANDONLINK" ? (
-                            <a href={String(value)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                            <a href={String(value)} target="_blank" rel="noopener noreferrer" className="text-[#4f7fc8] hover:underline flex items-center gap-1">
                               View Cart <ShoppingBag className="w-2.5 h-2.5" />
                             </a>
                           ) : (
@@ -489,12 +489,12 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
               
               return (
                 <div className="space-y-3">
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-1">Miscellaneous</h4>
+                  <h4 className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider border-b border-[#ebece6] pb-1">Miscellaneous</h4>
                   <div className="grid grid-cols-1 gap-2">
                     {items.map(([key, value]) => (
                       <div key={key} className="flex flex-col">
-                        <span className="text-[10px] text-gray-400 uppercase font-medium mb-0.5 truncate">{key.replace(/_/g, " ")}</span>
-                        <span className="text-xs text-gray-700 font-semibold">{String(value)}</span>
+                        <span className="text-[10px] text-[#9a9a94] uppercase font-medium mb-0.5 truncate">{key.replace(/_/g, " ")}</span>
+                        <span className="text-xs text-[#3a3a36] font-semibold">{String(value)}</span>
                       </div>
                     ))}
                   </div>
@@ -506,17 +506,17 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 mb-4 gap-0 overflow-x-auto scroller-hide">
+      <div className="flex border-b border-[#ebece6] mb-4 gap-0 overflow-x-auto scroller-hide">
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key as any)}
             className={cn("flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap",
-              tab === t.key ? "border-[#1c1c1c] text-[#1c1c1c]" : "border-transparent text-gray-500 hover:text-gray-700"
+              tab === t.key ? "border-[#1c1c1c] text-[#1c1c1c]" : "border-transparent text-[#6b6b67] hover:text-[#3a3a36]"
             )}>
             <t.icon className="w-3.5 h-3.5" />
             {t.label}
             {"count" in t && t.count > 0 && (
               <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                tab === t.key ? "bg-[#1c1c1c] text-white" : "bg-gray-100 text-gray-500"
+                tab === t.key ? "bg-[#1c1c1c] text-white" : "bg-[#f0f0ec] text-[#6b6b67]"
               )}>{t.count}</span>
             )}
           </button>
@@ -526,22 +526,22 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
       {/* Tab content */}
       {tab === "timeline" && (
         <div className="space-y-4">
-          <div className="card divide-y divide-gray-50">
-            {timeline.length === 0 && <div className="p-8 text-center text-gray-400 text-sm">No activity yet</div>}
+          <div className="card divide-y divide-[#f6f7f2]">
+            {timeline.length === 0 && <div className="p-8 text-center text-[#9a9a94] text-sm">No activity yet</div>}
             {paginatedTimeline.map(item => (
               <div key={item.id} className="p-4 flex items-start gap-3">
                 <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0",
                   item.type === "order" ? "bg-[#1c1c1c]" :
                   item.type === "task" ? "bg-amber-500" :
                   item.type === "call" ? "bg-[#1c1c1c]/60" :
-                  item.type === "whatsapp" ? "bg-emerald-500" : "bg-violet-500"
+                  item.type === "whatsapp" ? "bg-[#55c08f]" : "bg-[#6f9bdd]"
                 )} />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium text-[#1c1c1c]">{item.title}</span>
-                    <span className="text-xs text-gray-400">{formatDateTime(item.at)}</span>
+                    <span className="text-xs text-[#9a9a94]">{formatDateTime(item.at)}</span>
                   </div>
-                  {item.detail && <div className="text-xs text-gray-600 mt-1">{item.detail}</div>}
+                  {item.detail && <div className="text-xs text-[#55554f] mt-1">{item.detail}</div>}
                 </div>
               </div>
             ))}
@@ -553,7 +553,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
       {tab === "orders" && (
         <div className="space-y-4">
           <div className="space-y-3">
-            {orders.length === 0 && <div className="card p-8 text-center text-gray-400 text-sm">No orders yet</div>}
+            {orders.length === 0 && <div className="card p-8 text-center text-[#9a9a94] text-sm">No orders yet</div>}
             {paginatedOrders.map(o => (
               <div 
                 key={o.id} 
@@ -561,7 +561,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                   const oid = [o.shopify_order_id, o.order_number, o.id].find(id => id && String(id).trim().length > 0);
                   if (oid) setSelectedOrderId(String(oid));
                 }}
-                className="card p-4 cursor-pointer hover:shadow-md hover:border-r hover:border-r-gray-100 transition-all hover:scale-[1.002] active:scale-[0.998]"
+                className="card p-4 cursor-pointer hover:shadow-md hover:border-r hover:border-r-[#ebece6] transition-all hover:scale-[1.002] active:scale-[0.998]"
               >
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
@@ -569,8 +569,8 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                       <span className="font-semibold text-sm text-[#1c1c1c]">{o.order_number}</span>
                       <DeliveryBadge status={o.delivery_status} />
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">{o.line_items.filter((i: any) => !i.__metadata).map((l: any) => `${l.name || l.title || "Unknown Product"} × ${l.qty || l.quantity || 1}`).join(", ")}</div>
-                    <div className="text-[11px] text-gray-400 mt-0.5">
+                    <div className="text-xs text-[#6b6b67] mt-1">{o.line_items.filter((i: any) => !i.__metadata).map((l: any) => `${l.name || l.title || "Unknown Product"} × ${l.qty || l.quantity || 1}`).join(", ")}</div>
+                    <div className="text-[11px] text-[#9a9a94] mt-0.5">
                       Ordered {formatDate(o.ordered_at)}
                       {o.delivered_at && ` · Delivered ${formatDate(o.delivered_at)}`}
                       {o.tracking_number && ` · AWB: ${o.tracking_number}`}
@@ -578,7 +578,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-[#1c1c1c]">{formatCurrency(Number(o.total_price) || 0)}</div>
-                    <div className="text-[11px] text-gray-400 uppercase">{o.source}</div>
+                    <div className="text-[11px] text-[#9a9a94] uppercase">{o.source}</div>
                   </div>
                 </div>
               </div>
@@ -590,8 +590,8 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
 
       {tab === "calls" && (
         <div className="space-y-4">
-          <div className="card divide-y divide-gray-50">
-            {calls.length === 0 && <div className="p-8 text-center text-gray-400 text-sm">No call logs yet</div>}
+          <div className="card divide-y divide-[#f6f7f2]">
+            {calls.length === 0 && <div className="p-8 text-center text-[#9a9a94] text-sm">No call logs yet</div>}
             {paginatedCalls.map(cl => (
               <div key={cl.id} className="p-4 flex items-start gap-3">
                 <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0",
@@ -600,16 +600,16 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium text-[#1c1c1c] capitalize">{cl.outcome.replace("_", " ")}</span>
-                    <span className="text-xs text-gray-400">{formatDate(cl.called_at)}</span>
+                    <span className="text-xs text-[#9a9a94]">{formatDate(cl.called_at)}</span>
                   </div>
-                  {cl.note && <div className="text-xs text-gray-600 mt-1 italic">&quot;{cl.note}&quot;</div>}
+                  {cl.note && <div className="text-xs text-[#55554f] mt-1 italic">&quot;{cl.note}&quot;</div>}
                   {(cl.disposition || cl.follow_up_action) && (
-                    <div className="text-[11px] text-gray-500 mt-1">
+                    <div className="text-[11px] text-[#6b6b67] mt-1">
                       {[cl.disposition?.replace(/_/g, " "), cl.follow_up_action].filter(Boolean).join(" · ")}
                     </div>
                   )}
                   {cl.agent_name && (
-                    <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1.5">
+                    <div className="text-[11px] text-[#9a9a94] mt-0.5 flex items-center gap-1.5">
                       <span>by {cl.agent_name}</span>
                       {cl.agent_name.includes("System") && (
                         <span className="text-[9px] bg-[#ebece6] text-[#1c1c1c] px-1.5 py-0.5 rounded border border-[#ebece6] font-bold uppercase leading-none">Automated</span>
@@ -637,10 +637,10 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
                     <div>
                       <div className="text-sm font-bold text-[#1c1c1c]">{rec.agent?.name || "Unknown Agent"}</div>
-                      <div className="text-[10px] font-black text-[#5f5f5d] uppercase tracking-widest">{formatDateTime(rec.created_at)}</div>
+                      <div className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">{formatDateTime(rec.created_at)}</div>
                     </div>
                     {rec.duration_seconds && (
-                      <span className="text-[10px] font-black tabular-nums text-[#1c1c1c] px-2 py-1 bg-[#ebece6]/50 rounded-md uppercase tracking-wider self-start md:self-auto">
+                      <span className="text-[10px] font-bold tabular-nums text-[#1c1c1c] px-2 py-1 bg-[#ebece6]/50 rounded-md uppercase tracking-wider self-start md:self-auto">
                         Duration: {Math.floor(rec.duration_seconds / 60)}:{String(rec.duration_seconds % 60).padStart(2, "0")}
                       </span>
                     )}
@@ -665,7 +665,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
       {tab === "tasks" && (
         <div className="space-y-4">
           <div className="space-y-3">
-            {tasks.length === 0 && <div className="card p-8 text-center text-gray-400 text-sm">No tasks yet</div>}
+            {tasks.length === 0 && <div className="card p-8 text-center text-[#9a9a94] text-sm">No tasks yet</div>}
             {paginatedTasks.map(t => (
               <div key={t.id} className="card p-4 flex items-center gap-3">
                 <div className="flex-1">
@@ -673,7 +673,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
                     <TaskTypeBadge type={t.task_type} />
                     <TaskStatusBadge status={t.status} />
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-[#6b6b67] mt-1">
                     Due: {formatDate(t.due_date)} · {t.order?.order_number || t.abandoned_cart?.cart_token?.slice(0, 8) || "Abandoned Cart"}
                   </div>
                 </div>
@@ -699,7 +699,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
           <button className="btn-primary" onClick={handleClearRTO}>Confirm</button>
         </>}
       >
-        <p className="text-sm text-gray-600">Are you sure you want to clear the RTO flag for <strong>{customer.name}</strong>? Future orders will generate follow-up tasks normally.</p>
+        <p className="text-sm text-[#55554f]">Are you sure you want to clear the RTO flag for <strong>{customer.name}</strong>? Future orders will generate follow-up tasks normally.</p>
       </Modal>
 
       {/* Order Detail Modal */}
@@ -709,7 +709,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
         title={`Order Details — ${customer.name}`}
         maxWidth="max-w-6xl"
       >
-        <div className="bg-gray-50 -m-5 rounded-lg overflow-hidden min-h-[60vh]">
+        <div className="bg-[#f6f7f2] -m-5 rounded-lg overflow-hidden min-h-[60vh]">
           {selectedOrderId && <ShiprocketOrderView orderId={selectedOrderId} />}
         </div>
       </Modal>

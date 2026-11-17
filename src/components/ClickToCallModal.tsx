@@ -126,13 +126,13 @@ export default function ClickToCallModal({
         {status === "idle" && (
           <div className="space-y-4">
             <div className="bg-[#f6f7f2] border border-[#ebece6] p-4 rounded-xl">
-              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">CALL RECIPIENT</div>
+              <div className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider mb-1">CALL RECIPIENT</div>
               <div className="text-sm font-bold text-[#1c1c1c]">{customerName}</div>
-              <div className="text-xs font-semibold text-gray-500 mt-0.5">{customerPhone}</div>
+              <div className="text-xs font-semibold text-[#6b6b67] mt-0.5">{customerPhone}</div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">
                 YOUR FORWARDING PHONE
               </label>
               <input
@@ -142,7 +142,7 @@ export default function ClickToCallModal({
                 placeholder="Enter your phone number (e.g. +919988776655)"
                 className="input text-sm"
               />
-              <p className="text-[10px] text-gray-400 italic">
+              <p className="text-[10px] text-[#9a9a94] italic">
                 Our cloud telephony gateway will dial your phone first. Once you answer, it will instantly dial and bridge the customer.
               </p>
             </div>
@@ -150,13 +150,13 @@ export default function ClickToCallModal({
             <div className="flex gap-3 pt-2">
               <button
                 onClick={handleNativeFallback}
-                className="flex-1 btn-secondary text-[10px] py-3 uppercase tracking-widest font-black"
+                className="flex-1 btn-secondary text-[10px] py-3 uppercase tracking-wider font-bold"
               >
                 Direct Dialer
               </button>
               <button
                 onClick={handleStartCall}
-                className="flex-1 btn-primary text-[10px] py-3 uppercase tracking-widest font-black flex items-center justify-center gap-1.5"
+                className="flex-1 btn-primary text-[10px] py-3 uppercase tracking-wider font-bold flex items-center justify-center gap-1.5"
               >
                 <Phone className="w-3.5 h-3.5 fill-current" /> Call via Cloud
               </button>
@@ -175,7 +175,7 @@ export default function ClickToCallModal({
               {status !== "live" && (
                 <>
                   <div className="absolute inset-0 w-20 h-20 rounded-full border border-[#1c1c1c]/30 animate-ping opacity-40" />
-                  <div className="absolute inset-0 w-20 h-20 rounded-full border-2 border-emerald-400 animate-ping opacity-20 delay-300" />
+                  <div className="absolute inset-0 w-20 h-20 rounded-full border-2 border-[#6fcb9d] animate-ping opacity-20 delay-300" />
                 </>
               )}
             </div>
@@ -184,7 +184,7 @@ export default function ClickToCallModal({
               {status === "connecting_agent" && (
                 <>
                   <h4 className="text-sm font-bold text-[#1c1c1c] animate-pulse">Ringing Agent...</h4>
-                  <p className="text-[11px] text-gray-500 max-w-xs font-semibold leading-relaxed">
+                  <p className="text-[11px] text-[#6b6b67] max-w-xs font-semibold leading-relaxed">
                     Check your mobile phone. We are dialing your handset first to secure a clean voice channel...
                   </p>
                 </>
@@ -192,8 +192,8 @@ export default function ClickToCallModal({
 
               {status === "ringing_customer" && (
                 <>
-                  <h4 className="text-sm font-bold text-emerald-600 animate-pulse">Agent Connected! Calling Customer...</h4>
-                  <p className="text-[11px] text-gray-500 max-w-xs font-semibold leading-relaxed">
+                  <h4 className="text-sm font-bold text-[#3fa877] animate-pulse">Agent Connected! Calling Customer...</h4>
+                  <p className="text-[11px] text-[#6b6b67] max-w-xs font-semibold leading-relaxed">
                     Bridging call to <strong>{customerName}</strong> ({customerPhone}). Please wait for them to answer...
                   </p>
                 </>
@@ -201,13 +201,13 @@ export default function ClickToCallModal({
 
               {status === "live" && (
                 <>
-                  <h4 className="text-sm font-black text-emerald-700 tracking-wider uppercase flex items-center justify-center gap-1.5">
-                    <Volume2 className="w-4 h-4 text-emerald-600 animate-bounce" /> Live Call Active
+                  <h4 className="text-sm font-bold text-[#2f8a5f] tracking-wider uppercase flex items-center justify-center gap-1.5">
+                    <Volume2 className="w-4 h-4 text-[#3fa877] animate-bounce" /> Live Call Active
                   </h4>
-                  <div className="text-3xl font-black text-[#1c1c1c] tracking-tight tabular-nums py-2">
+                  <div className="text-3xl font-bold text-[#1c1c1c] tracking-tight tabular-nums py-2">
                     {formatDuration(callDuration)}
                   </div>
-                  <p className="text-[11px] text-gray-400 italic">
+                  <p className="text-[11px] text-[#9a9a94] italic">
                     The conversation is active. Speak clearly. Standard logging session is running.
                   </p>
                 </>
@@ -217,7 +217,7 @@ export default function ClickToCallModal({
             {status === "live" ? (
               <button
                 onClick={onClose}
-                className="btn-primary bg-rose-600 border-rose-600 text-white text-[10px] py-3 px-8 uppercase tracking-widest font-black hover:bg-rose-700 transition-all active:scale-[0.98]"
+                className="btn-primary bg-rose-600 border-rose-600 text-white text-[10px] py-3 px-8 uppercase tracking-wider font-bold hover:bg-rose-700 transition-all active:scale-[0.98]"
               >
                 Disconnect & Log Call
               </button>
@@ -225,13 +225,13 @@ export default function ClickToCallModal({
               <div className="flex gap-3 w-full max-w-xs">
                 <button
                   onClick={handleNativeFallback}
-                  className="flex-1 btn-secondary text-[10px] py-2 px-3 uppercase tracking-widest font-bold"
+                  className="flex-1 btn-secondary text-[10px] py-2 px-3 uppercase tracking-wider font-bold"
                 >
                   Direct Fallback
                 </button>
                 <button
                   onClick={onClose}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 rounded-xl text-[10px] py-2 px-3 uppercase tracking-widest font-bold"
+                  className="flex-1 bg-[#f0f0ec] hover:bg-[#e6e7e0] border border-[#ebece6] text-[#55554f] rounded-xl text-[10px] py-2 px-3 uppercase tracking-wider font-bold"
                 >
                   Cancel
                 </button>
@@ -250,20 +250,20 @@ export default function ClickToCallModal({
               </div>
             </div>
 
-            <p className="text-[11px] text-gray-500 leading-relaxed font-medium">
+            <p className="text-[11px] text-[#6b6b67] leading-relaxed font-medium">
               We were unable to connect the call via our enterprise cloud telephony gateway. Would you like to use your native device browser dialer as a quick fallback?
             </p>
 
             <div className="flex gap-3 pt-2">
               <button
                 onClick={onClose}
-                className="flex-1 btn-secondary text-[10px] py-3 uppercase tracking-widest font-black"
+                className="flex-1 btn-secondary text-[10px] py-3 uppercase tracking-wider font-bold"
               >
                 Cancel
               </button>
               <button
                 onClick={handleNativeFallback}
-                className="flex-1 btn-primary bg-[#1c1c1c] text-[#f6f7f2] text-[10px] py-3 uppercase tracking-widest font-black"
+                className="flex-1 btn-primary bg-[#1c1c1c] text-[#f6f7f2] text-[10px] py-3 uppercase tracking-wider font-bold"
               >
                 Fallback to Direct Dial
               </button>

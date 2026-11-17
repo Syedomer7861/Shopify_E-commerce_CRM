@@ -197,7 +197,7 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
             <button 
               onClick={() => setTab('dm')}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
+                "flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all",
                 tab === 'dm' ? "bg-white text-[#1c1c1c] shadow-sm" : "text-[#5f5f5d] hover:text-[#1c1c1c]"
               )}
             >
@@ -207,7 +207,7 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
             <button 
               onClick={() => setTab('group')}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
+                "flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all",
                 tab === 'group' ? "bg-white text-[#1c1c1c] shadow-sm" : "text-[#5f5f5d] hover:text-[#1c1c1c]"
               )}
             >
@@ -220,11 +220,11 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
         {tab === 'dm' ? (
           <>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9a9a94]" />
               <input 
                 type="text" 
                 placeholder="Search teammates..." 
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c]"
+                className="w-full bg-[#f6f7f2] border border-[#ebece6] rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c]"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 autoFocus
@@ -233,22 +233,22 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
 
             <div className="max-h-[400px] overflow-y-auto space-y-1 pr-2 custom-scrollbar">
               {loading ? (
-                <div className="p-8 text-center text-gray-400 text-xs">Loading teammates...</div>
+                <div className="p-8 text-center text-[#9a9a94] text-xs">Loading teammates...</div>
               ) : filtered.length === 0 ? (
-                <div className="p-8 text-center text-gray-400 text-xs">No users found</div>
+                <div className="p-8 text-center text-[#9a9a94] text-xs">No users found</div>
               ) : (
                 filtered.map(u => (
                   <button 
                     key={u.id}
                     onClick={() => startDM(u)}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group text-left"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#f6f7f2] transition-colors group text-left"
                   >
                     <Avatar name={u.name} />
                     <div className="flex-1">
                       <div className="text-sm font-bold text-[#1c1c1c]">{u.name}</div>
-                      <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{u.role || 'Agent'}</div>
+                      <div className="text-[10px] text-[#9a9a94] font-medium uppercase tracking-wider">{u.role || 'Agent'}</div>
                     </div>
-                    <MessageSquare className="w-4 h-4 text-gray-300 group-hover:text-[#1c1c1c] transition-colors" />
+                    <MessageSquare className="w-4 h-4 text-[#d4d5cd] group-hover:text-[#1c1c1c] transition-colors" />
                   </button>
                 ))
               )}
@@ -261,16 +261,16 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
                 <Megaphone className="w-6 h-6 text-[#1c1c1c]" />
               </div>
               <h3 className="text-sm font-bold text-[#1c1c1c]">Create Announcement Group</h3>
-              <p className="text-[10px] text-[#5f5f5d] uppercase tracking-widest leading-relaxed px-8">Create a space for important updates. Only you can invite others later.</p>
+              <p className="text-[10px] text-[#5f5f5d] uppercase tracking-wider leading-relaxed px-8">Create a space for important updates. Only you can invite others later.</p>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest px-1">Group Name</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider px-1">Group Name</label>
                 <input 
                   type="text"
                   placeholder="e.g. Sales Updates 2024"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c]"
+                  className="w-full bg-[#f6f7f2] border border-[#ebece6] rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-[#1c1c1c]/5 focus:border-[#1c1c1c]"
                   value={groupName}
                   onChange={e => setGroupName(e.target.value)}
                 />
@@ -278,7 +278,7 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
               <button 
                 onClick={createGroup}
                 disabled={!groupName.trim() || creating}
-                className="w-full bg-[#1c1c1c] text-[#fcfbf8] py-3.5 rounded-xl text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-[#1c1c1c]/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2"
+                className="w-full bg-[#1c1c1c] text-[#fcfbf8] py-3.5 rounded-xl text-xs font-bold uppercase tracking-[0.2em] shadow-lg shadow-[#1c1c1c]/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2"
               >
                 {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Group"}
               </button>

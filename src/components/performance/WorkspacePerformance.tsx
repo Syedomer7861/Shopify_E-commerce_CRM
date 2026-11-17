@@ -57,7 +57,7 @@ function trendProps(cur: number, prev: number | null | undefined) {
 const PRIORITY_STYLE: Record<string, string> = {
   urgent: "bg-rose-500",
   high: "bg-amber-500",
-  normal: "bg-blue-500",
+  normal: "bg-[#6f9bdd]",
   low: "bg-[#9c9a94]",
 };
 
@@ -211,7 +211,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
     <div className="animate-fade-in space-y-6">
       <div className="flex justify-end">
         <button onClick={exportCsv}
-          className="h-8 px-3 rounded-lg text-[10px] font-black uppercase tracking-widest bg-[#1c1c1c] text-white flex items-center gap-1.5 hover:opacity-90 transition-all">
+          className="h-8 px-3 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-[#1c1c1c] text-white flex items-center gap-1.5 hover:opacity-90 transition-all">
           <Download className="w-3 h-3" /> Export CSV
         </button>
       </div>
@@ -228,9 +228,9 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
       {(data.goals.length > 0 || pmTotal > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="card p-5">
-            <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Personal Goals</h3>
+            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4">Personal Goals</h3>
             {data.goals.length === 0 ? (
-              <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-widest py-8 text-center">No goals assigned</div>
+              <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-wider py-8 text-center">No goals assigned</div>
             ) : (
               <div className="space-y-4">
                 {data.goals.map((g) => {
@@ -242,7 +242,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
                         <span className="font-bold text-[#5f5f5d] tabular-nums shrink-0">{g.progress}/{g.target}</span>
                       </div>
                       <div className="h-2 rounded-full bg-[#ebece6] overflow-hidden">
-                        <div className={cn("h-full rounded-full transition-all", pct >= 100 ? "bg-emerald-500" : "bg-[#1c1c1c]")} style={{ width: `${pct}%` }} />
+                        <div className={cn("h-full rounded-full transition-all", pct >= 100 ? "bg-[#55c08f]" : "bg-[#1c1c1c]")} style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   );
@@ -252,16 +252,16 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
           </div>
 
           <div className="card p-5">
-            <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4 flex items-center gap-2">
+            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4 flex items-center gap-2">
               <Flag className="w-3.5 h-3.5" /> Completed by Priority
             </h3>
             {pmTotal === 0 ? (
-              <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-widest py-8 text-center">Nothing completed in range</div>
+              <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-wider py-8 text-center">Nothing completed in range</div>
             ) : (
               <div className="space-y-3">
                 {(["urgent", "high", "normal", "low"] as const).map((k) => (
                   <div key={k} className="flex items-center gap-3 text-xs">
-                    <span className="w-14 font-bold text-[#5f5f5d] uppercase text-[10px] tracking-widest">{k}</span>
+                    <span className="w-14 font-bold text-[#5f5f5d] uppercase text-[10px] tracking-wider">{k}</span>
                     <div className="flex-1 h-2.5 rounded-full bg-[#ebece6] overflow-hidden">
                       <div className={cn("h-full rounded-full", PRIORITY_STYLE[k])} style={{ width: `${Math.round((pm[k] / pmTotal) * 100)}%` }} />
                     </div>
@@ -276,22 +276,22 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
         <div className="card p-5">
-          <div className="text-[10px] font-black text-[#5f5f5d]/50 uppercase tracking-widest mb-2 flex items-center gap-2">
+          <div className="text-[10px] font-bold text-[#5f5f5d]/50 uppercase tracking-wider mb-2 flex items-center gap-2">
             <Timer className="w-3.5 h-3.5" /> Avg Cycle Time
           </div>
-          <div className="text-2xl font-black text-[#1c1c1c] tabular-nums">{dl.cycleTimeDays == null ? "—" : `${dl.cycleTimeDays}d`}</div>
+          <div className="text-2xl font-bold text-[#1c1c1c] tabular-nums">{dl.cycleTimeDays == null ? "—" : `${dl.cycleTimeDays}d`}</div>
           <div className="text-[10px] text-[#6b6b67] font-bold mt-1">Created → done, tasks in range</div>
         </div>
 
         <div className="card p-5">
-          <div className="text-[10px] font-black text-[#5f5f5d]/50 uppercase tracking-widest mb-2">Estimate Accuracy</div>
+          <div className="text-[10px] font-bold text-[#5f5f5d]/50 uppercase tracking-wider mb-2">Estimate Accuracy</div>
           {estH === 0 ? (
             <div className="text-[11px] text-[#6b6b67] font-bold py-3">No estimates on completed tasks</div>
           ) : (
             <>
-              <div className="text-2xl font-black text-[#1c1c1c] tabular-nums">
+              <div className="text-2xl font-bold text-[#1c1c1c] tabular-nums">
                 {estRatio}%
-                <span className={cn("ml-2 text-[10px] font-black uppercase", estRatio != null && estRatio > 115 ? "text-rose-600" : estRatio != null && estRatio < 85 ? "text-amber-600" : "text-emerald-600")}>
+                <span className={cn("ml-2 text-[10px] font-bold uppercase", estRatio != null && estRatio > 115 ? "text-rose-600" : estRatio != null && estRatio < 85 ? "text-amber-600" : "text-[#3fa877]")}>
                   {estRatio != null && estRatio > 115 ? "over" : estRatio != null && estRatio < 85 ? "under" : "on target"}
                 </span>
               </div>
@@ -301,32 +301,32 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
         </div>
 
         <div className="card p-5">
-          <div className="text-[10px] font-black text-[#5f5f5d]/50 uppercase tracking-widest mb-2 flex items-center gap-2">
+          <div className="text-[10px] font-bold text-[#5f5f5d]/50 uppercase tracking-wider mb-2 flex items-center gap-2">
             <Gauge className="w-3.5 h-3.5" /> Open Capacity
           </div>
-          <div className="text-2xl font-black text-[#1c1c1c] tabular-nums">
+          <div className="text-2xl font-bold text-[#1c1c1c] tabular-nums">
             {openH}h <span className="text-[10px] text-[#6b6b67] font-bold">/ {weeklyCap}h wk</span>
           </div>
           <div className="h-2 rounded-full bg-[#ebece6] overflow-hidden mt-2">
-            <div className={cn("h-full rounded-full", capPct > 100 ? "bg-rose-500" : capPct > 80 ? "bg-amber-500" : "bg-emerald-500")} style={{ width: `${Math.min(100, capPct)}%` }} />
+            <div className={cn("h-full rounded-full", capPct > 100 ? "bg-rose-500" : capPct > 80 ? "bg-amber-500" : "bg-[#55c08f]")} style={{ width: `${Math.min(100, capPct)}%` }} />
           </div>
         </div>
 
         <div className="card p-5">
-          <div className="text-[10px] font-black text-[#5f5f5d]/50 uppercase tracking-widest mb-2 flex items-center gap-2">
+          <div className="text-[10px] font-bold text-[#5f5f5d]/50 uppercase tracking-wider mb-2 flex items-center gap-2">
             <AlertTriangle className="w-3.5 h-3.5" /> Rework
           </div>
-          <div className={cn("text-2xl font-black tabular-nums", data.reworkCount > 0 ? "text-amber-600" : "text-[#1c1c1c]")}>{data.reworkCount}</div>
+          <div className={cn("text-2xl font-bold tabular-nums", data.reworkCount > 0 ? "text-amber-600" : "text-[#1c1c1c]")}>{data.reworkCount}</div>
           <div className="text-[10px] text-[#6b6b67] font-bold mt-1">Moved back out of a done column</div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="card p-5">
-          <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Daily Output</h3>
+          <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4">Daily Output</h3>
           <div className="h-[240px]">
             {chartData.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-[11px] text-[#6b6b67] font-bold uppercase tracking-widest">No activity in range</div>
+              <div className="h-full flex items-center justify-center text-[11px] text-[#6b6b67] font-bold uppercase tracking-wider">No activity in range</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 0, right: 8, left: -18, bottom: 0 }}>
@@ -343,18 +343,18 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
         </div>
 
         <div className="card p-5">
-          <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">By Space</h3>
+          <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4">By Space</h3>
           {data.bySpace.length === 0 ? (
-            <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-widest py-8 text-center">No tasks assigned</div>
+            <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-wider py-8 text-center">No tasks assigned</div>
           ) : (
             <div className="space-y-2">
-              <div className="grid grid-cols-[1fr_auto_auto] gap-4 text-[9px] font-black text-[#5f5f5d]/50 uppercase tracking-widest px-1 pb-1">
+              <div className="grid grid-cols-[1fr_auto_auto] gap-4 text-[9px] font-bold text-[#5f5f5d]/50 uppercase tracking-wider px-1 pb-1">
                 <span>Space</span><span className="w-12 text-right">Done</span><span className="w-12 text-right">Open</span>
               </div>
               {data.bySpace.map((r) => (
                 <div key={r.space} className="grid grid-cols-[1fr_auto_auto] gap-4 text-xs items-center px-1">
                   <span className="font-bold text-[#1c1c1c] truncate">{r.space}</span>
-                  <span className="w-12 text-right font-bold text-emerald-600 tabular-nums">{r.done}</span>
+                  <span className="w-12 text-right font-bold text-[#3fa877] tabular-nums">{r.done}</span>
                   <span className="w-12 text-right font-bold text-[#5f5f5d] tabular-nums">{r.open}</span>
                 </div>
               ))}
@@ -365,14 +365,14 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="card p-5">
-          <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Attendance Ledger</h3>
+          <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4">Attendance Ledger</h3>
           {attendance.length === 0 ? (
-            <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-widest py-8 text-center">No attendance rows</div>
+            <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-wider py-8 text-center">No attendance rows</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-[#ebece6] text-[9px] font-black text-[#5f5f5d]/50 uppercase tracking-widest">
+                  <tr className="border-b border-[#ebece6] text-[9px] font-bold text-[#5f5f5d]/50 uppercase tracking-wider">
                     <th className="py-2">Date</th><th className="py-2">In</th><th className="py-2">Out</th><th className="py-2 text-right">Net</th>
                   </tr>
                 </thead>
@@ -392,7 +392,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
         </div>
 
         <div className="card p-5">
-          <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Recent Activity</h3>
+          <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4">Recent Activity</h3>
           {actEntries.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {actEntries.map(([k, v]) => (
@@ -403,7 +403,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
             </div>
           )}
           {data.recentActivity.length === 0 ? (
-            <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-widest py-8 text-center">No recent activity</div>
+            <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-wider py-8 text-center">No recent activity</div>
           ) : (
             <div className="space-y-2.5 max-h-[280px] overflow-y-auto">
               {data.recentActivity.map((a) => (

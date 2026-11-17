@@ -137,7 +137,7 @@ export default function OrganisationOverviewPage() {
       />
 
       {error ? <div className={cn(PANEL, "text-sm text-rose-700")}>Couldn&apos;t load the organisation: {error}</div>
-      : !data ? <div className="py-16 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
+      : !data ? <div className="py-16 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
       : (
         <div className="space-y-5">
           <div className="grid gap-4 lg:grid-cols-3">

@@ -45,15 +45,15 @@ export function TemplatePicker({ open, onClose, templates, departments, designat
 
   const list = (title: string, prefix: string, names: string[], existing: AnyUnit[]) => (
     <div>
-      <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">{title}</div>
+      <div className="text-[10px] font-bold uppercase tracking-wider text-[#9a9a94] mb-2">{title}</div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
         {names.map(n => {
           const already = has(existing, n);
           return (
-            <label key={n} className="flex items-center gap-2 text-xs p-2 rounded-lg border border-gray-100 cursor-pointer">
+            <label key={n} className="flex items-center gap-2 text-xs p-2 rounded-lg border border-[#ebece6] cursor-pointer">
               <input type="checkbox" disabled={already} checked={already || picked.has(`${prefix}:${n}`)} onChange={() => toggle(`${prefix}:${n}`)} />
-              <span className={already ? "text-gray-400" : ""}>{n}</span>
-              {already && <span className="ml-auto text-[9px] uppercase tracking-wider text-gray-400">Added</span>}
+              <span className={already ? "text-[#9a9a94]" : ""}>{n}</span>
+              {already && <span className="ml-auto text-[9px] uppercase tracking-wider text-[#9a9a94]">Added</span>}
             </label>
           );
         })}
@@ -70,7 +70,7 @@ export function TemplatePicker({ open, onClose, templates, departments, designat
         </button>
       </>}>
       <div className="space-y-5">
-        <p className="text-xs text-gray-500">Pick your industry to see suggested departments and job titles. Untick anything you don&apos;t need. Nothing is created until you press Activate.</p>
+        <p className="text-xs text-[#6b6b67]">Pick your industry to see suggested departments and job titles. Untick anything you don&apos;t need. Nothing is created until you press Activate.</p>
         <Select value={code} onChange={choose} placeholder="Choose an industry" options={templates.map(x => ({ value: x.code, label: x.name }))} triggerClassName="text-xs" />
         {t && list("Departments", "d", t.departments, departments)}
         {t && list("Designations", "g", t.designations, designations)}

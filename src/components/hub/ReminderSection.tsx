@@ -125,7 +125,7 @@ export function ReminderSection() {
         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
           <Bell className="w-8 h-8 text-rose-500 animate-pulse" />
         </div>
-        <h3 className="text-xl font-black text-rose-900 mb-2">Reminders Not Initialized</h3>
+        <h3 className="text-xl font-bold text-rose-900 mb-2">Reminders Not Initialized</h3>
         <p className="text-sm text-rose-700/60 max-w-md mx-auto mb-8 leading-relaxed">
           The personal reminders table is missing. Please run the setup script in the Supabase SQL Editor.
         </p>
@@ -135,7 +135,7 @@ export function ReminderSection() {
         <div>
           <button 
             onClick={() => window.location.reload()}
-            className="text-xs font-black text-rose-900 uppercase tracking-widest hover:underline"
+            className="text-xs font-bold text-rose-900 uppercase tracking-wider hover:underline"
           >
             Refresh after running script
           </button>
@@ -152,8 +152,8 @@ export function ReminderSection() {
             <Bell className="w-6 h-6 text-rose-500" />
           </div>
           <div>
-            <h3 className="text-xl font-black text-[#1c1c1c] tracking-tight">Smart Reminders</h3>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-0.5">Never miss a critical task</p>
+            <h3 className="text-xl font-bold text-[#1c1c1c] tracking-tight">Smart Reminders</h3>
+            <p className="text-xs text-[#9a9a94] font-bold uppercase tracking-wider mt-0.5">Never miss a critical task</p>
           </div>
         </div>
         
@@ -183,7 +183,7 @@ export function ReminderSection() {
         <form onSubmit={addReminder} className="card p-8 bg-white border-rose-100 shadow-xl shadow-rose-500/5 animate-in zoom-in-95 duration-300">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Reminder Title</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Reminder Title</label>
               <input
                 type="text"
                 placeholder="What should we remind you about?..."
@@ -194,7 +194,7 @@ export function ReminderSection() {
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Date</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Date</label>
               <input
                 type="date"
                 className="input"
@@ -204,7 +204,7 @@ export function ReminderSection() {
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Time</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Time</label>
               <input
                 type="time"
                 className="input"
@@ -214,7 +214,7 @@ export function ReminderSection() {
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-50">
+          <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-[#f6f7f2]">
             <button type="button" onClick={() => setIsAdding(false)} className="btn-secondary">Cancel</button>
             <button type="submit" className="btn-primary !bg-[#1c1c1c] !text-white">Save Reminder</button>
           </div>
@@ -223,13 +223,13 @@ export function ReminderSection() {
 
       <div className="space-y-3">
         {loading ? (
-          <div className="py-10 text-center text-gray-300">
+          <div className="py-10 text-center text-[#d4d5cd]">
             <Loader2 className="w-8 h-8 animate-spin mx-auto" />
           </div>
         ) : reminders.length === 0 ? (
-          <div className="py-12 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-100">
-             <AlertCircle className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-             <p className="text-gray-400 font-medium">You have no upcoming reminders.</p>
+          <div className="py-12 text-center bg-[#f6f7f2] rounded-3xl border-2 border-dashed border-[#ebece6]">
+             <AlertCircle className="w-10 h-10 text-[#e6e7e0] mx-auto mb-3" />
+             <p className="text-[#9a9a94] font-medium">You have no upcoming reminders.</p>
           </div>
         ) : (
           reminders.map(reminder => {
@@ -237,24 +237,24 @@ export function ReminderSection() {
             return (
               <div key={reminder.id} className={cn(
                 "flex items-center gap-3 sm:gap-6 p-4 sm:p-5 rounded-2xl border transition-all group",
-                isPast ? "bg-gray-50 border-gray-100 opacity-60" : "bg-white border-[#ebece6] hover:border-rose-200 hover:shadow-lg hover:shadow-rose-500/5"
+                isPast ? "bg-[#f6f7f2] border-[#ebece6] opacity-60" : "bg-white border-[#ebece6] hover:border-rose-200 hover:shadow-lg hover:shadow-rose-500/5"
               )}>
                 <div className={cn(
                   "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
-                  isPast ? "bg-gray-200" : "bg-rose-50"
+                  isPast ? "bg-[#e6e7e0]" : "bg-rose-50"
                 )}>
-                  <Clock className={cn("w-6 h-6", isPast ? "text-gray-400" : "text-rose-500")} />
+                  <Clock className={cn("w-6 h-6", isPast ? "text-[#9a9a94]" : "text-rose-500")} />
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-black text-[#1c1c1c] truncate">{reminder.title}</h4>
+                  <h4 className="text-sm font-bold text-[#1c1c1c] truncate">{reminder.title}</h4>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">
                       <Calendar className="w-3 h-3" />
                       {mounted ? new Date(reminder.remind_at).toLocaleDateString() : "---"}
                     </span>
-                    <span className="w-1 h-1 rounded-full bg-gray-200" />
-                    <span className="text-[10px] font-bold text-[#1c1c1c]/60 uppercase tracking-widest">
+                    <span className="w-1 h-1 rounded-full bg-[#e6e7e0]" />
+                    <span className="text-[10px] font-bold text-[#1c1c1c]/60 uppercase tracking-wider">
                       {mounted ? new Date(reminder.remind_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
                     </span>
                   </div>
@@ -263,12 +263,12 @@ export function ReminderSection() {
                 <div className="text-right flex items-center gap-4">
                   {!isPast && (
                      <div className="hidden md:block">
-                        <div className="text-[9px] font-black text-rose-500 uppercase tracking-tighter bg-rose-50 px-2 py-1 rounded">Upcoming</div>
+                        <div className="text-[9px] font-bold text-rose-500 uppercase tracking-tighter bg-rose-50 px-2 py-1 rounded">Upcoming</div>
                      </div>
                   )}
                   <button aria-label="Delete"
                     onClick={() => deleteReminder(reminder.id)}
-                    className="p-2 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                    className="p-2 text-[#d4d5cd] hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

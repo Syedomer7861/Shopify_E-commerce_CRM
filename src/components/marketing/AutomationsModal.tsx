@@ -134,20 +134,20 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
       <div className="space-y-5">
         <div className="space-y-2">
           {rules.length === 0 && (
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50 py-2 text-center">No rules yet</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d]/50 py-2 text-center">No rules yet</p>
           )}
           {rules.map((r) => (
             <div key={r.id} className="p-3 rounded-xl border border-[#ebece6] flex items-start gap-3">
               <input type="checkbox" checked={r.enabled} onChange={() => toggle(r)} className="mt-1" />
               <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-bold text-[#1c1c1c]">{r.name}</div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d]/60 mt-0.5">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]/60 mt-0.5">
                   {(r.trigger as any)?.event === "task_created"
                     ? "When a task is created"
                     : `When status → ${statusName((r.trigger as any)?.to)}`}{" "}
                   · then {(r.actions as any[]).map(describeAction).join(", ")}
                 </div>
-                {!r.list_id && <div className="text-[9px] font-bold uppercase tracking-widest text-[#5f5f5d]/40 mt-0.5">All lists</div>}
+                {!r.list_id && <div className="text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d]/40 mt-0.5">All lists</div>}
               </div>
               <button aria-label="Delete" onClick={() => remove(r.id)} className="text-[#5f5f5d] hover:text-rose-500 flex-shrink-0">
                 <Trash2 className="w-4 h-4" />
@@ -157,7 +157,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
         </div>
 
         <div className="border-t border-[#ebece6] pt-4 space-y-3">
-          <div className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]/60 flex items-center gap-1.5">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]/60 flex items-center gap-1.5">
             <Zap className="w-3.5 h-3.5" /> New rule {list ? `· ${list.name}` : ""}
           </div>
           <input
@@ -299,7 +299,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
           <div className="flex items-center justify-between">
             <button
               onClick={() => setActions((prev) => [...prev, { type: "notify" }])}
-              className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d] hover:text-[#1c1c1c] flex items-center gap-1"
+              className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] hover:text-[#1c1c1c] flex items-center gap-1"
             >
               <Plus className="w-3 h-3" /> Action
             </button>
@@ -307,7 +307,7 @@ export default function AutomationsModal({ open, onClose, list, lists = [], memb
               onClick={save}
               disabled={saving}
               className={cn(
-                "px-3 py-2 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
+                "px-3 py-2 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-bold uppercase tracking-wider disabled:opacity-40"
               )}
             >
               {saving ? "Saving…" : "Save rule"}

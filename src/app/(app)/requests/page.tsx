@@ -30,7 +30,7 @@ export default function RequestsPage() {
     return () => { active = false; };
   }, [profile]);
 
-  if (loading || (profile && apps === null)) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (loading || (profile && apps === null)) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   if (!profile) return null;
 
   const nav = allowedNavModules(profile);
@@ -58,9 +58,9 @@ export default function RequestsPage() {
               <span className="w-9 h-9 rounded-lg bg-white border border-[#ebece6] flex items-center justify-center shrink-0"><Icon className="w-4 h-4 text-[#1c1c1c]" /></span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-bold text-[#1c1c1c]">{title}</span>
-                <span className="block text-[11px] text-gray-500 mt-0.5">{desc}</span>
+                <span className="block text-[11px] text-[#6b6b67] mt-0.5">{desc}</span>
               </span>
-              <ChevronRight className="w-4 h-4 text-gray-300 mt-1 shrink-0" />
+              <ChevronRight className="w-4 h-4 text-[#d4d5cd] mt-1 shrink-0" />
             </Link>
           ))}
         </div>

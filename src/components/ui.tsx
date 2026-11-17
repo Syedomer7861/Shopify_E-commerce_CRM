@@ -259,7 +259,7 @@ export function Select({
           {options.map((o, i) => (
             <div key={o.value}>
               {o.group && o.group !== options[i - 1]?.group && (
-                <div className="px-3 pt-2 pb-1 text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]/60">{o.group}</div>
+                <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]/60">{o.group}</div>
               )}
               <button
                 type="button"
@@ -316,11 +316,11 @@ export function SyncProgressBar({
       <div className="mb-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {!isComplete && !error && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1c1c1c]" />}
-          {isComplete && <CheckCircle className="w-3.5 h-3.5 text-emerald-600 animate-in zoom-in" />}
+          {isComplete && <CheckCircle className="w-3.5 h-3.5 text-[#3fa877] animate-in zoom-in" />}
           {error && <AlertCircle className="w-3.5 h-3.5 text-rose-500" />}
           <span className={cn(
-            "text-[10px] font-bold uppercase tracking-widest",
-            error ? "text-rose-500" : isComplete ? "text-emerald-700" : "text-[#5f5f5d]"
+            "text-[10px] font-bold uppercase tracking-wider",
+            error ? "text-rose-500" : isComplete ? "text-[#2f8a5f]" : "text-[#5f5f5d]"
           )}>
             {message || (isComplete ? "Sync Complete" : "Synchronizing...")}
           </span>
@@ -331,7 +331,7 @@ export function SyncProgressBar({
         <div 
           className={cn(
             "h-full transition-all duration-500 ease-out relative",
-            error ? "bg-rose-500" : isComplete ? "bg-emerald-600" : "bg-[#1c1c1c]"
+            error ? "bg-rose-500" : isComplete ? "bg-[#3fa877]" : "bg-[#1c1c1c]"
           )}
           style={{ width: `${progress}%` }}
         >
@@ -384,7 +384,7 @@ export function Pagination({
 
   return (
     <div className="flex items-center justify-between py-6 mt-6 border-t border-[#ebece6]/60">
-      <p className="text-[10px] font-black text-[#5f5f5d] uppercase tracking-[0.2em] opacity-40">
+      <p className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-[0.2em] opacity-40">
         Showing <span className="text-[#1c1c1c]">{(current - 1) * pageSize + 1}</span> to <span className="text-[#1c1c1c]">{Math.min(current * pageSize, total)}</span> of <span className="text-[#1c1c1c]">{total}</span> entries
       </p>
       <div className="flex items-center gap-2">
@@ -415,8 +415,8 @@ export function Pagination({
               <>
                 {startPage > 1 && (
                   <>
-                    <button onClick={() => onChange(1)} className="w-9 h-9 rounded-xl text-[10px] font-black bg-[#f6f7f2] text-[#5f5f5d] border border-[#ebece6] hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">1</button>
-                    {startPage > 2 && <span className="text-[#5f5f5d] px-1 text-[10px] font-black opacity-30">...</span>}
+                    <button onClick={() => onChange(1)} className="w-9 h-9 rounded-xl text-[10px] font-bold bg-[#f6f7f2] text-[#5f5f5d] border border-[#ebece6] hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">1</button>
+                    {startPage > 2 && <span className="text-[#5f5f5d] px-1 text-[10px] font-bold opacity-30">...</span>}
                   </>
                 )}
                 {pages.map(p => (
@@ -424,7 +424,7 @@ export function Pagination({
                     key={p}
                     onClick={() => onChange(p)}
                     className={cn(
-                      "w-9 h-9 rounded-xl text-[10px] font-black transition-all shadow-sm",
+                      "w-9 h-9 rounded-xl text-[10px] font-bold transition-all shadow-sm",
                       current === p ? "bg-[#1c1c1c] text-white ring-4 ring-[#1c1c1c]/10" : "bg-[#f6f7f2] text-[#5f5f5d] border border-[#ebece6] hover:border-[#1c1c1c] hover:text-[#1c1c1c]"
                     )}
                   >
@@ -433,8 +433,8 @@ export function Pagination({
                 ))}
                 {endPage < totalPages && (
                   <>
-                    {endPage < totalPages - 1 && <span className="text-[#5f5f5d] px-1 text-[10px] font-black opacity-30">...</span>}
-                    <button onClick={() => onChange(totalPages)} className="w-9 h-9 rounded-xl text-[10px] font-black bg-[#f6f7f2] text-[#5f5f5d] border border-[#ebece6] hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">{totalPages}</button>
+                    {endPage < totalPages - 1 && <span className="text-[#5f5f5d] px-1 text-[10px] font-bold opacity-30">...</span>}
+                    <button onClick={() => onChange(totalPages)} className="w-9 h-9 rounded-xl text-[10px] font-bold bg-[#f6f7f2] text-[#5f5f5d] border border-[#ebece6] hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm">{totalPages}</button>
                   </>
                 )}
               </>

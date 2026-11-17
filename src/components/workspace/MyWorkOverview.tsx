@@ -17,8 +17,8 @@ const addDays = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.get
 const PRIO: Record<string, { label: string; cls: string; rank: number }> = {
   urgent: { label: "Urgent", cls: "bg-rose-50 text-rose-600", rank: 0 },
   high: { label: "High", cls: "bg-amber-50 text-amber-700", rank: 1 },
-  normal: { label: "Normal", cls: "bg-slate-100 text-slate-600", rank: 2 },
-  low: { label: "Low", cls: "bg-emerald-50 text-emerald-700", rank: 3 },
+  normal: { label: "Normal", cls: "bg-[#f0f0ec] text-[#55554f]", rank: 2 },
+  low: { label: "Low", cls: "bg-[#ecf8f1] text-[#2f8a5f]", rank: 3 },
 };
 const CAP_KEY = "mkt-workload-weekly-hours"; // shared with the Workload page
 
@@ -141,7 +141,7 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 rounded-2xl p-7 text-white bg-gradient-to-br from-[#0f3d2a] via-[#145a3b] to-[#0b2a1d] relative overflow-hidden">
-          <div className="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-emerald-400/10 blur-2xl" />
+          <div className="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-[#6fcb9d]/10 blur-2xl" />
           <h2 className="text-2xl md:text-3xl font-semibold tracking-tight font-display">Continue your work</h2>
           <p className="text-sm text-white/70 mt-1.5">
             {view.open.length === 0 ? "Nothing open right now." : `${view.open.length} open ${view.open.length === 1 ? "task" : "tasks"}${view.overdue.length ? `, ${view.overdue.length} overdue` : ""}.`}
@@ -150,13 +150,13 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
             Open my tasks <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
-        <Card title="Today's focus" icon={Target} className="lg:col-span-2 bg-emerald-50/40">
+        <Card title="Today's focus" icon={Target} className="lg:col-span-2 bg-[#ecf8f1]/40">
           {view.focus.length === 0 ? <Empty>{failed ? "Couldn't load your tasks." : "No open tasks. Enjoy the calm."}</Empty> : (
             <ul className="space-y-2.5">
               {view.focus.map(t => (
                 <li key={t.id}>
                   <Link href={linkFor(t)} className="flex items-start gap-2.5 text-sm text-[#1c1c1c] hover:underline">
-                    <Circle className={cn("w-4 h-4 mt-0.5 shrink-0", t.due_date && t.due_date < today ? "text-rose-500" : "text-gray-300")} />
+                    <Circle className={cn("w-4 h-4 mt-0.5 shrink-0", t.due_date && t.due_date < today ? "text-rose-500" : "text-[#d4d5cd]")} />
                     <span className="flex-1 truncate">{t.title}</span>
                     {t.due_date && <span className={cn("text-xs shrink-0", t.due_date < today ? "text-rose-500" : "text-[#6b6b67]")}>{t.due_date === today ? "Today" : fmtDue(t.due_date)}</span>}
                   </Link>
@@ -177,7 +177,7 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
           <Link key={s.label} href={s.href} className="card p-5 hover:border-[#1c1c1c]/20 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-[#1c1c1c]">{s.label}</span>
-              <s.icon className={cn("w-5 h-5", s.alert ? "text-rose-500" : "text-emerald-600")} />
+              <s.icon className={cn("w-5 h-5", s.alert ? "text-rose-500" : "text-[#3fa877]")} />
             </div>
             <div className={cn("text-3xl font-bold mt-2", s.alert && "text-rose-600")}>{s.value}</div>
             <div className="text-xs text-[#6b6b67] mt-0.5">{s.sub}</div>
@@ -195,7 +195,7 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
             { label: "Hours logged", value: rangeMins === null ? "—" : hm(rangeMins) || "0h" },
           ].map(s => (
             <div key={s.label}>
-              <div className="text-[10px] font-black uppercase tracking-widest text-[#6b6b67]">{s.label}</div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[#6b6b67]">{s.label}</div>
               <div className="text-2xl font-bold mt-1">{s.value}</div>
               {s.sub && <div className="text-[11px] text-[#6b6b67]">{s.sub}</div>}
             </div>
@@ -218,7 +218,7 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
                       <div className="text-sm font-semibold text-[#1c1c1c] truncate">{p.list?.name || "Untitled list"}</div>
                       <div className="text-xs text-[#6b6b67]">{p.done} of {p.total} done</div>
                     </div>
-                    <div className="w-28 h-2 rounded-full bg-[#f0f0ec] overflow-hidden shrink-0"><div className="h-full bg-emerald-600 rounded-full" style={{ width: `${pct}%` }} /></div>
+                    <div className="w-28 h-2 rounded-full bg-[#f0f0ec] overflow-hidden shrink-0"><div className="h-full bg-[#3fa877] rounded-full" style={{ width: `${pct}%` }} /></div>
                     <span className="text-xs font-semibold w-9 text-right">{pct}%</span>
                   </li>
                 );
@@ -253,7 +253,7 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
             <ul className="space-y-3">
               {view.recent.map(({ t, done }) => (
                 <li key={t.id} className="flex items-center gap-3 text-sm">
-                  {done ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <Circle className="w-4 h-4 text-gray-300 shrink-0" />}
+                  {done ? <CheckCircle2 className="w-4 h-4 text-[#3fa877] shrink-0" /> : <Circle className="w-4 h-4 text-[#d4d5cd] shrink-0" />}
                   <Link href={linkFor(t)} className="flex-1 truncate text-[#1c1c1c] hover:underline">{done ? "Completed" : "Updated"} &ldquo;{t.title}&rdquo;</Link>
                   {t.updated_at && <span className="text-xs text-[#6b6b67] shrink-0">{ago(t.updated_at)}</span>}
                 </li>
@@ -268,11 +268,11 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
               <span className="text-3xl font-bold">{hm(weekMins) || "0h"}</span>
               <span className="text-xs text-[#6b6b67]">of {capHours}h · {Math.min(100, Math.round((weekMins / (capHours * 60)) * 100))}%</span>
             </div>
-            <div className="h-2 rounded-full bg-[#f0f0ec] mt-3 overflow-hidden"><div className="h-full bg-emerald-600 rounded-full" style={{ width: `${Math.min(100, (weekMins / (capHours * 60)) * 100)}%` }} /></div>
+            <div className="h-2 rounded-full bg-[#f0f0ec] mt-3 overflow-hidden"><div className="h-full bg-[#3fa877] rounded-full" style={{ width: `${Math.min(100, (weekMins / (capHours * 60)) * 100)}%` }} /></div>
             <div className="grid grid-cols-5 gap-3 mt-5 items-end h-28">
               {days.map(d => (
                 <div key={d.label} className="flex flex-col items-center gap-1 h-full justify-end">
-                  <div className={cn("w-full rounded-md", d.d === today ? "bg-emerald-700" : "bg-emerald-200")} style={{ height: `${d.mins ? Math.max(6, (d.mins / maxDay) * 80) : 2}%` }} />
+                  <div className={cn("w-full rounded-md", d.d === today ? "bg-[#2f8a5f]" : "bg-[#b5e4ca]")} style={{ height: `${d.mins ? Math.max(6, (d.mins / maxDay) * 80) : 2}%` }} />
                   <span className="text-[11px] text-[#6b6b67]">{d.label}</span>
                   <span className="text-[11px] font-semibold">{d.mins ? `${(d.mins / 60).toFixed(1)}h` : "—"}</span>
                 </div>

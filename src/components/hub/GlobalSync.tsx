@@ -95,12 +95,12 @@ export default function GlobalSync() {
         onClick={startSync}
         disabled={syncing}
         className={cn(
-          "group relative px-8 py-3 rounded-2xl bg-white border border-gray-100 text-[#1c1c1c] overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl",
+          "group relative px-8 py-3 rounded-2xl bg-white border border-[#ebece6] text-[#1c1c1c] overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl",
           syncing && "opacity-50 cursor-not-allowed"
         )}
       >
          <div className="relative flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-[#f6f7f2] flex items-center justify-center">
               {syncing ? (
                 <RefreshCw className="w-4 h-4 text-[#1c1c1c] animate-spin" />
               ) : (
@@ -108,10 +108,10 @@ export default function GlobalSync() {
               )}
             </div>
             <div className="flex flex-col items-start">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 leading-none mb-1">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80 leading-none mb-1">
                 {syncing ? "Syncing..." : "Live Sync"}
               </span>
-              <span className="text-sm font-black tracking-tight">Global Refresh</span>
+              <span className="text-sm font-bold tracking-tight">Global Refresh</span>
             </div>
          </div>
       </button>
@@ -120,8 +120,8 @@ export default function GlobalSync() {
         <div className="fixed bottom-8 right-8 z-50 w-80 animate-in slide-in-from-right-8 fade-in duration-500">
           <div className="glass-panel p-6 shadow-2xl border border-white/20 bg-white/90 backdrop-blur-xl rounded-3xl">
             <div className="flex items-center justify-between mb-4">
-               <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Sync Monitor</h4>
-               <button aria-label="Close" onClick={() => setSyncing(false)} className="text-gray-400 hover:text-[#1c1c1c]">
+               <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#9a9a94]">Sync Monitor</h4>
+               <button aria-label="Close" onClick={() => setSyncing(false)} className="text-[#9a9a94] hover:text-[#1c1c1c]">
                  <X className="w-4 h-4" />
                </button>
             </div>
@@ -134,7 +134,7 @@ export default function GlobalSync() {
             {isComplete && (
                <button 
                  onClick={() => setSyncing(false)}
-                 className="w-full mt-4 py-2 bg-[#1c1c1c] text-white text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-black transition-colors"
+                 className="w-full mt-4 py-2 bg-[#1c1c1c] text-white text-[10px] font-bold uppercase tracking-wider rounded-xl hover:bg-black transition-colors"
                >
                  Dismiss
                </button>

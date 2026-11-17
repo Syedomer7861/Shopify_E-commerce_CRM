@@ -30,7 +30,7 @@ export function FloatingChat() {
         </div>
         
         <div className="flex flex-col items-start overflow-hidden w-0 group-hover:w-24 transition-all duration-300">
-          <span className="text-[10px] font-bold uppercase tracking-widest opacity-60 leading-none">Team</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider opacity-60 leading-none">Team</span>
           <span className="text-xs font-bold whitespace-nowrap">Chat Hub</span>
         </div>
 

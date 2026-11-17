@@ -69,7 +69,7 @@ export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[
         subtitle: name,
         type: "system",
         icon: topic.includes("order") ? <ShoppingBag className="w-3 h-3" /> : <Zap className="w-3 h-3" />,
-        color: topic.includes("order") ? "bg-emerald-500" : "bg-amber-500"
+        color: topic.includes("order") ? "bg-[#55c08f]" : "bg-amber-500"
       };
     }
     
@@ -100,15 +100,15 @@ export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[
   return (
     <div className="animate-in slide-in-from-right-8 duration-700">
       <div className="flex items-center justify-between mb-5 px-1">
-        <h2 className="text-[11px] font-black text-[#1c1c1c] flex items-center gap-3 uppercase tracking-[0.2em]">
+        <h2 className="text-[11px] font-bold text-[#1c1c1c] flex items-center gap-3 uppercase tracking-[0.2em]">
           <div className="p-2 bg-[#ebece6] rounded-xl">
             <Activity className="w-4 h-4 text-[#1c1c1c]/40" />
           </div>
           Live Intelligence Stream
         </h2>
-        <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100/50">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">Observable</span>
+        <div className="flex items-center gap-2 bg-[#ecf8f1] px-3 py-1.5 rounded-full border border-[#d5f0e1]/50">
+          <div className="w-2 h-2 rounded-full bg-[#55c08f] animate-pulse" />
+          <span className="text-[9px] font-bold text-[#2f8a5f] uppercase tracking-wider">Observable</span>
         </div>
       </div>
       
@@ -130,10 +130,10 @@ export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest truncate">
+                    <span className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider truncate">
                       {details.title}
                     </span>
-                    <span className="text-[9px] text-[#5f5f5d]/30 font-black uppercase whitespace-nowrap">
+                    <span className="text-[9px] text-[#5f5f5d]/30 font-bold uppercase whitespace-nowrap">
                       {mounted ? timeAgo(log.created_at) : "—"}
                     </span>
                   </div>
@@ -141,8 +141,8 @@ export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[
                     <span>{details.subtitle}</span>
                     {details.badge && (
                       <span className={cn(
-                        "ml-2 text-[7px] font-black px-1.5 py-0.5 rounded-md border",
-                        details.type === "auto" || details.type === "system" ? "bg-amber-50 border-amber-100 text-amber-700" : "bg-gray-50 border-gray-100 text-gray-500"
+                        "ml-2 text-[7px] font-bold px-1.5 py-0.5 rounded-md border",
+                        details.type === "auto" || details.type === "system" ? "bg-amber-50 border-amber-100 text-amber-700" : "bg-[#f6f7f2] border-[#ebece6] text-[#6b6b67]"
                       )}>
                         {details.badge}
                       </span>
@@ -159,8 +159,8 @@ export default function LivePulseFeed({ initialLogs = [] }: { initialLogs?: any[
                     <RefreshCw className="w-6 h-6 text-[#1c1c1c]/20 animate-spin-slow" />
                  </div>
               </div>
-              <div className="text-[10px] text-[#1c1c1c] font-black uppercase tracking-[0.2em]">Monitoring Pipeline</div>
-              <div className="text-[9px] text-[#5f5f5d]/40 mt-2 font-bold uppercase tracking-widest italic">Waiting for incoming telemetry...</div>
+              <div className="text-[10px] text-[#1c1c1c] font-bold uppercase tracking-[0.2em]">Monitoring Pipeline</div>
+              <div className="text-[9px] text-[#5f5f5d]/40 mt-2 font-bold uppercase tracking-wider italic">Waiting for incoming telemetry...</div>
             </div>
           )}
         </div>

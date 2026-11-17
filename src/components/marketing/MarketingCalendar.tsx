@@ -16,8 +16,8 @@ type CalView = "month" | "week" | "agenda";
 const PRIORITY_DOT: Record<string, string> = {
   urgent: "bg-rose-500",
   high: "bg-amber-500",
-  normal: "bg-slate-300",
-  low: "bg-slate-200",
+  normal: "bg-[#d4d5cd]",
+  low: "bg-[#e6e7e0]",
 };
 
 type Props = {
@@ -189,7 +189,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
             {who.map((id) => (
               <span
                 key={id}
-                className="w-3.5 h-3.5 rounded-full bg-[#1c1c1c] text-white text-[6px] font-black flex items-center justify-center border border-white"
+                className="w-3.5 h-3.5 rounded-full bg-[#1c1c1c] text-white text-[6px] font-bold flex items-center justify-center border border-white"
                 title={memberById.get(id)?.name || memberById.get(id)?.email || ""}
               >
                 {initials(memberById.get(id)?.name, memberById.get(id)?.email)}
@@ -238,8 +238,8 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
                 </span>
               </span>
               <div className="min-w-0">
-                <div className="text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/60 truncate">Total {s.name}</div>
-                <div className="text-lg font-black text-[#1c1c1c] leading-none">{s.count}</div>
+                <div className="text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d]/60 truncate">Total {s.name}</div>
+                <div className="text-lg font-bold text-[#1c1c1c] leading-none">{s.count}</div>
               </div>
             </button>
           ))}
@@ -254,14 +254,14 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
               </button>
               <button
                 onClick={() => setCursor(view === "month" ? startOfMonth(new Date()) : new Date())}
-                className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d] px-2 hover:text-[#1c1c1c]"
+                className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] px-2 hover:text-[#1c1c1c]"
               >
                 Today
               </button>
               <button aria-label="Next" onClick={() => step(1)} className="w-7 h-7 rounded-lg hover:bg-[#f2efe8] flex items-center justify-center text-[#5f5f5d]">
                 <ChevronRight className="w-4 h-4" />
               </button>
-              <span className="text-sm font-black uppercase tracking-widest text-[#1c1c1c] ml-2">{label}</span>
+              <span className="text-sm font-bold uppercase tracking-wider text-[#1c1c1c] ml-2">{label}</span>
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -271,7 +271,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
                     key={v}
                     onClick={() => setView(v)}
                     className={cn(
-                      "px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest",
+                      "px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider",
                       view === v ? "bg-white text-[#1c1c1c] shadow-sm" : "text-[#5f5f5d]"
                     )}
                   >
@@ -282,7 +282,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
               <button
                 onClick={() => setShowFilters((s) => !s)}
                 className={cn(
-                  "px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border flex items-center gap-1.5",
+                  "px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border flex items-center gap-1.5",
                   showFilters || hiddenStatuses.size || hideDone ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#5f5f5d] border-[#ebece6]"
                 )}
               >
@@ -291,7 +291,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
               <div className="relative">
                 <button
                   onClick={() => setExportOpen((o) => !o)}
-                  className="px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-white text-[#5f5f5d] border border-[#ebece6] flex items-center gap-1.5"
+                  className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-white text-[#5f5f5d] border border-[#ebece6] flex items-center gap-1.5"
                 >
                   <Download className="w-3 h-3" /> Export
                 </button>
@@ -314,7 +314,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
 
           {showFilters && (
             <div className="px-4 py-3 border-b border-[#ebece6] bg-[#faf8f3] flex flex-wrap items-center gap-2">
-              <span className="text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50">Show</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d]/50">Show</span>
               {list.statuses.map((s) => {
                 const on = !hiddenStatuses.has(s.id);
                 return (
@@ -344,7 +344,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
               {(hiddenStatuses.size > 0 || hideDone) && (
                 <button
                   onClick={() => { setHiddenStatuses(new Set()); setHideDone(false); }}
-                  className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:underline"
+                  className="text-[10px] font-bold text-rose-500 uppercase tracking-wider hover:underline"
                 >
                   Reset
                 </button>
@@ -356,7 +356,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
           {view === "month" && (
             <div className="overflow-x-auto">
               <div className="min-w-[620px]">
-                <div className="grid grid-cols-7 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50 border-b border-[#ebece6]">
+                <div className="grid grid-cols-7 text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d]/50 border-b border-[#ebece6]">
                   {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
                     <div key={d} className="px-2 py-2 text-center">{d}</div>
                   ))}
@@ -377,7 +377,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
                         </div>
                         {list_.slice(0, 4).map((t) => <Pill key={t.id} t={t} />)}
                         {list_.length > 4 && (
-                          <button onClick={() => { setView("agenda"); setCursor(day); }} className="text-[9px] font-black text-[#5f5f5d]/60 pl-1 hover:text-[#1c1c1c]">
+                          <button onClick={() => { setView("agenda"); setCursor(day); }} className="text-[9px] font-bold text-[#5f5f5d]/60 pl-1 hover:text-[#1c1c1c]">
                             +{list_.length - 4} more
                           </button>
                         )}
@@ -399,12 +399,12 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
                   return (
                     <div key={k} className="border-r border-[#ebece6] min-h-[420px]">
                       <div className={cn("px-2 py-2 border-b border-[#ebece6] text-center", today && "bg-[#1c1c1c] text-white")}>
-                        <div className="text-[8px] font-black uppercase tracking-widest opacity-60">{format(day, "EEE")}</div>
-                        <div className="text-sm font-black">{format(day, "d")}</div>
+                        <div className="text-[8px] font-bold uppercase tracking-wider opacity-60">{format(day, "EEE")}</div>
+                        <div className="text-sm font-bold">{format(day, "d")}</div>
                       </div>
                       <div className="p-1.5 space-y-1">
                         {list_.map((t) => <Pill key={t.id} t={t} />)}
-                        {list_.length === 0 && <div className="text-[9px] text-[#5f5f5d]/30 text-center pt-4 font-bold uppercase tracking-widest">—</div>}
+                        {list_.length === 0 && <div className="text-[9px] text-[#5f5f5d]/30 text-center pt-4 font-bold uppercase tracking-wider">—</div>}
                       </div>
                     </div>
                   );
@@ -416,13 +416,13 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
           {view === "agenda" && (
             <div className="divide-y divide-[#ebece6] max-h-[560px] overflow-y-auto">
               {[...byDay.keys()].sort().length === 0 && (
-                <div className="px-4 py-12 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/40">
+                <div className="px-4 py-12 text-center text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d]/40">
                   Nothing scheduled in this window
                 </div>
               )}
               {[...byDay.keys()].sort().map((k) => (
                 <div key={k} className="px-4 py-3">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]/60 mb-2">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]/60 mb-2">
                     {format(parseISO(k), "EEEE, d MMM")}
                   </div>
                   <div className="space-y-1.5">
@@ -441,14 +441,14 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
         !selected && "hidden xl:block"
       )}>
         {!selected ? (
-          <div className="text-center py-16 text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/40">
+          <div className="text-center py-16 text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d]/40">
             Pick an event
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-2">
               <span
-                className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
                 style={{ backgroundColor: statusColor(selected.status) + "26", color: statusColor(selected.status) }}
               >
                 {statusMeta(selected.status)?.name ?? selected.status}
@@ -458,7 +458,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
               </button>
             </div>
 
-            <div className="text-[15px] font-black text-[#1c1c1c] leading-tight">{selected.title}</div>
+            <div className="text-[15px] font-bold text-[#1c1c1c] leading-tight">{selected.title}</div>
 
             <div className="space-y-1.5 text-[11px] font-medium text-[#5f5f5d]">
               <div className="flex items-center gap-2">
@@ -478,7 +478,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
 
             {(selected.assignees?.length ?? 0) > 0 && (
               <div className="border-t border-[#ebece6] pt-3">
-                <div className="text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50 mb-2 flex items-center gap-1.5">
+                <div className="text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d]/50 mb-2 flex items-center gap-1.5">
                   <UsersIcon className="w-3 h-3" /> Team
                 </div>
                 <div className="space-y-1.5">
@@ -486,7 +486,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
                     const m = memberById.get(id);
                     return (
                       <div key={id} className="flex items-center gap-2 text-[11px] font-medium text-[#1c1c1c]">
-                        <span className="w-5 h-5 rounded-full bg-[#1c1c1c] text-white text-[7px] font-black flex items-center justify-center flex-shrink-0">
+                        <span className="w-5 h-5 rounded-full bg-[#1c1c1c] text-white text-[7px] font-bold flex items-center justify-center flex-shrink-0">
                           {initials(m?.name, m?.email)}
                         </span>
                         <span className="truncate">{m?.name || m?.email || id}</span>
@@ -509,7 +509,7 @@ export default function MarketingCalendar({ list, tasks, members = [], onOpenTas
 
             <button
               onClick={() => onOpenTask(selected.id)}
-              className="w-full py-2 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-black uppercase tracking-widest"
+              className="w-full py-2 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-bold uppercase tracking-wider"
             >
               Open full task
             </button>

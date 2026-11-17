@@ -95,7 +95,7 @@ export default function SuperAdminPricing() {
     load();
   }
 
-  if (loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (loading) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
 
   return (
     <div>

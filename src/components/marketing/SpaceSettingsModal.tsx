@@ -120,7 +120,7 @@ export default function SpaceSettingsModal({ open, space, members, canManage, on
             key={t}
             onClick={() => setTab(t)}
             className={cn(
-              "px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest",
+              "px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider",
               tab === t ? "bg-white text-[#1c1c1c] shadow-sm" : "text-[#5f5f5d]"
             )}
           >
@@ -133,7 +133,7 @@ export default function SpaceSettingsModal({ open, space, members, canManage, on
         <div className="space-y-5">
           <div className="flex items-end gap-2">
             <div className="flex-1">
-              <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-1.5">Name</label>
+              <label className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider block mb-1.5">Name</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -153,13 +153,13 @@ export default function SpaceSettingsModal({ open, space, members, canManage, on
           {canManage && (
             <div className="flex items-center justify-between border-t border-[#ebece6] pt-4">
               {confirmArchive ? (
-                <button onClick={archive} className="px-3 py-2 rounded-lg bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest">
+                <button onClick={archive} className="px-3 py-2 rounded-lg bg-rose-500 text-white text-[10px] font-bold uppercase tracking-wider">
                   Archive — sure?
                 </button>
               ) : (
                 <button
                   onClick={() => setConfirmArchive(true)}
-                  className="px-3 py-2 rounded-lg border border-[#ebece6] text-rose-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+                  className="px-3 py-2 rounded-lg border border-[#ebece6] text-rose-500 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Archive Space
                 </button>
@@ -167,7 +167,7 @@ export default function SpaceSettingsModal({ open, space, members, canManage, on
               <button
                 onClick={saveGeneral}
                 disabled={saving}
-                className="px-4 py-2 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40 flex items-center gap-2"
+                className="px-4 py-2 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-bold uppercase tracking-wider disabled:opacity-40 flex items-center gap-2"
               >
                 {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Save
               </button>
@@ -178,7 +178,7 @@ export default function SpaceSettingsModal({ open, space, members, canManage, on
         <div className="space-y-2">
           {spaceMembers.map((m) => (
             <div key={m.user_id} className="flex items-center gap-2 p-2 rounded-xl border border-[#ebece6]">
-              <span className="w-6 h-6 rounded-full bg-[#1c1c1c] text-white text-[9px] font-black flex items-center justify-center flex-shrink-0">
+              <span className="w-6 h-6 rounded-full bg-[#1c1c1c] text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">
                 {(nameOf(m.user_id).slice(0, 2)).toUpperCase()}
               </span>
               <span className="text-[13px] font-semibold text-[#1c1c1c] flex-1 truncate">
@@ -189,7 +189,7 @@ export default function SpaceSettingsModal({ open, space, members, canManage, on
                 <>
                   <button
                     onClick={() => toggleOwner(m)}
-                    className="text-[9px] font-black uppercase tracking-widest text-[#5f5f5d] hover:text-[#1c1c1c]"
+                    className="text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d] hover:text-[#1c1c1c]"
                   >
                     {m.role === "owner" ? "Demote" : "Make owner"}
                   </button>

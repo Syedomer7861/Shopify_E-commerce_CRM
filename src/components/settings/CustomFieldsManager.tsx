@@ -88,7 +88,7 @@ export function CustomFieldsManager({ canEdit }: { canEdit: boolean }) {
   return (
     <div className="card p-6 space-y-5">
       <div>
-        <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2">Custom fields</h3>
+        <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2">Custom fields</h3>
         <p className="text-xs text-[#5f5f5d]">Add your own fields to records. They appear in the add and edit forms, and in the list if you choose.</p>
       </div>
       {canEdit && templates.length > 0 && (
@@ -106,11 +106,11 @@ export function CustomFieldsManager({ canEdit }: { canEdit: boolean }) {
       <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
         {ENTITIES.map(([k, l]) => (
           <button key={k} onClick={() => setEntity(k)} aria-pressed={entity === k}
-            className={cn("px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap border", entity === k ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-gray-600 border-[#ebece6]")}>{l}</button>
+            className={cn("px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap border", entity === k ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#55554f] border-[#ebece6]")}>{l}</button>
         ))}
       </div>
 
-      {loading ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : defs.length === 0 ? (
+      {loading ? <Loader2 className="w-4 h-4 animate-spin text-[#9a9a94]" /> : defs.length === 0 ? (
         <p className="text-xs text-[#5f5f5d]">No custom fields on this record yet.</p>
       ) : (
         <div className="divide-y divide-[#ebece6] border border-[#ebece6] rounded-lg">

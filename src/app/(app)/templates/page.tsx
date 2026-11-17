@@ -70,7 +70,7 @@ export default function TemplateManager() {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-[#5f5f5d] gap-3">
         <RefreshCw className="w-8 h-8 animate-spin" />
-        <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Authenticating Access...</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Authenticating Access...</p>
       </div>
     );
   }
@@ -158,7 +158,7 @@ export default function TemplateManager() {
       />
 
       <div className="mb-6 relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9a9a94]" />
         <input 
           className="input pl-10 h-10" 
           placeholder="Search templates..." 
@@ -185,12 +185,12 @@ export default function TemplateManager() {
                 </div>
               </div>
               <h3 className="text-sm font-bold text-[#1c1c1c] mb-2 line-clamp-1">{tpl.name}</h3>
-              <p className="text-xs text-gray-500 leading-relaxed line-clamp-4 whitespace-pre-wrap">
+              <p className="text-xs text-[#6b6b67] leading-relaxed line-clamp-4 whitespace-pre-wrap">
                 {tpl.body}
               </p>
             </div>
-            <div className="px-5 py-3 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
-              <span className="text-[10px] text-gray-400 font-medium">Auto-variable detection active</span>
+            <div className="px-5 py-3 bg-[#f6f7f2]/50 border-t border-[#ebece6] flex items-center justify-between">
+              <span className="text-[10px] text-[#9a9a94] font-medium">Auto-variable detection active</span>
               <MessageSquare className="w-3.5 h-3.5 text-[#1c1c1c]/40" />
             </div>
           </div>
@@ -198,7 +198,7 @@ export default function TemplateManager() {
       </div>
 
       {loading && filtered.length === 0 && (
-        <div className="text-center py-20 text-gray-400 text-sm italic">Loading templates...</div>
+        <div className="text-center py-20 text-[#9a9a94] text-sm italic">Loading templates...</div>
       )}
 
       {/* Template Modal */}
@@ -215,7 +215,7 @@ export default function TemplateManager() {
         <div className="space-y-4">
           {!editingTemplate && (
             <div className="mb-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Load Quick Preset</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Load Quick Preset</label>
               <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
                 {PRESET_TEMPLATES.map((p, i) => (
                   <button
@@ -230,7 +230,7 @@ export default function TemplateManager() {
             </div>
           )}
           <div>
-            <label className="text-xs font-bold text-gray-700 block mb-1">Template Name</label>
+            <label className="text-xs font-bold text-[#3a3a36] block mb-1">Template Name</label>
             <input 
               className="input text-sm" 
               placeholder="e.g. VIP Reorder Reminder" 
@@ -240,7 +240,7 @@ export default function TemplateManager() {
           </div>
           <div className="grid grid-cols-2 gap-4">
              <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Category</label>
+              <label className="text-xs font-bold text-[#3a3a36] block mb-1">Category</label>
               <select 
                 className="select text-sm"
                 value={formData.category}
@@ -256,7 +256,7 @@ export default function TemplateManager() {
           </div>
           <div>
             <div className="flex justify-between mb-1">
-              <label className="text-xs font-bold text-gray-700">Message Body</label>
+              <label className="text-xs font-bold text-[#3a3a36]">Message Body</label>
               <div className="flex items-center gap-1.5">
                 {VARIABLES.map(v => (
                     <button 
@@ -275,7 +275,7 @@ export default function TemplateManager() {
               value={formData.body}
               onChange={e => setFormData({ ...formData, body: e.target.value })}
             />
-            <div className="mt-2 text-[10px] text-gray-400 bg-gray-50 p-2 rounded border border-gray-100">
+            <div className="mt-2 text-[10px] text-[#9a9a94] bg-[#f6f7f2] p-2 rounded border border-[#ebece6]">
               <b>Tip:</b> Use emojis to increase engagement. Variables between double curly braces like <code>{"{{name}}"}</code> will be auto-replaced.
             </div>
           </div>

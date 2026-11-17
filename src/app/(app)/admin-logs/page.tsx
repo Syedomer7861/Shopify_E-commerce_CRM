@@ -173,7 +173,7 @@ export default function AdminLogs() {
   if (profileLoading) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
-        <LoaderIcon className="w-8 h-8 animate-spin text-gray-300" />
+        <LoaderIcon className="w-8 h-8 animate-spin text-[#d4d5cd]" />
       </div>
     );
   }
@@ -223,7 +223,7 @@ export default function AdminLogs() {
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="md:col-span-2 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9a9a94]" />
           <input
             type="text"
             placeholder="Search by user, action, or summary..."
@@ -236,7 +236,7 @@ export default function AdminLogs() {
           />
         </div>
         <div className="relative">
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9a9a94]" />
           <select 
             className="input pl-10 appearance-none capitalize"
             value={actionFilter}
@@ -256,7 +256,7 @@ export default function AdminLogs() {
             onClick={() => setHistoryOpen(o => !o)}
             className={cn(
               "flex items-center gap-2 px-3 h-full w-full rounded-xl text-xs font-bold border transition-colors",
-              activeRange ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-gray-500 border-[#ebece6] hover:border-gray-300"
+              activeRange ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#6b6b67] border-[#ebece6] hover:border-[#d4d5cd]"
             )}
           >
             <Clock className="w-3.5 h-3.5" />
@@ -264,14 +264,14 @@ export default function AdminLogs() {
           </button>
           {historyOpen && (
             <div className="absolute right-0 mt-2 w-72 bg-white border border-[#ebece6] rounded-xl shadow-lg p-4 z-20 space-y-3">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Browse a date range</p>
+              <p className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Browse a date range</p>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[9px] font-bold text-gray-400 uppercase block mb-1">From</label>
+                  <label className="text-[9px] font-bold text-[#9a9a94] uppercase block mb-1">From</label>
                   <input type="date" className="input text-xs h-9 w-full" value={historyStart} onChange={e => setHistoryStart(e.target.value)} />
                 </div>
                 <div>
-                  <label className="text-[9px] font-bold text-gray-400 uppercase block mb-1">To</label>
+                  <label className="text-[9px] font-bold text-[#9a9a94] uppercase block mb-1">To</label>
                   <input type="date" className="input text-xs h-9 w-full" value={historyEnd} onChange={e => setHistoryEnd(e.target.value)} />
                 </div>
               </div>
@@ -307,45 +307,45 @@ export default function AdminLogs() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#1c1c1c] text-[#fcfbf8]">
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest">Timestamp</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest">User</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest">Action</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest">Details</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-right">Context</th>
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider">Timestamp</th>
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider">User</th>
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider">Action</th>
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider">Details</th>
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-right">Context</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#ebece6]">
               {loading && logs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-10 text-center">
-                    <LoaderIcon className="w-6 h-6 animate-spin mx-auto text-gray-300" />
+                    <LoaderIcon className="w-6 h-6 animate-spin mx-auto text-[#d4d5cd]" />
                   </td>
                 </tr>
               ) : filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-gray-400 text-sm">No logs found matching your criteria.</td>
+                  <td colSpan={5} className="px-6 py-10 text-center text-[#9a9a94] text-sm">No logs found matching your criteria.</td>
                 </tr>
               ) : (
                 paginatedLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-[rgba(28,28,28,0.02)] transition-colors group">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-xs font-bold text-[#1c1c1c]">{new Date(log.created_at).toLocaleString()}</div>
-                      <div className="text-[10px] text-gray-400 font-medium">{timeAgo(log.created_at)}</div>
+                      <div className="text-[10px] text-[#9a9a94] font-medium">{timeAgo(log.created_at)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <Avatar name={log.actor_email || "S"} size="sm" />
                         <div>
                           <div className="text-xs font-bold text-[#1c1c1c]">{log.actor_email || "System"}</div>
-                          <div className="text-[10px] text-gray-400 tabular-nums">{log.actor_id?.substring(0, 8)}</div>
+                          <div className="text-[10px] text-[#9a9a94] tabular-nums">{log.actor_id?.substring(0, 8)}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={cn(
-                        "text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md border",
+                        "text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border",
                         log.action.includes("delete") || log.action.includes("skip") ? "bg-rose-50 border-rose-100 text-rose-600" :
-                        log.action.includes("complete") || log.action.includes("create") ? "bg-emerald-50 border-emerald-100 text-emerald-600" :
+                        log.action.includes("complete") || log.action.includes("create") ? "bg-[#ecf8f1] border-[#d5f0e1] text-[#3fa877]" :
                         "bg-[#1c1c1c]/5 border-[#1c1c1c]/10 text-[#1c1c1c]"
                       )}>
                         {log.action.replace(/_/g, ' ')}
@@ -386,30 +386,30 @@ export default function AdminLogs() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Action</div>
+                <div className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider mb-1">Action</div>
                 <div className="font-bold text-[#1c1c1c]">{detailsLog.action?.replace(/_/g, " ")}</div>
               </div>
               <div>
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Timestamp</div>
+                <div className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider mb-1">Timestamp</div>
                 <div className="font-bold text-[#1c1c1c]">{new Date(detailsLog.created_at).toLocaleString()}</div>
               </div>
               <div className="col-span-2">
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">User</div>
+                <div className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider mb-1">User</div>
                 <div className="font-bold text-[#1c1c1c]">{detailsLog.actor_email || "System"}</div>
               </div>
               <div className="col-span-2">
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Summary</div>
+                <div className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider mb-1">Summary</div>
                 <div className="text-[#5f5f5d]">{detailsLog.summary}</div>
               </div>
             </div>
             <div>
-              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Raw Metadata</div>
+              <div className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider mb-1">Raw Metadata</div>
               {detailsLog.metadata && Object.keys(detailsLog.metadata).length > 0 ? (
-                <pre className="bg-gray-50 rounded-xl p-3 text-[11px] font-mono text-[#5f5f5d] overflow-x-auto max-h-64 overflow-y-auto">
+                <pre className="bg-[#f6f7f2] rounded-xl p-3 text-[11px] font-mono text-[#5f5f5d] overflow-x-auto max-h-64 overflow-y-auto">
                   {JSON.stringify(detailsLog.metadata, null, 2)}
                 </pre>
               ) : (
-                <p className="text-xs text-gray-400 italic">No additional metadata for this event.</p>
+                <p className="text-xs text-[#9a9a94] italic">No additional metadata for this event.</p>
               )}
             </div>
           </div>

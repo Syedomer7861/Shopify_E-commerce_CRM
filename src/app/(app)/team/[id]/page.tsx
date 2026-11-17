@@ -93,7 +93,7 @@ export default function AgentDetailPage() {
         <div className="h-screen flex items-center justify-center bg-[#fcfbf8]">
             <div className="flex flex-col items-center gap-4">
                 <Loader2 className="w-10 h-10 animate-spin text-[#1c1c1c]" />
-                <p className="text-xs font-bold text-[#5f5f5d] uppercase tracking-widest">Establishing Live Feed...</p>
+                <p className="text-xs font-bold text-[#5f5f5d] uppercase tracking-wider">Establishing Live Feed...</p>
             </div>
         </div>
     );
@@ -125,26 +125,26 @@ export default function AgentDetailPage() {
                         <Avatar name={profile.name || profile.email} size="lg" />
                         <div className={cn(
                             "absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-[#fcfbf8] transition-all duration-500",
-                            profile.status === 'online' ? "bg-emerald-500 animate-pulse" : 
+                            profile.status === 'online' ? "bg-[#55c08f] animate-pulse" : 
                             ["break", "lunch", "away"].includes(profile.status) ? "bg-amber-500" : 
-                            profile.status === 'meeting' ? "bg-indigo-500" : "bg-gray-400"
+                            profile.status === 'meeting' ? "bg-[#6f9bdd]" : "bg-[#9a9a94]"
                         )} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black text-[#1c1c1c] tracking-tight uppercase flex items-center gap-3">
+                        <h1 className="text-2xl font-bold text-[#1c1c1c] tracking-tight uppercase flex items-center gap-3">
                             {profile.name || "Unknown Agent"}
-                            {profile.status === 'online' && <div className="text-[10px] font-black text-emerald-600 tracking-widest flex items-center gap-1"><Activity className="w-3 h-3" /> LIVE</div>}
+                            {profile.status === 'online' && <div className="text-[10px] font-bold text-[#3fa877] tracking-wider flex items-center gap-1"><Activity className="w-3 h-3" /> LIVE</div>}
                         </h1>
                         <p className="text-sm text-[#5f5f5d] font-bold">{profile.email} • <span className="capitalize">{profile.role}</span></p>
                     </div>
                 </div>
                 <div className="ml-auto flex items-center gap-3">
                     <div className={cn(
-                        "px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all duration-500 shadow-sm",
-                        profile.status === 'online' ? "bg-emerald-50 text-emerald-700 border-emerald-200" : 
+                        "px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider border transition-all duration-500 shadow-sm",
+                        profile.status === 'online' ? "bg-[#ecf8f1] text-[#2f8a5f] border-[#b5e4ca]" : 
                         ["break", "lunch", "away"].includes(profile.status) ? "bg-amber-50 text-amber-700 border-amber-200" : 
-                        profile.status === 'meeting' ? "bg-indigo-50 text-indigo-700 border-indigo-200" :
-                        "bg-gray-50 text-gray-500 border-gray-100"
+                        profile.status === 'meeting' ? "bg-[#eef4fc] text-[#3d66a6] border-[#c7dbf5]" :
+                        "bg-[#f6f7f2] text-[#6b6b67] border-[#ebece6]"
                     )}>
                         {profile.status || 'offline'}
                     </div>
@@ -165,7 +165,7 @@ export default function AgentDetailPage() {
                         <SectionTitle>
                             <ListChecks className="w-4 h-4 text-[#1c1c1c]" />
                             Live Task Queue
-                            <span className="ml-auto text-[10px] text-gray-400 font-bold bg-[#ebece6] px-2 py-0.5 rounded-full">
+                            <span className="ml-auto text-[10px] text-[#9a9a94] font-bold bg-[#ebece6] px-2 py-0.5 rounded-full">
                                 {activeTasks.length} PENDING
                             </span>
                         </SectionTitle>
@@ -173,10 +173,10 @@ export default function AgentDetailPage() {
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="border-b border-[#ebece6]">
-                                        <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Customer</th>
-                                        <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Task Type</th>
-                                        <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Due</th>
-                                        <th className="py-3 text-right text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Status</th>
+                                        <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Customer</th>
+                                        <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Task Type</th>
+                                        <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Due</th>
+                                        <th className="py-3 text-right text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[#ebece6]/50">
@@ -185,7 +185,7 @@ export default function AgentDetailPage() {
                                             <td className="py-4">
                                                 <div className="flex flex-col">
                                                     <span className="text-xs font-bold text-[#1c1c1c] uppercase">{task.customer?.name}</span>
-                                                    <span className="text-[9px] text-gray-400 font-bold tracking-wider">{task.customer?.phone}</span>
+                                                    <span className="text-[9px] text-[#9a9a94] font-bold tracking-wider">{task.customer?.phone}</span>
                                                 </div>
                                             </td>
                                             <td className="py-4">
@@ -196,7 +196,7 @@ export default function AgentDetailPage() {
                                             </td>
                                             <td className="py-4 text-right">
                                                 <span className={cn(
-                                                    "px-2 py-0.5 rounded-[4px] text-[9px] font-black uppercase tracking-widest border",
+                                                    "px-2 py-0.5 rounded-[4px] text-[9px] font-bold uppercase tracking-wider border",
                                                     task.status === "overdue" ? "bg-rose-50 text-rose-700 border-rose-100" : "bg-amber-50 text-amber-700 border-amber-100"
                                                 )}>
                                                     {task.status}
@@ -206,7 +206,7 @@ export default function AgentDetailPage() {
                                     ))}
                                     {activeTasks.length === 0 && (
                                         <tr>
-                                            <td colSpan={4} className="py-10 text-center text-xs text-gray-400 italic">No active tasks in queue. Agent is idle.</td>
+                                            <td colSpan={4} className="py-10 text-center text-xs text-[#9a9a94] italic">No active tasks in queue. Agent is idle.</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -223,11 +223,11 @@ export default function AgentDetailPage() {
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="border-b border-[#ebece6]">
-                                        <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Date</th>
-                                        <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Status</th>
-                                        <th className="py-3 text-center text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">In</th>
-                                        <th className="py-3 text-center text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Out</th>
-                                        <th className="py-3 text-right text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Work Hours</th>
+                                        <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Date</th>
+                                        <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Status</th>
+                                        <th className="py-3 text-center text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">In</th>
+                                        <th className="py-3 text-center text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Out</th>
+                                        <th className="py-3 text-right text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Work Hours</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[#ebece6]/50">
@@ -236,8 +236,8 @@ export default function AgentDetailPage() {
                                             <td className="py-4 text-xs font-bold text-[#1c1c1c]">{format(new Date(log.date), "MMM dd, yyyy")}</td>
                                             <td className="py-4">
                                                 <span className={cn(
-                                                    "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
-                                                    log.status === "Present" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+                                                    "px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider",
+                                                    log.status === "Present" ? "bg-[#ecf8f1] text-[#2f8a5f]" : "bg-rose-50 text-rose-700"
                                                 )}>
                                                     {log.status}
                                                 </span>
@@ -276,7 +276,7 @@ export default function AgentDetailPage() {
                                                 "Activity recorded"
                                             )}
                                         </div>
-                                        <div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest pt-0.5">
+                                        <div className="text-[9px] text-[#9a9a94] font-bold uppercase tracking-wider pt-0.5">
                                             {format(new Date(act.created_at), "HH:mm • MMM dd")}
                                         </div>
                                     </div>
@@ -284,7 +284,7 @@ export default function AgentDetailPage() {
                             ))}
                             {(!stats?.activity || stats?.activity.length === 0) && (
                                 <div className="text-center py-10">
-                                    <p className="text-xs text-gray-400 italic">No recent activity logs.</p>
+                                    <p className="text-xs text-[#9a9a94] italic">No recent activity logs.</p>
                                 </div>
                             )}
                         </div>

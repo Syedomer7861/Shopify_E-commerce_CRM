@@ -32,8 +32,8 @@ type Line = { id: string; name: string; unit: string; target: number | null; wei
 type Snapshot = { lines?: Line[]; overall?: number | null; band?: Band | null; coverage?: number };
 
 const BAND: Record<Band, { label: string; cls: string }> = {
-  exceeds: { label: "Exceeds", cls: "bg-emerald-50 text-emerald-700" },
-  meets: { label: "Meets", cls: "bg-sky-50 text-sky-700" },
+  exceeds: { label: "Exceeds", cls: "bg-[#ecf8f1] text-[#2f8a5f]" },
+  meets: { label: "Meets", cls: "bg-[#eef4fc] text-[#3d66a6]" },
   needs_improvement: { label: "Needs improvement", cls: "bg-amber-50 text-amber-700" },
   below: { label: "Below expectations", cls: "bg-rose-50 text-rose-700" },
 };
@@ -177,7 +177,7 @@ export function KpiScorecard({ employeeId, viewer }: { employeeId: string; viewe
         </select>
       </div>
 
-      {loading ? <div className="py-6 text-center text-gray-400"><Loader2 className="w-4 h-4 animate-spin mx-auto" /></div> : (
+      {loading ? <div className="py-6 text-center text-[#9a9a94]"><Loader2 className="w-4 h-4 animate-spin mx-auto" /></div> : (
         <>
           <div className="flex flex-wrap items-end gap-4 mb-3">
             <div>

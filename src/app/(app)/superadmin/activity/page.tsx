@@ -30,16 +30,16 @@ export default function SuperAdminActivity() {
     <div>
       <PageHeader title="Owner activity" subtitle="Every owner action, newest first. Permanent: nobody can edit or delete it." />
       {loading ? (
-        <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
+        <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
       ) : rows.length === 0 ? (
         <EmptyState icon={<History className="w-6 h-6" />} title="No owner actions yet" desc="Suspensions, reactivations, request updates and new organisations appear here." />
       ) : (
-        <div className="card divide-y divide-gray-50">
+        <div className="card divide-y divide-[#f6f7f2]">
           {rows.map(a => (
             <div key={a.id} className="p-3 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs">
-              <span className="text-gray-500 sm:w-44 shrink-0">{new Date(a.created_at).toLocaleString()}</span>
+              <span className="text-[#6b6b67] sm:w-44 shrink-0">{new Date(a.created_at).toLocaleString()}</span>
               <span className="font-bold text-[#1c1c1c] sm:w-48 shrink-0">{a.action.replace(/_/g, " ").replace(".", ": ")}</span>
-              <span className="text-gray-600 break-words">{describe(a)}</span>
+              <span className="text-[#55554f] break-words">{describe(a)}</span>
             </div>
           ))}
         </div>

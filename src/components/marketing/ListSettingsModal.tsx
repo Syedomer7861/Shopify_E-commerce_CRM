@@ -128,7 +128,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
       <div className="space-y-5">
         <div className="flex items-end gap-2">
           <div className="flex-1">
-            <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-1.5">Name</label>
+            <label className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider block mb-1.5">Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -136,7 +136,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
             />
           </div>
           <div>
-            <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-1.5">Color</label>
+            <label className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider block mb-1.5">Color</label>
             <input
               type="color"
               value={color}
@@ -147,7 +147,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
         </div>
 
         <div>
-          <div className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest mb-2">Statuses (columns)</div>
+          <div className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider mb-2">Statuses (columns)</div>
           <div className="space-y-1.5">
             {statuses.map((s, i) => (
               <div key={s.id} className="flex items-center gap-1">
@@ -183,7 +183,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
           </div>
           <button
             onClick={addStatus}
-            className="mt-2 text-[10px] font-black uppercase tracking-widest text-[#5f5f5d] hover:text-[#1c1c1c] flex items-center gap-1"
+            className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] hover:text-[#1c1c1c] flex items-center gap-1"
           >
             <Plus className="w-3 h-3" /> Status
           </button>
@@ -193,7 +193,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
         </div>
 
         <div className="border-t border-[#ebece6] pt-4">
-          <div className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest mb-2">Custom fields</div>
+          <div className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider mb-2">Custom fields</div>
           <div className="space-y-1.5">
             {fields.map((f, i) => (
               <div key={f.id} className="space-y-1">
@@ -232,7 +232,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
           </div>
           <button
             onClick={addField}
-            className="mt-2 text-[10px] font-black uppercase tracking-widest text-[#5f5f5d] hover:text-[#1c1c1c] flex items-center gap-1"
+            className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] hover:text-[#1c1c1c] flex items-center gap-1"
           >
             <Plus className="w-3 h-3" /> Field
           </button>
@@ -240,13 +240,13 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
 
         <div className="flex items-center justify-between border-t border-[#ebece6] pt-4">
           {confirmArchive ? (
-            <button onClick={archive} className="px-3 py-2 rounded-lg bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest">
+            <button onClick={archive} className="px-3 py-2 rounded-lg bg-rose-500 text-white text-[10px] font-bold uppercase tracking-wider">
               Archive — sure?
             </button>
           ) : (
             <button
               onClick={() => setConfirmArchive(true)}
-              className="px-3 py-2 rounded-lg border border-[#ebece6] text-rose-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+              className="px-3 py-2 rounded-lg border border-[#ebece6] text-rose-500 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5"
             >
               <Trash2 className="w-3.5 h-3.5" /> Archive list
             </button>
@@ -254,7 +254,7 @@ export default function ListSettingsModal({ open, list, tasks, onClose, onSaved,
           <button
             onClick={save}
             disabled={saving}
-            className="px-4 py-2 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40 flex items-center gap-2"
+            className="px-4 py-2 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-bold uppercase tracking-wider disabled:opacity-40 flex items-center gap-2"
           >
             {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Save
           </button>

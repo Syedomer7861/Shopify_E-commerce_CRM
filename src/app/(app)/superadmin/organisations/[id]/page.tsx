@@ -24,7 +24,7 @@ type Tab = (typeof TABS)[number];
 function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d]">{label}</div>
+      <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]">{label}</div>
       <div className="text-sm text-[#1c1c1c] mt-0.5">{value}</div>
     </div>
   );
@@ -76,7 +76,7 @@ export default function SuperAdminOrgDetail() {
   }
 
   if (missing) return <div className="card p-6 text-sm text-[#5f5f5d]">Organisation not found. <Link href="/superadmin/organisations" className="underline">Back to list</Link></div>;
-  if (!org) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (!org) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
 
   return (
     <div>
@@ -105,14 +105,14 @@ export default function SuperAdminOrgDetail() {
             <Fact label="Modules off" value={org.disabled_modules?.length || 0} />
             <SeatOverridePanel orgId={id} />
             <div className="col-span-2 border-t border-[#ebece6] pt-3">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Records</div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-2">Records</div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {Object.entries(usage || {}).map(([k, v]) => <Fact key={k} label={k} value={<span className="tabular-nums">{v}</span>} />)}
               </div>
             </div>
           </div>
           <div className="card p-4 space-y-3">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d]">Owner notes (only you see these)</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]">Owner notes (only you see these)</div>
             <input value={tags} onChange={e => setTags(e.target.value)} placeholder="Tags, comma separated"
               className="w-full h-10 px-3 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30" />
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={7} maxLength={10000} placeholder="Notes"
@@ -130,15 +130,15 @@ export default function SuperAdminOrgDetail() {
       {tab === "modules" && <OrgModulesPanel orgId={id} />}
 
       {tab === "activity" && (
-        !audit ? <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
+        !audit ? <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
         : audit.length === 0 ? <div className="card p-4 text-sm text-[#5f5f5d]">No owner actions on this organisation yet.</div>
         : (
-          <div className="card divide-y divide-gray-50">
+          <div className="card divide-y divide-[#f6f7f2]">
             {audit.map(a => (
               <div key={a.id} className="p-3 flex flex-col sm:flex-row gap-1 sm:gap-4 text-xs">
-                <span className="text-gray-500 sm:w-44 shrink-0">{new Date(a.created_at).toLocaleString()}</span>
+                <span className="text-[#6b6b67] sm:w-44 shrink-0">{new Date(a.created_at).toLocaleString()}</span>
                 <span className="font-bold text-[#1c1c1c] sm:w-48 shrink-0">{a.action.replace(/_/g, " ").replace(".", ": ")}</span>
-                <span className="text-gray-600 break-words">{JSON.stringify(a.details)}</span>
+                <span className="text-[#55554f] break-words">{JSON.stringify(a.details)}</span>
               </div>
             ))}
           </div>

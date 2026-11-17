@@ -149,7 +149,7 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
         <div className="w-20 h-20 rounded-3xl bg-[#1c1c1c] flex items-center justify-center mb-5 shadow-2xl shadow-[#1c1c1c]/20">
           <span className="text-3xl">💬</span>
         </div>
-        <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-widest">Internal Communications</h3>
+        <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider">Internal Communications</h3>
         <p className="text-xs text-[#5f5f5d] mt-2 max-w-[280px] leading-relaxed opacity-60">
           Select a channel or teammate from the left to start collaborating in real-time.
         </p>
@@ -197,8 +197,8 @@ export function MessageList({ searchQuery = "" }: { searchQuery?: string }) {
               <div className={cn("flex flex-col max-w-[70%]", isMe ? "items-end" : "items-start")}>
                 {!isSameSender && (
                   <div className="flex items-center gap-2 mb-1 px-1">
-                    {!isMe && <span className="text-[10px] font-black text-[#1c1c1c] tracking-tight">{msg.sender?.name}</span>}
-                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">
+                    {!isMe && <span className="text-[10px] font-bold text-[#1c1c1c] tracking-tight">{msg.sender?.name}</span>}
+                    <span className="text-[8px] font-bold text-[#9a9a94] uppercase tracking-tighter">
                       {format(new Date(msg.created_at), 'h:mm a')}
                     </span>
                   </div>

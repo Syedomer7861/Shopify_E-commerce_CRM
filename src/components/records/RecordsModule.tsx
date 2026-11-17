@@ -231,7 +231,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
     (!needle || [...columns.map(c => (personKeys.has(c.key) ? people[r[c.key]] : r[c.key])), people[r[ownerCol]], r.status]
       .some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(needle))));
 
-  if (loading && !loadedOnce) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (loading && !loadedOnce) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   if (notReady) {
     return (
       <div className="card p-5 flex items-start gap-3 text-sm text-amber-700 bg-amber-50 border-amber-100">
@@ -246,13 +246,13 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
       <div className="flex flex-wrap items-center justify-end gap-2 mb-3">
         {(all.length > 0 || filtering) && (
           <div className="relative flex-1 min-w-[160px] max-w-xs mr-auto">
-            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-[#9a9a94] absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input type="search" aria-label={`Search ${noun}s`} placeholder="Search" className="input pl-8 text-xs" value={query} onChange={e => setQuery(e.target.value)} />
           </div>
         )}
         {(all.length > 0 || filtering) && (
           <div className="flex flex-wrap items-center gap-1.5">
-            {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" aria-label="Loading" />}
+            {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#9a9a94]" aria-label="Loading" />}
             {dateCols.length > 1 && (
               <Select value={dateCol} onChange={setDateCol} triggerClassName="text-xs h-8 min-w-[110px]" options={dateCols} />
             )}
@@ -274,7 +274,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
         <div className="flex gap-1.5 mb-3 overflow-x-auto scrollbar-hide">
           {[[null, all.length] as const, ...Object.entries(statusCounts)].map(([s, n]) => (
             <button key={s ?? "all"} onClick={() => setStatusFilter(s)} aria-pressed={statusFilter === s}
-              className={"px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap border " + (statusFilter === s ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-gray-600 border-[#ebece6]")}>
+              className={"px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap border " + (statusFilter === s ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#55554f] border-[#ebece6]")}>
               {s === null ? "All" : label(s)} <span className="opacity-60">{n}</span>
             </button>
           ))}
@@ -289,7 +289,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
         <div className="card overflow-x-auto">
           <table className="w-full text-xs min-w-[640px]">
             <thead>
-              <tr className="text-left text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-100">
+              <tr className="text-left text-[10px] uppercase tracking-wider text-[#9a9a94] border-b border-[#ebece6]">
                 {columns.map(c => <th key={c.key} className="p-3">{c.label}</th>)}
                 <th className="p-3">Status</th>
                 <th className="p-3">{config.ownerLabel || "Owner"}</th>
@@ -298,7 +298,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
             </thead>
             <tbody>
               {shown.map(row => (
-                <tr key={row.id} className="border-b border-gray-50 last:border-0">
+                <tr key={row.id} className="border-b border-[#f6f7f2] last:border-0">
                   {columns.map(c => (
                     <td key={c.key} className="p-3 text-[#1c1c1c]">{c.format ? c.format(row[c.key], row) : personKeys.has(c.key) ? (people[row[c.key]] || "—") : (row[c.key] ?? "—")}</td>
                   ))}
@@ -307,17 +307,17 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
                       <Select value={row.status} onChange={v => setStatus(row, v)} triggerClassName="text-xs capitalize"
                         options={config.statuses.map(s => ({ value: s, label: label(s) }))} />
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-600">{label(row.status || "—")}</span>
+                      <span className="px-2 py-0.5 rounded-full bg-[#f0f0ec] text-[10px] font-bold uppercase tracking-wider text-[#55554f]">{label(row.status || "—")}</span>
                     )}
                   </td>
-                  <td className="p-3 text-gray-500">{people[row[ownerCol]] || "—"}</td>
+                  <td className="p-3 text-[#6b6b67]">{people[row[ownerCol]] || "—"}</td>
                   <td className="p-3 text-right whitespace-nowrap sticky right-0 bg-[#f6f7f2]">
                     {config.rowActions?.(row, load)}
                     {config.editable && canEditRow(row) && (
-                      <button onClick={() => openEdit(row)} aria-label={`Edit ${noun}`} className="text-gray-400 hover:text-[#1c1c1c] ml-2 align-middle"><Pencil className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => openEdit(row)} aria-label={`Edit ${noun}`} className="text-[#9a9a94] hover:text-[#1c1c1c] ml-2 align-middle"><Pencil className="w-3.5 h-3.5" /></button>
                     )}
                     {canDelete && (
-                      <button onClick={() => remove(row)} aria-label={`Delete ${noun}`} className="text-gray-300 hover:text-rose-500 ml-2 align-middle"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => remove(row)} aria-label={`Delete ${noun}`} className="text-[#d4d5cd] hover:text-rose-500 ml-2 align-middle"><Trash2 className="w-3.5 h-3.5" /></button>
                     )}
                   </td>
                 </tr>
@@ -342,7 +342,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
             const set = (v: string) => setForm(prev => ({ ...prev, [f.key]: v }));
             return (
               <div key={f.key}>
-                <label htmlFor={id} className="text-xs font-medium text-gray-700 block mb-1">{f.label}{f.required && " *"}</label>
+                <label htmlFor={id} className="text-xs font-medium text-[#3a3a36] block mb-1">{f.label}{f.required && " *"}</label>
                 {f.type === "person" ? (
                   <Select value={form[f.key] || ""} onChange={set} placeholder="Choose a person" options={Object.entries(people).map(([value, name]) => ({ value, label: name }))} />
                 ) : f.type === "select" ? (
@@ -368,7 +368,7 @@ export function ModuleTabs<T extends string>({ tabs, active, onChange }: { tabs:
     <div className="flex gap-1 mb-5 border-b border-[#ebece6] overflow-x-auto scrollbar-hide">
       {tabs.map(t => (
         <button key={t.key} onClick={() => onChange(t.key)}
-          className={`px-3 py-2.5 text-xs font-bold border-b-2 -mb-px transition-colors whitespace-nowrap ${active === t.key ? "border-[#1c1c1c] text-[#1c1c1c]" : "border-transparent text-gray-400 hover:text-[#1c1c1c]"}`}>
+          className={`px-3 py-2.5 text-xs font-bold border-b-2 -mb-px transition-colors whitespace-nowrap ${active === t.key ? "border-[#1c1c1c] text-[#1c1c1c]" : "border-transparent text-[#9a9a94] hover:text-[#1c1c1c]"}`}>
           {t.label}
         </button>
       ))}

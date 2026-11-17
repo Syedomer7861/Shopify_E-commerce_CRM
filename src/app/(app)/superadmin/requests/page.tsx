@@ -23,9 +23,9 @@ function sourceLabel(t?: Touch | null) {
 
 const STATUS_STYLE: Record<ContactRequest["status"], string> = {
   new: "bg-amber-50 text-amber-700",
-  contacted: "bg-blue-50 text-blue-700",
-  provisioned: "bg-emerald-50 text-emerald-700",
-  declined: "bg-gray-100 text-gray-600",
+  contacted: "bg-[#eef4fc] text-[#3d66a6]",
+  provisioned: "bg-[#ecf8f1] text-[#2f8a5f]",
+  declined: "bg-[#f0f0ec] text-[#55554f]",
 };
 
 export default function SuperAdminRequests() {
@@ -65,13 +65,13 @@ export default function SuperAdminRequests() {
     <div>
       <PageHeader title="Requests" subtitle="Workspace requests from the public contact form. Self-serve signup is off, so this is the way in." />
       {loading ? (
-        <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
+        <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
       ) : requests.length === 0 ? (
         <EmptyState icon={<Mail className="w-6 h-6" />} title="No requests yet" desc="Submissions from /contact land here." />
       ) : (
         <div className="space-y-3">
           <div className="card p-4">
-            <div className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Requests by first source</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-2">Requests by first source</div>
             <div className="flex flex-wrap gap-2">
               {bySource.map(([label, n]) => (
                 <span key={label} className="text-xs px-2.5 py-1 rounded-full bg-[#f6f7f2] text-[#1c1c1c]">{label} <b>{n}</b></span>
@@ -84,10 +84,10 @@ export default function SuperAdminRequests() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-bold text-[#1c1c1c]">{r.name}</span>
-                  {r.company && <span className="text-xs text-gray-500">&middot; {r.company}</span>}
-                  <span className={cn("text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full", STATUS_STYLE[r.status])}>{r.status}</span>
+                  {r.company && <span className="text-xs text-[#6b6b67]">&middot; {r.company}</span>}
+                  <span className={cn("text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full", STATUS_STYLE[r.status])}>{r.status}</span>
                 </div>
-                <div className="flex items-center gap-4 text-xs text-gray-500 mt-1 flex-wrap">
+                <div className="flex items-center gap-4 text-xs text-[#6b6b67] mt-1 flex-wrap">
                   <a href={`mailto:${r.email}`} className="flex items-center gap-1 hover:text-[#1c1c1c]"><Mail className="w-3 h-3" /> {r.email}</a>
                   {r.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {r.phone}</span>}
                   <span>{new Date(r.created_at).toLocaleDateString()}</span>

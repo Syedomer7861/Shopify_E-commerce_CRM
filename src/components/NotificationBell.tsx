@@ -26,8 +26,8 @@ type Notification = {
 };
 
 const TYPE_DOT: Record<Notification["type"], string> = {
-  info: "bg-blue-400",
-  success: "bg-emerald-400",
+  info: "bg-[#8fb3e8]",
+  success: "bg-[#6fcb9d]",
   warning: "bg-amber-400",
   alert: "bg-rose-500",
 };
@@ -208,7 +208,7 @@ export function NotificationBell() {
       >
         <Bell className="w-4 h-4 text-[#1c1c1c]" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -217,7 +217,7 @@ export function NotificationBell() {
       {open && (
         <div className="absolute left-0 bottom-full mb-2 lg:left-auto lg:bottom-auto lg:mb-0 lg:right-0 lg:mt-2 w-80 max-w-[calc(100vw-1.5rem)] bg-[#f6f7f2] rounded-2xl shadow-2xl border border-[#ebece6] overflow-hidden animate-slide-up">
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#ebece6]">
-            <h3 className="text-xs font-black uppercase tracking-widest text-[#1c1c1c]">Notifications</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#1c1c1c]">Notifications</h3>
             {unreadCount > 0 && (
               <button onClick={markAllRead} className="flex items-center gap-1 text-[10px] font-bold text-[#5f5f5d] hover:text-[#1c1c1c] transition-colors">
                 <Check className="w-3 h-3" /> Mark all read
@@ -246,7 +246,7 @@ export function NotificationBell() {
                 >
                   <span className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", TYPE_DOT[n.type])} />
                   <div className="min-w-0 flex-1">
-                    <div className={cn("text-xs text-[#1c1c1c] truncate", !n.read ? "font-black" : "font-bold")}>{n.title}</div>
+                    <div className={cn("text-xs text-[#1c1c1c] truncate", !n.read ? "font-bold" : "font-bold")}>{n.title}</div>
                     {n.body && <div className="text-[11px] text-[#5f5f5d] mt-0.5 line-clamp-2">{n.body}</div>}
                     <div className="text-[9px] text-[#5f5f5d]/60 mt-1 font-medium">{formatDistanceToNow(new Date(n.created_at))} ago</div>
                   </div>

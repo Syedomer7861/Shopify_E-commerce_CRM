@@ -67,14 +67,14 @@ export default function ManagerStatsGrid() {
       label: "Active Agents",
       value: stats?.activeAgents ?? ph,
       icon: <Users className="w-4 h-4" />,
-      accent: "text-emerald-600",
+      accent: "text-[#3fa877]",
       variant: "glass" as const,
     },
     {
       label: "NDR Resolved",
       value: stats?.ndrResolved ?? ph,
       icon: <TrendingUp className="w-4 h-4" />,
-      accent: "text-blue-600",
+      accent: "text-[#4f7fc8]",
       variant: "glass" as const,
     },
     {

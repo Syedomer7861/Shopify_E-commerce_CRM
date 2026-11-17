@@ -49,7 +49,7 @@ export default function SuperAdminHealth() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (!data) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (!data) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   const dbBytes = Number(data.db?.db_bytes || 0);
   const used = dbBytes / DB_LIMIT;
   const last = data.snapshots[data.snapshots.length - 1];
@@ -79,7 +79,7 @@ export default function SuperAdminHealth() {
 
       <div className="grid lg:grid-cols-3 gap-3">
         <div className="card p-4 lg:col-span-2">
-          <div className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-3">Database size, daily</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-3">Database size, daily</div>
           {data.snapshots.length === 0 ? <p className="text-xs text-[#5f5f5d]">No snapshots yet.</p> : (
             <>
               <div className="flex items-end gap-1 h-28" role="img" aria-label="Database size over the last 30 snapshots">
@@ -97,7 +97,7 @@ export default function SuperAdminHealth() {
           {warnings.map(w => <p key={w.at} className="text-xs text-amber-700 mt-2">{new Date(w.at).toLocaleDateString()}: {w.note}</p>)}
         </div>
         <div className="card p-4">
-          <div className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Largest tables</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-2">Largest tables</div>
           {(data.db?.tables || []).slice(0, 10).map(t => (
             <div key={t.name} className="flex justify-between text-xs py-0.5"><span className="font-mono truncate">{t.name}</span><span className="tabular-nums">{mb(Number(t.bytes))}</span></div>
           ))}
@@ -106,7 +106,7 @@ export default function SuperAdminHealth() {
 
       <div className="grid lg:grid-cols-3 gap-3">
         <div className="card p-4">
-          <div className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Integrations, 7 days</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-2">Integrations, 7 days</div>
           {data.integrations.length === 0 ? <p className="text-xs text-[#5f5f5d]">No events.</p> : data.integrations.map(i => (
             <div key={i.source} className="flex justify-between text-xs py-0.5">
               <span className="capitalize">{i.source}</span><span className="text-[#5f5f5d]">last {ago(i.last_at)}{Number(i.failed_7d) ? ` · ${i.failed_7d} failed` : ""}</span>
@@ -114,7 +114,7 @@ export default function SuperAdminHealth() {
           ))}
         </div>
         <div className="card p-4 lg:col-span-2">
-          <div className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Recent failures</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-2">Recent failures</div>
           {data.failures.length === 0 ? <p className="text-xs text-[#5f5f5d]">None in 7 days.</p> : data.failures.map((f, i) => (
             <div key={i} className="text-xs py-1 border-b border-[#ebece6] last:border-0">
               <span className="font-semibold">{f.source} · {f.topic}</span> <span className="text-[#5f5f5d]">{ago(f.at)}</span>

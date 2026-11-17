@@ -379,7 +379,7 @@ export default function WorkspacePage() {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-[#5f5f5d] gap-3">
         <RefreshCw className="w-8 h-8 animate-spin" />
-        <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Loading workspace…</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Loading workspace…</p>
       </div>
     );
   }
@@ -388,11 +388,11 @@ export default function WorkspacePage() {
     return wsAdmin ? (
       <div className="max-w-md mx-auto text-center py-20 space-y-4">
         <Layers className="w-10 h-10 text-[#5f5f5d]/40 mx-auto" />
-        <h2 className="text-lg font-black text-[#1c1c1c]">No Spaces yet</h2>
+        <h2 className="text-lg font-bold text-[#1c1c1c]">No Spaces yet</h2>
         <p className="text-[13px] text-[#5f5f5d] font-medium">A Space is a team&apos;s area — Marketing, Amazon Ops, Ads…</p>
         <button
           onClick={() => setNewSpaceOpen(true)}
-          className="px-4 py-2.5 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-2"
+          className="px-4 py-2.5 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-2"
         >
           <Plus className="w-3.5 h-3.5" /> Create a Space
         </button>
@@ -409,7 +409,7 @@ export default function WorkspacePage() {
             <button
               onClick={handleNewSpace}
               disabled={creatingSpace || !newSpaceName.trim()}
-              className="w-full py-3 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
+              className="w-full py-3 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-bold uppercase tracking-wider disabled:opacity-40"
             >
               {creatingSpace ? "Creating…" : "Create Space"}
             </button>
@@ -436,7 +436,7 @@ export default function WorkspacePage() {
                     key={v}
                     onClick={() => setView(v)}
                     className={cn(
-                      "px-2.5 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5",
+                      "px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5",
                       view === v ? "bg-white text-[#1c1c1c] shadow-sm" : "text-[#5f5f5d]"
                     )}
                   >
@@ -449,11 +449,11 @@ export default function WorkspacePage() {
             <button
               onClick={() => setIntakeOpen(true)}
               title="Creative requests"
-              className="relative px-2.5 py-2 rounded-lg border border-[#ebece6] bg-white text-[#1c1c1c] text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+              className="relative px-2.5 py-2 rounded-lg border border-[#ebece6] bg-white text-[#1c1c1c] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5"
             >
               <Inbox className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Requests</span>
               {intake.filter((r) => r.status === "new").length > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">
                   {intake.filter((r) => r.status === "new").length}
                 </span>
               )}
@@ -461,7 +461,7 @@ export default function WorkspacePage() {
             <button
               onClick={() => setAutomationsOpen(true)}
               title="Automations"
-              className="px-2.5 py-2 rounded-lg border border-[#ebece6] bg-white text-[#1c1c1c] text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+              className="px-2.5 py-2 rounded-lg border border-[#ebece6] bg-white text-[#1c1c1c] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5"
             >
               <Zap className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Automations</span>
             </button>
@@ -469,21 +469,21 @@ export default function WorkspacePage() {
               onClick={() => setGoalsOpen(true)}
               title="Goals"
               disabled={!activeSpaceId}
-              className="px-2.5 py-2 rounded-lg border border-[#ebece6] bg-white text-[#1c1c1c] text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-40"
+              className="px-2.5 py-2 rounded-lg border border-[#ebece6] bg-white text-[#1c1c1c] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 disabled:opacity-40"
             >
               <Target className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Goals</span>
             </button>
             <button
               onClick={openTemplates}
               title="Templates"
-              className="px-2.5 py-2 rounded-lg border border-[#ebece6] bg-white text-[#1c1c1c] text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+              className="px-2.5 py-2 rounded-lg border border-[#ebece6] bg-white text-[#1c1c1c] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5"
             >
               <Sparkles className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Templates</span>
             </button>
             <button
               onClick={() => setNewListOpen(true)}
               title="New list"
-              className="px-2.5 py-2 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+              className="px-2.5 py-2 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">List</span>
             </button>
@@ -497,7 +497,7 @@ export default function WorkspacePage() {
           <div
             key={s.id}
             className={cn(
-              "flex items-center rounded-lg text-[11px] font-black uppercase tracking-widest whitespace-nowrap border transition-all",
+              "flex items-center rounded-lg text-[11px] font-bold uppercase tracking-wider whitespace-nowrap border transition-all",
               s.id === activeSpaceId ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#5f5f5d] border-[#ebece6] hover:border-[#1c1c1c]/30"
             )}
           >
@@ -519,7 +519,7 @@ export default function WorkspacePage() {
         {wsAdmin && (
           <button
             onClick={() => setNewSpaceOpen(true)}
-            className="px-2.5 py-1.5 rounded-lg border border-dashed border-[#ebece6] text-[#5f5f5d] text-[11px] font-black uppercase tracking-widest hover:border-[#1c1c1c]/30 flex items-center gap-1"
+            className="px-2.5 py-1.5 rounded-lg border border-dashed border-[#ebece6] text-[#5f5f5d] text-[11px] font-bold uppercase tracking-wider hover:border-[#1c1c1c]/30 flex items-center gap-1"
           >
             <Plus className="w-3 h-3" /> Space
           </button>
@@ -585,7 +585,7 @@ export default function WorkspacePage() {
           {(filters.q || filters.priority || filters.assignee) && (
             <button
               onClick={() => setFilters({ q: "", priority: "", assignee: "" })}
-              className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d] hover:text-[#1c1c1c]"
+              className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] hover:text-[#1c1c1c]"
             >
               Clear
             </button>
@@ -607,7 +607,7 @@ export default function WorkspacePage() {
 
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 bg-[#1c1c1c] text-white rounded-xl px-3 py-2 text-[11px] font-bold">
-          <span className="uppercase tracking-widest text-[10px]">{selected.size} selected</span>
+          <span className="uppercase tracking-wider text-[10px]">{selected.size} selected</span>
           <select onChange={(e) => e.target.value && bulkApply({ assignees: [e.target.value] })} defaultValue="" className="bg-[#2a2a2a] rounded px-2 py-1 text-white">
             <option value="">Assign…</option>
             {members.map((m) => <option key={m.id} value={m.id}>{m.name || m.email}</option>)}
@@ -620,8 +620,8 @@ export default function WorkspacePage() {
             <option value="">Priority…</option>
             {["urgent", "high", "normal", "low"].map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
-          <button onClick={bulkDelete} className="bg-rose-500 rounded px-2 py-1 uppercase tracking-widest text-[10px]">{confirmBulkDel ? "Sure?" : "Delete"}</button>
-          <button onClick={() => setSelected(new Set())} className="text-white/60 uppercase tracking-widest text-[10px]">Clear</button>
+          <button onClick={bulkDelete} className="bg-rose-500 rounded px-2 py-1 uppercase tracking-wider text-[10px]">{confirmBulkDel ? "Sure?" : "Delete"}</button>
+          <button onClick={() => setSelected(new Set())} className="text-white/60 uppercase tracking-wider text-[10px]">Clear</button>
         </div>
       )}
 
@@ -652,7 +652,7 @@ export default function WorkspacePage() {
       ) : (
         <div className="bg-white border border-[#ebece6] rounded-2xl divide-y divide-[#ebece6]">
           {filtered.length === 0 && (
-            <div className="p-8 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">No tasks</div>
+            <div className="p-8 text-center text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d]/50">No tasks</div>
           )}
           {filtered
             .slice()
@@ -671,7 +671,7 @@ export default function WorkspacePage() {
                   <button onClick={() => setQuery({ task: t.id })} className="flex items-center gap-3 flex-1 min-w-0 text-left">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: col?.color ?? "#ccc" }} />
                     <span className="text-[13px] font-semibold text-[#1c1c1c] flex-1 truncate">{t.title}</span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]">{col?.name ?? t.status}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d]">{col?.name ?? t.status}</span>
                     {t.due_date && (
                       <span className="text-[10px] font-bold text-[#5f5f5d]">
                         {new Date(t.due_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
@@ -739,7 +739,7 @@ export default function WorkspacePage() {
           <button
             onClick={handleNewSpace}
             disabled={creatingSpace || !newSpaceName.trim()}
-            className="w-full py-3 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
+            className="w-full py-3 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-bold uppercase tracking-wider disabled:opacity-40"
           >
             {creatingSpace ? "Creating…" : "Create Space"}
           </button>
@@ -749,7 +749,7 @@ export default function WorkspacePage() {
       <Modal open={intakeOpen} onClose={() => setIntakeOpen(false)} title="Creative requests" maxWidth="max-w-lg">
         <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
           {intake.length === 0 && (
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50 py-6 text-center">No requests</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d]/50 py-6 text-center">No requests</p>
           )}
           {intake.map((r) => (
             <div
@@ -762,7 +762,7 @@ export default function WorkspacePage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-[13px] font-bold text-[#1c1c1c]">{r.title}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d]/60 mt-0.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]/60 mt-0.5">
                     {r.requester?.name || r.requester?.email || "Someone"}
                     {r.desired_date ? ` · by ${new Date(r.desired_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : ""}
                     {r.status !== "new" ? ` · ${r.status}` : ""}
@@ -773,14 +773,14 @@ export default function WorkspacePage() {
                     <button
                       onClick={() => resolveIntake(r.id, "accepted")}
                       disabled={resolvingId === r.id}
-                      className="px-2 py-1 rounded-lg bg-[#1c1c1c] text-white text-[9px] font-black uppercase tracking-widest disabled:opacity-40"
+                      className="px-2 py-1 rounded-lg bg-[#1c1c1c] text-white text-[9px] font-bold uppercase tracking-wider disabled:opacity-40"
                     >
                       Accept
                     </button>
                     <button
                       onClick={() => resolveIntake(r.id, "rejected")}
                       disabled={resolvingId === r.id}
-                      className="px-2 py-1 rounded-lg border border-[#ebece6] text-[#5f5f5d] text-[9px] font-black uppercase tracking-widest disabled:opacity-40"
+                      className="px-2 py-1 rounded-lg border border-[#ebece6] text-[#5f5f5d] text-[9px] font-bold uppercase tracking-wider disabled:opacity-40"
                     >
                       Reject
                     </button>
@@ -803,7 +803,7 @@ export default function WorkspacePage() {
               key={t}
               onClick={() => setTplTab(t)}
               className={cn(
-                "flex-1 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest",
+                "flex-1 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider",
                 tplTab === t ? "bg-white text-[#1c1c1c] shadow-sm" : "text-[#5f5f5d]"
               )}
             >
@@ -817,7 +817,7 @@ export default function WorkspacePage() {
         ) : (
         <div className="space-y-2">
           {templates.length === 0 && (
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50 py-4 text-center">No templates</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d]/50 py-4 text-center">No templates</p>
           )}
           {templates.map((tpl) => {
             const taskN = Array.isArray((tpl.payload as any)?.tasks) ? (tpl.payload as any).tasks.length : 0;
@@ -825,14 +825,14 @@ export default function WorkspacePage() {
               <div key={tpl.id} className="flex items-center gap-3 p-3 rounded-xl border border-[#ebece6]">
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-bold text-[#1c1c1c]">{tpl.name}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d]/60">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]/60">
                     {tpl.kind === "list" ? "New list in this Space" : "Add to current list"} · {taskN} task{taskN === 1 ? "" : "s"}
                   </div>
                 </div>
                 <button
                   onClick={() => applyTemplate(tpl)}
                   disabled={applyingId === tpl.id}
-                  className="px-3 py-1.5 rounded-lg bg-[#1c1c1c] text-white text-[9px] font-black uppercase tracking-widest disabled:opacity-40"
+                  className="px-3 py-1.5 rounded-lg bg-[#1c1c1c] text-white text-[9px] font-bold uppercase tracking-wider disabled:opacity-40"
                 >
                   {applyingId === tpl.id ? "…" : "Use"}
                 </button>
@@ -856,7 +856,7 @@ export default function WorkspacePage() {
           <button
             onClick={handleNewList}
             disabled={creatingList || !newListName.trim()}
-            className="w-full py-3 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
+            className="w-full py-3 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-bold uppercase tracking-wider disabled:opacity-40"
           >
             {creatingList ? "Creating…" : "Create list"}
           </button>

@@ -121,7 +121,7 @@ export default function SuperAdminCampaigns() {
     load();
   }
 
-  if (!campaigns) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (!campaigns) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   const shown = campaigns.filter(c => showArchived || !c.is_archived);
 
   return (

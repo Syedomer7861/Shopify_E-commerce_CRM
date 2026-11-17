@@ -181,10 +181,10 @@ export function ChannelList() {
             </div>
           )}
           {isOnline && (
-            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full shadow-sm" />
+            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-[#55c08f] border-2 border-white rounded-full shadow-sm" />
           )}
           {hasUnread && !isSelected && !isOnline && (
-            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
+            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-[#55c08f] border-2 border-white rounded-full" />
           )}
         </div>
 
@@ -193,7 +193,7 @@ export function ChannelList() {
             <span className={cn(
               "text-xs font-bold truncate",
               isSelected ? "text-[#fcfbf8]" : "text-[#1c1c1c]",
-              hasUnread && !isSelected && "text-emerald-600"
+              hasUnread && !isSelected && "text-[#3fa877]"
             )}>
               {displayName}
             </span>
@@ -275,7 +275,7 @@ export function ChannelList() {
         {/* Group Channels */}
         <div className="space-y-1">
           <div className="flex items-center justify-between px-3 mb-2">
-            <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Channels</span>
+            <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider opacity-60">Channels</span>
             {isAdmin && (
               <button aria-label="Add" onClick={() => setIsNewChatOpen(true)} className="p-1 hover:bg-[#ebece6] rounded transition-colors">
                 <Plus className="w-3.5 h-3.5 text-[#5f5f5d]" />
@@ -288,7 +288,7 @@ export function ChannelList() {
         {/* Direct Messages */}
         <div className="space-y-1">
           <div className="flex items-center justify-between px-3 mb-2">
-            <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Direct Messages</span>
+            <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider opacity-60">Direct Messages</span>
             <button aria-label="Add member" onClick={() => setIsNewChatOpen(true)} className="p-1 hover:bg-[#ebece6] rounded transition-colors">
               <UserPlus className="w-3.5 h-3.5 text-[#5f5f5d]" />
             </button>
@@ -297,7 +297,7 @@ export function ChannelList() {
             <div className="px-2 py-4 text-center">
               <button 
                 onClick={() => setIsNewChatOpen(true)}
-                className="text-[10px] font-bold text-[#1c1c1c]/40 hover:text-[#1c1c1c] transition-colors uppercase tracking-widest"
+                className="text-[10px] font-bold text-[#1c1c1c]/40 hover:text-[#1c1c1c] transition-colors uppercase tracking-wider"
               >
                 + Start Messaging
               </button>

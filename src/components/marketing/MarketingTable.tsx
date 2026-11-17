@@ -56,7 +56,7 @@ export default function MarketingTable({ list, tasks, members, onOpenTask }: Pro
     <th className={cn("px-4 py-2.5", right && "text-right")}>
       <button
         onClick={() => toggle(k)}
-        className={cn("inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d] hover:text-[#1c1c1c]", right && "flex-row-reverse")}
+        className={cn("inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d] hover:text-[#1c1c1c]", right && "flex-row-reverse")}
       >
         {label}
         {sort.key === k && (sort.dir === 1 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
@@ -75,14 +75,14 @@ export default function MarketingTable({ list, tasks, members, onOpenTask }: Pro
             <Th k="assignee" label="Assignee" />
             <Th k="due_date" label="Due" right />
             {fields.map((f) => (
-              <th key={f.id} className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d] whitespace-nowrap">{f.name}</th>
+              <th key={f.id} className="px-4 py-2.5 text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d] whitespace-nowrap">{f.name}</th>
             ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-[#ebece6]">
           {rows.length === 0 && (
             <tr>
-              <td colSpan={5 + fields.length} className="px-4 py-8 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
+              <td colSpan={5 + fields.length} className="px-4 py-8 text-center text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d]/50">
                 No tasks
               </td>
             </tr>

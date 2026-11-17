@@ -228,7 +228,7 @@ export default function ImportPage() {
   }
 
   if (profileLoading) {
-    return <div className="py-12 text-center text-gray-400">Loading permissions...</div>;
+    return <div className="py-12 text-center text-[#9a9a94]">Loading permissions...</div>;
   }
 
   if (!hasPermission(profile, "can_import")) {
@@ -253,7 +253,7 @@ export default function ImportPage() {
             <AlertCircle className="w-5 h-5 text-amber-700" />
           </div>
           <div>
-            <p className="text-xs font-black text-amber-900 uppercase tracking-widest">Presentation Mode Active</p>
+            <p className="text-xs font-bold text-amber-900 uppercase tracking-wider">Presentation Mode Active</p>
             <p className="text-[11px] text-amber-700 font-medium">Imports will be simulated. No data will be written to the production database.</p>
           </div>
         </div>
@@ -264,12 +264,12 @@ export default function ImportPage() {
         {(["upload", "mapping", "preview", "done"] as Step[]).map((s, i) => (
           <div key={s} className="flex items-center gap-2">
             <div className={cn("w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all",
-              step === s ? "bg-[#1c1c1c] text-white" : (["mapping","preview","done"].includes(step) && i < ["upload","mapping","preview","done"].indexOf(step)) ? "bg-[#1c1c1c] text-white" : "bg-gray-100 text-gray-400"
+              step === s ? "bg-[#1c1c1c] text-white" : (["mapping","preview","done"].includes(step) && i < ["upload","mapping","preview","done"].indexOf(step)) ? "bg-[#1c1c1c] text-white" : "bg-[#f0f0ec] text-[#9a9a94]"
             )}>
               {(["mapping","preview","done"].includes(step) && i < ["upload","mapping","preview","done"].indexOf(step)) ? "✓" : i + 1}
             </div>
-            <span className={cn("text-xs font-medium capitalize", step === s ? "text-[#1c1c1c]" : "text-gray-400 hidden sm:inline")}>{s}</span>
-            {i < 3 && <div className={cn("w-4 sm:w-8 h-0.5", (step !== "upload" && i === 0) || (["preview","done"].includes(step) && i <= 1) || (step === "done" && i === 2) ? "bg-[#1c1c1c]" : "bg-gray-200")} />}
+            <span className={cn("text-xs font-medium capitalize", step === s ? "text-[#1c1c1c]" : "text-[#9a9a94] hidden sm:inline")}>{s}</span>
+            {i < 3 && <div className={cn("w-4 sm:w-8 h-0.5", (step !== "upload" && i === 0) || (["preview","done"].includes(step) && i <= 1) || (step === "done" && i === 2) ? "bg-[#1c1c1c]" : "bg-[#e6e7e0]")} />}
           </div>
         ))}
       </div>
@@ -277,16 +277,16 @@ export default function ImportPage() {
       {step === "upload" && (
         <div className="space-y-4">
           {/* Type Toggle */}
-          <div className="flex p-1 bg-gray-100 rounded-xl w-fit">
+          <div className="flex p-1 bg-[#f0f0ec] rounded-xl w-fit">
             <button 
               onClick={() => { setImportType("orders"); reset(); }}
               className={cn("px-4 py-1.5 text-xs font-semibold rounded-lg transition-all", 
-                importType === "orders" ? "bg-white text-[#1c1c1c] shadow-sm" : "text-gray-500 hover:text-gray-700")}
+                importType === "orders" ? "bg-white text-[#1c1c1c] shadow-sm" : "text-[#6b6b67] hover:text-[#3a3a36]")}
             > Standard Orders </button>
             <button 
               onClick={() => { setImportType("abandoned"); reset(); }}
               className={cn("px-4 py-1.5 text-xs font-semibold rounded-lg transition-all", 
-                importType === "abandoned" ? "bg-white text-[#1c1c1c] shadow-sm" : "text-gray-500 hover:text-gray-700")}
+                importType === "abandoned" ? "bg-white text-[#1c1c1c] shadow-sm" : "text-[#6b6b67] hover:text-[#3a3a36]")}
             > Abandoned Carts </button>
           </div>
 
@@ -297,7 +297,7 @@ export default function ImportPage() {
             onClick={() => inputRef.current?.click()}
             className={cn(
               "border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all",
-              dragging ? "border-[#1c1c1c] bg-[#1c1c1c]/5 scale-[1.01]" : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+              dragging ? "border-[#1c1c1c] bg-[#1c1c1c]/5 scale-[1.01]" : "border-[#d4d5cd] hover:border-[#9a9a94] hover:bg-[#f6f7f2]"
             )}
           >
             <input ref={inputRef} type="file" accept=".xlsx,.csv" className="hidden"
@@ -306,7 +306,7 @@ export default function ImportPage() {
               <Upload className="w-7 h-7 text-[#1c1c1c]" />
             </div>
             <div className="text-base font-semibold text-[#1c1c1c] mb-1">Drop your Excel file here</div>
-            <div className="text-sm text-gray-400 mb-4">or click to browse · .xlsx or .csv · up to 5,000 rows</div>
+            <div className="text-sm text-[#9a9a94] mb-4">or click to browse · .xlsx or .csv · up to 5,000 rows</div>
             <button className="btn-primary mx-auto">
               <FileSpreadsheet className="w-4 h-4" /> Choose File
             </button>
@@ -314,27 +314,27 @@ export default function ImportPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="card p-4">
-              <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+              <div className="text-xs font-semibold text-[#3a3a36] mb-2 flex items-center gap-1.5">
                 <span className="w-4 h-4 rounded bg-rose-100 text-rose-600 flex items-center justify-center text-[10px] font-bold">R</span>
                 Required columns
               </div>
               <div className="space-y-1">
                 {activeRequired.map(c => (
-                  <div key={c} className="flex items-center gap-2 text-xs text-gray-600">
+                  <div key={c} className="flex items-center gap-2 text-xs text-[#55554f]">
                     <CheckCircle className="w-3 h-3 text-[#1c1c1c] flex-shrink-0" /> {c}
                   </div>
                 ))}
               </div>
             </div>
             <div className="card p-4">
-              <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+              <div className="text-xs font-semibold text-[#3a3a36] mb-2 flex items-center gap-1.5">
                 <span className="w-4 h-4 rounded bg-[#ebece6] text-[#1c1c1c] flex items-center justify-center text-[10px] font-bold">O</span>
                 Optional columns
               </div>
               <div className="space-y-1">
                 {activeOptional.map(c => (
-                  <div key={c} className="flex items-center gap-2 text-xs text-gray-400">
-                    <div className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0" /> {c}
+                  <div key={c} className="flex items-center gap-2 text-xs text-[#9a9a94]">
+                    <div className="w-3 h-3 rounded-full border border-[#d4d5cd] flex-shrink-0" /> {c}
                   </div>
                 ))}
               </div>
@@ -350,10 +350,10 @@ export default function ImportPage() {
 
       {step === "mapping" && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-[#ebece6] shadow-sm">
             <div>
               <h3 className="text-sm font-semibold text-[#1c1c1c]">Map Excel Columns</h3>
-              <p className="text-xs text-gray-500">Align your file&apos;s headers with the CRM fields below.</p>
+              <p className="text-xs text-[#6b6b67]">Align your file&apos;s headers with the CRM fields below.</p>
             </div>
             <div className="flex gap-2">
               <button onClick={reset} className="btn-secondary text-xs">Cancel</button>
@@ -366,14 +366,14 @@ export default function ImportPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-2 px-1">
                 <span className="w-4 h-4 rounded bg-rose-100 text-rose-600 flex items-center justify-center text-[10px] font-bold">R</span>
-                <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Required Fields</h4>
+                <h4 className="text-xs font-bold text-[#3a3a36] uppercase tracking-wider">Required Fields</h4>
               </div>
-              <div className="card divide-y divide-gray-50 overflow-hidden">
+              <div className="card divide-y divide-[#f6f7f2] overflow-hidden">
                 {activeRequired.map(col => (
                   <div key={col} className="p-3 flex items-center justify-between gap-4">
                     <div className="min-w-[120px]">
-                      <div className="text-xs font-semibold text-gray-700">{col}</div>
-                      <div className="text-[10px] text-gray-400">Essential for import</div>
+                      <div className="text-xs font-semibold text-[#3a3a36]">{col}</div>
+                      <div className="text-[10px] text-[#9a9a94]">Essential for import</div>
                     </div>
                     <select 
                       className="select flex-1 text-xs py-1.5" 
@@ -392,17 +392,17 @@ export default function ImportPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-2 px-1">
                 <span className="w-4 h-4 rounded bg-[#ebece6] text-[#1c1c1c] flex items-center justify-center text-[10px] font-bold">O</span>
-                <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Optional Fields</h4>
+                <h4 className="text-xs font-bold text-[#3a3a36] uppercase tracking-wider">Optional Fields</h4>
               </div>
-              <div className="card divide-y divide-gray-50 overflow-hidden">
+              <div className="card divide-y divide-[#f6f7f2] overflow-hidden">
                 {activeOptional.map(col => (
                   <div key={col} className="p-3 flex items-center justify-between gap-4">
                     <div className="min-w-[120px]">
-                      <div className="text-xs font-medium text-gray-600">{col}</div>
-                      <div className="text-[10px] text-gray-400 italic">Optional data</div>
+                      <div className="text-xs font-medium text-[#55554f]">{col}</div>
+                      <div className="text-[10px] text-[#9a9a94] italic">Optional data</div>
                     </div>
                     <select 
-                      className="select flex-1 text-xs py-1.5 border-gray-100 text-gray-500" 
+                      className="select flex-1 text-xs py-1.5 border-[#ebece6] text-[#6b6b67]" 
                       value={columnMapping[col] || ""} 
                       onChange={e => setColumnMapping(prev => ({ ...prev, [col]: e.target.value }))}
                     >
@@ -418,17 +418,17 @@ export default function ImportPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-2 px-1">
                 <span className="w-4 h-4 rounded bg-[#ebece6] text-[#1c1c1c] flex items-center justify-center text-[10px] font-bold">C</span>
-                <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Customer Details</h4>
+                <h4 className="text-xs font-bold text-[#3a3a36] uppercase tracking-wider">Customer Details</h4>
               </div>
-              <div className="card divide-y divide-gray-50 overflow-hidden">
+              <div className="card divide-y divide-[#f6f7f2] overflow-hidden">
                 {activeCustomer.map(col => (
                   <div key={col} className="p-3 flex items-center justify-between gap-4">
                     <div className="min-w-[120px]">
-                      <div className="text-xs font-medium text-gray-600">{col}</div>
-                      <div className="text-[10px] text-gray-400 italic">Saved to profile</div>
+                      <div className="text-xs font-medium text-[#55554f]">{col}</div>
+                      <div className="text-[10px] text-[#9a9a94] italic">Saved to profile</div>
                     </div>
                     <select 
-                      className="select flex-1 text-xs py-1.5 border-gray-100 text-gray-500" 
+                      className="select flex-1 text-xs py-1.5 border-[#ebece6] text-[#6b6b67]" 
                       value={columnMapping[col] || ""} 
                       onChange={e => setColumnMapping(prev => ({ ...prev, [col]: e.target.value }))}
                     >
@@ -445,8 +445,8 @@ export default function ImportPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
-                <span className="w-4 h-4 rounded bg-purple-100 text-purple-600 flex items-center justify-center text-[10px] font-bold">M</span>
-                <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Import Additional Columns</h4>
+                <span className="w-4 h-4 rounded bg-[#dfeafa] text-[#4f7fc8] flex items-center justify-center text-[10px] font-bold">M</span>
+                <h4 className="text-xs font-bold text-[#3a3a36] uppercase tracking-wider">Import Additional Columns</h4>
               </div>
               <button 
                 onClick={() => {
@@ -458,7 +458,7 @@ export default function ImportPage() {
                 Select All Unmapped
               </button>
             </div>
-            <div className="card p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 bg-gray-50/10">
+            <div className="card p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 bg-[#f6f7f2]/10">
               {headers.map(header => {
                 const isMapped = Object.values(columnMapping).includes(header);
                 const isSelected = metaColumns.has(header);
@@ -475,19 +475,19 @@ export default function ImportPage() {
                     }}
                     className={cn(
                       "flex items-center justify-between p-2 rounded-lg border text-xs cursor-pointer transition-all",
-                      isMapped ? "bg-gray-100 border-gray-100 opacity-50 cursor-not-allowed" :
-                      isSelected ? "bg-[#1c1c1c]/5 border-[#1c1c1c]/20 text-[#1c1c1c] font-medium" : "bg-white border-gray-100 hover:border-gray-200"
+                      isMapped ? "bg-[#f0f0ec] border-[#ebece6] opacity-50 cursor-not-allowed" :
+                      isSelected ? "bg-[#1c1c1c]/5 border-[#1c1c1c]/20 text-[#1c1c1c] font-medium" : "bg-white border-[#ebece6] hover:border-[#ebece6]"
                     )}
                   >
                     <span className="truncate pr-2">{header}</span>
                     {!isMapped && (
                       <div className={cn("w-3.5 h-3.5 rounded-sm border flex items-center justify-center",
-                        isSelected ? "bg-[#1c1c1c] border-[#1c1c1c] text-white" : "bg-white border-gray-300 shadow-inner"
+                        isSelected ? "bg-[#1c1c1c] border-[#1c1c1c] text-white" : "bg-white border-[#d4d5cd] shadow-inner"
                       )}>
                         {isSelected && <CheckCircle className="w-2.5 h-2.5" />}
                       </div>
                     )}
-                    {isMapped && <span className="text-[9px] text-gray-400 font-bold uppercase">Mapped</span>}
+                    {isMapped && <span className="text-[9px] text-[#9a9a94] font-bold uppercase">Mapped</span>}
                   </div>
                 );
               })}
@@ -515,9 +515,9 @@ export default function ImportPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm font-semibold text-[#1c1c1c] flex items-center gap-2">
-                <FileSpreadsheet className="w-4 h-4 text-gray-500" /> {fileName}
+                <FileSpreadsheet className="w-4 h-4 text-[#6b6b67]" /> {fileName}
               </div>
-              <div className="text-xs text-gray-500 mt-0.5">
+              <div className="text-xs text-[#6b6b67] mt-0.5">
                 {data.length} rows found ·{" "}
                 <span className="text-[#1c1c1c] font-medium">{valid.length} valid</span> ·{" "}
                 <span className="text-rose-600 font-medium">{errors.length} errors</span>
@@ -548,48 +548,48 @@ export default function ImportPage() {
             </div>
           )}
 
-          <div className="table-container overflow-x-auto max-h-[450px] shadow-inner bg-gray-50/20 rounded-xl border border-gray-100">
+          <div className="table-container overflow-x-auto max-h-[450px] shadow-inner bg-[#f6f7f2]/20 rounded-xl border border-[#ebece6]">
             <table className="w-full text-xs min-w-[1000px] border-collapse">
               <thead className="sticky top-0 z-10">
-                <tr className="bg-gray-100/90 backdrop-blur-sm border-b border-gray-200">
-                  <th className="text-left py-2.5 px-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">#</th>
-                  <th className="text-left py-2.5 px-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Customer</th>
-                  <th className="text-left py-2.5 px-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Phone</th>
-                  <th className="text-left py-2.5 px-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider truncate max-w-[120px]">
+                <tr className="bg-[#f0f0ec]/90 backdrop-blur-sm border-b border-[#ebece6]">
+                  <th className="text-left py-2.5 px-3 text-[10px] font-bold text-[#6b6b67] uppercase tracking-wider">#</th>
+                  <th className="text-left py-2.5 px-3 text-[10px] font-bold text-[#6b6b67] uppercase tracking-wider">Customer</th>
+                  <th className="text-left py-2.5 px-3 text-[10px] font-bold text-[#6b6b67] uppercase tracking-wider">Phone</th>
+                  <th className="text-left py-2.5 px-3 text-[10px] font-bold text-[#6b6b67] uppercase tracking-wider truncate max-w-[120px]">
                       {importType === "orders" ? "Product" : "Total Value"}
                   </th>
                   {CUSTOMER_COLS.map(c => columnMapping[c] ? (
                     <th key={c} className="text-left py-2.5 px-3 text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">{c}</th>
                   ) : null)}
                   {metaColumns.size > 0 && (
-                    <th className="text-left py-2.5 px-3 text-[10px] font-bold text-purple-500 uppercase tracking-wider">Custom Meta</th>
+                    <th className="text-left py-2.5 px-3 text-[10px] font-bold text-[#6f9bdd] uppercase tracking-wider">Custom Meta</th>
                   )}
-                  <th className="text-left py-2.5 px-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="text-left py-2.5 px-3 text-[10px] font-bold text-[#6b6b67] uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
+              <tbody className="divide-y divide-[#ebece6] bg-white">
                 {data.slice(0, 50).map(r => (
-                  <tr key={r._n} className={cn("transition-colors", r._error ? "bg-rose-50/30" : "hover:bg-gray-50/50")}>
-                    <td className="py-2.5 px-3 text-gray-400 font-mono">{r._n}</td>
+                  <tr key={r._n} className={cn("transition-colors", r._error ? "bg-rose-50/30" : "hover:bg-[#f6f7f2]/50")}>
+                    <td className="py-2.5 px-3 text-[#9a9a94] font-mono">{r._n}</td>
                     <td className="py-2.5 px-3 font-semibold text-[#1c1c1c] whitespace-nowrap">{r["Customer Name"] || "—"}</td>
-                    <td className="py-2.5 px-3 text-gray-600 font-mono">{r["Phone Number"] || "—"}</td>
-                    <td className="py-2.5 px-3 text-gray-600 truncate max-w-[120px]" title={importType === "orders" ? r["Product Name"] : r["Total Value"]}>
+                    <td className="py-2.5 px-3 text-[#55554f] font-mono">{r["Phone Number"] || "—"}</td>
+                    <td className="py-2.5 px-3 text-[#55554f] truncate max-w-[120px]" title={importType === "orders" ? r["Product Name"] : r["Total Value"]}>
                         {importType === "orders" ? (r["Product Name"] || "—") : (r["Total Value"] || "—")}
                     </td>
                     {CUSTOMER_COLS.map(c => columnMapping[c] ? (
-                      <td key={c} className="py-2.5 px-3 text-gray-500 italic whitespace-nowrap">{r[c] || "—"}</td>
+                      <td key={c} className="py-2.5 px-3 text-[#6b6b67] italic whitespace-nowrap">{r[c] || "—"}</td>
                     ) : null)}
                     {metaColumns.size > 0 && (
                       <td className="py-2.5 px-3">
                         {r["Custom Meta"] ? (
                           <div className="flex flex-wrap gap-1">
                             {Object.entries(r["Custom Meta"]).slice(0, 2).map(([k, v]) => (
-                                <span key={k} className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 text-[9px] font-bold border border-purple-100">
+                                <span key={k} className="px-1.5 py-0.5 rounded bg-[#eef4fc] text-[#4f7fc8] text-[9px] font-bold border border-[#dfeafa]">
                                     {k}: {String(v)}
                                 </span>
                             ))}
                             {Object.keys(r["Custom Meta"]).length > 2 && (
-                                <span className="text-[9px] text-purple-400 font-medium">+{Object.keys(r["Custom Meta"]).length - 2} more</span>
+                                <span className="text-[9px] text-[#8fb3e8] font-medium">+{Object.keys(r["Custom Meta"]).length - 2} more</span>
                             )}
                           </div>
                         ) : "—"}
@@ -605,7 +605,7 @@ export default function ImportPage() {
                   </tr>
                 ))}
                 {data.length > 50 && (
-                  <tr><td colSpan={6 + CUSTOMER_COLS.filter(c => columnMapping[c]).length + (metaColumns.size > 0 ? 1 : 0)} className="py-4 text-center text-gray-400 italic">... and {data.length - 50} more rows</td></tr>
+                  <tr><td colSpan={6 + CUSTOMER_COLS.filter(c => columnMapping[c]).length + (metaColumns.size > 0 ? 1 : 0)} className="py-4 text-center text-[#9a9a94] italic">... and {data.length - 50} more rows</td></tr>
                 )}
               </tbody>
             </table>
@@ -619,8 +619,8 @@ export default function ImportPage() {
             <CheckCircle className="w-8 h-8 text-[#1c1c1c]" />
           </div>
           <h2 className="text-xl font-display text-[#1c1c1c] mb-2">Import Successful</h2>
-          <p className="text-sm text-gray-500 mb-1">{results.imported} records processed successfully</p>
-          <p className="text-xs text-gray-400 mb-6">{results.skipped} rows skipped (duplicates or data errors)</p>
+          <p className="text-sm text-[#6b6b67] mb-1">{results.imported} records processed successfully</p>
+          <p className="text-xs text-[#9a9a94] mb-6">{results.skipped} rows skipped (duplicates or data errors)</p>
           <div className="flex justify-center gap-3">
             <button onClick={reset} className="btn-secondary">Import Another File</button>
             <a href="/customers" className="btn-primary">View Customer List</a>

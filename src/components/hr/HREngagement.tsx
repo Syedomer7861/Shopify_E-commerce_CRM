@@ -11,14 +11,14 @@ interface Review { id: string; agent: string; period: string; rating: number; fe
 interface Training { id: string; agent: string; topic: string; dueDate: string; completed: boolean; }
 interface Grievance { id: string; agent: string; subject: string; description: string; priority: "Low" | "Medium" | "High"; status: "Open" | "In Review" | "Resolved"; date: string; resolution: string; }
 
-const PRIORITY_COLOR: Record<string, string> = { Low: "bg-sky-50 text-sky-700", Medium: "bg-amber-50 text-amber-700", High: "bg-rose-50 text-rose-700" };
-const GSTATUS_COLOR: Record<string, string> = { "Open": "bg-amber-50 text-amber-700", "In Review": "bg-sky-50 text-sky-700", "Resolved": "bg-emerald-50 text-emerald-700" };
+const PRIORITY_COLOR: Record<string, string> = { Low: "bg-[#eef4fc] text-[#3d66a6]", Medium: "bg-amber-50 text-amber-700", High: "bg-rose-50 text-rose-700" };
+const GSTATUS_COLOR: Record<string, string> = { "Open": "bg-amber-50 text-amber-700", "In Review": "bg-[#eef4fc] text-[#3d66a6]", "Resolved": "bg-[#ecf8f1] text-[#2f8a5f]" };
 
 function Stars({ rating, onChange }: { rating: number; onChange?: (r: number) => void }) {
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map(s => (
-        <Star key={s} className={cn("w-4 h-4 transition-colors", s <= rating ? "text-amber-400 fill-amber-400" : "text-gray-200")}
+        <Star key={s} className={cn("w-4 h-4 transition-colors", s <= rating ? "text-amber-400 fill-amber-400" : "text-[#e6e7e0]")}
           onClick={() => onChange?.(s)} style={{ cursor: onChange ? "pointer" : "default" }} />
       ))}
     </div>
@@ -115,22 +115,22 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
       {/* ── HR Administrative Guidance ── */}
       <div className="bg-[#1c1c1c] text-white p-5 rounded-2xl flex items-start gap-4 shadow-xl border border-white/5">
         <div className="p-3 bg-white/10 rounded-xl">
-          <TrendingUp className="w-6 h-6 text-emerald-400" />
+          <TrendingUp className="w-6 h-6 text-[#6fcb9d]" />
         </div>
         <div>
-          <h2 className="text-sm font-black uppercase tracking-tighter mb-1">HR Engagement Suite</h2>
-          <p className="text-[11px] text-gray-400 font-medium leading-relaxed max-w-2xl">
+          <h2 className="text-sm font-bold uppercase tracking-tighter mb-1">HR Engagement Suite</h2>
+          <p className="text-[11px] text-[#9a9a94] font-medium leading-relaxed max-w-2xl">
             This module is designed to foster a high-performance culture and maintain professional standards. 
             Use <span className="text-white font-bold">Reviews</span> to formally appraise talent, <span className="text-white font-bold">Training</span> to track mandatory compliance (e.g. POSH), and <span className="text-white font-bold">Grievances</span> to resolve internal disputes with a clear audit trail.
           </p>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-full sm:w-fit">
+      <div className="flex flex-wrap gap-1 bg-[#f0f0ec] p-1 rounded-xl w-full sm:w-fit">
         {(["reviews", "training", "grievances"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={cn("px-4 py-1.5 text-xs font-bold rounded-lg capitalize transition-all",
-              tab === t ? "bg-[#1c1c1c] text-white" : "text-gray-500 hover:text-[#1c1c1c]")}>
+              tab === t ? "bg-[#1c1c1c] text-white" : "text-[#6b6b67] hover:text-[#1c1c1c]")}>
             {t === "reviews" ? "Performance Reviews" : t === "training" ? "Training Tracker" : "Grievances"}
           </button>
         ))}
@@ -140,28 +140,28 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
       {tab === "reviews" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-5 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-5 flex items-center gap-2">
               <Star className="w-4 h-4" /> Review Records
             </h3>
             <div className="space-y-4">
               {reviews.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(r => (
-                <div key={r.id} className={cn("p-5 space-y-3 border-l-4 bg-gray-50 rounded-r-xl", r.status === "Completed" ? "border-l-emerald-400" : "border-l-amber-400")}>
+                <div key={r.id} className={cn("p-5 space-y-3 border-l-4 bg-[#f6f7f2] rounded-r-xl", r.status === "Completed" ? "border-l-[#6fcb9d]" : "border-l-amber-400")}>
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="text-sm font-black text-[#1c1c1c]">{r.agent}</div>
-                      <div className="text-[10px] text-gray-400 font-bold">{r.period}</div>
+                      <div className="text-sm font-bold text-[#1c1c1c]">{r.agent}</div>
+                      <div className="text-[10px] text-[#9a9a94] font-bold">{r.period}</div>
                     </div>
-                    <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full", r.status === "Completed" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700")}>{r.status}</span>
+                    <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full", r.status === "Completed" ? "bg-[#ecf8f1] text-[#2f8a5f]" : "bg-amber-50 text-amber-700")}>{r.status}</span>
                   </div>
 
                   {editReview?.id === r.id ? (
                     <div className="space-y-3">
                       <div>
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Rating</label>
+                        <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Rating</label>
                         <Stars rating={editReview.rating} onChange={v => setEditReview(p => p ? { ...p, rating: v } : null)} />
                       </div>
                       <div>
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Feedback</label>
+                        <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Feedback</label>
                         <textarea className="input w-full text-xs min-h-[70px]" value={editReview.feedback}
                           onChange={e => setEditReview(p => p ? { ...p, feedback: e.target.value } : null)} />
                       </div>
@@ -173,11 +173,11 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
                   ) : r.status === "Completed" ? (
                     <>
                       <Stars rating={r.rating} />
-                      <p className="text-xs text-gray-600 italic leading-relaxed">&ldquo;{r.feedback}&rdquo;</p>
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-                        <p className="text-[10px] text-gray-400">{r.date}</p>
+                      <p className="text-xs text-[#55554f] italic leading-relaxed">&ldquo;{r.feedback}&rdquo;</p>
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#ebece6]">
+                        <p className="text-[10px] text-[#9a9a94]">{r.date}</p>
                         <div className="flex gap-3">
-                          <button onClick={() => setEditReview({ id: r.id, rating: r.rating, feedback: r.feedback })} className="text-[10px] font-bold text-sky-500 hover:underline">Edit</button>
+                          <button onClick={() => setEditReview({ id: r.id, rating: r.rating, feedback: r.feedback })} className="text-[10px] font-bold text-[#6f9bdd] hover:underline">Edit</button>
                           <button onClick={() => { if(confirm("Delete this review?")) handleAction("review", { id: r.id }, "delete") }} className="text-[10px] font-bold text-rose-500 hover:underline">Delete</button>
                         </div>
                       </div>
@@ -188,7 +188,7 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
                   )}
                 </div>
               ))}
-              {reviews.length === 0 && <p className="text-xs text-gray-400 italic text-center py-6">No performance reviews on record.</p>}
+              {reviews.length === 0 && <p className="text-xs text-[#9a9a94] italic text-center py-6">No performance reviews on record.</p>}
               {reviews.length > ITEMS_PER_PAGE && (
                 <div className="pt-2">
                   <Pagination 
@@ -203,18 +203,18 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
           </div>
 
           <div className="card p-6 space-y-4 h-fit">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider flex items-center gap-2">
               <Plus className="w-4 h-4" /> Schedule Review
             </h3>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Agent</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Agent</label>
               <select className="input w-full text-sm" value={newR.agent_id} onChange={e => setNewR(p => ({ ...p, agent_id: e.target.value }))}>
                 <option value="">Select Agent</option>
                 {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Review Period</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Review Period</label>
               <input className="input w-full text-sm" placeholder="e.g., Q3 2026" value={newR.period} onChange={e => setNewR(p => ({ ...p, period: e.target.value }))} />
             </div>
             <button onClick={() => {
@@ -232,24 +232,24 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
       {tab === "training" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-5 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-5 flex items-center gap-2">
               <BookOpen className="w-4 h-4" /> Training Assignments
             </h3>
             <div className="space-y-3">
               {training.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(t => (
                 <div key={t.id} onClick={() => handleAction("training", { id: t.id, is_completed: !t.completed }, "update")}
                   className={cn("flex items-center gap-3 p-3 rounded-xl cursor-pointer border transition-all",
-                    t.completed ? "bg-emerald-50 border-emerald-100" : "bg-gray-50 border-transparent hover:border-gray-200")}>
+                    t.completed ? "bg-[#ecf8f1] border-[#d5f0e1]" : "bg-[#f6f7f2] border-transparent hover:border-[#ebece6]")}>
                   <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-                    t.completed ? "bg-emerald-500 border-emerald-500" : "border-gray-300")}>
+                    t.completed ? "bg-[#55c08f] border-[#55c08f]" : "border-[#d4d5cd]")}>
                     {t.completed && <CheckCircle className="w-3 h-3 text-white" />}
                   </div>
                   <div className="flex-1">
-                    <div className={cn("text-xs font-bold", t.completed ? "text-emerald-700 line-through" : "text-[#1c1c1c]")}>{t.topic}</div>
-                    <div className="text-[10px] text-gray-400">{t.agent} · Due: {t.dueDate}</div>
+                    <div className={cn("text-xs font-bold", t.completed ? "text-[#2f8a5f] line-through" : "text-[#1c1c1c]")}>{t.topic}</div>
+                    <div className="text-[10px] text-[#9a9a94]">{t.agent} · Due: {t.dueDate}</div>
                   </div>
                   {mounted && !t.completed && new Date(t.dueDate) < new Date() && (
-                    <span className="text-[9px] font-black bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-full">Overdue</span>
+                    <span className="text-[9px] font-bold bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-full">Overdue</span>
                   )}
                 </div>
               ))}
@@ -267,22 +267,22 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
           </div>
 
           <div className="card p-6 space-y-4">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider flex items-center gap-2">
               <Plus className="w-4 h-4" /> Assign Training
             </h3>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Agent</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Agent</label>
               <select className="input w-full text-sm" value={newT.agent_id} onChange={e => setNewT(p => ({ ...p, agent_id: e.target.value }))}>
                 <option value="">Select Agent</option>
                 {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Training Topic</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Training Topic</label>
               <input className="input w-full text-sm" placeholder="e.g., POSH Awareness" value={newT.topic} onChange={e => setNewT(p => ({ ...p, topic: e.target.value }))} />
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Due Date</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Due Date</label>
               <input type="date" className="input w-full text-sm" value={newT.dueDate} onChange={e => setNewT(p => ({ ...p, dueDate: e.target.value }))} />
             </div>
             <button onClick={() => {
@@ -300,34 +300,34 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
       {tab === "grievances" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-5 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-5 flex items-center gap-2">
               <AlertCircle className="w-4 h-4" /> Grievance Register
             </h3>
             <div className="space-y-4">
               {grievances.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(g => (
-                <div key={g.id} className="p-4 bg-gray-50 rounded-xl space-y-3">
+                <div key={g.id} className="p-4 bg-[#f6f7f2] rounded-xl space-y-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="text-xs font-black text-[#1c1c1c]">{g.subject}</div>
-                      <div className="text-[10px] text-gray-400">{g.agent} · {g.date}</div>
+                      <div className="text-xs font-bold text-[#1c1c1c]">{g.subject}</div>
+                      <div className="text-[10px] text-[#9a9a94]">{g.agent} · {g.date}</div>
                     </div>
                     <div className="flex gap-1.5">
-                      <span className={cn("text-[9px] font-black px-1.5 py-0.5 rounded-full", PRIORITY_COLOR[g.priority])}>{g.priority}</span>
-                      <span className={cn("text-[9px] font-black px-1.5 py-0.5 rounded-full", GSTATUS_COLOR[g.status])}>{g.status}</span>
+                      <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full", PRIORITY_COLOR[g.priority])}>{g.priority}</span>
+                      <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full", GSTATUS_COLOR[g.status])}>{g.status}</span>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-600 italic">{g.description}</p>
+                  <p className="text-xs text-[#55554f] italic">{g.description}</p>
                   {g.status !== "Resolved" && (
                     <div className="flex gap-2">
                       <button onClick={() => handleAction("grievance", { id: g.id, status: "In Review" }, "update")}
-                        className="text-xs font-bold text-sky-500 hover:underline">Mark In Review</button>
+                        className="text-xs font-bold text-[#6f9bdd] hover:underline">Mark In Review</button>
                       <button onClick={() => handleAction("grievance", { id: g.id, status: "Resolved" }, "update")}
-                        className="text-xs font-bold text-emerald-500 hover:underline">Resolve</button>
+                        className="text-xs font-bold text-[#55c08f] hover:underline">Resolve</button>
                     </div>
                   )}
                 </div>
               ))}
-              {grievances.length === 0 && <p className="text-xs text-gray-400 italic text-center py-6">No grievances on record.</p>}
+              {grievances.length === 0 && <p className="text-xs text-[#9a9a94] italic text-center py-6">No grievances on record.</p>}
               {grievances.length > ITEMS_PER_PAGE && (
                 <div className="pt-2">
                   <Pagination 
@@ -342,31 +342,31 @@ export default function HREngagement({ reviews: dbReviews, assignments: dbAssign
           </div>
 
           <div className="card p-6 space-y-4">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider flex items-center gap-2">
               <Plus className="w-4 h-4" /> Log Grievance
             </h3>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Agent</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Agent</label>
               <select className="input w-full text-sm" value={newG.agent_id} onChange={e => setNewG(p => ({ ...p, agent_id: e.target.value }))}>
                 <option value="">Select Agent</option>
                 {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Subject</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Subject</label>
               <input className="input w-full text-sm" placeholder="Brief subject line" value={newG.subject} onChange={e => setNewG(p => ({ ...p, subject: e.target.value }))} />
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Description</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Description</label>
               <textarea className="input w-full text-sm min-h-[70px]" placeholder="Describe the issue in detail..." value={newG.description} onChange={e => setNewG(p => ({ ...p, description: e.target.value }))} />
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Priority</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Priority</label>
               <div className="flex gap-2">
                 {(["Low", "Medium", "High"] as const).map(pr => (
                   <button key={pr} onClick={() => setNewG(p => ({ ...p, priority: pr }))}
                     className={cn("flex-1 py-2 text-xs font-bold rounded-lg border transition-all",
-                      newG.priority === pr ? PRIORITY_COLOR[pr] + " border-current" : "border-gray-200 text-gray-400")}>{pr}</button>
+                      newG.priority === pr ? PRIORITY_COLOR[pr] + " border-current" : "border-[#ebece6] text-[#9a9a94]")}>{pr}</button>
                 ))}
               </div>
             </div>

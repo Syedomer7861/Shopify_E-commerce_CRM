@@ -40,14 +40,14 @@ export default function RevenueDashboard() {
       });
   }, []);
 
-  if (loading) return <div className="h-96 flex items-center justify-center animate-pulse text-gray-400 font-bold uppercase tracking-widest text-xs">Calculating ROI...</div>;
-  if (!data) return <div className="p-8 text-center text-gray-500">No revenue data available yet.</div>;
+  if (loading) return <div className="h-96 flex items-center justify-center animate-pulse text-[#9a9a94] font-bold uppercase tracking-wider text-xs">Calculating ROI...</div>;
+  if (!data) return <div className="p-8 text-center text-[#6b6b67]">No revenue data available yet.</div>;
 
   const summaryCards = [
-    { label: "Recovered Revenue", value: formatCurrency(data.summary.totalRecovered), icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { label: "Potential Pipeline", value: formatCurrency(data.summary.totalPotential), icon: Target, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Recovered Revenue", value: formatCurrency(data.summary.totalRecovered), icon: DollarSign, color: "text-[#3fa877]", bg: "bg-[#ecf8f1]" },
+    { label: "Potential Pipeline", value: formatCurrency(data.summary.totalPotential), icon: Target, color: "text-[#4f7fc8]", bg: "bg-[#eef4fc]" },
     { label: "Cart Recovery Rate", value: `${data.summary.recoveryRate.toFixed(1)}%`, icon: TrendingUp, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "NDR Success Rate", value: `${data.summary.ndrRate.toFixed(1)}%`, icon: ArrowUpRight, color: "text-sky-600", bg: "bg-sky-50" },
+    { label: "NDR Success Rate", value: `${data.summary.ndrRate.toFixed(1)}%`, icon: ArrowUpRight, color: "text-[#4f7fc8]", bg: "bg-[#eef4fc]" },
   ];
 
   const pieData = [
@@ -66,9 +66,9 @@ export default function RevenueDashboard() {
               <div className={`w-10 h-10 ${card.bg} ${card.color} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm`}>
                 <card.icon className="w-5 h-5" />
               </div>
-              <span className="text-[10px] font-black text-[#5f5f5d] uppercase tracking-widest opacity-60">{card.label}</span>
+              <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider opacity-60">{card.label}</span>
             </div>
-            <div className="text-3xl font-black text-[#1c1c1c] tracking-tighter">{card.value}</div>
+            <div className="text-3xl font-bold text-[#1c1c1c] tracking-tighter">{card.value}</div>
           </div>
         ))}
       </div>
@@ -82,7 +82,7 @@ export default function RevenueDashboard() {
                 <BarChart3 className="w-4 h-4 text-[#1c1c1c]/40" />
                 Recovery Performance
               </h3>
-              <p className="text-[10px] text-[#5f5f5d] font-black uppercase tracking-[0.15em] opacity-40">Potential vs Actual Recovered (INR)</p>
+              <p className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-[0.15em] opacity-40">Potential vs Actual Recovered (INR)</p>
             </div>
           </div>
           
@@ -100,13 +100,13 @@ export default function RevenueDashboard() {
                     if (active && payload && payload.length) {
                       return (
                         <div className="bg-[#1c1c1c] p-4 rounded-xl shadow-2xl border border-white/10">
-                          <div className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">{payload[0].payload.name}</div>
+                          <div className="text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">{payload[0].payload.name}</div>
                           <div className="space-y-1">
                             <div className="text-sm font-bold text-white flex items-center justify-between gap-4">
                               <span>Potential:</span>
                               <span>{formatCurrency(payload[0].value as number)}</span>
                             </div>
-                            <div className="text-sm font-bold text-emerald-400 flex items-center justify-between gap-4">
+                            <div className="text-sm font-bold text-[#6fcb9d] flex items-center justify-between gap-4">
                               <span>Recovered:</span>
                               <span>{formatCurrency(payload[1].value as number)}</span>
                             </div>
@@ -130,7 +130,7 @@ export default function RevenueDashboard() {
               <PieChart className="w-4 h-4 text-[#1c1c1c]/40" />
               Revenue Mix
            </h3>
-           <p className="text-[10px] text-[#5f5f5d] font-black uppercase tracking-[0.15em] opacity-40 mb-8">Share of total recovery</p>
+           <p className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-[0.15em] opacity-40 mb-8">Share of total recovery</p>
            
            <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -151,8 +151,8 @@ export default function RevenueDashboard() {
                         if (active && payload && payload.length) {
                           return (
                             <div className="bg-[#1c1c1c] p-3 rounded-2xl shadow-xl border border-white/10">
-                              <p className="text-[10px] font-black text-white uppercase tracking-widest mb-1">{payload[0].name}</p>
-                              <p className="text-[11px] font-black text-emerald-400 tabular-nums">{formatCurrency(payload[0].value as number)}</p>
+                              <p className="text-[10px] font-bold text-white uppercase tracking-wider mb-1">{payload[0].name}</p>
+                              <p className="text-[11px] font-bold text-[#6fcb9d] tabular-nums">{formatCurrency(payload[0].value as number)}</p>
                             </div>
                           );
                         }
@@ -166,11 +166,11 @@ export default function RevenueDashboard() {
            <div className="space-y-2 mt-4">
               {pieData.map((d, i) => (
                  <div key={i} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 font-bold text-gray-600">
+                    <div className="flex items-center gap-2 font-bold text-[#55554f]">
                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
                        {d.name}
                     </div>
-                    <div className="font-black text-[#1c1c1c]">{formatCurrency(d.value)}</div>
+                    <div className="font-bold text-[#1c1c1c]">{formatCurrency(d.value)}</div>
                  </div>
               ))}
            </div>
@@ -185,38 +185,38 @@ export default function RevenueDashboard() {
                 <Users className="w-4 h-4 text-[#1c1c1c]/40" />
                 Recovery Specialists
               </h3>
-              <p className="text-[10px] text-[#5f5f5d] font-black uppercase tracking-[0.15em] opacity-40">Revenue recovered per agent</p>
+              <p className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-[0.15em] opacity-40">Revenue recovered per agent</p>
             </div>
          </div>
 
          <div className="overflow-x-auto">
             <table className="w-full text-left">
                <thead>
-                  <tr className="border-b border-gray-100">
-                     <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Agent</th>
-                     <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Tasks Done</th>
-                     <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Revenue Recovered</th>
-                     <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Avg Ticket</th>
+                  <tr className="border-b border-[#ebece6]">
+                     <th className="pb-4 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Agent</th>
+                     <th className="pb-4 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider text-center">Tasks Done</th>
+                     <th className="pb-4 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider text-right">Revenue Recovered</th>
+                     <th className="pb-4 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider text-right">Avg Ticket</th>
                   </tr>
                </thead>
                <tbody>
                   {data.agentPerformance.map((agent: any, idx: number) => (
-                     <tr key={idx} className="border-b border-gray-50/50 group hover:bg-gray-50/50 transition-colors">
+                     <tr key={idx} className="border-b border-[#f6f7f2]/50 group hover:bg-[#f6f7f2]/50 transition-colors">
                         <td className="py-4">
                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] font-black">
+                              <div className="w-8 h-8 rounded-full bg-[#eef4fc] text-[#4f7fc8] flex items-center justify-center text-[10px] font-bold">
                                  {agent.name.split(" ").map((n: string) => n[0]).join("")}
                               </div>
-                              <span className="font-bold text-gray-800">{agent.name}</span>
+                              <span className="font-bold text-[#262624]">{agent.name}</span>
                            </div>
                         </td>
                         <td className="py-4 text-center">
-                           <span className="badge bg-gray-50 text-gray-600 font-black">{agent.count}</span>
+                           <span className="badge bg-[#f6f7f2] text-[#55554f] font-bold">{agent.count}</span>
                         </td>
-                        <td className="py-4 text-right font-black text-emerald-600">
+                        <td className="py-4 text-right font-bold text-[#3fa877]">
                            {formatCurrency(agent.recovered)}
                         </td>
-                        <td className="py-4 text-right font-bold text-gray-400">
+                        <td className="py-4 text-right font-bold text-[#9a9a94]">
                            {formatCurrency(agent.count > 0 ? agent.recovered / agent.count : 0)}
                         </td>
                      </tr>

@@ -209,35 +209,35 @@ export default function AbandonedCartsPage() {
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div className="card p-5 border-l-4 border-l-[#1c1c1c]">
-          <div className="flex items-center gap-3 mb-2 text-gray-500">
+          <div className="flex items-center gap-3 mb-2 text-[#6b6b67]">
             <Clock className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Pending Recovery</span>
           </div>
           <div className="text-2xl font-display text-[#1c1c1c] font-bold">{globalStats.pendingCount}</div>
-          <div className="text-[10px] text-gray-400 mt-1">Carts waiting for follow-up</div>
+          <div className="text-[10px] text-[#9a9a94] mt-1">Carts waiting for follow-up</div>
         </div>
         <div className="card p-5 border-l-4 border-l-rose-400">
-          <div className="flex items-center gap-3 mb-2 text-gray-500">
+          <div className="flex items-center gap-3 mb-2 text-[#6b6b67]">
             <AlertCircle className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Potential Revenue</span>
           </div>
           <div className="text-2xl font-display text-[#1c1c1c] font-bold">₹{globalStats.pendingValue.toLocaleString()}</div>
-          <div className="text-[10px] text-gray-400 mt-1">Value of carts not yet recovered</div>
+          <div className="text-[10px] text-[#9a9a94] mt-1">Value of carts not yet recovered</div>
         </div>
         <div className="card p-5 border-l-4 border-l-[#1c1c1c]">
-          <div className="flex items-center gap-3 mb-2 text-gray-500">
+          <div className="flex items-center gap-3 mb-2 text-[#6b6b67]">
             <CheckCircle2 className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Recovered Revenue</span>
           </div>
           <div className="text-2xl font-display text-[#1c1c1c] font-bold">₹{globalStats.recoveredValue.toLocaleString()}</div>
-          <div className="text-[10px] text-gray-400 mt-1">Orders secured after follow-up</div>
+          <div className="text-[10px] text-[#9a9a94] mt-1">Orders secured after follow-up</div>
         </div>
       </div>
 
       {/* Filters & Actions */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9a9a94]" />
           <input 
             type="text" 
             placeholder="Search by name or phone..." 
@@ -253,7 +253,7 @@ export default function AbandonedCartsPage() {
               key={f}
               onClick={() => setStatusFilter(f)}
               className={cn("px-4 h-10 text-xs font-semibold rounded-xl transition-all capitalize",
-                statusFilter === f ? "bg-[#1c1c1c] text-white shadow-sm" : "bg-white text-gray-500 border border-gray-100 hover:bg-gray-50"
+                statusFilter === f ? "bg-[#1c1c1c] text-white shadow-sm" : "bg-white text-[#6b6b67] border border-[#ebece6] hover:bg-[#f6f7f2]"
               )}
             >
               {f}
@@ -267,35 +267,35 @@ export default function AbandonedCartsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="text-left py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Customer info</th>
-                <th className="text-left py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cart Details</th>
-                <th className="text-left py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Abandoned At</th>
-                <th className="text-left py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
-                <th className="text-right py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Actions</th>
+              <tr className="bg-[#f6f7f2]/50 border-b border-[#ebece6]">
+                <th className="text-left py-4 px-6 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Customer info</th>
+                <th className="text-left py-4 px-6 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Cart Details</th>
+                <th className="text-left py-4 px-6 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Abandoned At</th>
+                <th className="text-left py-4 px-6 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Status</th>
+                <th className="text-right py-4 px-6 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-[#f6f7f2]">
               {loading ? (
-                <tr><td colSpan={5} className="py-20 text-center text-gray-400">Loading abandoned carts...</td></tr>
+                <tr><td colSpan={5} className="py-20 text-center text-[#9a9a94]">Loading abandoned carts...</td></tr>
               ) : filteredCarts.length === 0 ? (
-                <tr><td colSpan={5} className="py-20 text-center text-gray-400 italic">No carts found matching your filters.</td></tr>
+                <tr><td colSpan={5} className="py-20 text-center text-[#9a9a94] italic">No carts found matching your filters.</td></tr>
               ) : paginatedCarts.map(cart => (
-                <tr key={cart.id} className="hover:bg-gray-50/30 transition-colors group">
+                <tr key={cart.id} className="hover:bg-[#f6f7f2]/30 transition-colors group">
                   <td className="py-4 px-6">
                     <div className="font-semibold text-[#1c1c1c] uppercase tracking-tight">{cart.customer?.name || "Anonymous"}</div>
-                    <div className="text-xs text-gray-500 font-mono">{cart.phone}</div>
+                    <div className="text-xs text-[#6b6b67] font-mono">{cart.phone}</div>
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-2 mb-1">
-                      <ShoppingBag className="w-3.5 h-3.5 text-gray-400" />
-                      <span className="font-bold text-gray-700">₹{cart.total_price?.toLocaleString()}</span>
+                      <ShoppingBag className="w-3.5 h-3.5 text-[#9a9a94]" />
+                      <span className="font-bold text-[#3a3a36]">₹{cart.total_price?.toLocaleString()}</span>
                     </div>
-                    <div className="text-[11px] text-gray-400 truncate max-w-[200px]">
+                    <div className="text-[11px] text-[#9a9a94] truncate max-w-[200px]">
                       {(cart.line_items as any[])?.map(i => i.title).join(", ") || "No items"}
                     </div>
                   </td>
-                  <td className="py-4 px-6 text-xs text-gray-500">
+                  <td className="py-4 px-6 text-xs text-[#6b6b67]">
                     {format(new Date(cart.abandoned_at), "MMM dd, hh:mm a")}
                   </td>
                   <td className="py-4 px-6">
@@ -320,13 +320,13 @@ export default function AbandonedCartsPage() {
                          // from ingestion when nothing was resolvable) - the
                          // button used to render anyway and produce a broken
                          // wa.me link with no recipient.
-                         <span className="py-1.5 px-3 h-8 text-[10px] text-gray-300 flex items-center gap-1.5" title="No phone number on file">
+                         <span className="py-1.5 px-3 h-8 text-[10px] text-[#d4d5cd] flex items-center gap-1.5" title="No phone number on file">
                            <MessageCircle className="w-3 h-3" /> No Phone
                          </span>
                        )}
                       <button
                         onClick={() => deleteCart(cart.id)}
-                        className="p-1.5 rounded-lg hover:bg-rose-50 text-gray-400 hover:text-rose-500 transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-rose-50 text-[#9a9a94] hover:text-rose-500 transition-colors"
                         title="Delete record"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -338,7 +338,7 @@ export default function AbandonedCartsPage() {
             </tbody>
           </table>
         </div>
-        <div className="px-6 border-t border-gray-50 bg-white">
+        <div className="px-6 border-t border-[#f6f7f2] bg-white">
           <Pagination 
             current={currentPage}
             total={filteredCarts.length}

@@ -109,7 +109,7 @@ export default function KpiPage() {
     return g && g.version > (t.source_version ?? 0) ? g : null;
   };
 
-  if (profileLoading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (profileLoading) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   if (!canView) return <AccessDenied title="KPI Plans" desc="Your role doesn't include KPIs. An admin can grant it on the Roles page." />;
 
   const shownOurs = ours.filter(t => (showArchived ? t.status === "archived" : t.status !== "archived"));
@@ -139,7 +139,7 @@ export default function KpiPage() {
             <button className={tab(view === "library")} onClick={() => setView("library")}>Template library ({shownLibrary.length})</button>
           </nav>
 
-          {loading ? <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
+          {loading ? <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
           : view === "overview" ? (
             <KpiOverview viewer={profile ?? null} departments={departments} />
           ) : view === "plans" ? (
@@ -174,7 +174,7 @@ export default function KpiPage() {
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-sm font-semibold text-[#1c1c1c]">{t.name}</span>
                               {t.source_template_id && <span className="text-[10px] text-[#5f5f5d]">from library v{t.source_version}</span>}
-                              {upd && <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-sky-50 text-sky-700">v{upd.version} available</span>}
+                              {upd && <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#eef4fc] text-[#3d66a6]">v{upd.version} available</span>}
                               {t.status === "archived" && <span className="text-[10px] font-bold uppercase text-[#5f5f5d]">Archived</span>}
                             </div>
                             <div className="text-xs text-[#5f5f5d] mt-1">
@@ -214,7 +214,7 @@ export default function KpiPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-semibold text-[#1c1c1c]">{g.name}</span>
                           <span className="text-[10px] text-[#5f5f5d]">v{g.version}</span>
-                          {mine && <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">Adopted v{mine.source_version}</span>}
+                          {mine && <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#ecf8f1] text-[#2f8a5f]">Adopted v{mine.source_version}</span>}
                         </div>
                         <div className="text-xs text-[#5f5f5d] mt-1">
                           {g.kpi_template_items.length} KPIs · {g.kpi_template_items.length - manual} measured automatically, {manual} manual

@@ -72,7 +72,7 @@ export default function DashboardBuilderPage() {
     return () => window.removeEventListener("beforeunload", h);
   }, [dirty]);
 
-  if (profileLoading || dash === undefined) return <div className="py-16 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (profileLoading || dash === undefined) return <div className="py-16 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   if (!hasPermission(profile, "manage_team") && can(profile, "organisation", "view") === null) return <AccessDenied />;
   if (!dash) return <AccessDenied title="Dashboard not found" desc="It doesn't exist or you can't open it." />;
   const editable = dash.org_id ? isAdmin(profile) || can(profile, "organisation", "manage") !== null : !!profile?.is_platform_admin;
@@ -160,7 +160,7 @@ export default function DashboardBuilderPage() {
             <div className="text-xs font-bold text-[#1c1c1c]">Widgets</div>
             {CATEGORIES.map(c => (
               <div key={c}>
-                <div className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d] mb-1">{c}</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-1">{c}</div>
                 {HOME_WIDGETS.filter(w => w.category === c).map(w => (
                   <div key={w.key} draggable={editable} onDragStart={() => setDrag({ widget: w.key })} onDragEnd={() => setDrag(null)}
                     className="flex items-center gap-1 text-xs py-1.5 px-2 rounded-lg hover:bg-[#f6f7f2] cursor-grab" title={w.description}>

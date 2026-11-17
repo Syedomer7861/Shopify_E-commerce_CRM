@@ -8,7 +8,7 @@ import { PageHeader, SegmentBadge, Avatar, EmptyState, Modal, Pagination } from 
 import dynamic from 'next/dynamic';
 import { isDemoMode } from "@/lib/demo";
 const AddCustomerModal = dynamic(() => import("@/components/AddCustomerModal").then(mod => mod.AddCustomerModal), { 
-  loading: () => <div className="p-8 text-center"><RefreshCw className="w-6 h-6 animate-spin mx-auto text-gray-300" /></div>
+  loading: () => <div className="p-8 text-center"><RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#d4d5cd]" /></div>
 });
 import { createClient } from "@/lib/supabase";
 import { cn, formatDate, orQuote } from "@/lib/utils";
@@ -281,19 +281,19 @@ export default function CustomersPage() {
         <div className="card p-4 md:p-5 mb-6 animate-slide-down">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <div>
-              <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-2 opacity-60">Min Orders</label>
+              <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider block mb-1 md:mb-2 opacity-60">Min Orders</label>
               <input type="number" placeholder="0" className="input text-xs bg-[#fcfbf8]" value={minOrders} onChange={e => setMinOrders(e.target.value)} />
             </div>
             <div>
-              <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-2 opacity-60">Max Orders</label>
+              <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider block mb-1 md:mb-2 opacity-60">Max Orders</label>
               <input type="number" placeholder="999" className="input text-xs bg-[#fcfbf8]" value={maxOrders} onChange={e => setMaxOrders(e.target.value)} />
             </div>
             <div>
-              <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-2 opacity-60">Last Order From</label>
+              <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider block mb-1 md:mb-2 opacity-60">Last Order From</label>
               <input type="date" className="input text-xs bg-[#fcfbf8]" value={lastOrderStart} onChange={e => setLastOrderStart(e.target.value)} />
             </div>
             <div>
-              <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-2 opacity-60">Last Order To</label>
+              <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider block mb-1 md:mb-2 opacity-60">Last Order To</label>
               <input type="date" className="input text-xs bg-[#fcfbf8]" value={lastOrderEnd} onChange={e => setLastOrderEnd(e.target.value)} />
             </div>
           </div>
@@ -306,7 +306,7 @@ export default function CustomersPage() {
                 setLastOrderEnd("");
                 setSeg("all");
               }}
-              className="text-[10px] text-rose-500 font-bold uppercase tracking-widest hover:underline"
+              className="text-[10px] text-rose-500 font-bold uppercase tracking-wider hover:underline"
             >
               Clear All
             </button>
@@ -315,7 +315,7 @@ export default function CustomersPage() {
               // fetchCustomers dependency array above); this button had no
               // handler at all. Give it a real job: close the panel.
               onClick={() => setShowFilters(false)}
-              className="btn-primary py-2 px-8 text-[10px] font-bold uppercase tracking-widest"
+              className="btn-primary py-2 px-8 text-[10px] font-bold uppercase tracking-wider"
             >
               Apply Filter
             </button>
@@ -333,7 +333,7 @@ export default function CustomersPage() {
         <div className="flex items-center gap-1 bg-[#ebece6]/30 rounded-xl border border-[#ebece6] p-1 overflow-x-auto scrollbar-hide">
           {SEGS.map(s => (
             <button key={s.value} onClick={() => setSeg(s.value)}
-              className={cn("px-4 md:px-5 py-2 rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap",
+              className={cn("px-4 md:px-5 py-2 rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap",
                 seg === s.value ? "bg-[#1c1c1c] text-white shadow-md" : "text-[#5f5f5d] hover:bg-[#ebece6]/50"
               )}>
               {s.label}
@@ -348,11 +348,11 @@ export default function CustomersPage() {
           { label: "Repeat", count: stats.repeat, color: "border-l-[#1c1c1c]" },
           { label: "One-time", count: stats.one_time, color: "border-l-amber-500" },
           { label: "Inactive", count: stats.inactive, color: "border-l-rose-500" },
-          { label: "RTO Flag", count: stats.rto, color: "border-l-orange-500" },
+          { label: "RTO Flag", count: stats.rto, color: "border-l-[#f0b43c]" },
         ].map(s => (
           <div key={s.label} className={cn("card p-4 md:p-6 border-l-4", s.color)}>
             <div className="text-xl md:text-3xl font-bold text-[#1c1c1c] tracking-tighter mb-1 md:mb-2">{s.count}</div>
-            <div className="text-[9px] md:text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">{s.label}</div>
+            <div className="text-[9px] md:text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider">{s.label}</div>
           </div>
         ))}
       </div>
@@ -361,7 +361,7 @@ export default function CustomersPage() {
       <div className="card overflow-hidden p-0">
         <div className="overflow-x-auto scrollbar-hide">
           <div className="min-w-[800px]">
-            <div className="grid grid-cols-[40px_2fr_1.5fr_1fr_1fr_1fr_80px] bg-[#ebece6]/30 border-b border-[#ebece6] px-4 py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">
+            <div className="grid grid-cols-[40px_2fr_1.5fr_1fr_1fr_1fr_80px] bg-[#ebece6]/30 border-b border-[#ebece6] px-4 py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">
               <div className="flex items-center justify-center">
                 <input type="checkbox" className="checkbox w-3.5 h-3.5" 
                   checked={selectedIds.length === customers.length && customers.length > 0} 
@@ -376,7 +376,7 @@ export default function CustomersPage() {
               <span>Actions</span>
             </div>
             {loading ? (
-              <div className="p-12 text-center text-gray-400 text-sm">Searching...</div>
+              <div className="p-12 text-center text-[#9a9a94] text-sm">Searching...</div>
             ) : customers.length === 0 ? (
               <EmptyState icon={<Search className="w-5 h-5" />} title="No customers found" desc="Try a different search" />
             ) : (
@@ -392,7 +392,7 @@ export default function CustomersPage() {
                     <Avatar name={c.name} size="sm" />
                     <div className="min-w-0">
                       <div className="text-xs font-bold text-[#1c1c1c] truncate hover:underline">{c.name}</div>
-                      {c.rto_flag && <div className="text-[9px] text-rose-600 font-bold uppercase tracking-widest flex items-center gap-1 mt-0.5"><AlertTriangle className="w-2.5 h-2.5" /> RTO Alert</div>}
+                      {c.rto_flag && <div className="text-[9px] text-rose-600 font-bold uppercase tracking-wider flex items-center gap-1 mt-0.5"><AlertTriangle className="w-2.5 h-2.5" /> RTO Alert</div>}
                     </div>
                   </Link>
                   <div className="flex flex-col justify-center min-w-0">
@@ -434,7 +434,7 @@ export default function CustomersPage() {
           </button>
         </>}
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-[#55554f]">
           Are you sure you want to delete <strong>{selectedIds.length}</strong> selected customers? This action is irreversible and will also delete all associated orders and tasks.
         </p>
       </Modal>

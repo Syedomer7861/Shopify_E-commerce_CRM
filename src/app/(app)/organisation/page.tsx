@@ -202,7 +202,7 @@ export default function OrganisationPage() {
     setBusy(null);
   }
 
-  if (profileLoading) return <div className="py-12 text-center text-gray-400">Loading...</div>;
+  if (profileLoading) return <div className="py-12 text-center text-[#9a9a94]">Loading...</div>;
   if (!canView) return <AccessDenied title="Organisation setup" desc="Only team managers and HR can view the organisation structure." />;
 
   const opts = (list: Unit[]) => [
@@ -219,7 +219,7 @@ export default function OrganisationPage() {
       />
 
       {loading ? (
-        <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
+        <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
       ) : notReady ? (
         <div className="card p-5 flex items-start gap-3 text-sm text-amber-700 bg-amber-50 border-amber-100">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -265,9 +265,9 @@ export default function OrganisationPage() {
             {SECTIONS.map(({ table, title, icon: Icon, hint }) => (
               <div key={table} className="card p-4">
                 <h2 className="text-sm font-bold text-[#1c1c1c] flex items-center gap-2"><Icon className="w-4 h-4" /> {title}</h2>
-                <p className="text-[11px] text-gray-400 mb-3">{hint}</p>
+                <p className="text-[11px] text-[#9a9a94] mb-3">{hint}</p>
                 <div className="space-y-1.5 mb-3">
-                  {units[table].length === 0 && <div className="text-xs text-gray-400 py-2">None yet.</div>}
+                  {units[table].length === 0 && <div className="text-xs text-[#9a9a94] py-2">None yet.</div>}
                   {ordered(table).map(({ u, depth }) => editing === u.id ? (
                     <form key={u.id} onSubmit={e => { e.preventDefault(); renameUnit(table, u); }} className="flex items-center gap-1.5">
                       <input
@@ -282,30 +282,30 @@ export default function OrganisationPage() {
                       <button type="submit" disabled={busy === u.id || !editName.trim()} className="p-1.5 rounded-md bg-[#1c1c1c] text-white" aria-label="Save name">
                         {busy === u.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                       </button>
-                      <button type="button" onClick={() => setEditing(null)} className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100" aria-label="Cancel rename">
+                      <button type="button" onClick={() => setEditing(null)} className="p-1.5 rounded-md text-[#6b6b67] hover:bg-[#f0f0ec]" aria-label="Cancel rename">
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </form>
                   ) : (
-                    <div key={u.id} className={cn("flex items-center justify-between gap-2 text-xs py-1.5 px-2 rounded-lg bg-gray-50", depth > 0 && "ml-4")}>
+                    <div key={u.id} className={cn("flex items-center justify-between gap-2 text-xs py-1.5 px-2 rounded-lg bg-[#f6f7f2]", depth > 0 && "ml-4")}>
                       <span className="min-w-0">
-                        <span className={cn("block truncate", !u.is_active && "line-through text-gray-400")}>
-                          {depth > 0 ? "↳ " : ""}{u.name}{u.is_head_office && <span className="ml-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-600">HQ</span>}
+                        <span className={cn("block truncate", !u.is_active && "line-through text-[#9a9a94]")}>
+                          {depth > 0 ? "↳ " : ""}{u.name}{u.is_head_office && <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wider text-[#3fa877]">HQ</span>}
                         </span>
-                        {engine && rowMeta(table, u) && <span className="block truncate text-[10px] text-gray-400">{rowMeta(table, u)}</span>}
+                        {engine && rowMeta(table, u) && <span className="block truncate text-[10px] text-[#9a9a94]">{rowMeta(table, u)}</span>}
                       </span>
                       <span className="shrink-0 flex items-center gap-2">
-                        <span className="text-gray-400" title="People assigned">{peopleIn(table, u.id)}</span>
+                        <span className="text-[#9a9a94]" title="People assigned">{peopleIn(table, u.id)}</span>
                         {canEdit && (
                           <>
-                            <button onClick={() => { if (engine) setForm({ table, initial: u }); else { setEditing(u.id); setEditName(u.name); } }} disabled={busy === u.id} className="text-gray-400 hover:text-[#1c1c1c]" aria-label={`Rename ${u.name}`} title="Rename">
+                            <button onClick={() => { if (engine) setForm({ table, initial: u }); else { setEditing(u.id); setEditName(u.name); } }} disabled={busy === u.id} className="text-[#9a9a94] hover:text-[#1c1c1c]" aria-label={`Rename ${u.name}`} title="Rename">
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
-                            <button onClick={() => toggleUnit(table, u)} disabled={busy === u.id} className="text-[10px] text-gray-500 hover:text-[#1c1c1c] underline">
+                            <button onClick={() => toggleUnit(table, u)} disabled={busy === u.id} className="text-[10px] text-[#6b6b67] hover:text-[#1c1c1c] underline">
                               {u.is_active ? "Retire" : "Restore"}
                             </button>
                             {!u.is_head_office && (
-                              <button onClick={() => deleteUnit(table, u)} disabled={busy === u.id} className="text-gray-400 hover:text-red-600" aria-label={`Delete ${u.name}`} title="Delete">
+                              <button onClick={() => deleteUnit(table, u)} disabled={busy === u.id} className="text-[#9a9a94] hover:text-red-600" aria-label={`Delete ${u.name}`} title="Delete">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
@@ -355,15 +355,15 @@ export default function OrganisationPage() {
           {canPlace && controlsReady && (
             <div className="card p-4 mb-8">
               <h2 className="text-sm font-bold text-[#1c1c1c]">Modules &amp; security</h2>
-              <p className="text-[11px] text-gray-400 mb-3">Switch a module off for the whole organisation - it closes for everyone, admins included, and its data is kept. <span className="font-bold text-gray-500">Sales &amp; call centre</span> covers the call queue, customers, orders, carts, campaigns, recordings and sales analytics: switch it off if your organisation doesn&apos;t sell to consumers.</p>
+              <p className="text-[11px] text-[#9a9a94] mb-3">Switch a module off for the whole organisation - it closes for everyone, admins included, and its data is kept. <span className="font-bold text-[#6b6b67]">Sales &amp; call centre</span> covers the call queue, customers, orders, carts, campaigns, recordings and sales analytics: switch it off if your organisation doesn&apos;t sell to consumers.</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
                 {SWITCHABLE_MODULES.map(m => profile?.org_platform_blocked_modules?.includes(m.key) ? (
-                  <div key={m.key} className="flex items-center gap-2 p-2.5 rounded-lg border border-gray-100 bg-gray-50 text-[11px] text-gray-500" title="Not included in your plan. Contact us to add it.">
+                  <div key={m.key} className="flex items-center gap-2 p-2.5 rounded-lg border border-[#ebece6] bg-[#f6f7f2] text-[11px] text-[#6b6b67]" title="Not included in your plan. Contact us to add it.">
                     <input type="checkbox" checked={false} disabled aria-label={`${m.label}: not in your plan`} />
                     {m.label} <span className="ml-auto text-[9px] uppercase tracking-wider">Not in plan</span>
                   </div>
                 ) : (
-                  <label key={m.key} className="flex items-center gap-2 p-2.5 rounded-lg border border-gray-100 text-[11px] text-[#1c1c1c] cursor-pointer">
+                  <label key={m.key} className="flex items-center gap-2 p-2.5 rounded-lg border border-[#ebece6] text-[11px] text-[#1c1c1c] cursor-pointer">
                     <input type="checkbox" checked={!off.includes(m.key)} onChange={() => setModulesOff(off.includes(m.key) ? off.filter(k => k !== m.key) : [...off, m.key])} />
                     {m.label}
                   </label>
@@ -371,7 +371,7 @@ export default function OrganisationPage() {
               </div>
               <div className="flex flex-wrap items-end gap-3">
                 <div>
-                  <label htmlFor="session-timeout" className="text-xs font-medium text-gray-700 block mb-1">Sign out after idle (minutes)</label>
+                  <label htmlFor="session-timeout" className="text-xs font-medium text-[#3a3a36] block mb-1">Sign out after idle (minutes)</label>
                   <input id="session-timeout" type="number" min={5} max={1440} placeholder="Never" className="input w-40 text-xs" value={timeoutValue} onChange={e => setTimeoutMin(e.target.value)} />
                 </div>
                 <button onClick={saveControls} disabled={busy === "controls"} className="btn-primary text-xs px-4">
@@ -382,23 +382,23 @@ export default function OrganisationPage() {
           )}
 
           <h2 className="text-sm font-bold text-[#1c1c1c] mb-1 flex items-center gap-2"><Users className="w-4 h-4" /> People &amp; reporting lines</h2>
-          <p className="text-[11px] text-gray-400 mb-4">
+          <p className="text-[11px] text-[#9a9a94] mb-4">
             {canPlace ? "Set where each person sits and who they report to." : "Read-only - an admin sets placements."}
           </p>
           <div className="card overflow-x-auto">
             <table className="w-full text-xs min-w-[760px]">
               <thead>
-                <tr className="text-left text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-100">
+                <tr className="text-left text-[10px] uppercase tracking-wider text-[#9a9a94] border-b border-[#ebece6]">
                   <th className="p-3">Person</th><th className="p-3">Branch</th><th className="p-3">Department</th>
                   <th className="p-3">Designation</th><th className="p-3">Reports to</th>
                 </tr>
               </thead>
               <tbody>
                 {activeMembers.map(m => (
-                  <tr key={m.id} className="border-b border-gray-50 last:border-0">
+                  <tr key={m.id} className="border-b border-[#f6f7f2] last:border-0">
                     <td className="p-3">
                       <div className="font-semibold text-[#1c1c1c]">{m.name || "Unnamed"}</div>
-                      <div className="text-[10px] text-gray-400">{m.role}</div>
+                      <div className="text-[10px] text-[#9a9a94]">{m.role}</div>
                     </td>
                     {([
                       ["branch_id", opts(units.branches)],

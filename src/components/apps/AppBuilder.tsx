@@ -79,7 +79,7 @@ export function AppBuilder({ open, editing, onClose, onSaved }: { open: boolean;
       <div className="space-y-4">
         {!editing && (
           <div>
-            <p className="text-xs font-medium text-gray-700 mb-1.5">Start from a template</p>
+            <p className="text-xs font-medium text-[#3a3a36] mb-1.5">Start from a template</p>
             <div className="flex flex-wrap gap-1.5">
               {APP_TEMPLATES.map(t => (
                 <button key={t.label} type="button" onClick={() => setDraft(toDraft(t))}
@@ -91,30 +91,30 @@ export function AppBuilder({ open, editing, onClose, onSaved }: { open: boolean;
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label htmlFor="app-label" className="text-xs font-medium text-gray-700 block mb-1">App name *</label>
+            <label htmlFor="app-label" className="text-xs font-medium text-[#3a3a36] block mb-1">App name *</label>
             <input id="app-label" className="input" maxLength={60} placeholder="Asset Register" value={draft.label} onChange={e => setDraft(d => ({ ...d, label: e.target.value }))} />
           </div>
           <div>
-            <label htmlFor="app-noun" className="text-xs font-medium text-gray-700 block mb-1">One record is called *</label>
+            <label htmlFor="app-noun" className="text-xs font-medium text-[#3a3a36] block mb-1">One record is called *</label>
             <input id="app-noun" className="input" maxLength={40} placeholder="asset" value={draft.noun} onChange={e => setDraft(d => ({ ...d, noun: e.target.value }))} />
           </div>
         </div>
         <div>
-          <label htmlFor="app-desc" className="text-xs font-medium text-gray-700 block mb-1">What is it for?</label>
+          <label htmlFor="app-desc" className="text-xs font-medium text-[#3a3a36] block mb-1">What is it for?</label>
           <input id="app-desc" className="input" maxLength={200} value={draft.description} onChange={e => setDraft(d => ({ ...d, description: e.target.value }))} />
         </div>
         <div>
-          <label htmlFor="app-statuses" className="text-xs font-medium text-gray-700 block mb-1">Statuses, in order, separated by commas *</label>
+          <label htmlFor="app-statuses" className="text-xs font-medium text-[#3a3a36] block mb-1">Statuses, in order, separated by commas *</label>
           <input id="app-statuses" className="input" value={draft.statuses} onChange={e => setDraft(d => ({ ...d, statuses: e.target.value }))} />
         </div>
         <div>
-          <p className="text-xs font-medium text-gray-700 mb-1">Who sees the records?</p>
+          <p className="text-xs font-medium text-[#3a3a36] mb-1">Who sees the records?</p>
           <Select value={draft.visibility} onChange={v => setDraft(d => ({ ...d, visibility: v as Draft["visibility"] }))}
             options={[{ value: "everyone", label: "Everyone in the organisation" }, { value: "own", label: "Each person sees only their own (admins see all)" }]} />
         </div>
 
         <div>
-          <p className="text-xs font-medium text-gray-700 mb-1.5">Fields</p>
+          <p className="text-xs font-medium text-[#3a3a36] mb-1.5">Fields</p>
           <div className="space-y-2">
             {draft.fields.map((f, i) => (
               <div key={i} className="rounded-lg border border-[#ebece6] p-2.5 space-y-2">
@@ -122,7 +122,7 @@ export function AppBuilder({ open, editing, onClose, onSaved }: { open: boolean;
                   <input aria-label={`Field ${i + 1} name`} className="input flex-1 min-w-0" placeholder="Field name" maxLength={40} value={f.label} onChange={e => setField(i, { label: e.target.value })} />
                   <button type="button" aria-label={`Remove field ${i + 1}`} disabled={draft.fields.length === 1}
                     onClick={() => setDraft(d => ({ ...d, fields: d.fields.filter((_, n) => n !== i) }))}
-                    className="px-2 text-gray-400 hover:text-rose-500 disabled:opacity-30"><Trash2 className="w-4 h-4" /></button>
+                    className="px-2 text-[#9a9a94] hover:text-rose-500 disabled:opacity-30"><Trash2 className="w-4 h-4" /></button>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="w-40"><Select value={f.type} onChange={v => setField(i, { type: v as DraftField["type"] })} options={FIELD_TYPES} triggerClassName="text-xs" /></div>
@@ -140,7 +140,7 @@ export function AppBuilder({ open, editing, onClose, onSaved }: { open: boolean;
             <button type="button" onClick={() => setDraft(d => ({ ...d, fields: [...d.fields, { label: "", type: "text", required: false, options: "" }] }))}
               className="mt-2 flex items-center gap-1.5 text-xs font-bold text-[#1c1c1c]"><Plus className="w-3.5 h-3.5" /> Add field</button>
           )}
-          {editing && <p className="mt-2 text-[11px] text-gray-400">Removing a field hides it; values already saved are kept.</p>}
+          {editing && <p className="mt-2 text-[11px] text-[#9a9a94]">Removing a field hides it; values already saved are kept.</p>}
         </div>
       </div>
     </Modal>

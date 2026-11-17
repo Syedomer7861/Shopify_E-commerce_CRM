@@ -163,7 +163,7 @@ export default async function LandingPage() {
             {hero.footnote && <p className="text-[var(--dim)] text-[13px] mt-5">{hero.footnote}</p>}
             <ul className="mt-6 flex flex-wrap justify-center gap-2">
               {PROOF.map((p) => (
-                <li key={p} className="inline-flex items-center gap-1.5 rounded-full bg-white/70 border border-black/10 px-3 py-1.5 text-[12.5px] font-medium"><CheckCircle2 aria-hidden className="w-3.5 h-3.5 text-emerald-600" />{p}</li>
+                <li key={p} className="inline-flex items-center gap-1.5 rounded-full bg-white/70 border border-black/10 px-3 py-1.5 text-[12.5px] font-medium"><CheckCircle2 aria-hidden className="w-3.5 h-3.5 text-[#3fa877]" />{p}</li>
               ))}
             </ul>
           </Reveal>
@@ -208,7 +208,7 @@ export default async function LandingPage() {
         <Stagger className="mt-12 grid grid-cols-2 lg:grid-cols-6 gap-3" gap={0.08}>
           {ORDER_FLOW.map(([h, t], i) => (
             <StaggerItem key={h} className="flex">
-              <div className={`relative w-full rounded-2xl p-5 ${i === 4 ? "bg-rose-50 border border-rose-200" : i === ORDER_FLOW.length - 1 ? "bg-emerald-600 text-white" : "bg-white border border-[var(--line)]"}`}>
+              <div className={`relative w-full rounded-2xl p-5 ${i === 4 ? "bg-rose-50 border border-rose-200" : i === ORDER_FLOW.length - 1 ? "bg-[#3fa877] text-white" : "bg-white border border-[var(--line)]"}`}>
                 <span className={`font-display text-[12px] font-semibold tabular-nums ${i === ORDER_FLOW.length - 1 ? "text-white/70" : "text-[var(--dim)]"}`}>{String(i + 1).padStart(2, "0")}</span>
                 <h3 className="font-display font-bold text-[17px] tracking-tight mt-3">{h}</h3>
                 <p className={`text-[13.5px] leading-relaxed mt-1.5 ${i === ORDER_FLOW.length - 1 ? "text-white/80" : "text-[var(--dim)]"}`}>{t}</p>

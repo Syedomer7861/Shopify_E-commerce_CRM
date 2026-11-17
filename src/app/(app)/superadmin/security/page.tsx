@@ -38,7 +38,7 @@ function Check({ ok, title, children }: { ok: boolean; title: string; children?:
   return (
     <div className="card p-4">
       <div className="flex items-center gap-2 text-sm font-bold">
-        {ok ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <ShieldAlert className="w-4 h-4 text-red-600" />}
+        {ok ? <CheckCircle2 className="w-4 h-4 text-[#3fa877]" /> : <ShieldAlert className="w-4 h-4 text-red-600" />}
         <span className={ok ? "text-[#1c1c1c]" : "text-red-700"}>{title}</span>
       </div>
       {children}
@@ -61,7 +61,7 @@ export default function SuperAdminSecurity() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (!data) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (!data) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   const a = data.accounts;
   const ownersNo2fa = data.owners.filter(o => !o.two_factor).length;
 
@@ -97,18 +97,18 @@ export default function SuperAdminSecurity() {
 
       <div className="grid lg:grid-cols-2 gap-3">
         <div className={cn("card p-4", ownersNo2fa > 0 && "ring-1 ring-red-300")}>
-          <div className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Owner accounts</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-2">Owner accounts</div>
           {data.owners.map(o => (
             <div key={o.id} className="flex flex-wrap items-center gap-2 text-xs py-1">
               <span className="flex-1 min-w-0 truncate">{o.email}</span>
-              <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", o.two_factor ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700")}>{o.two_factor ? "Two-factor on" : "No two-factor"}</span>
+              <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", o.two_factor ? "bg-[#ecf8f1] text-[#2f8a5f]" : "bg-red-50 text-red-700")}>{o.two_factor ? "Two-factor on" : "No two-factor"}</span>
               <span className="text-[#5f5f5d]">{o.last_sign_in_at ? `Signed in ${new Date(o.last_sign_in_at).toLocaleDateString()}` : "Never signed in"}</span>
             </div>
           ))}
         </div>
         <div className="card p-4">
           <div className="flex items-center mb-2">
-            <div className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d] flex-1">Owner actions, last 7 days</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d] flex-1">Owner actions, last 7 days</div>
             <Link href="/superadmin/activity" className="text-[11px] underline text-[#5f5f5d]">All activity</Link>
           </div>
           {data.owner_actions.length === 0 ? <p className="text-xs text-[#5f5f5d]">None.</p> : data.owner_actions.map(x => (

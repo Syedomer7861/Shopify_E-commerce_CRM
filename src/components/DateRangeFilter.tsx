@@ -56,7 +56,7 @@ export function DateRangeFilter({ value, onChange, className }: { value: DateRan
   const active = value.from || value.to;
   return (
     <div className={"flex flex-wrap items-center gap-1.5 " + (className ?? "")}>
-      <CalendarRange className="w-3.5 h-3.5 text-gray-400" aria-hidden />
+      <CalendarRange className="w-3.5 h-3.5 text-[#9a9a94]" aria-hidden />
       <Select
         value={value.preset}
         onChange={v => onChange(v === "custom" ? { ...value, preset: "custom" } : presetRange(v))}
@@ -67,13 +67,13 @@ export function DateRangeFilter({ value, onChange, className }: { value: DateRan
         <>
           <input type="date" aria-label="From date" className="input text-xs h-8 w-[140px]" value={value.from} max={value.to || undefined}
             onChange={e => onChange({ ...value, from: e.target.value })} />
-          <span className="text-[10px] text-gray-400">to</span>
+          <span className="text-[10px] text-[#9a9a94]">to</span>
           <input type="date" aria-label="To date" className="input text-xs h-8 w-[140px]" value={value.to} min={value.from || undefined}
             onChange={e => onChange({ ...value, to: e.target.value })} />
         </>
       )}
       {active && (
-        <button type="button" onClick={() => onChange(ALL_TIME)} aria-label="Clear date filter" className="p-1 rounded hover:bg-gray-100 text-gray-400">
+        <button type="button" onClick={() => onChange(ALL_TIME)} aria-label="Clear date filter" className="p-1 rounded hover:bg-[#f0f0ec] text-[#9a9a94]">
           <X className="w-3.5 h-3.5" />
         </button>
       )}

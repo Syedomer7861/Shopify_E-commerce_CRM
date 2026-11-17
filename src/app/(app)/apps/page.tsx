@@ -59,7 +59,7 @@ function AppsPage() {
     else { toast.success("App archived"); router.replace("/apps"); load(); }
   }
 
-  if (profileLoading || loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (profileLoading || loading) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   if (!profile) return null;
 
   return (
@@ -81,8 +81,8 @@ function AppsPage() {
               {APP_TEMPLATES.map(t => (
                 <div key={t.label} className="card p-4">
                   <div className="text-sm font-bold text-[#1c1c1c]">{t.label}</div>
-                  <p className="text-[11px] text-gray-500 mt-1">{t.description}</p>
-                  <p className="text-[10px] text-gray-400 mt-2">{t.fields.length} fields · {t.statuses.length} statuses</p>
+                  <p className="text-[11px] text-[#6b6b67] mt-1">{t.description}</p>
+                  <p className="text-[10px] text-[#9a9a94] mt-2">{t.fields.length} fields · {t.statuses.length} statuses</p>
                 </div>
               ))}
             </div>
@@ -92,7 +92,7 @@ function AppsPage() {
         <>
           <ModuleTabs tabs={apps.map(a => ({ key: a.key, label: a.label }))} active={current.key} onChange={open} />
           <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
-            <p className="text-xs text-gray-500 max-w-xl">
+            <p className="text-xs text-[#6b6b67] max-w-xl">
               {current.description || `Every ${current.noun} your team records.`}
               {current.visibility === "own" && <span className="ml-1 font-bold text-[#1c1c1c]">You see your own; admins see all.</span>}
             </p>

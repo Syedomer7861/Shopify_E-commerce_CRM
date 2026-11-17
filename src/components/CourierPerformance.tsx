@@ -192,7 +192,7 @@ export default function LogisticsPulse() {
         <div className="absolute inset-0 border-4 border-[#ebece6] rounded-full"></div>
         <div className="absolute inset-0 border-4 border-[#1c1c1c] border-t-transparent rounded-full animate-spin"></div>
       </div>
-      <div className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-[0.3em] animate-pulse">Aggregating Logistics Intelligence...</div>
+      <div className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-[0.3em] animate-pulse">Aggregating Logistics Intelligence...</div>
     </div>
   );
 
@@ -203,24 +203,24 @@ export default function LogisticsPulse() {
       <div className="flex items-center justify-between relative z-10">
         <div className="flex items-center gap-5">
           <div className="w-12 h-12 rounded-2xl bg-[#f6f7f2]/10 flex items-center justify-center backdrop-blur-md">
-            <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-[#8fb3e8]" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f6f7f2]/40 mb-1">Live Pipeline Synchronization</div>
-            <div className="text-sm font-black truncate max-w-[200px] md:max-w-md tracking-tight">{syncMessage || "Fetching new intelligence..."}</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f6f7f2]/40 mb-1">Live Pipeline Synchronization</div>
+            <div className="text-sm font-bold truncate max-w-[200px] md:max-w-md tracking-tight">{syncMessage || "Fetching new intelligence..."}</div>
           </div>
         </div>
         <div className="flex items-center gap-8">
           <div className="text-right hidden md:block">
-            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f6f7f2]/40 mb-1">Process Saturation</div>
-            <div className="text-sm font-black tabular-nums tracking-tighter">{Math.round(syncProgress)}%</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#f6f7f2]/40 mb-1">Process Saturation</div>
+            <div className="text-sm font-bold tabular-nums tracking-tighter">{Math.round(syncProgress)}%</div>
           </div>
           <div className="w-14 h-14 relative flex items-center justify-center">
             <svg className="w-full h-full -rotate-90">
               <circle cx="28" cy="28" r="24" fill="none" stroke="white" strokeWidth="4" className="opacity-10" />
               <circle cx="28" cy="28" r="24" fill="none" stroke="#a9c92a" strokeWidth="4" strokeDasharray={150.8} strokeDashoffset={150.8 - (150.8 * syncProgress / 100)} className="transition-all duration-500" />
             </svg>
-            <span className="absolute text-[10px] font-black">{Math.round(syncProgress)}%</span>
+            <span className="absolute text-[10px] font-bold">{Math.round(syncProgress)}%</span>
           </div>
         </div>
       </div>
@@ -228,21 +228,21 @@ export default function LogisticsPulse() {
   );
 
   if (showEmptyState) return (
-    <div className="h-[500px] flex flex-col items-center justify-center text-center p-12 bg-[#f6f7f2] rounded-[48px] border-2 border-dashed border-[#ebece6] group transition-all hover:border-blue-200 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 via-transparent to-indigo-50/20 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+    <div className="h-[500px] flex flex-col items-center justify-center text-center p-12 bg-[#f6f7f2] rounded-[48px] border-2 border-dashed border-[#ebece6] group transition-all hover:border-[#c7dbf5] relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#eef4fc]/20 via-transparent to-[#eef4fc]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
       
       <div className="relative z-10 flex flex-col items-center">
         <div className="w-24 h-24 bg-[#ebece6] rounded-[32px] flex items-center justify-center mb-10 group-hover:scale-110 group-hover:rotate-3 transition-all duration-700 shadow-xl border border-[#ebece6]">
           <Truck className="w-12 h-12 text-[#1c1c1c] animate-pulse-slow" />
         </div>
-        <h3 className="text-4xl font-black text-[#1c1c1c] uppercase tracking-tighter mb-4 group-hover:text-blue-900 transition-colors">Logistics Intelligence</h3>
-        <p className="text-[11px] text-[#5f5f5d] font-black max-w-sm mb-12 leading-relaxed uppercase tracking-[0.2em]">
+        <h3 className="text-4xl font-bold text-[#1c1c1c] uppercase tracking-tighter mb-4 group-hover:text-[#233b60] transition-colors">Logistics Intelligence</h3>
+        <p className="text-[11px] text-[#5f5f5d] font-bold max-w-sm mb-12 leading-relaxed uppercase tracking-[0.2em]">
           Synchronize your Shiprocket ecosystem to activate real-time delivery audits and courier performance matrices.
         </p>
         
         <button 
           onClick={handleSync}
-          className="relative group/btn px-16 py-6 rounded-2xl bg-[#1c1c1c] text-[#f6f7f2] font-black text-[11px] uppercase tracking-[0.4em] transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-[#1c1c1c]/20 overflow-hidden"
+          className="relative group/btn px-16 py-6 rounded-2xl bg-[#1c1c1c] text-[#f6f7f2] font-bold text-[11px] uppercase tracking-[0.4em] transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-[#1c1c1c]/20 overflow-hidden"
         >
           <div className="relative z-10 flex items-center gap-4">
             <Activity className="w-4 h-4" />
@@ -265,22 +265,22 @@ export default function LogisticsPulse() {
       <div className="flex items-center justify-between px-2">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-             <span className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-[0.2em]">Real-Time Observability</span>
+             <div className="w-2.5 h-2.5 rounded-full bg-[#55c08f] animate-pulse" />
+             <span className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-[0.2em]">Real-Time Observability</span>
           </div>
           {lastUpdate && (
-             <span className="text-[10px] font-black text-[#5f5f5d]/40 bg-[#ebece6] px-3 py-1 rounded-lg border border-[#ebece6]">
+             <span className="text-[10px] font-bold text-[#5f5f5d]/40 bg-[#ebece6] px-3 py-1 rounded-lg border border-[#ebece6]">
                 REFRESH: {mounted ? lastUpdate : "---"}
              </span>
           )}
         </div>
         {syncing && (
            <div className="flex flex-col items-end gap-1.5">
-              <span className="text-[10px] font-black text-blue-600 animate-pulse tracking-tighter uppercase">
+              <span className="text-[10px] font-bold text-[#4f7fc8] animate-pulse tracking-tighter uppercase">
                  STREAMING LIVE INTELLIGENCE
               </span>
               {data?.debug && (
-                <span className="text-[9px] font-black text-[#5f5f5d]/40 bg-[#ebece6] px-2.5 py-1 rounded-lg border border-[#ebece6]">
+                <span className="text-[9px] font-bold text-[#5f5f5d]/40 bg-[#ebece6] px-2.5 py-1 rounded-lg border border-[#ebece6]">
                   PIPELINE: {data.debug.rawCount} PAYLOADS
                 </span>
               )}
@@ -289,7 +289,7 @@ export default function LogisticsPulse() {
       </div>
 
       {data?.error && (
-         <div className="mx-2 p-5 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-black uppercase tracking-widest overflow-x-auto whitespace-pre-wrap break-words leading-relaxed">
+         <div className="mx-2 p-5 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-bold uppercase tracking-wider overflow-x-auto whitespace-pre-wrap break-words leading-relaxed">
             [API EXCEPTION]: {typeof data.error === 'object' ? JSON.stringify(data.error, null, 2) : String(data.error)}
             {data?.rawError && <div className="mt-2 opacity-60">RAW_TRACE: {JSON.stringify(data.rawError)}</div>}
          </div>
@@ -307,14 +307,14 @@ export default function LogisticsPulse() {
           label="Delivered" 
           value={summary.delivered} 
           icon={CheckCircle} 
-          accent="text-emerald-600"
+          accent="text-[#3fa877]"
           sub={`${summary.successRate.toFixed(1)}% SUCCESS`}
         />
         <PulseMetric 
           label="In-Transit" 
           value={summary.inTransit} 
           icon={Navigation} 
-          accent="text-blue-600"
+          accent="text-[#4f7fc8]"
         />
         <PulseMetric 
           label="NDR Risk" 
@@ -335,7 +335,7 @@ export default function LogisticsPulse() {
         {/* Courier Bar Chart */}
         <div className="card p-5 sm:p-8 space-y-8 bg-[#f6f7f2] border border-[#ebece6] rounded-[32px] shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-[11px] font-black text-[#1c1c1c] flex items-center gap-3 uppercase tracking-[0.2em]">
+            <h3 className="text-[11px] font-bold text-[#1c1c1c] flex items-center gap-3 uppercase tracking-[0.2em]">
               <div className="p-2 bg-[#ebece6] rounded-xl">
                 <Truck className="w-4 h-4 text-[#1c1c1c]/40" />
               </div>
@@ -343,12 +343,12 @@ export default function LogisticsPulse() {
             </h3>
             <div className="flex gap-4 sm:gap-6">
               <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <span className="text-[9px] font-black text-[#5f5f5d]/40 uppercase tracking-widest">High</span>
+                <div className="w-2.5 h-2.5 rounded-full bg-[#55c08f]" />
+                <span className="text-[9px] font-bold text-[#5f5f5d]/40 uppercase tracking-wider">High</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                <span className="text-[9px] font-black text-[#5f5f5d]/40 uppercase tracking-widest">Critical</span>
+                <span className="text-[9px] font-bold text-[#5f5f5d]/40 uppercase tracking-wider">Critical</span>
               </div>
             </div>
           </div>
@@ -374,21 +374,21 @@ export default function LogisticsPulse() {
                       const d = payload[0].payload;
                       return (
                         <div className="bg-[#1c1c1c] p-5 rounded-2xl border border-[#1c1c1c] shadow-2xl text-[10px] text-[#f6f7f2]">
-                          <div className="font-black uppercase tracking-[0.2em] mb-3 pb-2 border-b border-white/10">{d.name}</div>
+                          <div className="font-bold uppercase tracking-[0.2em] mb-3 pb-2 border-b border-white/10">{d.name}</div>
                           <div className="space-y-2">
-                            <div className="flex justify-between gap-8 opacity-40 uppercase font-black">
+                            <div className="flex justify-between gap-8 opacity-40 uppercase font-bold">
                               <span>Total Loads:</span>
                               <span className="text-[#f6f7f2] tabular-nums">{d.total}</span>
                             </div>
-                            <div className="flex justify-between gap-8 text-emerald-400 uppercase font-black">
+                            <div className="flex justify-between gap-8 text-[#6fcb9d] uppercase font-bold">
                               <span>Delivered:</span>
                               <span className="tabular-nums">{d.delivered}</span>
                             </div>
-                            <div className="flex justify-between gap-8 text-rose-400 uppercase font-black">
+                            <div className="flex justify-between gap-8 text-rose-400 uppercase font-bold">
                               <span>RTO Count:</span>
                               <span className="tabular-nums">{d.rto}</span>
                             </div>
-                            <div className="pt-2 border-t border-white/10 flex justify-between gap-8 font-black uppercase text-blue-400">
+                            <div className="pt-2 border-t border-white/10 flex justify-between gap-8 font-bold uppercase text-[#8fb3e8]">
                               <span>Success Rate:</span>
                               <span className="tabular-nums">{d.successRate.toFixed(1)}%</span>
                             </div>
@@ -411,9 +411,9 @@ export default function LogisticsPulse() {
 
         {/* Status Donut Chart */}
         <div className="card p-8 space-y-8 bg-[#f6f7f2] border border-[#ebece6] rounded-[32px] shadow-sm flex flex-col">
-          <h3 className="text-[11px] font-black text-[#1c1c1c] flex items-center gap-3 uppercase tracking-[0.2em]">
+          <h3 className="text-[11px] font-bold text-[#1c1c1c] flex items-center gap-3 uppercase tracking-[0.2em]">
             <div className="p-2 bg-[#ebece6] rounded-xl">
-              <Activity className="w-4 h-4 text-emerald-600" />
+              <Activity className="w-4 h-4 text-[#3fa877]" />
             </div>
             Operational Lifecycle
           </h3>
@@ -440,8 +440,8 @@ export default function LogisticsPulse() {
                     if (active && payload && payload.length) {
                       return (
                         <div className="bg-[#1c1c1c] p-3 rounded-2xl shadow-xl border border-white/10">
-                          <p className="text-[10px] font-black text-white uppercase tracking-widest mb-1">{payload[0].name}</p>
-                          <p className="text-[11px] font-black text-blue-400 tabular-nums">ORDERS : {payload[0].value}</p>
+                          <p className="text-[10px] font-bold text-white uppercase tracking-wider mb-1">{payload[0].name}</p>
+                          <p className="text-[11px] font-bold text-[#8fb3e8] tabular-nums">ORDERS : {payload[0].value}</p>
                         </div>
                       );
                     }
@@ -451,19 +451,19 @@ export default function LogisticsPulse() {
                 <Legend 
                   verticalAlign="bottom" 
                   height={48}
-                  formatter={(value) => <span className="text-[10px] font-black uppercase text-[#5f5f5d]/60 tracking-widest">{value}</span>}
+                  formatter={(value) => <span className="text-[10px] font-bold uppercase text-[#5f5f5d]/60 tracking-wider">{value}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>
             
             <div className="mt-10 grid grid-cols-2 gap-6 w-full">
-              <div className="p-6 rounded-[24px] bg-emerald-50/50 border border-emerald-100/50">
-                 <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2">Fulfilled</div>
-                 <div className="text-3xl font-black text-emerald-700 tracking-tighter tabular-nums">{summary.delivered}</div>
+              <div className="p-6 rounded-[24px] bg-[#ecf8f1]/50 border border-[#d5f0e1]/50">
+                 <div className="text-[10px] font-bold text-[#3fa877] uppercase tracking-wider mb-2">Fulfilled</div>
+                 <div className="text-3xl font-bold text-[#2f8a5f] tracking-tighter tabular-nums">{summary.delivered}</div>
               </div>
               <div className="p-6 rounded-[24px] bg-rose-50/50 border border-rose-100/50">
-                 <div className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-2">Returned</div>
-                 <div className="text-3xl font-black text-rose-700 tracking-tighter tabular-nums">{summary.rto}</div>
+                 <div className="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-2">Returned</div>
+                 <div className="text-3xl font-bold text-rose-700 tracking-tighter tabular-nums">{summary.rto}</div>
               </div>
             </div>
           </div>
@@ -481,11 +481,11 @@ function PulseMetric({ label, value, icon: Icon, accent, sub }: any) {
         <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-all group-hover:scale-110", accent.replace('text-', 'bg-').replace('-600', '-50'))}>
           <Icon className="w-5 h-5" />
         </div>
-        <span className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-[0.15em] leading-tight">{label}</span>
+        <span className="text-[10px] font-bold text-[#5f5f5d]/40 uppercase tracking-[0.15em] leading-tight">{label}</span>
       </div>
       <div className="flex items-baseline gap-3">
-        <div className={cn("text-2xl font-black tracking-tighter tabular-nums", accent)}>{value}</div>
-        {sub && <div className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-tighter">{sub}</div>}
+        <div className={cn("text-2xl font-bold tracking-tighter tabular-nums", accent)}>{value}</div>
+        {sub && <div className="text-[10px] font-bold text-[#5f5f5d]/40 uppercase tracking-tighter">{sub}</div>}
       </div>
     </div>
   );

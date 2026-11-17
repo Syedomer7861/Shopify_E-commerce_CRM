@@ -83,17 +83,17 @@ export default function MarketingDashboard({ lists, tasks, members }: Props) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {tiles.map((t) => (
           <div key={t.label} className="bg-white border border-[#ebece6] rounded-2xl p-4">
-            <div className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]/60">{t.label}</div>
-            <div className={cn("text-3xl font-black mt-1", t.alert ? "text-rose-500" : "text-[#1c1c1c]")}>{t.value}</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]/60">{t.label}</div>
+            <div className={cn("text-3xl font-bold mt-1", t.alert ? "text-rose-500" : "text-[#1c1c1c]")}>{t.value}</div>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white border border-[#ebece6] rounded-2xl p-4">
-          <div className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]/60 mb-3">Open tasks by assignee</div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]/60 mb-3">Open tasks by assignee</div>
           {byAssignee.length === 0 ? (
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/40 py-8 text-center">No open tasks</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d]/40 py-8 text-center">No open tasks</p>
           ) : (
             <ResponsiveContainer width="100%" height={Math.max(120, byAssignee.length * 36)}>
               <BarChart data={byAssignee} layout="vertical" margin={{ left: 8, right: 16 }}>
@@ -107,7 +107,7 @@ export default function MarketingDashboard({ lists, tasks, members }: Props) {
         </div>
 
         <div className="bg-white border border-[#ebece6] rounded-2xl p-4">
-          <div className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]/60 mb-3">All tasks by stage</div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]/60 mb-3">All tasks by stage</div>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={byType} margin={{ left: -20, right: 8 }}>
               <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />

@@ -33,7 +33,7 @@ export function StructureCard({ data }: { data: OrgOverview }) {
     <div className={cn(PANEL, "h-full flex flex-col")}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-[#1c1c1c] flex items-center gap-2"><Network className="w-4 h-4" /> Organisation structure</h3>
-        <Link href="/organisation" className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#5f5f5d] hover:text-[#1c1c1c]">Full structure <ArrowUpRight className="w-3 h-3" /></Link>
+        <Link href="/organisation" className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] hover:text-[#1c1c1c]">Full structure <ArrowUpRight className="w-3 h-3" /></Link>
       </div>
       {active.length === 0 ? (
         <p className="text-xs text-[#5f5f5d]">No departments yet. <Link href="/organisation" className="underline font-semibold">Add your first department</Link> or <Link href="/organisation?templates=1" className="underline font-semibold">start from an industry template</Link>.</p>

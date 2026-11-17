@@ -150,29 +150,29 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
   return (
     <div className="space-y-8 pb-20 animate-in fade-in duration-700">
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#fcfbf8] p-4 sm:p-6 rounded-3xl border border-gray-100 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#fcfbf8] p-4 sm:p-6 rounded-3xl border border-[#ebece6] shadow-sm">
         <div className="space-y-1">
-          <h2 className="text-xl font-black text-[#1c1c1c] tracking-tight flex items-center gap-3">
+          <h2 className="text-xl font-bold text-[#1c1c1c] tracking-tight flex items-center gap-3">
             <div className="w-10 h-10 bg-[#1c1c1c] text-white rounded-2xl flex items-center justify-center shadow-lg">
               <ShieldCheck className="w-5 h-5" />
             </div>
             Agent Intelligence Center
           </h2>
-          <p className="text-[11px] text-gray-400 font-bold uppercase tracking-[0.2em] ml-13">Telemetry & Performance Audit</p>
+          <p className="text-[11px] text-[#9a9a94] font-bold uppercase tracking-[0.2em] ml-13">Telemetry & Performance Audit</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex w-full sm:w-auto min-w-0 bg-white p-1 rounded-xl border border-gray-100 shadow-inner">
+          <div className="flex w-full sm:w-auto min-w-0 bg-white p-1 rounded-xl border border-[#ebece6] shadow-inner">
             <input 
               type="date" 
-              className="flex-1 min-w-0 text-[10px] font-black uppercase tracking-wider px-2 sm:px-3 py-2 border-none focus:ring-0 bg-transparent"
+              className="flex-1 min-w-0 text-[10px] font-bold uppercase tracking-wider px-2 sm:px-3 py-2 border-none focus:ring-0 bg-transparent"
               value={dateRange.start}
               onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
             />
-            <div className="w-[1px] bg-gray-100 my-2" />
+            <div className="w-[1px] bg-[#f0f0ec] my-2" />
             <input 
               type="date" 
-              className="flex-1 min-w-0 text-[10px] font-black uppercase tracking-wider px-2 sm:px-3 py-2 border-none focus:ring-0 bg-transparent"
+              className="flex-1 min-w-0 text-[10px] font-bold uppercase tracking-wider px-2 sm:px-3 py-2 border-none focus:ring-0 bg-transparent"
               value={dateRange.end}
               onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
             />
@@ -180,7 +180,7 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
           <button
             onClick={() => fetchData()}
             disabled={loading}
-            className="btn-primary py-3 px-6 text-[10px] font-black uppercase tracking-widest gap-2"
+            className="btn-primary py-3 px-6 text-[10px] font-bold uppercase tracking-wider gap-2"
           >
             {loading ? <Zap className="w-3 h-3 animate-pulse" /> : <Zap className="w-3 h-3" />}
             Sync Live
@@ -195,7 +195,7 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
           value={stats.onlineCount} 
           icon={UserCheck} 
           sub="Agents currently online"
-          accent="text-emerald-600"
+          accent="text-[#3fa877]"
         />
         <MetricCard 
           label="Cumulative Tasks" 
@@ -209,7 +209,7 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
           value={formatCurrency(stats.totalRevenue)} 
           icon={TrendingUp} 
           sub="Direct agent conversions" 
-          accent="text-emerald-600"
+          accent="text-[#3fa877]"
         />
         <MetricCard 
           label="Avg Efficiency" 
@@ -224,42 +224,42 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
         {/* Agent Performance Table */}
         <div className="xl:col-span-2 space-y-4">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest flex items-center gap-2">
+            <h3 className="text-xs font-bold text-[#1c1c1c] uppercase tracking-wider flex items-center gap-2">
               <Users className="w-4 h-4" /> Agent Leaderboard
             </h3>
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#9a9a94]" />
               <input 
                 type="text" 
                 placeholder="Filter by name..." 
-                className="pl-9 pr-4 py-2 text-[10px] font-bold border-gray-100 rounded-xl focus:ring-[#1c1c1c] bg-[#fcfbf8] w-48"
+                className="pl-9 pr-4 py-2 text-[10px] font-bold border-[#ebece6] rounded-xl focus:ring-[#1c1c1c] bg-[#fcfbf8] w-48"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="card overflow-x-auto border border-gray-100 shadow-xl shadow-gray-200/20">
+          <div className="card overflow-x-auto border border-[#ebece6] shadow-xl shadow-[#e6e7e0]/20">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-[#fcfbf8] border-b border-gray-100">
-                  <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Agent</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Live Status</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Work/Break</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Output</th>
-                  <th className="px-3 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-right">Revenue</th>
-                  <th className="px-3 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Action</th>
+                <tr className="bg-[#fcfbf8] border-b border-[#ebece6]">
+                  <th className="px-6 py-4 text-[9px] font-bold text-[#9a9a94] uppercase tracking-[0.2em]">Agent</th>
+                  <th className="px-6 py-4 text-[9px] font-bold text-[#9a9a94] uppercase tracking-[0.2em]">Live Status</th>
+                  <th className="px-6 py-4 text-[9px] font-bold text-[#9a9a94] uppercase tracking-[0.2em] text-center">Work/Break</th>
+                  <th className="px-6 py-4 text-[9px] font-bold text-[#9a9a94] uppercase tracking-[0.2em] text-center">Output</th>
+                  <th className="px-3 py-4 text-[9px] font-bold text-[#9a9a94] uppercase tracking-[0.2em] text-right">Revenue</th>
+                  <th className="px-3 py-4 text-[9px] font-bold text-[#9a9a94] uppercase tracking-[0.2em] text-center">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-[#f6f7f2]">
                 {filteredAgents.map((agent: any) => (
-                  <tr key={agent.id} className="hover:bg-gray-50/50 transition-colors group">
+                  <tr key={agent.id} className="hover:bg-[#f6f7f2]/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <Avatar name={agent.name} size="sm" />
                         <div>
-                          <div className="text-[11px] font-black text-[#1c1c1c] tracking-tight">{agent.name}</div>
-                          <div className="text-[9px] font-bold text-gray-400 truncate max-w-[120px]">{agent.email}</div>
+                          <div className="text-[11px] font-bold text-[#1c1c1c] tracking-tight">{agent.name}</div>
+                          <div className="text-[9px] font-bold text-[#9a9a94] truncate max-w-[120px]">{agent.email}</div>
                         </div>
                       </div>
                     </td>
@@ -268,35 +268,35 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
                         <div className="flex items-center gap-1.5">
                           <div className={cn(
                             "w-1.5 h-1.5 rounded-full animate-pulse",
-                            agent.status === 'online' ? 'bg-emerald-500' : agent.status === 'break' ? 'bg-amber-500' : 'bg-gray-300'
+                            agent.status === 'online' ? 'bg-[#55c08f]' : agent.status === 'break' ? 'bg-amber-500' : 'bg-[#d4d5cd]'
                           )} />
                           <span className={cn(
-                            "text-[10px] font-black uppercase tracking-wider",
-                            agent.status === 'online' ? 'text-emerald-600' : agent.status === 'break' ? 'text-amber-600' : 'text-gray-400'
+                            "text-[10px] font-bold uppercase tracking-wider",
+                            agent.status === 'online' ? 'text-[#3fa877]' : agent.status === 'break' ? 'text-amber-600' : 'text-[#9a9a94]'
                           )}>{agent.status || 'Offline'}</span>
                         </div>
                         {agent.liveState && agent.status !== 'offline' && (
                           <div className="flex items-center gap-1 mt-0.5">
-                            <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded animate-pulse">LIVE</span>
-                            <span className="text-[8px] font-bold text-gray-500 truncate max-w-[80px]">{agent.liveState.action}</span>
+                            <span className="text-[8px] font-bold bg-[#ecf8f1] text-[#3fa877] px-1.5 py-0.5 rounded animate-pulse">LIVE</span>
+                            <span className="text-[8px] font-bold text-[#6b6b67] truncate max-w-[80px]">{agent.liveState.action}</span>
                           </div>
                         )}
-                        {agent.lastReason && <span className="text-[8px] text-gray-400 italic">&ldquo;{agent.lastReason}&rdquo;</span>}
+                        {agent.lastReason && <span className="text-[8px] text-[#9a9a94] italic">&ldquo;{agent.lastReason}&rdquo;</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col items-center">
                          <div className="flex flex-wrap gap-2 sm:gap-3 mb-1">
                             <div className="text-center">
-                               <div className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">Online</div>
-                               <div className="text-[10px] font-black text-[#1c1c1c]">{agent.onlineHours}</div>
+                               <div className="text-[8px] font-bold text-[#9a9a94] uppercase tracking-tighter">Online</div>
+                               <div className="text-[10px] font-bold text-[#1c1c1c]">{agent.onlineHours}</div>
                             </div>
                             <div className="text-center">
-                               <div className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">Break</div>
-                               <div className="text-[10px] font-black text-rose-500">{agent.breakHours}</div>
+                               <div className="text-[8px] font-bold text-[#9a9a94] uppercase tracking-tighter">Break</div>
+                               <div className="text-[10px] font-bold text-rose-500">{agent.breakHours}</div>
                             </div>
                          </div>
-                         <div className="w-20 h-1 bg-gray-100 rounded-full overflow-hidden">
+                         <div className="w-20 h-1 bg-[#f0f0ec] rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-[#1c1c1c] transition-all duration-1000" 
                               style={{ width: `${Math.min(100, (agent.onlineSeconds / 28800) * 100)}%` }} // 8h target
@@ -306,18 +306,18 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
                     </td>
                     <td className="px-3 py-4 text-center">
                       <div className="flex flex-col items-center">
-                        <div className="text-[11px] font-black text-[#1c1c1c]">{agent.taskCount}</div>
-                        <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{agent.productivity} T/H</div>
+                        <div className="text-[11px] font-bold text-[#1c1c1c]">{agent.taskCount}</div>
+                        <div className="text-[8px] font-bold text-[#9a9a94] uppercase tracking-wider">{agent.productivity} T/H</div>
                       </div>
                     </td>
                     <td className="px-3 py-4 text-right">
-                      <div className="text-[11px] font-black text-emerald-600">{formatCurrency(agent.revenue)}</div>
+                      <div className="text-[11px] font-bold text-[#3fa877]">{formatCurrency(agent.revenue)}</div>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center gap-2 justify-center">
                         <button 
                           onClick={() => setSelectedAgent(agent)}
-                          className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 hover:bg-[#1c1c1c] hover:text-white rounded-md transition-all text-[10px] font-bold"
+                          className="flex items-center gap-1 px-2 py-1 bg-[#f0f0ec] text-[#3a3a36] hover:bg-[#1c1c1c] hover:text-white rounded-md transition-all text-[10px] font-bold"
                           title="View Performance"
                         >
                           <Eye className="w-3 h-3" /> Details
@@ -333,42 +333,42 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
 
           {/* Daily Performance Grid */}
           <div className="pt-8 space-y-4">
-            <h3 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest flex items-center gap-2 px-2">
+            <h3 className="text-xs font-bold text-[#1c1c1c] uppercase tracking-wider flex items-center gap-2 px-2">
               <Calendar className="w-4 h-4" /> Daily Performance Ledger
             </h3>
-            <div className="card border border-gray-100 overflow-hidden">
+            <div className="card border border-[#ebece6] overflow-hidden">
                <div className="max-h-[400px] overflow-y-auto">
                   <table className="w-full text-left border-collapse">
                     <thead className="sticky top-0 bg-[#fcfbf8] z-20 shadow-sm">
-                      <tr className="border-b border-gray-100">
-                        <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Date</th>
-                        <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Agent</th>
-                        <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                        <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest text-center">Login/Logout</th>
-                        <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest text-center">Net Hours</th>
-                        <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest text-center">Tasks</th>
-                        <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest text-right">Revenue</th>
+                      <tr className="border-b border-[#ebece6]">
+                        <th className="px-6 py-3 text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider">Agent</th>
+                        <th className="px-6 py-3 text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider text-center">Login/Logout</th>
+                        <th className="px-6 py-3 text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider text-center">Net Hours</th>
+                        <th className="px-6 py-3 text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider text-center">Tasks</th>
+                        <th className="px-6 py-3 text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider text-right">Revenue</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-[#f6f7f2]">
                       {data.dailyLogs.map((log: any, i: number) => (
-                        <tr key={i} className="hover:bg-gray-50/50">
+                        <tr key={i} className="hover:bg-[#f6f7f2]/50">
                           <td className="px-6 py-3 text-[10px] font-bold text-[#1c1c1c]">{log.date}</td>
-                          <td className="px-6 py-3 text-[10px] font-black text-[#1c1c1c] uppercase tracking-tighter">{log.name}</td>
+                          <td className="px-6 py-3 text-[10px] font-bold text-[#1c1c1c] uppercase tracking-tighter">{log.name}</td>
                           <td className="px-6 py-3">
                              <span className={cn(
-                               "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest",
-                               log.status === 'Present' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                               "px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider",
+                               log.status === 'Present' ? 'bg-[#ecf8f1] text-[#3fa877]' : 'bg-rose-50 text-rose-600'
                              )}>
                                {log.status}
                              </span>
                           </td>
-                          <td className="px-6 py-3 text-center text-[10px] font-bold text-gray-500">
+                          <td className="px-6 py-3 text-center text-[10px] font-bold text-[#6b6b67]">
                             {log.clockIn} — {log.clockOut}
                           </td>
-                          <td className="px-6 py-3 text-center text-[10px] font-black text-[#1c1c1c]">{log.netHours}</td>
-                          <td className="px-6 py-3 text-center text-[10px] font-black text-[#1c1c1c]">{log.tasks}</td>
-                          <td className="px-6 py-3 text-right text-[10px] font-black text-emerald-600">{formatCurrency(log.revenue)}</td>
+                          <td className="px-6 py-3 text-center text-[10px] font-bold text-[#1c1c1c]">{log.netHours}</td>
+                          <td className="px-6 py-3 text-center text-[10px] font-bold text-[#1c1c1c]">{log.tasks}</td>
+                          <td className="px-6 py-3 text-right text-[10px] font-bold text-[#3fa877]">{formatCurrency(log.revenue)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -380,19 +380,19 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
 
         {/* Live Activity & Insights */}
         <div className="space-y-6">
-          <div className="card p-6 border-none shadow-xl shadow-gray-200/40 bg-gradient-to-b from-white to-[#fcfbf8]">
-            <h3 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest mb-6 flex items-center gap-2">
+          <div className="card p-6 border-none shadow-xl shadow-[#e6e7e0]/40 bg-gradient-to-b from-white to-[#fcfbf8]">
+            <h3 className="text-xs font-bold text-[#1c1c1c] uppercase tracking-wider mb-6 flex items-center gap-2">
               <History className="w-4 h-4" /> Live Action Stream
             </h3>
             <div className="space-y-5">
               {data.recentActivity.slice(0, 10).map((log: any, i: number) => (
                 <div key={log.id} className="flex gap-3 relative pb-5 last:pb-0">
-                  {i < 9 && <div className="absolute left-[7px] top-4 bottom-0 w-[2px] bg-gray-50" />}
+                  {i < 9 && <div className="absolute left-[7px] top-4 bottom-0 w-[2px] bg-[#f6f7f2]" />}
                   <div className={cn(
                     "w-4 h-4 rounded-full border-2 border-white shadow-sm shrink-0 z-10 mt-0.5 flex items-center justify-center",
-                    log.activity_type === 'whatsapp' ? 'bg-emerald-500' : 
+                    log.activity_type === 'whatsapp' ? 'bg-[#55c08f]' : 
                     log.activity_type === 'call' ? 'bg-[#1c1c1c]' : 
-                    log.activity_type === 'login' ? 'bg-blue-500' : 'bg-amber-500'
+                    log.activity_type === 'login' ? 'bg-[#6f9bdd]' : 'bg-amber-500'
                   )}>
                     {log.activity_type === 'whatsapp' && <MessageSquare className="w-2 h-2 text-white" />}
                     {log.activity_type === 'call' && <Phone className="w-2 h-2 text-white" />}
@@ -400,10 +400,10 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-[10px] font-black text-[#1c1c1c] truncate">{log.profile?.name}</span>
-                      <span className="text-[8px] font-bold text-gray-400 whitespace-nowrap">{format(new Date(log.created_at), "HH:mm")}</span>
+                      <span className="text-[10px] font-bold text-[#1c1c1c] truncate">{log.profile?.name}</span>
+                      <span className="text-[8px] font-bold text-[#9a9a94] whitespace-nowrap">{format(new Date(log.created_at), "HH:mm")}</span>
                     </div>
-                    <div className="text-[9px] text-gray-500 leading-tight">
+                    <div className="text-[9px] text-[#6b6b67] leading-tight">
                       <span className="font-bold text-[#1c1c1c] uppercase tracking-tighter">{log.activity_type.replace('_', ' ')}</span>
                       {log.metadata?.description && ` — ${log.metadata.description}`}
                       {(log.metadata?.order_id || log.metadata?.cart_id) && (
@@ -414,7 +414,7 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
                                const id = log.metadata.order_id || log.metadata.cart_id;
                                window.open(type === 'order' ? `/orders?id=${id}` : `/tasks?id=${id}`, '_blank');
                              }}
-                             className="text-[8px] font-black text-emerald-600 hover:underline uppercase flex items-center gap-1"
+                             className="text-[8px] font-bold text-[#3fa877] hover:underline uppercase flex items-center gap-1"
                            >
                               <ArrowUpRight className="w-2 h-2" /> View {log.metadata.order_id ? 'Order' : 'Cart'}
                            </button>
@@ -426,10 +426,10 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
               ))}
               {data.recentActivity.length === 0 && (
                 <div className="py-12 text-center">
-                  <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <History className="w-5 h-5 text-gray-300" />
+                  <div className="w-12 h-12 bg-[#f6f7f2] rounded-full flex items-center justify-center mx-auto mb-3">
+                    <History className="w-5 h-5 text-[#d4d5cd]" />
                   </div>
-                  <p className="text-[10px] text-gray-400 font-bold italic">No live actions recorded</p>
+                  <p className="text-[10px] text-[#9a9a94] font-bold italic">No live actions recorded</p>
                 </div>
               )}
             </div>
@@ -439,7 +439,7 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
             <div className="absolute -right-4 -bottom-4 opacity-10">
               <Zap className="w-32 h-32 text-white" />
             </div>
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-4">Daily Efficiency Mix</h3>
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60 mb-4">Daily Efficiency Mix</h3>
             <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data.dailyLogs.slice(0, 10).reverse()}>
@@ -468,12 +468,12 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
             </div>
             <div className="mt-4 flex items-center justify-between">
                <div>
-                  <div className="text-xl font-black">{stats.totalTasks}</div>
-                  <div className="text-[8px] font-black uppercase tracking-widest opacity-40">System Velocity</div>
+                  <div className="text-xl font-bold">{stats.totalTasks}</div>
+                  <div className="text-[8px] font-bold uppercase tracking-wider opacity-40">System Velocity</div>
                </div>
                <div className="text-right">
-                  <div className="text-xl font-black">{stats.avgProductivity}</div>
-                  <div className="text-[8px] font-black uppercase tracking-widest opacity-40">Avg T/H</div>
+                  <div className="text-xl font-bold">{stats.avgProductivity}</div>
+                  <div className="text-[8px] font-bold uppercase tracking-wider opacity-40">Avg T/H</div>
                </div>
             </div>
           </div>
@@ -493,20 +493,20 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
 
 function MetricCard({ label, value, icon: Icon, sub, accent = "text-[#1c1c1c]", trend }: any) {
   return (
-    <div className="card p-6 relative overflow-hidden group hover:shadow-xl transition-all duration-500 border border-transparent hover:border-gray-100 bg-white">
+    <div className="card p-6 relative overflow-hidden group hover:shadow-xl transition-all duration-500 border border-transparent hover:border-[#ebece6] bg-white">
       <div className="flex justify-between items-start mb-3">
         <div className="space-y-1">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{label}</p>
+          <p className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-[0.2em]">{label}</p>
           <div className="flex items-baseline gap-2">
-            <h3 className={cn("text-3xl font-black tracking-tighter", accent)}>{value}</h3>
-            {trend && <span className="text-[10px] font-black text-emerald-500 flex items-center gap-0.5"><ArrowUpRight className="w-3 h-3" /> {trend}</span>}
+            <h3 className={cn("text-3xl font-bold tracking-tighter", accent)}>{value}</h3>
+            {trend && <span className="text-[10px] font-bold text-[#55c08f] flex items-center gap-0.5"><ArrowUpRight className="w-3 h-3" /> {trend}</span>}
           </div>
         </div>
-        <div className="p-3 bg-[#fcfbf8] rounded-2xl group-hover:bg-[#1c1c1c] group-hover:text-white transition-all duration-500 scale-110 shadow-sm border border-gray-50">
+        <div className="p-3 bg-[#fcfbf8] rounded-2xl group-hover:bg-[#1c1c1c] group-hover:text-white transition-all duration-500 scale-110 shadow-sm border border-[#f6f7f2]">
           <Icon className="w-5 h-5" />
         </div>
       </div>
-      <p className="text-[10px] text-gray-400 font-bold truncate opacity-80 mt-3 uppercase tracking-widest">{sub}</p>
+      <p className="text-[10px] text-[#9a9a94] font-bold truncate opacity-80 mt-3 uppercase tracking-wider">{sub}</p>
     </div>
   );
 }

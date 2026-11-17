@@ -9,8 +9,8 @@ import { midPosition } from "@/lib/marketing-client";
 const PRIORITY_DOT: Record<string, string> = {
   urgent: "bg-rose-500",
   high: "bg-amber-500",
-  normal: "bg-slate-300",
-  low: "bg-slate-200",
+  normal: "bg-[#d4d5cd]",
+  low: "bg-[#e6e7e0]",
 };
 
 export type BoardColumn = { id: string; name: string; color: string };
@@ -66,7 +66,7 @@ export default function MarketingBoard({ list, tasks, columns, groupOf, showWip,
               <div className="flex items-center justify-between px-3 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: col.color }} />
-                  <span className="text-[11px] font-black uppercase tracking-widest text-[#1c1c1c]">{col.name}</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#1c1c1c]">{col.name}</span>
                   <span className={cn("text-[10px] font-bold px-1.5 rounded-full", overLimit ? "bg-rose-100 text-rose-600" : "bg-[#ebece6] text-[#5f5f5d]")}>
                     {items.length}
                     {showWip && list.wip_limit != null ? `/${list.wip_limit}` : ""}
@@ -147,7 +147,7 @@ export default function MarketingBoard({ list, tasks, columns, groupOf, showWip,
                                   </span>
                                 )}
                                 {t.assignees?.slice(0, 3).map((a) => (
-                                  <span key={a} className="w-4 h-4 rounded-full bg-[#1c1c1c] text-white text-[7px] font-black flex items-center justify-center">
+                                  <span key={a} className="w-4 h-4 rounded-full bg-[#1c1c1c] text-white text-[7px] font-bold flex items-center justify-center">
                                     {a.slice(0, 2).toUpperCase()}
                                   </span>
                                 ))}

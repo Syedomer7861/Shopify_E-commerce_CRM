@@ -36,7 +36,7 @@ export function SidebarSections({ sections }: { sections: NavSection[] }) {
           <div key={s.key} className={cn(s.label && "pt-1")}>
             {s.label && (
               <button onClick={() => !holdsActive && toggle(s.key)} aria-expanded={isOpen}
-                className={cn("w-full flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-[0.12em] whitespace-nowrap transition-colors",
+                className={cn("w-full flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-[0.12em] whitespace-nowrap transition-colors",
                   holdsActive ? "text-[#1c1c1c] cursor-default" : "text-[#5f5f5d]/60 hover:text-[#1c1c1c] hover:bg-[rgba(28,28,28,0.04)]")}>
                 <span className="flex-1 text-left truncate">{s.label}</span>
                 {!isOpen && badge > 0 && <span className="text-[10px] font-bold px-1.5 rounded-full bg-rose-500 text-white normal-case tracking-normal">{badge}</span>}

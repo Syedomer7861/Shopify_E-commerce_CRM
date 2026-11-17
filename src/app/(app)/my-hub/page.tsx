@@ -46,7 +46,7 @@ export default function MyHubPage() {
             <Sparkles className="w-5 h-5 text-amber-700" />
           </div>
           <div>
-            <p className="text-xs font-black text-amber-900 uppercase tracking-widest">Presentation Mode Active</p>
+            <p className="text-xs font-bold text-amber-900 uppercase tracking-wider">Presentation Mode Active</p>
             <p className="text-[11px] text-amber-700 font-medium">Personal data is sandboxed. Changes made here will not be saved to your production profile.</p>
           </div>
         </div>
@@ -55,39 +55,39 @@ export default function MyHubPage() {
       {/* Hub Navigation */}
       <div className="grid grid-cols-2 lg:flex gap-3 lg:gap-4 mb-8">
         {[
-          { id: 'assigned', label: 'Assigned Tasks', icon: CheckSquare, color: 'text-indigo-500' },
-          { id: 'todos', label: 'Todo List', icon: CheckCircle2, color: 'text-emerald-500' },
-          { id: 'notes', label: 'Private Notes', icon: StickyNote, color: 'text-blue-500' },
+          { id: 'assigned', label: 'Assigned Tasks', icon: CheckSquare, color: 'text-[#6f9bdd]' },
+          { id: 'todos', label: 'Todo List', icon: CheckCircle2, color: 'text-[#55c08f]' },
+          { id: 'notes', label: 'Private Notes', icon: StickyNote, color: 'text-[#6f9bdd]' },
           { id: 'reminders', label: 'Reminders', icon: Bell, color: 'text-rose-500' },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
             className={cn(
-              "flex-1 flex items-center gap-3 p-4 rounded-2xl border transition-all duration-300 group",
+              "flex-1 min-w-0 flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-2xl border transition-all duration-300 group",
               activeTab === tab.id 
                 ? "bg-[#1c1c1c] border-[#1c1c1c] text-white shadow-xl shadow-[#1c1c1c]/10 translate-y-[-2px]" 
-                : "bg-white border-[#ebece6] text-[#5f5f5d] hover:border-gray-300 hover:bg-gray-50"
+                : "bg-white border-[#ebece6] text-[#5f5f5d] hover:border-[#d4d5cd] hover:bg-[#f6f7f2]"
             )}
           >
             <div className={cn(
-              "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
-              activeTab === tab.id ? "bg-white/10" : "bg-gray-100 group-hover:bg-gray-200"
+              "w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl flex items-center justify-center transition-colors",
+              activeTab === tab.id ? "bg-white/10" : "bg-[#f0f0ec] group-hover:bg-[#e6e7e0]"
             )}>
-              <tab.icon className={cn("w-5 h-5", activeTab === tab.id ? tab.color : "text-gray-400")} />
+              <tab.icon className={cn("w-5 h-5", activeTab === tab.id ? tab.color : "text-[#9a9a94]")} />
             </div>
-            <div className="text-left">
-              <div className="text-sm font-bold">{tab.label}</div>
+            <div className="text-left min-w-0">
+              <div className="text-[13px] sm:text-sm font-bold leading-tight">{tab.label}</div>
               <div className={cn(
-                "text-[10px] uppercase tracking-widest font-bold opacity-60",
-                activeTab === tab.id ? "text-white/60" : "text-gray-400"
+                "hidden sm:block text-[10px] uppercase tracking-wider font-bold opacity-60",
+                activeTab === tab.id ? "text-white/60" : "text-[#9a9a94]"
               )}>
                 {tab.id === 'assigned' ? 'From Your Team' : tab.id === 'todos' ? 'Personal Tasks' : tab.id === 'notes' ? 'Quick Ideas' : 'Timed Alerts'}
               </div>
             </div>
             <ChevronRight className={cn(
-              "w-4 h-4 ml-auto transition-transform",
-              activeTab === tab.id ? "text-white/40 rotate-90" : "text-gray-300"
+              "hidden sm:block w-4 h-4 ml-auto transition-transform",
+              activeTab === tab.id ? "text-white/40 rotate-90" : "text-[#d4d5cd]"
             )} />
           </button>
         ))}

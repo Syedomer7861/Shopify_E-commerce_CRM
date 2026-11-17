@@ -66,7 +66,7 @@ export default function SuperAdminRevenue() {
     };
   }, [rows, now]);
 
-  if (!view) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (!view) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   if (rows!.length === 0) {
     return (
       <div>
@@ -96,7 +96,7 @@ export default function SuperAdminRevenue() {
                 sub={`${formatMinor(m.churned, cur)} cancelled of ${formatMinor(m.start, cur)} at month start`} />
             </div>
             <div className="card p-4">
-              <div className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-3">MRR at each month end</div>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-3">MRR at each month end</div>
               <div className="flex items-end gap-1.5 h-32" role="img" aria-label={`MRR in ${cur} over the last 12 months`}>
                 {view.series.map(s => {
                   const v = s.mrr[cur] || 0;
@@ -117,7 +117,7 @@ export default function SuperAdminRevenue() {
 
       <div className="grid lg:grid-cols-3 gap-3">
         <div className="card p-4">
-          <div className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">MRR by plan ({view.paying} paying)</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-2">MRR by plan ({view.paying} paying)</div>
           {view.byPlan.length === 0 ? <p className="text-xs text-[#5f5f5d]">No paying organisations.</p> : view.byPlan.map(([name, m]) => (
             <div key={name} className="flex justify-between text-xs py-1">
               <span>{name}</span>
@@ -126,7 +126,7 @@ export default function SuperAdminRevenue() {
           ))}
         </div>
         <div className="card p-4">
-          <div className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Trials ending in 14 days</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-2">Trials ending in 14 days</div>
           {view.trialsEnding.length === 0 ? <p className="text-xs text-[#5f5f5d]">None.</p> : view.trialsEnding.map(r => (
             <Link key={r.id} href={`/superadmin/organisations/${r.org_id}`} className="flex justify-between text-xs py-1 hover:underline">
               <span>{r.organizations?.name || "Organisation"}</span>
@@ -135,7 +135,7 @@ export default function SuperAdminRevenue() {
           ))}
         </div>
         <div className="card p-4">
-          <div className="text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Renewals due in 30 days</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-2">Renewals due in 30 days</div>
           {view.renewals.length === 0 ? <p className="text-xs text-[#5f5f5d]">None.</p> : view.renewals.map(r => (
             <Link key={r.id} href={`/superadmin/organisations/${r.org_id}`} className="flex justify-between text-xs py-1 hover:underline">
               <span>{r.organizations?.name || "Organisation"}</span>

@@ -15,7 +15,7 @@ type Assignment = {
 
 const input = "h-9 px-2 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 const small = "text-xs px-3 py-1.5 rounded-lg border border-[#ebece6] disabled:opacity-40";
-const STATUS: Record<Assignment["status"], string> = { suggested: "bg-sky-50 text-sky-700", active: "bg-emerald-50 text-emerald-700", ended: "bg-gray-100 text-[#5f5f5d]" };
+const STATUS: Record<Assignment["status"], string> = { suggested: "bg-[#eef4fc] text-[#3d66a6]", active: "bg-[#ecf8f1] text-[#2f8a5f]", ended: "bg-[#f0f0ec] text-[#5f5f5d]" };
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 const day = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 
@@ -68,7 +68,7 @@ export function AssignmentsTab({ me, departments, designations, canManage, canAp
   const shown = rows.filter(a => a.status === show);
   const counts = { suggested: rows.filter(a => a.status === "suggested").length, active: rows.filter(a => a.status === "active").length };
 
-  if (loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (loading) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
 
   if (bulk) {
     const pool = people.filter(p => !bulk.dept || p.department_id === bulk.dept);

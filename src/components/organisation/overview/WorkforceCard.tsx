@@ -62,7 +62,7 @@ export function WorkforceCard({ data }: { data: OrgOverview }) {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl font-black text-[#1c1c1c] leading-none">{total}</span>
+              <span className="text-2xl font-bold text-[#1c1c1c] leading-none">{total}</span>
               <span className="text-[10px] text-[#5f5f5d]">active</span>
             </div>
           </div>

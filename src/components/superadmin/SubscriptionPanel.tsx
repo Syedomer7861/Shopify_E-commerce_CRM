@@ -96,13 +96,13 @@ export function SubscriptionPanel({ orgId }: { orgId: string }) {
     load();
   }
 
-  if (!subs) return <div className="card p-4"><Loader2 className="w-4 h-4 animate-spin text-gray-400" /></div>;
+  if (!subs) return <div className="card p-4"><Loader2 className="w-4 h-4 animate-spin text-[#9a9a94]" /></div>;
 
   const trialOver = current?.status === "trialing" && current.trial_ends_at && new Date(current.trial_ends_at) < new Date();
 
   return (
     <div className="card p-4 space-y-4">
-      <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d]">Subscription</div>
+      <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]">Subscription</div>
       {current ? (
         <div className="flex flex-wrap items-start gap-4">
           <div className="flex-1 min-w-0 text-sm">
@@ -117,8 +117,8 @@ export function SubscriptionPanel({ orgId }: { orgId: string }) {
               {current.status === "trialing" ? `Trial ends ${day(current.trial_ends_at)}` : `Period ${day(current.current_period_start)} to ${day(current.current_period_end)}`}
             </div>
           </div>
-          <span className={cn("text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full",
-            trialOver ? "bg-amber-50 text-amber-700" : current.status === "trialing" ? "bg-blue-50 text-blue-700" : "bg-emerald-50 text-emerald-700")}>
+          <span className={cn("text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+            trialOver ? "bg-amber-50 text-amber-700" : current.status === "trialing" ? "bg-[#eef4fc] text-[#3d66a6]" : "bg-[#ecf8f1] text-[#2f8a5f]")}>
             {trialOver ? "Trial ended" : current.status === "trialing" ? "Trial" : "Active"}
           </span>
           <button onClick={cancel} disabled={busy} className="text-xs px-3 py-1.5 rounded-lg border border-rose-100 text-rose-600 hover:bg-rose-50">Cancel</button>
@@ -153,7 +153,7 @@ export function SubscriptionPanel({ orgId }: { orgId: string }) {
 
       {history.length > 0 && (
         <div className="border-t border-[#ebece6] pt-3">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">History</div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-2">History</div>
           {history.map(h => (
             <div key={h.id} className="text-xs text-[#5f5f5d] py-1">
               {day(h.created_at)} to {day(h.cancelled_at)}: {h.plan_version?.plan?.name} v{h.plan_version?.version}, {formatMinor(h.price_minor, h.currency)}/{h.billing_cycle === "monthly" ? "mo" : "yr"}{h.cancel_reason ? ` · ${h.cancel_reason}` : ""}

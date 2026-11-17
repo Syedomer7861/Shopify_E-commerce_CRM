@@ -26,7 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProfileProvider>
     <ChatProvider>
-      <div className="app-ui flex flex-col lg:flex-row h-screen overflow-hidden bg-[#f2f3ee]">
+      <div className="app-ui flex flex-col lg:flex-row h-[100dvh] overflow-hidden bg-[#f2f3ee]">
         <AgentHeartbeat />
         <ModuleGuard />
         <MfaGate />
@@ -39,7 +39,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <Sidebar />
         </Suspense>
         <main id="main-application-content" className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden pl-16 lg:pl-0">
-          <div className={cn(isChatPage ? "" : "max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6")}>
+          <div className={cn(isChatPage ? "" : "max-w-7xl mx-auto px-3 sm:px-4 md:px-6 pt-4 pb-24 md:py-6")}>
             {!isChatPage && <PlatformNotices />}
             <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 animate-spin text-[#1c1c1c]" /></div>}>
               {children}

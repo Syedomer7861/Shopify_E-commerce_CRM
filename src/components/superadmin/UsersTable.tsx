@@ -57,7 +57,7 @@ export function UsersTable({ orgId, showOrg = true }: { orgId?: string; showOrg?
   const term = q.trim().toLowerCase();
   const shown = term ? users.filter(u => [u.email, u.name, u.org_name, u.role].some(v => v?.toLowerCase().includes(term))) : users;
 
-  if (loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (loading) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
 
   return (
     <div>
@@ -69,7 +69,7 @@ export function UsersTable({ orgId, showOrg = true }: { orgId?: string; showOrg?
         <div className="card overflow-x-auto">
           <table className="w-full text-sm min-w-[820px]">
             <thead>
-              <tr className="text-left text-[10px] uppercase tracking-widest text-[#5f5f5d] border-b border-[#ebece6]">
+              <tr className="text-left text-[10px] uppercase tracking-wider text-[#5f5f5d] border-b border-[#ebece6]">
                 <th className="p-3">User</th>
                 {showOrg && <th className="p-3">Organisation</th>}
                 <th className="p-3">Role</th>
@@ -81,11 +81,11 @@ export function UsersTable({ orgId, showOrg = true }: { orgId?: string; showOrg?
             </thead>
             <tbody>
               {shown.map(u => (
-                <tr key={u.user_id} className="border-b border-gray-50 last:border-0">
+                <tr key={u.user_id} className="border-b border-[#f6f7f2] last:border-0">
                   <td className="p-3">
                     <div className="font-semibold text-[#1c1c1c] flex items-center gap-1.5">
                       {u.name || "—"}
-                      {u.two_factor && <span title="Two-factor on"><ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /></span>}
+                      {u.two_factor && <span title="Two-factor on"><ShieldCheck className="w-3.5 h-3.5 text-[#3fa877]" /></span>}
                     </div>
                     <div className="text-[11px] text-[#5f5f5d]">{u.email}</div>
                   </td>
@@ -98,8 +98,8 @@ export function UsersTable({ orgId, showOrg = true }: { orgId?: string; showOrg?
                   <td className="p-3 text-xs text-[#5f5f5d]">{ago(u.last_seen_at)}</td>
                   <td className="p-3 text-xs text-[#5f5f5d]">{ago(u.last_sign_in_at)}</td>
                   <td className="p-3">
-                    <span className={cn("text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full",
-                      u.suspended ? "bg-rose-50 text-rose-600" : !u.is_active ? "bg-gray-100 text-gray-600" : "bg-emerald-50 text-emerald-700")}>
+                    <span className={cn("text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+                      u.suspended ? "bg-rose-50 text-rose-600" : !u.is_active ? "bg-[#f0f0ec] text-[#55554f]" : "bg-[#ecf8f1] text-[#2f8a5f]")}>
                       {u.suspended ? "Suspended" : !u.is_active ? "Off in team" : "Active"}
                     </span>
                   </td>
@@ -112,7 +112,7 @@ export function UsersTable({ orgId, showOrg = true }: { orgId?: string; showOrg?
                         </button>
                         {u.suspended ? (
                           <button onClick={() => run(u, "reactivate")}
-                            className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-emerald-100 text-emerald-700 hover:bg-emerald-50">
+                            className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#d5f0e1] text-[#2f8a5f] hover:bg-[#ecf8f1]">
                             <CheckCircle2 className="w-3 h-3" /> Reactivate
                           </button>
                         ) : (

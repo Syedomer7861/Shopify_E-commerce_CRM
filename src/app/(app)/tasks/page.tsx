@@ -865,7 +865,7 @@ export default function TasksPage() {
               className={cn("btn-secondary flex-1 sm:flex-none flex items-center justify-center gap-1.5 py-1.5 px-3", showFilters && "bg-[#1c1c1c]/10 border-[#1c1c1c] text-[#1c1c1c]")}
             >
               <Filter className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-black uppercase tracking-widest">{showFilters ? "Hide" : "Filters"}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider">{showFilters ? "Hide" : "Filters"}</span>
             </button>
 
             <button 
@@ -877,7 +877,7 @@ export default function TasksPage() {
               )}
             >
               <RefreshCw className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
-              <span className="text-[10px] font-black uppercase tracking-widest">{syncing ? "Syncing" : "Sync"}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider">{syncing ? "Syncing" : "Sync"}</span>
             </button>
           </div>
         }
@@ -889,16 +889,16 @@ export default function TasksPage() {
         <div className="card p-4 mb-5 border-[#1c1c1c]/10 animate-slide-down bg-white shadow-lg overflow-visible z-10">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Due Date From</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Due Date From</label>
               <input type="date" className="input text-xs" value={dueStart} onChange={e => setDueStart(e.target.value)} />
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Due Date To</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Due Date To</label>
               <input type="date" className="input text-xs" value={dueEnd} onChange={e => setDueEnd(e.target.value)} />
             </div>
             {(profile?.role === "admin" || profile?.role === "manager") && (
               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Assigned To</label>
+                <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Assigned To</label>
                 <Select
                   triggerClassName="text-xs"
                   value={agentFilter}
@@ -912,7 +912,7 @@ export default function TasksPage() {
               </div>
             )}
           </div>
-          <div className="flex justify-end mt-4 pt-4 border-t border-gray-100 gap-2">
+          <div className="flex justify-end mt-4 pt-4 border-t border-[#ebece6] gap-2">
             <button 
               onClick={() => {
                 setDueStart("");
@@ -943,7 +943,7 @@ export default function TasksPage() {
       <div className="flex flex-col lg:flex-row gap-3 mb-5 lg:items-center w-full">
         {/* Search */}
         <div className="relative w-full lg:w-64 flex-shrink-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9a9a94]" />
           <input 
             type="text" 
             placeholder="Search name or phone..." 
@@ -954,12 +954,12 @@ export default function TasksPage() {
         </div>
         
         {/* Scrollable Tabs Wrapper */}
-        <div className="flex-1 min-w-0 w-full relative group bg-white rounded-lg border border-gray-200 flex items-center">
+        <div className="flex-1 min-w-0 w-full relative group bg-white rounded-lg border border-[#ebece6] flex items-center">
           
           {/* Left Scroll Trigger */}
           <button 
             onClick={() => scrollTabs("left")}
-            className="absolute left-0 z-10 h-full px-1 bg-gradient-to-r from-white via-white to-transparent text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-auto"
+            className="absolute left-0 z-10 h-full px-1 bg-gradient-to-r from-white via-white to-transparent text-[#9a9a94] hover:text-[#55554f] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-auto"
             aria-label="Scroll left"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -985,10 +985,10 @@ export default function TasksPage() {
                 onClick={() => setTypeFilter(t.value)}
                 title={t.description}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all uppercase tracking-widest flex-shrink-0",
+                  "px-4 py-2 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all uppercase tracking-wider flex-shrink-0",
                   typeFilter === t.value
                     ? "bg-[#1c1c1c] text-white shadow-md shadow-black/10"
-                    : "bg-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                    : "bg-transparent text-[#6b6b67] hover:bg-[#f6f7f2] hover:text-[#1c1c1c]"
                 )}
               >
                 {t.label}
@@ -999,7 +999,7 @@ export default function TasksPage() {
           {/* Right Scroll Trigger */}
           <button 
             onClick={() => scrollTabs("right")}
-            className="absolute right-0 z-10 h-full px-1 bg-gradient-to-l from-white via-white to-transparent text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-auto"
+            className="absolute right-0 z-10 h-full px-1 bg-gradient-to-l from-white via-white to-transparent text-[#9a9a94] hover:text-[#55554f] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-auto"
             aria-label="Scroll right"
           >
             <ChevronRight className="w-4 h-4" />
@@ -1012,7 +1012,7 @@ export default function TasksPage() {
         <button
           onClick={() => setShowTypeInfo(true)}
           aria-label="What do these tabs mean?"
-          className="flex-shrink-0 w-9 h-9 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-gray-700 hover:bg-gray-50 flex items-center justify-center transition-colors"
+          className="flex-shrink-0 w-9 h-9 rounded-lg border border-[#ebece6] bg-white text-[#9a9a94] hover:text-[#3a3a36] hover:bg-[#f6f7f2] flex items-center justify-center transition-colors"
         >
           <Info className="w-4 h-4" />
         </button>
@@ -1021,7 +1021,7 @@ export default function TasksPage() {
         <div className="flex-shrink-0 w-full lg:w-auto">
           <Select
             className="w-full lg:w-auto"
-            triggerClassName="w-full text-xs h-[38px] bg-white border-gray-200"
+            triggerClassName="w-full text-xs h-[38px] bg-white border-[#ebece6]"
             value={statusFilter}
             onChange={setStatusFilter}
             options={STATUSES}
@@ -1046,7 +1046,7 @@ export default function TasksPage() {
 
       {/* Task list */}
       {canBulkManage && tasks.length > 0 && (
-        <label className="flex items-center gap-2 mb-2 text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] cursor-pointer w-fit">
+        <label className="flex items-center gap-2 mb-2 text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] cursor-pointer w-fit">
           <input type="checkbox" className="checkbox w-3.5 h-3.5"
             checked={selectedIds.length === tasks.length && tasks.length > 0}
             onChange={toggleSelectAll} />
@@ -1055,7 +1055,7 @@ export default function TasksPage() {
       )}
       <div className="space-y-3">
         {loading ? (
-          <div className="p-12 text-center text-gray-400 text-sm">Searching tasks...</div>
+          <div className="p-12 text-center text-[#9a9a94] text-sm">Searching tasks...</div>
         ) : tasks.length === 0 ? (
           <EmptyState icon={<CheckSquare className="w-5 h-5" />} title="No tasks found" desc="Try adjusting your filters" />
         ) : (
@@ -1098,7 +1098,7 @@ export default function TasksPage() {
               <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#f6f7f2] text-[#1c1c1c] flex items-center justify-center text-[9px] md:text-[10px] font-bold">
                 {selectedIds.length}
               </div>
-              <span className="hidden xs:inline text-[9px] md:text-[10px] font-bold uppercase tracking-widest opacity-60">Selected</span>
+              <span className="hidden xs:inline text-[9px] md:text-[10px] font-bold uppercase tracking-wider opacity-60">Selected</span>
             </div>
 
             <Select
@@ -1112,7 +1112,7 @@ export default function TasksPage() {
             <button
               onClick={handleBulkReassign}
               disabled={!bulkReassignTo || bulkActing}
-              className="text-[10px] font-bold uppercase tracking-widest hover:text-[#ebece6] transition-colors disabled:opacity-30"
+              className="text-[10px] font-bold uppercase tracking-wider hover:text-[#ebece6] transition-colors disabled:opacity-30"
             >
               Apply
             </button>
@@ -1120,13 +1120,13 @@ export default function TasksPage() {
             <button
               onClick={handleBulkCancel}
               disabled={bulkActing}
-              className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-rose-400 hover:text-rose-300 transition-colors disabled:opacity-30"
+              className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-rose-400 hover:text-rose-300 transition-colors disabled:opacity-30"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Cancel Selected
             </button>
 
-            <button onClick={() => setSelectedIds([])} className="ml-auto text-[10px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity">
+            <button onClick={() => setSelectedIds([])} className="ml-auto text-[10px] font-bold uppercase tracking-wider opacity-60 hover:opacity-100 transition-opacity">
               Clear
             </button>
           </div>
@@ -1144,7 +1144,7 @@ export default function TasksPage() {
         <div className="space-y-4">
           {TYPES.filter(t => t.value !== "all").map(t => (
             <div key={t.value}>
-              <div className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest">{t.label}</div>
+              <div className="text-xs font-bold text-[#1c1c1c] uppercase tracking-wider">{t.label}</div>
               <div className="text-xs text-[#5f5f5d] mt-0.5">{t.description}</div>
             </div>
           ))}

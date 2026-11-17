@@ -120,12 +120,12 @@ export function NoteSection() {
 
   if (tableError) {
     return (
-      <div className="card p-12 text-center bg-blue-50 border-blue-100">
+      <div className="card p-12 text-center bg-[#eef4fc] border-[#dfeafa]">
         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-          <StickyNote className="w-8 h-8 text-blue-500 animate-pulse" />
+          <StickyNote className="w-8 h-8 text-[#6f9bdd] animate-pulse" />
         </div>
-        <h3 className="text-xl font-black text-blue-900 mb-2">Notes Not Initialized</h3>
-        <p className="text-sm text-blue-700/60 max-w-md mx-auto mb-8 leading-relaxed">
+        <h3 className="text-xl font-bold text-[#233b60] mb-2">Notes Not Initialized</h3>
+        <p className="text-sm text-[#3d66a6]/60 max-w-md mx-auto mb-8 leading-relaxed">
           The personal notes table is missing. Please run the setup script in the Supabase SQL Editor.
         </p>
         <div className="bg-[#1c1c1c] text-white p-4 rounded-2xl text-[11px] font-mono inline-block mb-4">
@@ -134,7 +134,7 @@ export function NoteSection() {
         <div>
           <button 
             onClick={() => window.location.reload()}
-            className="text-xs font-black text-blue-900 uppercase tracking-widest hover:underline"
+            className="text-xs font-bold text-[#233b60] uppercase tracking-wider hover:underline"
           >
             Refresh after running script
           </button>
@@ -147,12 +147,12 @@ export function NoteSection() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
-            <StickyNote className="w-6 h-6 text-blue-500" />
+          <div className="w-12 h-12 rounded-2xl bg-[#eef4fc] flex items-center justify-center">
+            <StickyNote className="w-6 h-6 text-[#6f9bdd]" />
           </div>
           <div>
-            <h3 className="text-xl font-black text-[#1c1c1c] tracking-tight">Private Notes</h3>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-0.5">Quick ideas and reminders</p>
+            <h3 className="text-xl font-bold text-[#1c1c1c] tracking-tight">Private Notes</h3>
+            <p className="text-xs text-[#9a9a94] font-bold uppercase tracking-wider mt-0.5">Quick ideas and reminders</p>
           </div>
         </div>
         
@@ -169,7 +169,7 @@ export function NoteSection() {
           <input
             type="text"
             placeholder="Title (Optional)..."
-            className="w-full bg-transparent border-none text-lg font-black text-[#1c1c1c] placeholder:text-amber-900/30 focus:ring-0 px-0 mb-2"
+            className="w-full bg-transparent border-none text-lg font-bold text-[#1c1c1c] placeholder:text-amber-900/30 focus:ring-0 px-0 mb-2"
             value={newNote.title}
             onChange={e => setNewNote({ ...newNote, title: e.target.value })}
           />
@@ -192,23 +192,23 @@ export function NoteSection() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
-          <div className="col-span-full py-10 text-center text-gray-300">
+          <div className="col-span-full py-10 text-center text-[#d4d5cd]">
             <Loader2 className="w-8 h-8 animate-spin mx-auto" />
           </div>
         ) : notes.length === 0 && !isAdding ? (
-          <div className="col-span-full py-20 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-100">
-             <StickyNote className="w-12 h-12 text-gray-100 mx-auto mb-4" />
-             <p className="text-gray-400 font-medium">No notes yet. Start by creating one!</p>
+          <div className="col-span-full py-20 text-center bg-[#f6f7f2] rounded-3xl border-2 border-dashed border-[#ebece6]">
+             <StickyNote className="w-12 h-12 text-[#f0f0ec] mx-auto mb-4" />
+             <p className="text-[#9a9a94] font-medium">No notes yet. Start by creating one!</p>
           </div>
         ) : (
           notes.map(note => (
-            <div key={note.id} className="card p-6 bg-white hover:shadow-xl hover:shadow-gray-100 transition-all group relative overflow-hidden flex flex-col">
-              <div className="absolute top-0 left-0 w-full h-1 bg-blue-400 opacity-20" />
+            <div key={note.id} className="card p-6 bg-white hover:shadow-xl hover:shadow-[#f0f0ec] transition-all group relative overflow-hidden flex flex-col">
+              <div className="absolute top-0 left-0 w-full h-1 bg-[#8fb3e8] opacity-20" />
               <div className="flex justify-between items-start mb-4">
-                <h4 className="text-sm font-black text-[#1c1c1c] truncate flex-1">{note.title}</h4>
+                <h4 className="text-sm font-bold text-[#1c1c1c] truncate flex-1">{note.title}</h4>
                 <button aria-label="Close"
                   onClick={() => deleteNote(note.id)}
-                  className="p-1 text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                  className="p-1 text-[#d4d5cd] hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -216,7 +216,7 @@ export function NoteSection() {
               <p className="text-xs text-[#5f5f5d] leading-relaxed whitespace-pre-wrap flex-1 italic">
                 {note.content}
               </p>
-              <div className="mt-6 flex items-center justify-between text-[9px] font-bold text-gray-300 uppercase tracking-widest">
+              <div className="mt-6 flex items-center justify-between text-[9px] font-bold text-[#d4d5cd] uppercase tracking-wider">
                 <span>{mounted ? new Date(note.created_at).toLocaleDateString() : "---"}</span>
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity">Private Note</span>
               </div>

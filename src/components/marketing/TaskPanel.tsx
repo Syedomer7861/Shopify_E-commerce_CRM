@@ -324,7 +324,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
       <div className="absolute inset-0 bg-black/20" onClick={onClose} />
       <div className="relative w-full max-w-lg h-full bg-white shadow-2xl overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-[#ebece6] px-5 py-3 flex items-center justify-between z-10">
-          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]">
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]">
             {list?.name ?? "Task"}
             {saving && <Loader2 className="w-3 h-3 animate-spin" />}
           </div>
@@ -332,7 +332,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
             {confirmDelete ? (
               <button
                 onClick={remove}
-                className="px-2 h-8 rounded-lg bg-rose-500 text-white text-[9px] font-black uppercase tracking-widest"
+                className="px-2 h-8 rounded-lg bg-rose-500 text-white text-[9px] font-bold uppercase tracking-wider"
               >
                 Delete?
               </button>
@@ -361,7 +361,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
               defaultValue={task.title}
               onBlur={(e) => e.target.value.trim() && e.target.value !== task.title && patch({ title: e.target.value.trim() })}
               rows={2}
-              className="w-full text-xl font-black text-[#1c1c1c] resize-none outline-none leading-tight"
+              className="w-full text-xl font-bold text-[#1c1c1c] resize-none outline-none leading-tight"
             />
 
             <div className="grid grid-cols-2 gap-4">
@@ -427,7 +427,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                 {task.estimate_minutes ? (
                   <div className="h-1.5 rounded-full bg-[#ebece6] overflow-hidden">
                     <div
-                      className={cn("h-full rounded-full", loggedTotal > task.estimate_minutes ? "bg-rose-500" : "bg-emerald-500")}
+                      className={cn("h-full rounded-full", loggedTotal > task.estimate_minutes ? "bg-rose-500" : "bg-[#55c08f]")}
                       style={{ width: `${Math.min(100, (loggedTotal / task.estimate_minutes) * 100)}%` }}
                     />
                   </div>
@@ -436,12 +436,12 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {timerStart == null ? (
                     <button onClick={startTimer}
-                      className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-lg bg-[#1c1c1c] text-white">
+                      className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-1.5 rounded-lg bg-[#1c1c1c] text-white">
                       <Play className="w-3 h-3" /> Start timer
                     </button>
                   ) : (
                     <button onClick={stopTimer}
-                      className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-lg bg-rose-500 text-white">
+                      className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-1.5 rounded-lg bg-rose-500 text-white">
                       <Square className="w-3 h-3" /> Stop · {fmtMins(Math.max(0, (now - timerStart) / 60000))}
                     </button>
                   )}
@@ -465,7 +465,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                     className="flex-1 min-w-0 text-xs font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
                   />
                   <button onClick={submitLog}
-                    className="text-[10px] font-black uppercase tracking-widest px-2.5 py-2 rounded-lg bg-[#1c1c1c] text-white flex-shrink-0">
+                    className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg bg-[#1c1c1c] text-white flex-shrink-0">
                     Log
                   </button>
                 </div>
@@ -623,7 +623,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                     </button>
                   </div>
                 ))}
-                <label className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#5f5f5d] hover:text-[#1c1c1c] cursor-pointer">
+                <label className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] hover:text-[#1c1c1c] cursor-pointer">
                   {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
                   {uploading ? "Uploading…" : "Add file"}
                   <input
@@ -645,7 +645,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                 {links.map((l) => (
                   <div key={l.id} className="flex items-center gap-2 text-[12px]">
                     <Link2 className="w-3 h-3 text-[#5f5f5d] flex-shrink-0" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[#5f5f5d] w-20 flex-shrink-0">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d] w-20 flex-shrink-0">
                       {LINK_LABEL[l.kind] ?? l.kind}
                     </span>
                     <span className="font-medium text-[#1c1c1c] truncate flex-1">{l.task?.title ?? "—"}</span>
@@ -687,7 +687,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
               <div className="space-y-3">
                 {comments.map((c) => (
                   <div key={c.id} className="bg-[#f6f7f2] rounded-xl p-3">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d] mb-1">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-1">
                       {c.author?.name || c.author?.email || "User"} ·{" "}
                       {new Date(c.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                     </div>
@@ -708,7 +708,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                     />
                     {ac && acItems.length > 0 && (
                       <div className="absolute left-0 bottom-full mb-1 w-full max-w-xs bg-white border border-[#ebece6] rounded-xl shadow-lg z-30 overflow-hidden">
-                        <div className="px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50 border-b border-[#ebece6]">
+                        <div className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d]/50 border-b border-[#ebece6]">
                           {ac.kind === "@" ? "Mention" : "Saved message"}
                         </div>
                         {acItems.map((it, i) => (
@@ -764,7 +764,7 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest mb-1.5">{label}</div>
+      <div className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider mb-1.5">{label}</div>
       {children}
     </div>
   );

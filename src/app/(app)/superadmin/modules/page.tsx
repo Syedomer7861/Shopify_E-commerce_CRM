@@ -59,14 +59,14 @@ export default function SuperAdminModules() {
     load();
   }
 
-  if (loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (loading) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
 
   return (
     <div className="space-y-6">
       <PageHeader title="Modules" subtitle="What each organisation can use. A module that is off closes in the database for that organisation, admins included. Data is never deleted." />
 
       <div className="card p-4">
-        <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-3">Platform-wide</div>
+        <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-3">Platform-wide</div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {mods.map(m => (
             <div key={m.key} className="flex items-start gap-3 p-3 rounded-lg border border-[#ebece6]">
@@ -76,7 +76,7 @@ export default function SuperAdminModules() {
               </div>
               <button onClick={() => toggleAvailable(m)}
                 className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full",
-                  m.is_available ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600")}>
+                  m.is_available ? "bg-[#ecf8f1] text-[#2f8a5f]" : "bg-rose-50 text-rose-600")}>
                 {m.is_available ? "On" : "Off"}
               </button>
             </div>
@@ -85,7 +85,7 @@ export default function SuperAdminModules() {
       </div>
 
       <div className="card p-4">
-        <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-3">Modules in a plan</div>
+        <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-3">Modules in a plan</div>
         {plans.length === 0 ? <p className="text-sm text-[#5f5f5d]">Create a plan first.</p> : (
           <>
             <select value={planId} onChange={e => { setPlanId(e.target.value); setDraft(null); }}

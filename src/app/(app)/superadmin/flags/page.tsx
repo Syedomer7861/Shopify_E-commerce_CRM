@@ -59,7 +59,7 @@ export default function SuperAdminFlags() {
     load();
   }
 
-  if (loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (loading) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   const orgName = (id: string) => orgs.find(o => o.id === id)?.name || id.slice(0, 8);
 
   return (
@@ -93,13 +93,13 @@ export default function SuperAdminFlags() {
                   </label>
                   <button onClick={() => save(f.key, { enabled: !f.is_enabled })}
                     className={cn("text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full",
-                      f.is_enabled ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-[#5f5f5d]")}>
+                      f.is_enabled ? "bg-[#ecf8f1] text-[#2f8a5f]" : "bg-[#f0f0ec] text-[#5f5f5d]")}>
                     {f.is_enabled ? "On" : "Off"}
                   </button>
                 </div>
                 <div className="mt-3 pt-3 border-t border-[#ebece6] flex flex-wrap items-center gap-2 text-xs">
                   {fo.map(o => (
-                    <span key={o.org_id} className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-full", o.enabled ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600")}>
+                    <span key={o.org_id} className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-full", o.enabled ? "bg-[#ecf8f1] text-[#2f8a5f]" : "bg-rose-50 text-rose-600")}>
                       {orgName(o.org_id)}: {o.enabled ? "always on" : "always off"}
                       <button onClick={() => setOrg(f.key, o.org_id, null)} aria-label="Remove" className="ml-1 font-bold">×</button>
                     </span>

@@ -117,7 +117,7 @@ export function DashboardGrid({ profile, range, items }: { profile: Profile; ran
             {title && (
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-bold text-[#1c1c1c]">{title}</h3>
-                {w.href && <Link href={w.href} className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d] hover:text-[#1c1c1c]">View all</Link>}
+                {w.href && <Link href={w.href} className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] hover:text-[#1c1c1c]">View all</Link>}
               </div>
             )}
             {w.render(profile, range)}
@@ -154,7 +154,7 @@ export function WorkspaceHome({ profile }: { profile: Profile }) {
         title={<div className="flex items-center gap-3"><Icon className="w-7 h-7 text-[#1c1c1c]" /><span>{hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"}, {profile.name?.split(" ")[0]}</span></div>}
         subtitle={
           <span className="flex flex-wrap items-center gap-2 mt-1">
-            {profile.designation && <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold">{profile.designation}</span>}
+            {profile.designation && <span className="px-2.5 py-1 rounded-full bg-[#ecf8f1] text-[#24704c] text-xs font-semibold">{profile.designation}</span>}
             {profile.department && <span className="px-2.5 py-1 rounded-full bg-[#ebece6] text-[#1c1c1c] text-xs font-medium">{profile.department}</span>}
             <span className="px-2.5 py-1 rounded-full border border-[#ebece6] text-xs text-[#5f5f5d]">
               {new Date().toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
@@ -163,7 +163,7 @@ export function WorkspaceHome({ profile }: { profile: Profile }) {
         }
       />
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Showing: {rangeLabel(range)}</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[#9a9a94]">Showing: {rangeLabel(range)}</span>
         <DateRangeFilter value={range} onChange={setRange} />
       </div>
       {assigned !== undefined && <DashboardGrid profile={profile} range={range} items={items} />}

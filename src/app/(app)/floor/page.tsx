@@ -117,7 +117,7 @@ export default function FloorViewPage() {
         actions={
           <div className="flex items-center gap-2 bg-[#ebece6]/30 p-1 rounded-lg border border-[#ebece6]">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white shadow-sm border border-[#ebece6]">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-[#55c08f] animate-pulse" />
               <span className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">{stats.online} Active</span>
             </div>
             <div className="px-3 py-1.5 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">
@@ -178,12 +178,12 @@ function AgentCard({ agent, mounted }: { agent: AgentStatus, mounted: boolean })
   const isMeeting = agent.status === "meeting";
   
   const statusConfig: Record<string, { label: string, color: string, icon: any }> = {
-    online:   { label: "Productive", color: "text-emerald-700 bg-emerald-50 border-emerald-100", icon: UserCheck },
-    meeting:  { label: "Meeting",    color: "text-indigo-700 bg-indigo-50 border-indigo-100", icon: Users },
+    online:   { label: "Productive", color: "text-[#2f8a5f] bg-[#ecf8f1] border-[#d5f0e1]", icon: UserCheck },
+    meeting:  { label: "Meeting",    color: "text-[#3d66a6] bg-[#eef4fc] border-[#dfeafa]", icon: Users },
     break:    { label: "On Break",   color: "text-amber-700 bg-amber-50 border-amber-100", icon: Coffee },
-    lunch:    { label: "Lunch",      color: "text-orange-700 bg-orange-50 border-orange-100", icon: Coffee },
+    lunch:    { label: "Lunch",      color: "text-[#a8741c] bg-[#fdf5e4] border-[#fbeac6]", icon: Coffee },
     away:     { label: "Away",       color: "text-rose-700 bg-rose-50 border-rose-100", icon: AlertCircle },
-    offline:  { label: "Offline",    color: "text-[#5f5f5d] bg-gray-50 border-gray-100", icon: Clock },
+    offline:  { label: "Offline",    color: "text-[#5f5f5d] bg-[#f6f7f2] border-[#ebece6]", icon: Clock },
   };
 
   const config = statusConfig[agent.status] || statusConfig.offline;
@@ -196,14 +196,14 @@ function AgentCard({ agent, mounted }: { agent: AgentStatus, mounted: boolean })
   return (
     <div className={cn(
       "card p-5 group hover:shadow-xl transition-all duration-300 border-l-4",
-      isOnline ? "border-l-emerald-500" : isBreak ? "border-l-amber-500" : isMeeting ? "border-l-indigo-500" : "border-l-gray-300"
+      isOnline ? "border-l-[#55c08f]" : isBreak ? "border-l-amber-500" : isMeeting ? "border-l-[#6f9bdd]" : "border-l-[#d4d5cd]"
     )}>
       <div className="flex items-center justify-between mb-4">
         <div className="relative">
           <Avatar name={agent.name} size="md" />
           <div className={cn(
             "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white",
-            isOnline ? "bg-emerald-500 animate-pulse" : isBreak ? "bg-amber-500" : isMeeting ? "bg-indigo-500" : "bg-gray-400"
+            isOnline ? "bg-[#55c08f] animate-pulse" : isBreak ? "bg-amber-500" : isMeeting ? "bg-[#6f9bdd]" : "bg-[#9a9a94]"
           )} />
         </div>
         <div className={cn("px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex items-center gap-1.5", config.color)}>
@@ -222,21 +222,21 @@ function AgentCard({ agent, mounted }: { agent: AgentStatus, mounted: boolean })
            </div>
         )}
 
-        <div className="flex items-center gap-1 text-[9px] text-[#5f5f5d] font-bold uppercase tracking-widest opacity-60">
+        <div className="flex items-center gap-1 text-[9px] text-[#5f5f5d] font-bold uppercase tracking-wider opacity-60">
           Last Pulse: {lastSeenStr}
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#ebece6]">
         <div>
-          <div className="text-[9px] text-[#5f5f5d] font-bold uppercase tracking-widest opacity-60 mb-1">Productive</div>
+          <div className="text-[9px] text-[#5f5f5d] font-bold uppercase tracking-wider opacity-60 mb-1">Productive</div>
           <div className="text-xs font-bold text-[#1c1c1c] flex items-center gap-1.5">
-             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+             <div className="w-1.5 h-1.5 rounded-full bg-[#55c08f]" />
              {agent.onlineHours}
           </div>
         </div>
         <div>
-          <div className="text-[9px] text-[#5f5f5d] font-bold uppercase tracking-widest opacity-60 mb-1">On Break</div>
+          <div className="text-[9px] text-[#5f5f5d] font-bold uppercase tracking-wider opacity-60 mb-1">On Break</div>
           <div className="text-xs font-bold text-amber-700 flex items-center gap-1.5">
              <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
              {agent.breakHours}
@@ -246,11 +246,11 @@ function AgentCard({ agent, mounted }: { agent: AgentStatus, mounted: boolean })
 
       <div className="mt-4 grid grid-cols-2 gap-4">
         <div className="p-2 rounded-lg bg-[#f6f7f2] border border-[#ebece6]">
-          <div className="text-[8px] text-[#5f5f5d] font-bold uppercase tracking-widest mb-0.5 text-center">Tasks</div>
+          <div className="text-[8px] text-[#5f5f5d] font-bold uppercase tracking-wider mb-0.5 text-center">Tasks</div>
           <div className="text-sm font-bold text-[#1c1c1c] text-center">{agent.taskCount}</div>
         </div>
         <div className="p-2 rounded-lg bg-[#f6f7f2] border border-[#ebece6]">
-          <div className="text-[8px] text-[#5f5f5d] font-bold uppercase tracking-widest mb-0.5 text-center">Revenue</div>
+          <div className="text-[8px] text-[#5f5f5d] font-bold uppercase tracking-wider mb-0.5 text-center">Revenue</div>
           <div className="text-sm font-bold text-[#1c1c1c] text-center">₹{Math.round(agent.revenue).toLocaleString()}</div>
         </div>
       </div>

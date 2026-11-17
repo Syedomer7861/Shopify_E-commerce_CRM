@@ -310,7 +310,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
   };
 
   const statusColor: Record<EmpStatus, string> = {
-    "Active": "bg-emerald-50 text-emerald-700",
+    "Active": "bg-[#ecf8f1] text-[#2f8a5f]",
     "Notice Period": "bg-amber-50 text-amber-700",
     "Offboarded": "bg-rose-50 text-rose-600",
   };
@@ -329,7 +329,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
       <div className="lg:col-span-5 space-y-4">
         <div className="flex gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9a9a94]" />
             <input className="input w-full pl-9 text-sm" placeholder="Search by name, role, department..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <button onClick={() => setShowAdd(true)} className="btn-primary gap-2 text-xs px-3 whitespace-nowrap">
@@ -338,20 +338,20 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+        <div className="flex gap-1 bg-[#f0f0ec] p-1 rounded-xl">
           {STATUS_FILTERS.map(f => (
             <button
               key={f}
               onClick={() => setStatusFilter(f)}
               className={cn(
-                "flex-1 py-1.5 text-[10px] font-black rounded-lg capitalize transition-all flex items-center justify-center gap-1",
-                statusFilter === f ? "bg-[#1c1c1c] text-white shadow-sm" : "text-gray-500 hover:text-[#1c1c1c]"
+                "flex-1 py-1.5 text-[10px] font-bold rounded-lg capitalize transition-all flex items-center justify-center gap-1",
+                statusFilter === f ? "bg-[#1c1c1c] text-white shadow-sm" : "text-[#6b6b67] hover:text-[#1c1c1c]"
               )}
             >
               {f === "Notice Period" ? "Notice" : f}
               <span className={cn(
-                "text-[9px] px-1 rounded-full font-black",
-                statusFilter === f ? "bg-white/20 text-white" : "bg-gray-200 text-gray-500"
+                "text-[9px] px-1 rounded-full font-bold",
+                statusFilter === f ? "bg-white/20 text-white" : "bg-[#e6e7e0] text-[#6b6b67]"
               )}>{statusCounts[f]}</span>
             </button>
           ))}
@@ -364,46 +364,46 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
               key={emp.id}
               onClick={() => { setSelected(emp); setActivePanel("profile"); }}
               className={cn(
-                "flex items-center gap-4 px-5 py-4 cursor-pointer border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors",
+                "flex items-center gap-4 px-5 py-4 cursor-pointer border-b border-[#f6f7f2] last:border-0 hover:bg-[#f6f7f2]/60 transition-colors",
                 selected?.id === emp.id && "bg-[#1c1c1c]/5 border-l-2 border-l-[#1c1c1c]"
               )}
             >
               <Avatar name={emp.name} size="md" />
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-black text-[#1c1c1c] truncate">{emp.name}</div>
-                <div className="text-[10px] text-gray-400 font-bold">{emp.designation} · {emp.department}</div>
+                <div className="text-sm font-bold text-[#1c1c1c] truncate">{emp.name}</div>
+                <div className="text-[10px] text-[#9a9a94] font-bold">{emp.designation} · {emp.department}</div>
               </div>
-              <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest", statusColor[emp.status])}>{emp.status}</span>
+              <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider", statusColor[emp.status])}>{emp.status}</span>
             </div>
           ))}
 
           {/* Offboarded section — grayed out */}
           {(statusFilter === "All" || statusFilter === "Offboarded") && filtered.filter(e => e.status === "Offboarded").length > 0 && (
             <>
-              <div className="px-5 py-2 bg-gray-50 border-t border-gray-100">
-                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Offboarded ({filtered.filter(e => e.status === "Offboarded").length})</span>
+              <div className="px-5 py-2 bg-[#f6f7f2] border-t border-[#ebece6]">
+                <span className="text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider">Offboarded ({filtered.filter(e => e.status === "Offboarded").length})</span>
               </div>
               {filtered.filter(e => e.status === "Offboarded").map(emp => (
                 <div
                   key={emp.id}
                   onClick={() => { setSelected(emp); setActivePanel("profile"); }}
                   className={cn(
-                    "flex items-center gap-4 px-5 py-4 cursor-pointer border-b border-gray-50 last:border-0 hover:bg-gray-50/40 transition-colors opacity-50",
+                    "flex items-center gap-4 px-5 py-4 cursor-pointer border-b border-[#f6f7f2] last:border-0 hover:bg-[#f6f7f2]/40 transition-colors opacity-50",
                     selected?.id === emp.id && "opacity-80 bg-[#1c1c1c]/5 border-l-2 border-l-[#1c1c1c]"
                   )}
                 >
                   <Avatar name={emp.name} size="md" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-black text-[#1c1c1c] truncate line-through">{emp.name}</div>
-                    <div className="text-[10px] text-gray-400 font-bold">{emp.designation} · {emp.department}</div>
+                    <div className="text-sm font-bold text-[#1c1c1c] truncate line-through">{emp.name}</div>
+                    <div className="text-[10px] text-[#9a9a94] font-bold">{emp.designation} · {emp.department}</div>
                   </div>
-                  <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest", statusColor[emp.status])}>{emp.status}</span>
+                  <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider", statusColor[emp.status])}>{emp.status}</span>
                 </div>
               ))}
             </>
           )}
 
-          {filtered.length === 0 && <p className="text-xs text-gray-400 italic text-center py-8">No employees found.</p>}
+          {filtered.length === 0 && <p className="text-xs text-[#9a9a94] italic text-center py-8">No employees found.</p>}
         </div>
       </div>
 
@@ -411,16 +411,16 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
       <div className="lg:col-span-7">
         {!selected ? (
           <div className="card p-12 flex flex-col items-center text-center h-full justify-center">
-            <Users className="w-12 h-12 text-gray-200 mb-4" />
-            <p className="text-sm font-bold text-gray-400">Select an employee to view their profile, onboarding progress, and exit details.</p>
+            <Users className="w-12 h-12 text-[#e6e7e0] mb-4" />
+            <p className="text-sm font-bold text-[#9a9a94]">Select an employee to view their profile, onboarding progress, and exit details.</p>
           </div>
         ) : (
           <div className="space-y-4">
             {/* Panel Tabs */}
-            <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+            <div className="flex gap-1 bg-[#f0f0ec] p-1 rounded-xl w-fit">
               {(["profile", "onboarding", "offboarding"] as const).map(p => (
                 <button key={p} onClick={() => setActivePanel(p)}
-                  className={cn("px-4 py-1.5 text-xs font-bold rounded-lg capitalize transition-all", activePanel === p ? "bg-[#1c1c1c] text-white" : "text-gray-500 hover:text-[#1c1c1c]")}>
+                  className={cn("px-4 py-1.5 text-xs font-bold rounded-lg capitalize transition-all", activePanel === p ? "bg-[#1c1c1c] text-white" : "text-[#6b6b67] hover:text-[#1c1c1c]")}>
                   {p === "offboarding" ? "Exit / Offboard" : p.charAt(0).toUpperCase() + p.slice(1)}
                 </button>
               ))}
@@ -435,7 +435,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                       {isEditing ? (
                         <div className="space-y-2">
                            <input 
-                             className="input py-1 text-lg font-black w-full" 
+                             className="input py-1 text-lg font-bold w-full" 
                              value={editForm.name} 
                              onChange={e => setEditForm({ ...editForm, name: e.target.value })} 
                            />
@@ -454,9 +454,9 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                         </div>
                       ) : (
                         <>
-                          <h2 className="text-xl font-black text-[#1c1c1c]">{selected.name}</h2>
-                          <p className="text-xs text-gray-400 font-bold">{selected.designation} · {selected.department}</p>
-                          <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest mt-1 inline-block", statusColor[selected.status])}>{selected.status}</span>
+                          <h2 className="text-xl font-bold text-[#1c1c1c]">{selected.name}</h2>
+                          <p className="text-xs text-[#9a9a94] font-bold">{selected.designation} · {selected.department}</p>
+                          <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider mt-1 inline-block", statusColor[selected.status])}>{selected.status}</span>
                         </>
                       )}
                     </div>
@@ -496,7 +496,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                         setEditPlace({ p: placementFrom(selected.placement), legacy: {}, engine: false });
                         setIsEditing(true);
                       }}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-[#1c1c1c]"
+                      className="p-2 hover:bg-[#f0f0ec] rounded-lg transition-colors text-[#9a9a94] hover:text-[#1c1c1c]"
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
@@ -513,10 +513,10 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                     { icon: Briefcase, label: "Monthly Salary", key: "salary", val: `₹${selected.salary.toLocaleString("en-IN")}` },
                     { icon: Phone, label: "Emergency Contact", key: "emergencyContact", val: selected.emergencyContact || "—" },
                   ].map(({ icon: Icon, label, key, val }) => (
-                    <div key={label} className="p-3 bg-gray-50 rounded-xl">
+                    <div key={label} className="p-3 bg-[#f6f7f2] rounded-xl">
                       <div className="flex items-center gap-2 mb-1">
-                        <Icon className="w-3 h-3 text-gray-400" />
-                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{label}</span>
+                        <Icon className="w-3 h-3 text-[#9a9a94]" />
+                        <span className="text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider">{label}</span>
                       </div>
                       {isEditing ? (
                         key === "location" ? (
@@ -541,7 +541,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                                   setEditForm({...editForm, city: e.target.value});
                                 }} />
                                 {CITY_MAP[editForm.state] && (
-                                  <button aria-label="Close" className="p-1 hover:bg-gray-100 rounded" onClick={() => setCustomCity({ ...customCity, edit: false })}><X className="w-4 h-4" /></button>
+                                  <button aria-label="Close" className="p-1 hover:bg-[#f0f0ec] rounded" onClick={() => setCustomCity({ ...customCity, edit: false })}><X className="w-4 h-4" /></button>
                                 )}
                               </div>
                             )}
@@ -618,7 +618,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                       // Reactivate offboarded employee
                       <button
                         onClick={() => handleUpdate(selected.id, { is_active: true, notice_period: false })}
-                        className="flex-1 text-xs py-2 rounded-lg border border-emerald-200 text-emerald-600 hover:bg-emerald-50 transition-colors gap-1.5 flex items-center justify-center"
+                        className="flex-1 text-xs py-2 rounded-lg border border-[#b5e4ca] text-[#3fa877] hover:bg-[#ecf8f1] transition-colors gap-1.5 flex items-center justify-center"
                       >
                         <CheckCircle className="w-3.5 h-3.5" /> Reactivate Employee
                       </button>
@@ -661,15 +661,15 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
             {(activePanel === "onboarding" || activePanel === "offboarding") && (
               <div className="card p-6">
                 <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest">
+                  <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider">
                     {activePanel === "onboarding" ? "Onboarding Checklist" : "Exit / Offboarding Checklist"}
                   </h3>
-                  <span className="text-xs font-bold text-gray-400">
+                  <span className="text-xs font-bold text-[#9a9a94]">
                     {(selected[activePanel as 'onboarding' | 'offboarding'] || []).filter((t: any) => t.done).length} / {(selected[activePanel as 'onboarding' | 'offboarding'] || []).length} done
                   </span>
                 </div>
                 {/* Progress bar */}
-                <div className="w-full h-2 bg-gray-100 rounded-full mb-5 overflow-hidden">
+                <div className="w-full h-2 bg-[#f0f0ec] rounded-full mb-5 overflow-hidden">
                   <div className="h-full bg-[#1c1c1c] rounded-full transition-all duration-500"
                     style={{ width: `${((selected[activePanel as 'onboarding' | 'offboarding'] || []).filter((t: any) => t.done).length / (selected[activePanel as 'onboarding' | 'offboarding'] || []).length) * 100}%` }} />
                 </div>
@@ -677,12 +677,12 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                   {(selected[activePanel as 'onboarding' | 'offboarding'] || []).map((t: any, i: number) => (
                     <div key={i} onClick={() => toggleTask(activePanel as 'onboarding' | 'offboarding', i)}
                       className={cn("flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border",
-                        t.done ? "bg-emerald-50 border-emerald-100" : "bg-gray-50 border-transparent hover:border-gray-200")}>
+                        t.done ? "bg-[#ecf8f1] border-[#d5f0e1]" : "bg-[#f6f7f2] border-transparent hover:border-[#ebece6]")}>
                       <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
-                        t.done ? "bg-emerald-500 border-emerald-500" : "border-gray-300")}>
+                        t.done ? "bg-[#55c08f] border-[#55c08f]" : "border-[#d4d5cd]")}>
                         {t.done && <CheckCircle className="w-3 h-3 text-white" />}
                       </div>
-                      <span className={cn("text-xs font-bold", t.done ? "text-emerald-700 line-through" : "text-[#1c1c1c]")}>{t.task}</span>
+                      <span className={cn("text-xs font-bold", t.done ? "text-[#2f8a5f] line-through" : "text-[#1c1c1c]")}>{t.task}</span>
                     </div>
                   ))}
                 </div>
@@ -697,22 +697,22 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={() => setShowAdd(false)}>
           <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center">
-              <h3 className="font-black text-[#1c1c1c] uppercase tracking-widest text-sm">Add New Employee</h3>
-              <button aria-label="Close" onClick={() => setShowAdd(false)}><X className="w-4 h-4 text-gray-400" /></button>
+              <h3 className="font-bold text-[#1c1c1c] uppercase tracking-wider text-sm">Add New Employee</h3>
+              <button aria-label="Close" onClick={() => setShowAdd(false)}><X className="w-4 h-4 text-[#9a9a94]" /></button>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Full Name</label>
+                <label className="text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Full Name</label>
                 <input className="input w-full text-xs" placeholder="Priya Sharma" value={newEmp.name}
                   onChange={e => setNewEmp(prev => ({ ...prev, name: e.target.value }))} />
               </div>
               <div>
-                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Email</label>
+                <label className="text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Email</label>
                 <input className="input w-full text-xs" placeholder="priya@company.com" value={newEmp.email}
                   onChange={e => setNewEmp(prev => ({ ...prev, email: e.target.value }))} />
               </div>
               <div>
-                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">System Role</label>
+                <label className="text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">System Role</label>
                 <select className="input w-full text-xs" value={newEmp.role}
                   onChange={e => setNewEmp(prev => ({ ...prev, role: e.target.value }))}>
                   <option value="agent">Agent</option>
@@ -735,13 +735,13 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                 { key: "salary", label: "Monthly Salary (₹)", placeholder: "30000", type: "number" },
               ].map(f => (
                 <div key={f.key}>
-                  <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">{f.label}</label>
+                  <label className="text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">{f.label}</label>
                   <input type={f.type} className="input w-full text-xs" placeholder={f.placeholder} value={(newEmp as any)[f.key]}
                     onChange={e => setNewEmp(prev => ({ ...prev, [f.key]: e.target.value }))} />
                 </div>
               ))}
               <div className="col-span-2">
-                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Location</label>
+                <label className="text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Location</label>
                 <div className="flex gap-2">
                   {!customCity.add && CITY_MAP[newEmp.state] ? (
                     <select className="input w-1/3 text-xs bg-white" value={newEmp.city} onChange={e => {
@@ -763,7 +763,7 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                         setNewEmp({...newEmp, city: e.target.value});
                       }} />
                       {CITY_MAP[newEmp.state] && (
-                        <button aria-label="Close" className="p-1 hover:bg-gray-100 rounded" onClick={() => setCustomCity({ ...customCity, add: false })}><X className="w-4 h-4" /></button>
+                        <button aria-label="Close" className="p-1 hover:bg-[#f0f0ec] rounded" onClick={() => setCustomCity({ ...customCity, add: false })}><X className="w-4 h-4" /></button>
                       )}
                     </div>
                   )}

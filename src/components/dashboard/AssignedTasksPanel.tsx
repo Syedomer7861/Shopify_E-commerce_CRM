@@ -12,8 +12,8 @@ import type { MktTask, MktList } from "@/types";
 const PRIORITY_STYLE: Record<string, string> = {
   urgent: "bg-rose-50 text-rose-700 border-rose-200",
   high: "bg-amber-50 text-amber-700 border-amber-200",
-  normal: "bg-gray-50 text-gray-600 border-gray-200",
-  low: "bg-blue-50 text-blue-600 border-blue-200",
+  normal: "bg-[#f6f7f2] text-[#55554f] border-[#ebece6]",
+  low: "bg-[#eef4fc] text-[#4f7fc8] border-[#c7dbf5]",
 };
 
 function formatDue(due?: string | null) {
@@ -97,7 +97,7 @@ export function AssignedTasksPanel({ userId, compact = false }: { userId?: strin
   }
 
   if (loading) {
-    return <div className="py-8 text-center text-xs text-gray-400">Loading assigned work...</div>;
+    return <div className="py-8 text-center text-xs text-[#9a9a94]">Loading assigned work...</div>;
   }
 
   if (forbidden || visible.length === 0) {
@@ -130,13 +130,13 @@ export function AssignedTasksPanel({ userId, compact = false }: { userId?: strin
                   <p className="text-xs text-[#5f5f5d] mt-1 line-clamp-2">{t.description}</p>
                 )}
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#9a9a94]">
                     {list?.name || "Workspace"} &middot; {statusDef?.name || t.status}
                   </span>
                   {due && (
                     <span className={cn(
-                      "inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded",
-                      due.overdue ? "bg-rose-50 text-rose-600" : "bg-gray-50 text-gray-500"
+                      "inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
+                      due.overdue ? "bg-rose-50 text-rose-600" : "bg-[#f6f7f2] text-[#6b6b67]"
                     )}>
                       {due.overdue ? <AlertTriangle className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}
                       {due.label}
@@ -144,7 +144,7 @@ export function AssignedTasksPanel({ userId, compact = false }: { userId?: strin
                   )}
                 </div>
               </div>
-              <span className={cn("shrink-0 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full border", PRIORITY_STYLE[t.priority] || PRIORITY_STYLE.normal)}>
+              <span className={cn("shrink-0 text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border", PRIORITY_STYLE[t.priority] || PRIORITY_STYLE.normal)}>
                 {t.priority}
               </span>
             </div>
@@ -152,7 +152,7 @@ export function AssignedTasksPanel({ userId, compact = false }: { userId?: strin
           {!compact && (
             <div className="flex justify-end px-1 pt-1">
               {review ? (
-                <span className={cn("text-[9px] font-black uppercase tracking-widest", review === "approved" ? "text-emerald-600" : review === "rejected" ? "text-rose-600" : "text-amber-600")}>Review {review}</span>
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider", review === "approved" ? "text-[#3fa877]" : review === "rejected" ? "text-rose-600" : "text-amber-600")}>Review {review}</span>
               ) : (
                 <button onClick={() => sendForReview(t)} className="text-[10px] font-bold text-[#5f5f5d] underline hover:text-[#1c1c1c]">Send for review</button>
               )}

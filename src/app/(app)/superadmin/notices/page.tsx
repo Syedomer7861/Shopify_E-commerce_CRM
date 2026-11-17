@@ -21,10 +21,10 @@ const when = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "nume
 
 function status(n: Notice) {
   const now = Date.now();
-  if (n.is_archived) return { l: "Archived", c: "bg-gray-100 text-[#5f5f5d]" };
-  if (new Date(n.starts_at).getTime() > now) return { l: "Scheduled", c: "bg-sky-50 text-sky-700" };
-  if (n.ends_at && new Date(n.ends_at).getTime() <= now) return { l: "Ended", c: "bg-gray-100 text-[#5f5f5d]" };
-  return { l: "Live", c: "bg-emerald-50 text-emerald-700" };
+  if (n.is_archived) return { l: "Archived", c: "bg-[#f0f0ec] text-[#5f5f5d]" };
+  if (new Date(n.starts_at).getTime() > now) return { l: "Scheduled", c: "bg-[#eef4fc] text-[#3d66a6]" };
+  if (n.ends_at && new Date(n.ends_at).getTime() <= now) return { l: "Ended", c: "bg-[#f0f0ec] text-[#5f5f5d]" };
+  return { l: "Live", c: "bg-[#ecf8f1] text-[#2f8a5f]" };
 }
 
 export default function SuperAdminNotices() {
@@ -78,7 +78,7 @@ export default function SuperAdminNotices() {
     n.audience_orgs ? `Organisations: ${n.audience_orgs.map(orgName).join(", ")}` : null,
   ].filter(Boolean).join(" · ") || "All workspaces";
 
-  if (loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (loading) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
 
   return (
     <div>

@@ -57,7 +57,7 @@ export default function WorkforceOverview({ employees, leaves, attendance, holid
               <h3 className={title}>Attendance rate</h3>
               <p className="text-[11px] text-[#6b6b67] mt-1">Weekly, last 12 weeks. Present and late count fully, half days as half; holidays and leave are left out.</p>
             </div>
-            {latest && <div className="text-right"><div className="text-2xl font-black tabular-nums">{latest.rate}%</div><div className="text-[10px] text-[#6b6b67]">this week</div></div>}
+            {latest && <div className="text-right"><div className="text-2xl font-bold tabular-nums">{latest.rate}%</div><div className="text-[10px] text-[#6b6b67]">this week</div></div>}
           </div>
           {rated.length === 0 ? <p className="text-xs text-[#6b6b67] py-10 text-center">No attendance recorded in the last 12 weeks.</p> : (
             <div className="flex items-end gap-2 h-40" role="img" aria-label="Weekly attendance rate">
@@ -118,7 +118,7 @@ export default function WorkforceOverview({ employees, leaves, attendance, holid
             <ArrowUpRight className="w-3.5 h-3.5 text-[#6b6b67]" />
           </div>
           <div className="text-[11px] text-[#6b6b67]">{monthLabel}</div>
-          <div className="text-2xl font-black tabular-nums mt-1">{rupees(v.pay.bill)}</div>
+          <div className="text-2xl font-bold tabular-nums mt-1">{rupees(v.pay.bill)}</div>
           <div className="text-[11px] text-[#6b6b67]">Monthly salaries of active staff</div>
           <div className="mt-5 h-2 rounded-full bg-[#f0f0ec] overflow-hidden">
             <div className="h-full bg-[#55c08f]" style={{ width: `${v.pay.staff ? (v.pay.paid / v.pay.staff) * 100 : 0}%` }} />

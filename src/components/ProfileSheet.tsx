@@ -122,7 +122,7 @@ export function ProfileSheet({ open, onClose, profile, onPhotoChange }: {
         <dl className="divide-y divide-[#ebece6] rounded-xl border border-[#ebece6] bg-white">
           {rows.map(([k, v]) => (
             <div key={k} className="flex items-center justify-between gap-4 px-4 py-3">
-              <dt className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d]/70 flex-shrink-0">{k}</dt>
+              <dt className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]/70 flex-shrink-0">{k}</dt>
               <dd className="text-sm font-semibold text-[#1c1c1c] text-right min-w-0 break-words">{v}</dd>
             </div>
           ))}

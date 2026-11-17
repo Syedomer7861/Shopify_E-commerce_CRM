@@ -46,7 +46,7 @@ html, body {
   }
 
   .card {
-    @apply bg-white border border-[#ebece6] rounded-[20px] px-6 py-5;
+    @apply bg-white border border-[#ebece6] rounded-[20px] px-4 py-4 sm:px-6 sm:py-5;
     box-shadow: 0 1px 2px rgba(16, 24, 16, 0.04);
     animation: card-in 0.35s cubic-bezier(0.21, 0.47, 0.32, 0.98) backwards;
   }
@@ -252,3 +252,16 @@ h1, h2, h3, h4 {
 .grow-x { transform-origin: left; animation: grow-x 0.7s cubic-bezier(0.21, 0.47, 0.32, 0.98) backwards; }
 .grow-y { transform-origin: bottom; animation: grow-y 0.7s cubic-bezier(0.21, 0.47, 0.32, 0.98) backwards; }
 @media (prefers-reduced-motion: reduce) { .grow-x, .grow-y { animation: none; } }
+
+/* Phones: desktop-sized padding and gaps ate a third of a 330px content column,
+   and title + button rows squeezed into each other. Scoped to the signed-in app. */
+@media (max-width: 639px) {
+  #main-application-content .p-8, #main-application-content .p-10 { padding: 1.25rem; }
+  #main-application-content .px-8 { padding-left: 1.25rem; padding-right: 1.25rem; }
+  #main-application-content .p-6 { padding: 1rem; }
+  #main-application-content .px-6 { padding-left: 1rem; padding-right: 1rem; }
+  #main-application-content .gap-8 { gap: 1.25rem; }
+  #main-application-content .mb-8 { margin-bottom: 1.5rem; }
+  #main-application-content .justify-between { flex-wrap: wrap; row-gap: 0.5rem; }
+  #main-application-content .text-3xl { font-size: 1.625rem; line-height: 2rem; }
+}

@@ -73,7 +73,7 @@ export default function TaskHistoryModal({ taskId, taskTitle, members = [], onCl
       {loading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-[#5f5f5d]" /></div>
       ) : rows.length === 0 ? (
-        <div className="py-10 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/40">
+        <div className="py-10 text-center text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d]/40">
           No history yet
         </div>
       ) : (
@@ -90,7 +90,7 @@ export default function TaskHistoryModal({ taskId, taskTitle, members = [], onCl
                 <div className="text-[12px] text-[#5f5f5d] leading-snug">
                   <span className="font-bold text-[#1c1c1c]">{who(r)}</span> {line(r)}
                 </div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d]/50 mt-0.5">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]/50 mt-0.5">
                   {rel(r.created_at)} ·{" "}
                   {new Date(r.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                 </div>

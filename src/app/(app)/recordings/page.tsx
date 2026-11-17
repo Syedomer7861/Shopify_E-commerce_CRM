@@ -100,7 +100,7 @@ export default function CallRecordingsPage() {
   if (profileLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-300" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#d4d5cd]" />
       </div>
     );
   }
@@ -139,10 +139,10 @@ export default function CallRecordingsPage() {
       <div className="card bg-white border border-[#ebece6] shadow-sm rounded-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-[#ebece6] flex items-center justify-between bg-[#fcfbf8]">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-[0.2em]">Recent Recordings</h3>
+            <CheckCircle2 className="w-4 h-4 text-[#55c08f]" />
+            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-[0.2em]">Recent Recordings</h3>
           </div>
-          <div className="text-[10px] font-black text-[#5f5f5d] uppercase tracking-widest opacity-60">
+          <div className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider opacity-60">
             {logs.length} Logs Found
           </div>
         </div>
@@ -150,7 +150,7 @@ export default function CallRecordingsPage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-[#5f5f5d]">
             <Loader2 className="w-8 h-8 animate-spin text-[#1c1c1c] mb-4" />
-            <span className="text-xs font-bold uppercase tracking-widest">Loading Recordings...</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Loading Recordings...</span>
           </div>
         ) : filteredLogs.length === 0 ? (
           <div className="p-12">
@@ -165,11 +165,11 @@ export default function CallRecordingsPage() {
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-[#ebece6]">
-                  <th className="px-6 py-4 text-[9px] font-black text-[#5f5f5d] uppercase tracking-[0.2em]">Agent</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-[#5f5f5d] uppercase tracking-[0.2em]">Customer</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-[#5f5f5d] uppercase tracking-[0.2em]">Duration</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-[#5f5f5d] uppercase tracking-[0.2em]">Time</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-[#5f5f5d] uppercase tracking-[0.2em]">Recording</th>
+                  <th className="px-6 py-4 text-[9px] font-bold text-[#5f5f5d] uppercase tracking-[0.2em]">Agent</th>
+                  <th className="px-6 py-4 text-[9px] font-bold text-[#5f5f5d] uppercase tracking-[0.2em]">Customer</th>
+                  <th className="px-6 py-4 text-[9px] font-bold text-[#5f5f5d] uppercase tracking-[0.2em]">Duration</th>
+                  <th className="px-6 py-4 text-[9px] font-bold text-[#5f5f5d] uppercase tracking-[0.2em]">Time</th>
+                  <th className="px-6 py-4 text-[9px] font-bold text-[#5f5f5d] uppercase tracking-[0.2em]">Recording</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#ebece6]/60">
@@ -241,7 +241,7 @@ export default function CallRecordingsPage() {
           </div>
         )}
         {!loading && search && hasMore && (
-          <div className="px-6 pb-4 text-center text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">
+          <div className="px-6 pb-4 text-center text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider opacity-60">
             Search covers loaded recordings — load more to search older calls
           </div>
         )}

@@ -17,7 +17,7 @@ type Template = {
 };
 
 const STATUS_STYLE: Record<Template["status"], string> = {
-  draft: "bg-sky-50 text-sky-700", published: "bg-emerald-50 text-emerald-700", archived: "bg-gray-100 text-[#5f5f5d]",
+  draft: "bg-[#eef4fc] text-[#3d66a6]", published: "bg-[#ecf8f1] text-[#2f8a5f]", archived: "bg-[#f0f0ec] text-[#5f5f5d]",
 };
 const small = "text-xs px-3 py-1.5 rounded-lg border border-[#ebece6] disabled:opacity-40";
 
@@ -118,7 +118,7 @@ export default function SuperAdminKpiLibrary() {
     && (!q.trim() || `${t.name} ${t.collection} ${t.department_hint ?? ""}`.toLowerCase().includes(q.trim().toLowerCase())));
   const counts = { published: rows.filter(t => t.status === "published").length, draft: rows.filter(t => t.status === "draft").length };
 
-  if (loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (loading) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
 
   return (
     <div>

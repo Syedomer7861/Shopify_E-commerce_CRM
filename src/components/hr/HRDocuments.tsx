@@ -15,10 +15,10 @@ const ALLOWED_UPLOAD_TYPES = [
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 const CAT_COLOR: Record<string, string> = {
-  Compliance: "bg-blue-50 text-blue-600",
-  Leave: "bg-emerald-50 text-emerald-600",
+  Compliance: "bg-[#eef4fc] text-[#4f7fc8]",
+  Leave: "bg-[#ecf8f1] text-[#3fa877]",
   Operations: "bg-amber-50 text-amber-600",
-  General: "bg-gray-50 text-gray-600",
+  General: "bg-[#f6f7f2] text-[#55554f]",
 };
 
 const TEMPLATES: Record<DocType, (data: any) => string> = {
@@ -155,11 +155,11 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
 
   return (
     <div className="space-y-5">
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-[#f0f0ec] p-1 rounded-xl w-fit">
         {(["generator", "library"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={cn("px-4 py-1.5 text-xs font-bold rounded-lg capitalize transition-all",
-              tab === t ? "bg-[#1c1c1c] text-white" : "text-gray-500 hover:text-[#1c1c1c]")}>
+              tab === t ? "bg-[#1c1c1c] text-white" : "text-[#6b6b67] hover:text-[#1c1c1c]")}>
             {t === "generator" ? "Document Generator" : "Policy Library"}
           </button>
         ))}
@@ -170,7 +170,7 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6 space-y-5">
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Document Type</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Document Type</label>
               <select className="input w-full text-sm" value={docType} onChange={e => { setDocType(e.target.value as DocType); setPreview(""); }}>
                 {Object.keys(TEMPLATES).map(t => <option key={t}>{t}</option>)}
               </select>
@@ -178,38 +178,38 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
 
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Employee Full Name</label>
+                <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Employee Full Name</label>
                 <input className="input w-full text-sm" placeholder="Priya Sharma" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} />
               </div>
               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Designation</label>
+                <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Designation</label>
                 <input className="input w-full text-sm" placeholder="Senior Agent" value={formData.role} onChange={e => setFormData(p => ({ ...p, role: e.target.value }))} />
               </div>
               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Company Name</label>
+                <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Company Name</label>
                 <input className="input w-full text-sm" value={formData.company} onChange={e => setFormData(p => ({ ...p, company: e.target.value }))} />
               </div>
               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">
+                <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">
                   {needsEndDate ? "Join Date" : "Joining / Effective Date"}
                 </label>
                 <input type="date" className="input w-full text-sm" value={formData.joiningDate} onChange={e => setFormData(p => ({ ...p, joiningDate: e.target.value }))} />
               </div>
               {needsSalary && (
                 <div>
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Monthly Gross (₹)</label>
+                  <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Monthly Gross (₹)</label>
                   <input className="input w-full text-sm" placeholder="35000" value={formData.salary} onChange={e => setFormData(p => ({ ...p, salary: e.target.value }))} />
                 </div>
               )}
               {needsEndDate && (
                 <div>
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Last Working Date</label>
+                  <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Last Working Date</label>
                   <input type="date" className="input w-full text-sm" value={formData.endDate} onChange={e => setFormData(p => ({ ...p, endDate: e.target.value }))} />
                 </div>
               )}
               {needsReason && (
                 <div className="col-span-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Reason / Misconduct</label>
+                  <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Reason / Misconduct</label>
                   <textarea className="input w-full text-sm min-h-[60px]" placeholder="Describe the issue..." value={formData.reason} onChange={e => setFormData(p => ({ ...p, reason: e.target.value }))} />
                 </div>
               )}
@@ -222,7 +222,7 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
 
           <div className="card p-6 flex flex-col">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest">Preview</h3>
+              <h3 className="text-xs font-bold text-[#1c1c1c] uppercase tracking-wider">Preview</h3>
               {preview && (
                 <button onClick={printDoc} className="flex items-center gap-1.5 text-xs font-bold text-[#1c1c1c] hover:underline">
                   <Printer className="w-3.5 h-3.5" /> Print / Save PDF
@@ -230,13 +230,13 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
               )}
             </div>
             {preview ? (
-              <pre className="flex-1 text-[11px] text-gray-700 whitespace-pre-wrap leading-relaxed font-mono bg-gray-50 rounded-xl p-4 overflow-y-auto max-h-[480px]">
+              <pre className="flex-1 text-[11px] text-[#3a3a36] whitespace-pre-wrap leading-relaxed font-mono bg-[#f6f7f2] rounded-xl p-4 overflow-y-auto max-h-[480px]">
                 {preview}
               </pre>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                <FileText className="w-10 h-10 text-gray-200 mb-3" />
-                <p className="text-xs text-gray-400">Fill in the details and click Generate to preview the document here.</p>
+                <FileText className="w-10 h-10 text-[#e6e7e0] mb-3" />
+                <p className="text-xs text-[#9a9a94]">Fill in the details and click Generate to preview the document here.</p>
               </div>
             )}
           </div>
@@ -247,29 +247,29 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
       {tab === "library" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 card p-6">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-5 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-5 flex items-center gap-2">
               <BookOpen className="w-4 h-4" /> Policy Documents
             </h3>
             <div className="space-y-3">
               {policies.map(p => (
-                <div key={p.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group">
+                <div key={p.id} className="flex items-center justify-between p-4 bg-[#f6f7f2] rounded-xl hover:bg-[#f0f0ec] transition-colors group">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[#1c1c1c] flex items-center justify-center">
                       <Shield className="w-4 h-4 text-white" />
                     </div>
                     <div>
-                      <div className="text-xs font-black text-[#1c1c1c]">{p.name}</div>
-                      <div className="text-[10px] text-gray-400">{p.size} · Uploaded {p.uploadedOn}</div>
+                      <div className="text-xs font-bold text-[#1c1c1c]">{p.name}</div>
+                      <div className="text-[10px] text-[#9a9a94]">{p.size} · Uploaded {p.uploadedOn}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full", CAT_COLOR[p.category] || CAT_COLOR.General)}>{p.category}</span>
+                    <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full", CAT_COLOR[p.category] || CAT_COLOR.General)}>{p.category}</span>
                     {p.fileUrl && (
-                      <a href={p.fileUrl} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-[#1c1c1c] transition-colors" title="Download">
+                      <a href={p.fileUrl} target="_blank" rel="noopener noreferrer" className="text-[#d4d5cd] hover:text-[#1c1c1c] transition-colors" title="Download">
                         <Download className="w-3.5 h-3.5" />
                       </a>
                     )}
-                    <button aria-label="Delete" onClick={() => handleDeletePolicy(p.id)} className="text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
+                    <button aria-label="Delete" onClick={() => handleDeletePolicy(p.id)} className="text-[#d4d5cd] hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -279,16 +279,16 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
           </div>
 
           <div className="card p-6 space-y-4">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider flex items-center gap-2">
               <Upload className="w-4 h-4" /> Add Policy
             </h3>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Document Name</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Document Name</label>
               <input className="input w-full text-sm" placeholder="e.g., POSH Policy 2025" value={newPolicy.name}
                 onChange={e => setNewPolicy(p => ({ ...p, name: e.target.value }))} />
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Category</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Category</label>
               <select className="input w-full text-sm" value={newPolicy.category} onChange={e => setNewPolicy(p => ({ ...p, category: e.target.value }))}>
                 {["Compliance", "Leave", "Operations", "General"].map(c => <option key={c}>{c}</option>)}
               </select>
@@ -307,10 +307,10 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
               onDrop={e => { e.preventDefault(); setDragOver(false); pickFile(e.dataTransfer.files?.[0] || null); }}
               className={cn(
                 "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors",
-                dragOver ? "border-[#1c1c1c] bg-gray-50" : "border-gray-200 hover:border-[#1c1c1c]"
+                dragOver ? "border-[#1c1c1c] bg-[#f6f7f2]" : "border-[#ebece6] hover:border-[#1c1c1c]"
               )}
             >
-              <Upload className="w-6 h-6 text-gray-300 mx-auto mb-2" />
+              <Upload className="w-6 h-6 text-[#d4d5cd] mx-auto mb-2" />
               {uploadFile ? (
                 <>
                   <p className="text-xs text-[#1c1c1c] font-bold truncate">{uploadFile.name}</p>
@@ -320,8 +320,8 @@ export default function HRDocuments({ policies: dbPolicies, onRefresh }: Props) 
                 </>
               ) : (
                 <>
-                  <p className="text-xs text-gray-400">Click or drag file to upload</p>
-                  <p className="text-[9px] text-gray-300 mt-1">PDF, DOCX supported</p>
+                  <p className="text-xs text-[#9a9a94]">Click or drag file to upload</p>
+                  <p className="text-[9px] text-[#d4d5cd] mt-1">PDF, DOCX supported</p>
                 </>
               )}
             </div>

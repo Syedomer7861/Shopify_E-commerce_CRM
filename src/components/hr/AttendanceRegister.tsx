@@ -12,12 +12,12 @@ import {
 const STATUS_OPTS = ["Present", "Absent", "Half Day", "Late", "Leave", "Holiday"] as const;
 type AttStatus = typeof STATUS_OPTS[number];
 const STATUS_COLOR: Record<AttStatus, string> = {
-  Present: "bg-emerald-500 text-white",
+  Present: "bg-[#55c08f] text-white",
   Absent: "bg-rose-500 text-white",
   "Half Day": "bg-amber-400 text-white",
-  Late: "bg-orange-400 text-white",
-  Leave: "bg-purple-400 text-white",
-  Holiday: "bg-sky-400 text-white",
+  Late: "bg-[#f0b43c] text-white",
+  Leave: "bg-[#8fb3e8] text-white",
+  Holiday: "bg-[#8fb3e8] text-white",
 };
 const STATUS_SHORT: Record<AttStatus, string> = {
   Present: "P", Absent: "A", "Half Day": "HD", Late: "L", Leave: "LV", Holiday: "H"
@@ -26,9 +26,9 @@ const STATUS_SHORT: Record<AttStatus, string> = {
 type ShiftType = "Morning" | "Afternoon" | "Night" | "Off";
 const SHIFT_COLORS: Record<ShiftType, string> = {
   Morning: "bg-amber-50 text-amber-700 border-amber-200",
-  Afternoon: "bg-sky-50 text-sky-700 border-sky-200",
-  Night: "bg-indigo-50 text-indigo-700 border-indigo-200",
-  Off: "bg-gray-50 text-gray-400 border-gray-200",
+  Afternoon: "bg-[#eef4fc] text-[#3d66a6] border-[#c7dbf5]",
+  Night: "bg-[#eef4fc] text-[#3d66a6] border-[#c7dbf5]",
+  Off: "bg-[#f6f7f2] text-[#9a9a94] border-[#ebece6]",
 };
 // Mirrors SHIFT_START_MINUTES in src/lib/attendance-engine.ts - shown here
 // so HR can see what "Late" is being measured against.
@@ -278,11 +278,11 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
   return (
     <div className="space-y-5">
       {/* Sub-tabs */}
-      <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-full sm:w-fit">
+      <div className="flex flex-wrap gap-1 bg-[#f0f0ec] p-1 rounded-xl w-full sm:w-fit">
         {(["register", "shifts", "holidays", "analytics"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={cn("px-4 py-1.5 text-xs font-bold rounded-lg capitalize transition-all",
-              tab === t ? "bg-[#1c1c1c] text-white" : "text-gray-500 hover:text-[#1c1c1c]")}>
+              tab === t ? "bg-[#1c1c1c] text-white" : "text-[#6b6b67] hover:text-[#1c1c1c]")}>
             {t === "register" ? "Monthly Register" : t === "shifts" ? "Shift Assignment" : t === "holidays" ? "Holiday Calendar" : "Analytics"}
           </button>
         ))}
@@ -291,44 +291,44 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
       {/* ── Monthly Attendance Register ── */}
       {tab === "register" && (
         <div className="card overflow-hidden">
-          <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 bg-[#fcfbf8]">
-            <button onClick={prevMonth} aria-label="Previous month" className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-            <h3 className="text-xs sm:text-sm font-black text-[#1c1c1c] uppercase tracking-widest">{monthName} {year}</h3>
-            <button onClick={nextMonth} aria-label="Next month" className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors"><ChevronRight className="w-4 h-4" /></button>
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#ebece6] bg-[#fcfbf8]">
+            <button onClick={prevMonth} aria-label="Previous month" className="p-1.5 rounded-lg hover:bg-[#e6e7e0] transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+            <h3 className="text-xs sm:text-sm font-bold text-[#1c1c1c] uppercase tracking-wider">{monthName} {year}</h3>
+            <button onClick={nextMonth} aria-label="Next month" className="p-1.5 rounded-lg hover:bg-[#e6e7e0] transition-colors"><ChevronRight className="w-4 h-4" /></button>
           </div>
 
           {/* Legend */}
-          <div className="flex flex-wrap items-center gap-2 px-5 py-3 border-b border-gray-50">
+          <div className="flex flex-wrap items-center gap-2 px-5 py-3 border-b border-[#f6f7f2]">
             {STATUS_OPTS.map(s => (
-              <span key={s} className={cn("text-[9px] font-black px-2 py-0.5 rounded-full", STATUS_COLOR[s])}>
+              <span key={s} className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full", STATUS_COLOR[s])}>
                 {STATUS_SHORT[s]} — {s}
               </span>
             ))}
-            <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1 ml-2">
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#f0f0ec] text-[#6b6b67] flex items-center gap-1 ml-2">
               <Zap className="w-2.5 h-2.5" /> Auto-detected from clock-in
             </span>
-            <span className="text-[9px] text-gray-400 font-bold">· Click a cell to override manually</span>
+            <span className="text-[9px] text-[#9a9a94] font-bold">· Click a cell to override manually</span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-[#fcfbf8]">
-                  <th className="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest sticky left-0 bg-[#fcfbf8] z-10 min-w-[140px]">Team Member</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider sticky left-0 bg-[#fcfbf8] z-10 min-w-[140px]">Team Member</th>
                   {days.map(d => (
-                    <th key={d} className={cn("px-1 py-3 text-center text-[9px] font-black uppercase tracking-widest min-w-[36px]",
-                      isHoliday(d) ? "text-sky-500" : "text-gray-400")}>
+                    <th key={d} className={cn("px-1 py-3 text-center text-[9px] font-bold uppercase tracking-wider min-w-[36px]",
+                      isHoliday(d) ? "text-[#6f9bdd]" : "text-[#9a9a94]")}>
                       {d}
                     </th>
                   ))}
-                  <th className="px-3 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Summary</th>
+                  <th className="px-3 py-3 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Summary</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-[#f6f7f2]">
                 {agents.map(agent => (
-                  <tr key={agent.id} className="hover:bg-gray-50/50">
+                  <tr key={agent.id} className="hover:bg-[#f6f7f2]/50">
                     <td className="px-4 py-3 sticky left-0 bg-white z-10">
-                      <div className="text-xs font-black text-[#1c1c1c]">{agent.name}</div>
+                      <div className="text-xs font-bold text-[#1c1c1c]">{agent.name}</div>
                     </td>
                     {days.map(d => {
                       const cell = getCell(agent.name, d);
@@ -344,9 +344,9 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
                         <td key={d} className="px-0.5 py-2 text-center">
                           <button
                             onClick={() => setStatus(agent.name, d, statusCycle(cell?.status))}
-                            className={cn("relative w-7 h-7 rounded-lg text-[9px] font-black transition-all hover:scale-110",
-                              hol && !cell ? "bg-sky-50 text-sky-400" :
-                              cell ? STATUS_COLOR[cell.status] : "bg-gray-100 text-gray-300 hover:bg-gray-200"
+                            className={cn("relative w-7 h-7 rounded-lg text-[9px] font-bold transition-all hover:scale-110",
+                              hol && !cell ? "bg-[#eef4fc] text-[#8fb3e8]" :
+                              cell ? STATUS_COLOR[cell.status] : "bg-[#f0f0ec] text-[#d4d5cd] hover:bg-[#e6e7e0]"
                             )}
                             title={title}
                           >
@@ -359,17 +359,17 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
                       );
                     })}
                     <td className="px-3 py-3">
-                      <div className="flex gap-2 text-[9px] font-black">
-                        <span className="text-emerald-600">P:{countFor(agent.name, "Present")}</span>
-                        <span className="text-orange-500">L:{countFor(agent.name, "Late")}</span>
+                      <div className="flex gap-2 text-[9px] font-bold">
+                        <span className="text-[#3fa877]">P:{countFor(agent.name, "Present")}</span>
+                        <span className="text-[#f0b43c]">L:{countFor(agent.name, "Late")}</span>
                         <span className="text-rose-500">A:{countFor(agent.name, "Absent")}</span>
-                        <span className="text-purple-500">LV:{countFor(agent.name, "Leave")}</span>
+                        <span className="text-[#6f9bdd]">LV:{countFor(agent.name, "Leave")}</span>
                       </div>
                     </td>
                   </tr>
                 ))}
                 {agents.length === 0 && (
-                  <tr><td colSpan={days.length + 2} className="px-4 py-10 text-center text-xs text-gray-400 font-bold">No team members found.</td></tr>
+                  <tr><td colSpan={days.length + 2} className="px-4 py-10 text-center text-xs text-[#9a9a94] font-bold">No team members found.</td></tr>
                 )}
               </tbody>
             </table>
@@ -380,29 +380,29 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
       {/* ── Shift Assignment ── */}
       {tab === "shifts" && (
         <div className="card p-6">
-          <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-2">Weekly Shift Assignment</h3>
-          <p className="text-xs text-gray-400 mb-6">
+          <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-2">Weekly Shift Assignment</h3>
+          <p className="text-xs text-[#9a9a94] mb-6">
             Assign shift rotations per agent. Saved immediately and used to flag late clock-ins in the register above.
           </p>
           <div className="space-y-3">
             {employees.map(emp => {
               const currentShift = (emp.shift_type as ShiftType) || "Morning";
               return (
-               <div key={emp.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gray-50 rounded-xl border border-transparent hover:border-gray-200 transition-all gap-4">
+               <div key={emp.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-[#f6f7f2] rounded-xl border border-transparent hover:border-[#ebece6] transition-all gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#1c1c1c] flex items-center justify-center text-white text-xs font-black">
+                  <div className="w-8 h-8 rounded-full bg-[#1c1c1c] flex items-center justify-center text-white text-xs font-bold">
                     {emp.name?.split(" ").map((n: string) => n[0]).join("")}
                   </div>
                   <div>
                     <div className="text-sm font-bold text-[#1c1c1c]">{emp.name}</div>
-                    <div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Starts {SHIFT_START_LABEL[currentShift]}</div>
+                    <div className="text-[9px] text-[#9a9a94] font-bold uppercase tracking-wider">Starts {SHIFT_START_LABEL[currentShift]}</div>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                   {(["Morning", "Afternoon", "Night", "Off"] as ShiftType[]).map(s => (
                     <button key={s} disabled={shiftSaving === emp.id} onClick={() => setShift(emp.id, emp.name, s)}
                       className={cn("px-3 py-1.5 text-[10px] font-bold rounded-lg border transition-all flex items-center gap-1 disabled:opacity-50",
-                        currentShift === s ? SHIFT_COLORS[s] + " scale-105" : "border-gray-200 text-gray-400 hover:border-gray-300")}>
+                        currentShift === s ? SHIFT_COLORS[s] + " scale-105" : "border-[#ebece6] text-[#9a9a94] hover:border-[#d4d5cd]")}>
                       {s === "Morning" && <Sun className="w-3 h-3" />}
                       {s === "Afternoon" && <Sunset className="w-3 h-3" />}
                       {s === "Night" && <Moon className="w-3 h-3" />}
@@ -414,14 +414,14 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
               </div>
               );
             })}
-            {employees.length === 0 && <p className="text-xs text-gray-400 text-center py-6">No team members found.</p>}
+            {employees.length === 0 && <p className="text-xs text-[#9a9a94] text-center py-6">No team members found.</p>}
           </div>
           <div className="mt-6 p-4 bg-[#1c1c1c] rounded-xl text-white">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-3">Current Shift Summary</h4>
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-white/60 mb-3">Current Shift Summary</h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {(["Morning", "Afternoon", "Night", "Off"] as ShiftType[]).map(s => (
                 <div key={s} className="text-center">
-                  <div className="text-2xl font-black">{employees.filter(e => (e.shift_type || "Morning") === s).length}</div>
+                  <div className="text-2xl font-bold">{employees.filter(e => (e.shift_type || "Morning") === s).length}</div>
                   <div className="text-[9px] font-bold text-white/50 uppercase">{s}</div>
                 </div>
               ))}
@@ -434,48 +434,48 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
       {tab === "holidays" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-5 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-5 flex items-center gap-2">
               <Calendar className="w-4 h-4" /> Holiday List
             </h3>
             <div className="space-y-3">
               {holidays.map((h) => (
-                <div key={h.id || h.date} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                <div key={h.id || h.date} className="flex items-center justify-between p-3 bg-[#f6f7f2] rounded-xl">
                   <div>
-                    <div className="text-xs font-black text-[#1c1c1c]">{h.name}</div>
-                    <div className="text-[10px] text-gray-400">{mounted ? new Date(h.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }) : "---"}</div>
+                    <div className="text-xs font-bold text-[#1c1c1c]">{h.name}</div>
+                    <div className="text-[10px] text-[#9a9a94]">{mounted ? new Date(h.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }) : "---"}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full", h.type === "National" ? "bg-[#1c1c1c] text-white" : "bg-sky-100 text-sky-700")}>{h.type}</span>
+                    <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full", h.type === "National" ? "bg-[#1c1c1c] text-white" : "bg-[#dfeafa] text-[#3d66a6]")}>{h.type}</span>
                     <button aria-label="Remove" onClick={() => deleteHoliday(h.id)} className="text-rose-400 hover:text-rose-600 transition-colors">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
               ))}
-              {holidays.length === 0 && <p className="text-xs text-gray-400 text-center py-6">No holidays added yet.</p>}
+              {holidays.length === 0 && <p className="text-xs text-[#9a9a94] text-center py-6">No holidays added yet.</p>}
             </div>
           </div>
 
           <div className="card p-6">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-5 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-5 flex items-center gap-2">
               <Plus className="w-4 h-4" /> Add Holiday
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Holiday Date</label>
+                <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Holiday Date</label>
                 <input type="date" className="input w-full text-sm" value={newHoliday.date} onChange={e => setNewHoliday(p => ({ ...p, date: e.target.value }))} />
               </div>
               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Holiday Name</label>
+                <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Holiday Name</label>
                 <input className="input w-full text-sm" placeholder="e.g., Diwali" value={newHoliday.name} onChange={e => setNewHoliday(p => ({ ...p, name: e.target.value }))} />
               </div>
               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Type</label>
+                <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Type</label>
                 <div className="flex gap-2">
                   {(["National", "Optional"] as const).map(t => (
                     <button key={t} onClick={() => setNewHoliday(p => ({ ...p, type: t }))}
                       className={cn("flex-1 py-2 text-xs font-bold rounded-lg border transition-all",
-                        newHoliday.type === t ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "border-gray-200 text-gray-500")}>{t}</button>
+                        newHoliday.type === t ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "border-[#ebece6] text-[#6b6b67]")}>{t}</button>
                   ))}
                 </div>
               </div>
@@ -492,8 +492,8 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "Team Attendance Rate", value: `${analytics.teamAttendanceRate}%`, icon: CheckCircle, color: "text-emerald-600 bg-emerald-50" },
-              { label: "Team Punctuality", value: `${analytics.teamPunctualityRate}%`, icon: Timer, color: "text-sky-600 bg-sky-50" },
+              { label: "Team Attendance Rate", value: `${analytics.teamAttendanceRate}%`, icon: CheckCircle, color: "text-[#3fa877] bg-[#ecf8f1]" },
+              { label: "Team Punctuality", value: `${analytics.teamPunctualityRate}%`, icon: Timer, color: "text-[#4f7fc8] bg-[#eef4fc]" },
               { label: "Total Absences", value: analytics.totalAbsences, icon: X, color: "text-rose-600 bg-rose-50" },
               { label: "Total Break Hours", value: `${analytics.totalBreakHours}h`, icon: Coffee, color: "text-amber-600 bg-amber-50" },
             ].map((k, i) => (
@@ -501,17 +501,17 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
                 <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-3", k.color)}>
                   <k.icon className="w-4.5 h-4.5" />
                 </div>
-                <div className="text-2xl font-black text-[#1c1c1c] tracking-tight">{k.value}</div>
-                <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">{k.label}</div>
+                <div className="text-2xl font-bold text-[#1c1c1c] tracking-tight">{k.value}</div>
+                <div className="text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider mt-1">{k.label}</div>
               </div>
             ))}
           </div>
 
           <div className="card p-6">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-1 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-1 flex items-center gap-2">
               <BarChart3 className="w-4 h-4" /> Attendance Rate by Agent
             </h3>
-            <p className="text-[10px] text-gray-400 mb-6">Present + Late + Half Day, as a share of every day with a record this month.</p>
+            <p className="text-[10px] text-[#9a9a94] mb-6">Present + Late + Half Day, as a share of every day with a record this month.</p>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={analytics.perAgent} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
@@ -526,10 +526,10 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
           </div>
 
           <div className="card p-6">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-1 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-1 flex items-center gap-2">
               <TrendingUp className="w-4 h-4" /> Average Hours Worked, Per Day
             </h3>
-            <p className="text-[10px] text-gray-400 mb-6">Team-wide average productive hours per team member, across the month.</p>
+            <p className="text-[10px] text-[#9a9a94] mb-6">Team-wide average productive hours per team member, across the month.</p>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={analytics.trend} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
@@ -544,36 +544,36 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
           </div>
 
           <div className="card overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest">Per-Agent Breakdown</h3>
+            <div className="px-6 py-4 border-b border-[#ebece6]">
+              <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider">Per-Agent Breakdown</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-[#fcfbf8]">
-                    <th className="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Agent</th>
-                    <th className="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Present</th>
-                    <th className="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Late</th>
-                    <th className="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Half Day</th>
-                    <th className="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Absent</th>
-                    <th className="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Avg Hrs/Day</th>
-                    <th className="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Punctuality</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Agent</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider text-center">Present</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider text-center">Late</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider text-center">Half Day</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider text-center">Absent</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider text-center">Avg Hrs/Day</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider text-center">Punctuality</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-[#f6f7f2]">
                   {analytics.perAgent.map(a => (
-                    <tr key={a.name} className="hover:bg-gray-50/50">
-                      <td className="px-4 py-3 text-xs font-black text-[#1c1c1c]">{a.name}</td>
-                      <td className="px-4 py-3 text-xs text-center font-bold text-emerald-600">{a.present}</td>
-                      <td className="px-4 py-3 text-xs text-center font-bold text-orange-500">{a.late}</td>
+                    <tr key={a.name} className="hover:bg-[#f6f7f2]/50">
+                      <td className="px-4 py-3 text-xs font-bold text-[#1c1c1c]">{a.name}</td>
+                      <td className="px-4 py-3 text-xs text-center font-bold text-[#3fa877]">{a.present}</td>
+                      <td className="px-4 py-3 text-xs text-center font-bold text-[#f0b43c]">{a.late}</td>
                       <td className="px-4 py-3 text-xs text-center font-bold text-amber-500">{a.half}</td>
                       <td className="px-4 py-3 text-xs text-center font-bold text-rose-500">{a.absent}</td>
                       <td className="px-4 py-3 text-xs text-center font-bold text-[#1c1c1c]">{fmtHours(a.avgProductiveMins)}</td>
-                      <td className="px-4 py-3 text-xs text-center font-bold text-sky-600">{a.punctualityRate}%</td>
+                      <td className="px-4 py-3 text-xs text-center font-bold text-[#4f7fc8]">{a.punctualityRate}%</td>
                     </tr>
                   ))}
                   {analytics.perAgent.length === 0 && (
-                    <tr><td colSpan={7} className="px-4 py-10 text-center text-xs text-gray-400 font-bold">No attendance data for this month yet.</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-10 text-center text-xs text-[#9a9a94] font-bold">No attendance data for this month yet.</td></tr>
                   )}
                 </tbody>
               </table>

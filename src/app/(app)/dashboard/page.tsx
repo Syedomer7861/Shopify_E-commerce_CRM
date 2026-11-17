@@ -704,7 +704,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-center h-[60vh]">
         <div className="flex flex-col items-center gap-3">
           <RefreshCw className="w-8 h-8 text-[#1c1c1c] animate-spin" />
-          <p className="text-sm text-gray-500 font-medium">Syncing with CRM...</p>
+          <p className="text-sm text-[#6b6b67] font-medium">Syncing with CRM...</p>
         </div>
       </div>
     );
@@ -742,7 +742,7 @@ export default function Dashboard() {
         }
         subtitle={
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-1">
-            <span className="text-gray-500 font-medium">
+            <span className="text-[#6b6b67] font-medium">
               {attention > 0 ? `${attention} item${attention === 1 ? "" : "s"} need your attention` : "You're all caught up"} · {mounted ? new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" }) : "---"}
             </span>
             <div className="flex items-center gap-1.5 text-[#1c1c1c] font-bold bg-[#1c1c1c]/5 px-2.5 py-1 rounded-lg border border-[#1c1c1c]/10 w-fit">
@@ -756,11 +756,11 @@ export default function Dashboard() {
             <div className="flex flex-col items-start sm:items-end gap-0.5 mt-0.5 mr-0 sm:mr-3">
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#1c1c1c] animate-pulse" />
-                <span className="text-[#5f5f5d] text-[8px] md:text-[9px] uppercase font-bold tracking-widest opacity-60">
+                <span className="text-[#5f5f5d] text-[8px] md:text-[9px] uppercase font-bold tracking-wider opacity-60">
                   Pulse: {Math.floor(nextSyncIn / 60)}:{(nextSyncIn % 60).toString().padStart(2, '0')}
                 </span>
               </div>
-              <span className="text-[#5f5f5d] text-[8px] uppercase font-bold tracking-widest opacity-30">
+              <span className="text-[#5f5f5d] text-[8px] uppercase font-bold tracking-wider opacity-30">
                 Last Sync: {mounted ? lastChecked.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "--:--:--"}
               </span>
             </div>
@@ -776,7 +776,7 @@ export default function Dashboard() {
               )}
             >
               <RefreshCw className={cn("w-3.5 h-3.5 text-white", syncing && "animate-spin")} />
-              <span className="text-[10px] font-black uppercase tracking-widest">
+              <span className="text-[10px] font-bold uppercase tracking-wider">
                 {syncing ? "Refreshing..." : "Refresh CRM"}
               </span>
             </button>
@@ -794,9 +794,9 @@ export default function Dashboard() {
                 <RefreshCw className="w-4 h-4 text-[#1c1c1c] animate-spin" />
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[#1c1c1c]">{syncMessage || "Synchronizing CRM Data..."}</span>
               </div>
-              <span className="text-[11px] font-black text-[#1c1c1c]">{syncProgress}%</span>
+              <span className="text-[11px] font-bold text-[#1c1c1c]">{syncProgress}%</span>
            </div>
-           <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+           <div className="w-full bg-[#e6e7e0] h-1.5 rounded-full overflow-hidden">
               <div 
                 className="bg-[#1c1c1c] h-full transition-all duration-500 ease-out" 
                 style={{ width: `${syncProgress}%` }}
@@ -862,7 +862,7 @@ export default function Dashboard() {
             <span className="text-xs text-[#1c1c1c] font-bold bg-[#1c1c1c]/5 px-2 py-0.5 rounded-full">Due Today</span>
           </div>
           {todayTasks.length === 0 ? (
-            <div className="card p-8 text-center text-gray-400 text-sm">🎉 All calls done for today!</div>
+            <div className="card p-8 text-center text-[#9a9a94] text-sm">🎉 All calls done for today!</div>
           ) : (
             <>
               {todayTasks.map(task => (
@@ -898,19 +898,19 @@ export default function Dashboard() {
           {/* Upcoming */}
           <div>
             <h2 className="section-title">Upcoming (Next 3 Days)</h2>
-            <div className="card divide-y divide-gray-50">
+            <div className="card divide-y divide-[#f6f7f2]">
               {upcomingTasks.slice(0, 5).map(t => (
                 <div key={t.id} className="px-4 py-3 flex items-center gap-3">
                   <Avatar name={t.customer?.name || "U"} size="sm" />
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-bold text-[#1c1c1c] truncate">{t.customer?.name}</div>
-                    <div className="text-[11px] text-gray-400">{t.order?.order_number} · {t.task_type.replace("_", " ")}</div>
+                    <div className="text-[11px] text-[#9a9a94]">{t.order?.order_number} · {t.task_type.replace("_", " ")}</div>
                   </div>
-                  <div className="text-[11px] text-gray-400 whitespace-nowrap uppercase">{t.due_date}</div>
+                  <div className="text-[11px] text-[#9a9a94] whitespace-nowrap uppercase">{t.due_date}</div>
                 </div>
               ))}
               {upcomingTasks.length === 0 && (
-                <div className="px-4 py-6 text-center text-xs text-gray-400">No upcoming tasks</div>
+                <div className="px-4 py-6 text-center text-xs text-[#9a9a94]">No upcoming tasks</div>
               )}
             </div>
           </div>
@@ -918,7 +918,7 @@ export default function Dashboard() {
           {/* Recent Activity */}
           <div>
             <h2 className="section-title">Recent Activity</h2>
-            <div className="card divide-y divide-gray-50">
+            <div className="card divide-y divide-[#f6f7f2]">
               {recentActivity.map((log) => (
                 <div key={log.id} className="px-4 py-3 flex items-start gap-3">
                   <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0",
@@ -928,16 +928,16 @@ export default function Dashboard() {
                     <div className="text-xs font-bold text-[#1c1c1c]">
                       {log.customer?.name || (log as any).metadata?.customer_name || "System Event"}
                     </div>
-                    <div className="text-[11px] text-gray-400">
+                    <div className="text-[11px] text-[#9a9a94]">
                       {log.outcome === "done" ? "Call completed" : log.outcome === "no_answer" ? "No answer" : log.outcome.replace('_', ' ')}
                     </div>
-                    {log.note && <div className="text-[11px] text-gray-400 italic truncate">&quot;{log.note}&quot;</div>}
+                    {log.note && <div className="text-[11px] text-[#9a9a94] italic truncate">&quot;{log.note}&quot;</div>}
                   </div>
-                  <div className="text-[10px] text-gray-300 whitespace-nowrap">{timeAgo(log.called_at)}</div>
+                  <div className="text-[10px] text-[#d4d5cd] whitespace-nowrap">{timeAgo(log.called_at)}</div>
                 </div>
               ))}
               {recentActivity.length === 0 && (
-                <div className="px-4 py-6 text-center text-xs text-gray-400">No recent activity</div>
+                <div className="px-4 py-6 text-center text-xs text-[#9a9a94]">No recent activity</div>
               )}
             </div>
           </div>

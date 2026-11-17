@@ -86,19 +86,19 @@ export function UnitCombobox({
           onKeyDown={onKey}
           onBlur={() => { setOpen(false); setQuery(""); }}
         />
-        <button type="button" tabIndex={-1} disabled={disabled} onClick={() => setOpen(o => !o)} aria-label="Show options" className="text-gray-400">
+        <button type="button" tabIndex={-1} disabled={disabled} onClick={() => setOpen(o => !o)} aria-label="Show options" className="text-[#9a9a94]">
           <ChevronDown className="w-3.5 h-3.5" />
         </button>
       </div>
       {open && listStyle && createPortal(
         <ul ref={list} id={listId} role="listbox" style={listStyle} onMouseDown={e => e.preventDefault()} className="overflow-y-auto rounded-lg border border-[#ebece6] bg-white shadow-xl py-1 text-xs">
-          {filtered.length === 0 && <li className="px-3 py-2 text-gray-400">No match.</li>}
+          {filtered.length === 0 && <li className="px-3 py-2 text-[#9a9a94]">No match.</li>}
           {filtered.map((o, i) => {
             const header = o.group && o.group !== lastGroup ? o.group : null;
             lastGroup = o.group;
             return (
               <li key={o.value} role="presentation">
-                {header && <div className="px-3 pt-2 pb-1 text-[9px] font-black uppercase tracking-widest text-gray-400">{header}</div>}
+                {header && <div className="px-3 pt-2 pb-1 text-[9px] font-bold uppercase tracking-wider text-[#9a9a94]">{header}</div>}
                 <div
                   role="option"
                   aria-selected={o.value === value}
@@ -110,8 +110,8 @@ export function UnitCombobox({
                     i === active && "bg-[#f6f7f2]", o.disabled && "opacity-40 cursor-not-allowed")}
                 >
                   <span className="truncate">{o.label}</span>
-                  <span className="shrink-0 flex items-center gap-1 text-[10px] text-gray-400">
-                    {o.hint}{o.value === value && <Check className="w-3 h-3 text-emerald-600" />}
+                  <span className="shrink-0 flex items-center gap-1 text-[10px] text-[#9a9a94]">
+                    {o.hint}{o.value === value && <Check className="w-3 h-3 text-[#3fa877]" />}
                   </span>
                 </div>
               </li>

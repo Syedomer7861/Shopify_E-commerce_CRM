@@ -99,7 +99,7 @@ export default function RulesPage() {
     else setRules(prev => prev.filter(r => r.id !== rule.id));
   }
 
-  if (profileLoading) return <div className="py-12 text-center text-gray-400">Loading...</div>;
+  if (profileLoading) return <div className="py-12 text-center text-[#9a9a94]">Loading...</div>;
   if (!canView) return <AccessDenied title="Rules" desc="Your role doesn't include workflow access." />;
 
   const eventLabel = (e: string) => EVENTS.find(x => x.value === e)?.label || e;
@@ -122,7 +122,7 @@ export default function RulesPage() {
       />
 
       {loading ? (
-        <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
+        <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
       ) : notReady ? (
         <div className="card p-5 flex items-start gap-3 text-sm text-amber-700 bg-amber-50 border-amber-100">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -132,7 +132,7 @@ export default function RulesPage() {
         <>
           {canManage && (
             <div className="flex flex-wrap gap-2 mb-5">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 self-center">Start from</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#9a9a94] self-center">Start from</span>
               {TEMPLATES.map(t => (
                 <button key={t.label} onClick={() => setDraft({ ...t.draft })} className="btn-secondary text-[11px] py-1 px-2.5">{t.label}</button>
               ))}
@@ -151,8 +151,8 @@ export default function RulesPage() {
                   </div>
                   {canManage && (
                     <>
-                      <button onClick={() => toggle(r)} aria-label={r.is_active ? "Pause rule" : "Resume rule"} className={cn("p-1.5 rounded-lg", r.is_active ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400")}><Power className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => remove(r)} aria-label="Delete rule" className="p-1.5 text-gray-300 hover:text-rose-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => toggle(r)} aria-label={r.is_active ? "Pause rule" : "Resume rule"} className={cn("p-1.5 rounded-lg", r.is_active ? "bg-[#ecf8f1] text-[#3fa877]" : "bg-[#f0f0ec] text-[#9a9a94]")}><Power className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => remove(r)} aria-label="Delete rule" className="p-1.5 text-[#d4d5cd] hover:text-rose-500"><Trash2 className="w-3.5 h-3.5" /></button>
                     </>
                   )}
                 </div>
@@ -163,12 +163,12 @@ export default function RulesPage() {
           {runs.length > 0 && (
             <>
               <h2 className="text-sm font-bold text-[#1c1c1c] mb-3">Recent runs</h2>
-              <div className="card divide-y divide-gray-50">
+              <div className="card divide-y divide-[#f6f7f2]">
                 {runs.map(run => (
                   <div key={run.id} className="p-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
-                    <span className={cn("w-16 text-[9px] font-black uppercase tracking-widest", run.status === "success" ? "text-emerald-600" : run.status === "failed" ? "text-rose-600" : "text-gray-400")}>{run.status}</span>
-                    <span className="flex-1 text-[#1c1c1c] truncate">{rules.find(r => r.id === run.workflow_id)?.name || "Deleted rule"}{run.detail && <span className="text-gray-400"> &middot; {run.detail}</span>}</span>
-                    <span className="text-gray-400">{new Date(run.created_at).toLocaleString()}</span>
+                    <span className={cn("w-16 text-[9px] font-bold uppercase tracking-wider", run.status === "success" ? "text-[#3fa877]" : run.status === "failed" ? "text-rose-600" : "text-[#9a9a94]")}>{run.status}</span>
+                    <span className="flex-1 text-[#1c1c1c] truncate">{rules.find(r => r.id === run.workflow_id)?.name || "Deleted rule"}{run.detail && <span className="text-[#9a9a94]"> &middot; {run.detail}</span>}</span>
+                    <span className="text-[#9a9a94]">{new Date(run.created_at).toLocaleString()}</span>
                   </div>
                 ))}
               </div>
@@ -182,15 +182,15 @@ export default function RulesPage() {
         {draft && (
           <div className="space-y-4">
             <div>
-              <label htmlFor="rule-name" className="text-xs font-medium text-gray-700 block mb-1">Rule name</label>
+              <label htmlFor="rule-name" className="text-xs font-medium text-[#3a3a36] block mb-1">Rule name</label>
               <input id="rule-name" className="input" value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} />
             </div>
             <div>
-              <span className="text-xs font-medium text-gray-700 block mb-1">When</span>
+              <span className="text-xs font-medium text-[#3a3a36] block mb-1">When</span>
               <Select value={draft.event} onChange={v => setDraft({ ...draft, event: v })} options={EVENTS} />
             </div>
             <div>
-              <span className="text-xs font-medium text-gray-700 block mb-1">Only if (optional)</span>
+              <span className="text-xs font-medium text-[#3a3a36] block mb-1">Only if (optional)</span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <input aria-label="Condition field" className="input" placeholder="field, e.g. amount" value={draft.field} onChange={e => setDraft({ ...draft, field: e.target.value })} />
                 <Select value={draft.op} onChange={v => setDraft({ ...draft, op: v })} options={OPS} />
@@ -198,7 +198,7 @@ export default function RulesPage() {
               </div>
             </div>
             <div>
-              <span className="text-xs font-medium text-gray-700 block mb-1">Then</span>
+              <span className="text-xs font-medium text-[#3a3a36] block mb-1">Then</span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <Select value={draft.action} onChange={v => setDraft({ ...draft, action: v as Draft["action"] })}
                   options={[{ value: "notify", label: "Notify" }, { value: "create_approval", label: "Ask for approval from" }]} />
@@ -206,9 +206,9 @@ export default function RulesPage() {
               </div>
             </div>
             <div>
-              <label htmlFor="rule-title" className="text-xs font-medium text-gray-700 block mb-1">Message</label>
+              <label htmlFor="rule-title" className="text-xs font-medium text-[#3a3a36] block mb-1">Message</label>
               <input id="rule-title" className="input" placeholder="e.g. Large expense: {{category}} ₹{{amount}}" value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} />
-              <p className="text-[10px] text-gray-400 mt-1">{"Use {{field}} to drop in a value from the record."}</p>
+              <p className="text-[10px] text-[#9a9a94] mt-1">{"Use {{field}} to drop in a value from the record."}</p>
             </div>
           </div>
         )}

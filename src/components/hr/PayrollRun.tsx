@@ -153,11 +153,11 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
 
   return (
     <div className="space-y-5">
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-[#f0f0ec] p-1 rounded-xl w-fit">
         {(["payroll", "revisions", "expenses"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={cn("px-4 py-1.5 text-xs font-bold rounded-lg capitalize transition-all",
-              tab === t ? "bg-[#1c1c1c] text-white" : "text-gray-500 hover:text-[#1c1c1c]")}>
+              tab === t ? "bg-[#1c1c1c] text-white" : "text-[#6b6b67] hover:text-[#1c1c1c]")}>
             {t === "revisions" ? "Salary History" : t === "expenses" ? "Expenses" : "Monthly Payroll"}
           </button>
         ))}
@@ -169,22 +169,22 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
           {/* Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="card p-5 bg-[#1c1c1c] text-white">
-              <p className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">Total Payroll — {MONTH}</p>
-              <div className="text-3xl font-black text-emerald-400">{FMT(totalPayroll)}</div>
+              <p className="text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">Total Payroll — {MONTH}</p>
+              <div className="text-3xl font-bold text-[#6fcb9d]">{FMT(totalPayroll)}</div>
             </div>
             <div className="card p-5">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Disbursed</p>
-              <div className="text-3xl font-black text-[#1c1c1c]">{paidCount} / {payslips.length}</div>
+              <p className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider mb-1">Disbursed</p>
+              <div className="text-3xl font-bold text-[#1c1c1c]">{paidCount} / {payslips.length}</div>
             </div>
             <div className="card p-5">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pending</p>
-              <div className="text-3xl font-black text-amber-500">{FMT(payslips.filter(p => p.status === "Pending").reduce((s, r) => s + r.net, 0))}</div>
+              <p className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider mb-1">Pending</p>
+              <div className="text-3xl font-bold text-amber-500">{FMT(payslips.filter(p => p.status === "Pending").reduce((s, r) => s + r.net, 0))}</div>
             </div>
           </div>
 
           <div className="card overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-[#fcfbf8]">
-              <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest">Payslip Register — {MONTH}</h3>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#ebece6] bg-[#fcfbf8]">
+              <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider">Payslip Register — {MONTH}</h3>
               <button onClick={runAll} className="btn-primary text-xs gap-2 px-4 py-2">
                 <CheckCircle className="w-3.5 h-3.5" /> Mark All Paid
               </button>
@@ -192,32 +192,32 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-gray-50">
+                  <tr className="border-b border-[#f6f7f2]">
                     {["Agent", "Basic", "HRA", "Special", "EPF(-)", "Prof Tax(-)", "TDS(-)", "Net Pay", "Status", ""].map(h => (
-                      <th key={h} className="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
+                      <th key={h} className="px-4 py-3 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-[#f6f7f2]">
                   {payslips.map(row => (
-                    <tr key={row.id} className="hover:bg-gray-50/50">
-                      <td className="px-4 py-4 text-xs font-black text-[#1c1c1c]">{row.name}</td>
-                      <td className="px-4 py-4 text-xs text-gray-600">{FMT(row.basic)}</td>
-                      <td className="px-4 py-4 text-xs text-gray-600">{FMT(row.hra)}</td>
-                      <td className="px-4 py-4 text-xs text-gray-600">{FMT(row.special)}</td>
+                    <tr key={row.id} className="hover:bg-[#f6f7f2]/50">
+                      <td className="px-4 py-4 text-xs font-bold text-[#1c1c1c]">{row.name}</td>
+                      <td className="px-4 py-4 text-xs text-[#55554f]">{FMT(row.basic)}</td>
+                      <td className="px-4 py-4 text-xs text-[#55554f]">{FMT(row.hra)}</td>
+                      <td className="px-4 py-4 text-xs text-[#55554f]">{FMT(row.special)}</td>
                       <td className="px-4 py-4 text-xs text-rose-500">{FMT(row.pf)}</td>
                       <td className="px-4 py-4 text-xs text-rose-500">{FMT(row.pt)}</td>
                       <td className="px-4 py-4 text-xs text-rose-500">{FMT(row.tds)}</td>
-                      <td className="px-4 py-4 text-sm font-black text-emerald-600">{FMT(row.net)}</td>
+                      <td className="px-4 py-4 text-sm font-bold text-[#3fa877]">{FMT(row.net)}</td>
                       <td className="px-4 py-4">
-                        <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full",
-                          row.status === "Paid" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700")}>
+                        <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full",
+                          row.status === "Paid" ? "bg-[#ecf8f1] text-[#2f8a5f]" : "bg-amber-50 text-amber-700")}>
                           {row.status}
                         </span>
                       </td>
                       <td className="px-4 py-4">
                         <button onClick={() => toggleSlip(row.id, row.status)}
-                          className="text-[10px] font-bold text-gray-400 hover:text-[#1c1c1c] transition-colors">
+                          className="text-[10px] font-bold text-[#9a9a94] hover:text-[#1c1c1c] transition-colors">
                           Toggle
                         </button>
                       </td>
@@ -234,37 +234,37 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
       {tab === "revisions" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-5 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-5 flex items-center gap-2">
               <History className="w-4 h-4" /> Revision History
             </h3>
             <div className="space-y-4">
               {revisions.map(r => (
-                <div key={r.id} className="p-4 bg-gray-50 rounded-xl border-l-4 border-l-emerald-400">
+                <div key={r.id} className="p-4 bg-[#f6f7f2] rounded-xl border-l-4 border-l-[#6fcb9d]">
                   <div className="flex justify-between items-start mb-2">
-                    <div className="text-xs font-black text-[#1c1c1c]">{r.agent}</div>
-                    <div className="text-[9px] text-gray-400 font-bold">{r.date}</div>
+                    <div className="text-xs font-bold text-[#1c1c1c]">{r.agent}</div>
+                    <div className="text-[9px] text-[#9a9a94] font-bold">{r.date}</div>
                   </div>
                   <div className="flex items-center gap-3 mb-1">
                     <span className="text-sm font-bold text-rose-400 line-through">{FMT(r.oldSalary)}</span>
-                    <TrendingUp className="w-3 h-3 text-emerald-500" />
-                    <span className="text-sm font-black text-emerald-600">{FMT(r.newSalary)}</span>
-                    <span className="text-[10px] font-bold text-emerald-600">
+                    <TrendingUp className="w-3 h-3 text-[#55c08f]" />
+                    <span className="text-sm font-bold text-[#3fa877]">{FMT(r.newSalary)}</span>
+                    <span className="text-[10px] font-bold text-[#3fa877]">
                       (+{Math.round(((r.newSalary - r.oldSalary) / r.oldSalary) * 100)}%)
                     </span>
                   </div>
-                  <p className="text-[10px] text-gray-500 italic">{r.reason}</p>
+                  <p className="text-[10px] text-[#6b6b67] italic">{r.reason}</p>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="card p-6">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-5 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-5 flex items-center gap-2">
               <Plus className="w-4 h-4" /> Record New Revision
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Agent</label>
+                <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Agent</label>
                 <select className="input w-full text-sm" value={newRev.agent_id} onChange={e => setNewRev(p => ({ ...p, agent_id: e.target.value }))}>
                   <option value="">Select Agent</option>
                   {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
@@ -276,7 +276,7 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
                 { key: "reason", label: "Reason / Note", placeholder: "Annual appraisal" },
               ].map(f => (
                 <div key={f.key}>
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">{f.label}</label>
+                  <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">{f.label}</label>
                   <input className="input w-full text-sm" placeholder={f.placeholder} value={(newRev as any)[f.key]}
                     onChange={e => setNewRev(p => ({ ...p, [f.key]: e.target.value }))} />
                 </div>
@@ -302,30 +302,30 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
       {tab === "expenses" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-6">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-5 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-5 flex items-center gap-2">
               <Receipt className="w-4 h-4" /> Expense Claims
             </h3>
             <div className="space-y-3">
               {expenses.map(e => (
-                <div key={e.id} className="p-4 bg-gray-50 rounded-xl">
+                <div key={e.id} className="p-4 bg-[#f6f7f2] rounded-xl">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <div className="text-xs font-black text-[#1c1c1c]">{e.agent}</div>
-                      <div className="text-[10px] text-gray-400">{e.category} · {e.date}</div>
+                      <div className="text-xs font-bold text-[#1c1c1c]">{e.agent}</div>
+                      <div className="text-[10px] text-[#9a9a94]">{e.category} · {e.date}</div>
                     </div>
-                    <span className="text-sm font-black text-[#1c1c1c]">{FMT(e.amount)}</span>
+                    <span className="text-sm font-bold text-[#1c1c1c]">{FMT(e.amount)}</span>
                   </div>
-                  <p className="text-[10px] text-gray-500 italic mb-3">{e.description}</p>
+                  <p className="text-[10px] text-[#6b6b67] italic mb-3">{e.description}</p>
                   <div className="flex gap-2 items-center">
-                    <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full flex-1",
-                      e.status === "Approved" ? "bg-emerald-50 text-emerald-700" :
+                    <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full flex-1",
+                      e.status === "Approved" ? "bg-[#ecf8f1] text-[#2f8a5f]" :
                       e.status === "Rejected" ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-700")}>
                       {e.status}
                     </span>
                     {e.status === "Pending" && (
                       <>
                         <button onClick={() => handleAction("expense", { id: e.id, status: "Approved" }, "update")}
-                          className="text-xs font-bold text-emerald-500 hover:underline">Approve</button>
+                          className="text-xs font-bold text-[#55c08f] hover:underline">Approve</button>
                         <button onClick={() => handleAction("expense", { id: e.id, status: "Rejected" }, "update")}
                           className="text-xs font-bold text-rose-400 hover:underline">Reject</button>
                       </>
@@ -337,12 +337,12 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
           </div>
 
           <div className="card p-6">
-            <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-5 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-5 flex items-center gap-2">
               <Plus className="w-4 h-4" /> Submit Expense
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Agent</label>
+                <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Agent</label>
                 <select className="input w-full text-sm" value={newExp.agent_id} onChange={e => setNewExp(p => ({ ...p, agent_id: e.target.value }))}>
                   <option value="">Select Agent</option>
                   {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
@@ -353,13 +353,13 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
                 { key: "description", label: "Description", placeholder: "Auto fare to office" },
               ].map(f => (
                 <div key={f.key}>
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">{f.label}</label>
+                  <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">{f.label}</label>
                   <input className="input w-full text-sm" placeholder={f.placeholder} value={(newExp as any)[f.key]}
                     onChange={e => setNewExp(p => ({ ...p, [f.key]: e.target.value }))} />
                 </div>
               ))}
               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Category</label>
+                <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">Category</label>
                 <select className="input w-full text-sm" value={newExp.category} onChange={e => setNewExp(p => ({ ...p, category: e.target.value }))}>
                   {["Travel", "Stationery", "Internet", "Food", "Equipment", "Other"].map(c => <option key={c}>{c}</option>)}
                 </select>

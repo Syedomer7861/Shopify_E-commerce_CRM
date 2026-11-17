@@ -19,7 +19,7 @@ export function ChatWindow() {
   // Determine online status for the header
   const getStatus = () => {
     if (!activeChannel) return null;
-    if (activeChannel.type === 'group') return { label: 'Active', color: 'text-emerald-400' };
+    if (activeChannel.type === 'group') return { label: 'Active', color: 'text-[#6fcb9d]' };
     
     // For DMs, we need to know if the other person is online
     // We check all_members which we added to the channel object in ChannelList
@@ -27,8 +27,8 @@ export function ChatWindow() {
     const isOnline = otherMemberId && onlineUsers.includes(otherMemberId);
     
     return isOnline 
-      ? { label: 'Online', color: 'text-emerald-400' }
-      : { label: 'Offline', color: 'text-gray-400' };
+      ? { label: 'Online', color: 'text-[#6fcb9d]' }
+      : { label: 'Offline', color: 'text-[#9a9a94]' };
   };
 
   const status = getStatus();
@@ -55,7 +55,7 @@ export function ChatWindow() {
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-bold truncate leading-tight">{activeChannel.displayName || activeChannel.name}</span>
                 {status && (
-                  <span className={cn("text-[9px] font-bold uppercase tracking-widest leading-none", status.color)}>
+                  <span className={cn("text-[9px] font-bold uppercase tracking-wider leading-none", status.color)}>
                     {status.label}
                   </span>
                 )}

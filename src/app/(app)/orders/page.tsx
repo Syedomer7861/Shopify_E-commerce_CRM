@@ -6,7 +6,7 @@ import { PageHeader, DeliveryBadge, RiskBadge, Avatar, EmptyState, Modal, Pagina
 import dynamic from 'next/dynamic';
 import { isDemoMode } from "@/lib/demo";
 const ShiprocketOrderView = dynamic(() => import("@/components/ShiprocketOrderView"), { 
-  loading: () => <div className="p-8 text-center"><RefreshCw className="w-6 h-6 animate-spin mx-auto text-gray-300" /></div>
+  loading: () => <div className="p-8 text-center"><RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#d4d5cd]" /></div>
 });
 import { createClient } from "@/lib/supabase";
 import { cn, formatDate, formatCurrency, orQuote } from "@/lib/utils";
@@ -451,19 +451,19 @@ export default function OrdersPage() {
       <div className="card p-4 mb-5 animate-fade-in overflow-visible z-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-1.5 opacity-60">Date From</label>
+            <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider block mb-1 md:mb-1.5 opacity-60">Date From</label>
             <input type="date" className="input text-xs h-9 bg-[#fcfbf8]" value={startDate} onChange={e => setStartDate(e.target.value)} />
           </div>
           <div>
-            <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-1.5 opacity-60">Date To</label>
+            <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider block mb-1 md:mb-1.5 opacity-60">Date To</label>
             <input type="date" className="input text-xs h-9 bg-[#fcfbf8]" value={endDate} onChange={e => setEndDate(e.target.value)} />
           </div>
           <div>
-            <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-1.5 opacity-60">Min Amount (₹)</label>
+            <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider block mb-1 md:mb-1.5 opacity-60">Min Amount (₹)</label>
             <input type="number" placeholder="0" className="input text-xs h-9 bg-[#fcfbf8]" value={minAmount} onChange={e => setMinAmount(e.target.value)} />
           </div>
           <div>
-            <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-1 md:mb-1.5 opacity-60">Max Amount (₹)</label>
+            <label className="text-[9px] md:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider block mb-1 md:mb-1.5 opacity-60">Max Amount (₹)</label>
             <input type="number" placeholder="99999" className="input text-xs h-9 bg-[#fcfbf8]" value={maxAmount} onChange={e => setMaxAmount(e.target.value)} />
           </div>
         </div>
@@ -476,11 +476,11 @@ export default function OrdersPage() {
               setMaxAmount("");
               setStatus("all");
             }}
-            className="text-[10px] text-rose-500 font-bold uppercase tracking-widest hover:underline"
+            className="text-[10px] text-rose-500 font-bold uppercase tracking-wider hover:underline"
           >
             Clear Filters
           </button>
-          <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest opacity-40">Live Sync Active</div>
+          <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider opacity-40">Live Sync Active</div>
         </div>
       </div>
 
@@ -492,7 +492,7 @@ export default function OrdersPage() {
         <div className="flex items-center gap-1 bg-[#ebece6]/30 rounded-xl border border-[#ebece6] p-1 overflow-x-auto scroller-hide">
           {STATUSES.map(s => (
             <button key={s.value} onClick={() => setStatus(s.value)}
-              className={cn("px-4 md:px-5 py-2 rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap",
+              className={cn("px-4 md:px-5 py-2 rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap",
                 status === s.value ? "bg-[#1c1c1c] text-white shadow-md" : "text-[#5f5f5d] hover:bg-[#ebece6]/50"
               )}>
               {s.label}
@@ -508,7 +508,7 @@ export default function OrdersPage() {
         {[
           { label: "Delivered", value: "delivered", count: stats.delivered, color: "border-l-[#1c1c1c]", active: "shadow-xl border-[#1c1c1c]" },
           { label: "Transit", value: "in_transit", count: stats.in_transit, color: "border-l-[#ebece6]", active: "shadow-xl border-[#1c1c1c]" },
-          { label: "Out for Delivery", value: "out_for_delivery", count: stats.out_for_delivery, color: "border-l-sky-500", active: "shadow-xl border-[#1c1c1c]" },
+          { label: "Out for Delivery", value: "out_for_delivery", count: stats.out_for_delivery, color: "border-l-[#6f9bdd]", active: "shadow-xl border-[#1c1c1c]" },
           { label: "RTO", value: "rto", count: stats.rto, color: "border-l-rose-500", active: "shadow-xl border-[#1c1c1c]" },
           { label: "Pending", value: "pending", count: stats.pending, color: "border-l-amber-500", active: "shadow-xl border-[#1c1c1c]" },
           { label: "Failed", value: "failed", count: stats.failed, color: "border-l-red-700", active: "shadow-xl border-[#1c1c1c]" },
@@ -526,7 +526,7 @@ export default function OrdersPage() {
                <div className="absolute top-2 right-2 md:top-3 md:right-3 w-1.5 h-1.5 rounded-full bg-[#1c1c1c] animate-pulse" />
             )}
             <div className="text-xl md:text-3xl font-bold text-[#1c1c1c] tracking-tighter mb-1 md:mb-2">{s.count}</div>
-            <div className="text-[9px] md:text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">{s.label}</div>
+            <div className="text-[9px] md:text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider">{s.label}</div>
           </button>
         ))}
       </div>
@@ -534,7 +534,7 @@ export default function OrdersPage() {
       <div className="card overflow-hidden p-0">
         <div className="overflow-x-auto scrollbar-hide">
           <div className="min-w-[1000px]">
-            <div className="grid grid-cols-[40px_100px_2fr_2fr_1.5fr_1fr_1fr_1fr_120px] bg-[#ebece6]/30 border-b border-[#ebece6] px-4 py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">
+            <div className="grid grid-cols-[40px_100px_2fr_2fr_1.5fr_1fr_1fr_1fr_120px] bg-[#ebece6]/30 border-b border-[#ebece6] px-4 py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">
               <div className="flex items-center justify-center">
                 <input type="checkbox" className="checkbox w-3.5 h-3.5" 
                   checked={selectedIds.length === orders.length && orders.length > 0} 
@@ -551,7 +551,7 @@ export default function OrdersPage() {
               <span>Actions</span>
             </div>
         {loading ? (
-          <div className="p-12 text-center text-gray-400 text-sm">Loading orders...</div>
+          <div className="p-12 text-center text-[#9a9a94] text-sm">Loading orders...</div>
         ) : orders.length === 0 ? (
           <EmptyState icon={<Package className="w-5 h-5" />} title="No orders found" />
         ) : (
@@ -646,7 +646,7 @@ export default function OrdersPage() {
           </button>
         </>}
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-[#55554f]">
           Are you sure you want to delete <strong>{selectedIds.length}</strong> selected orders? This action is irreversible and will also delete all associated tasks.
         </p>
       </Modal>
@@ -659,13 +659,13 @@ export default function OrdersPage() {
               <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#f6f7f2] text-[#1c1c1c] flex items-center justify-center text-[9px] md:text-[10px] font-bold">
                 {selectedIds.length}
               </div>
-              <span className="hidden xs:inline text-[9px] md:text-[10px] font-bold uppercase tracking-widest opacity-60">Selection</span>
+              <span className="hidden xs:inline text-[9px] md:text-[10px] font-bold uppercase tracking-wider opacity-60">Selection</span>
             </div>
             
             <div className="flex items-center gap-3 flex-1">
               <button 
                 onClick={handleExportCsv}
-                className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest hover:text-[#ebece6] transition-colors"
+                className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider hover:text-[#ebece6] transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
                 Export
@@ -674,7 +674,7 @@ export default function OrdersPage() {
               {canDelete && (
                 <button 
                   onClick={() => setDeleteModal(true)}
-                  className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-rose-400 hover:text-rose-300 transition-colors"
+                  className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-rose-400 hover:text-rose-300 transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Delete

@@ -20,7 +20,7 @@ const mb = (b: number) => (b >= 1e9 ? `${(b / 1e9).toFixed(2)} GB` : `${(b / 1e6
 function Tile({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div className="card p-4">
-      <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d]">{label}</div>
+      <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]">{label}</div>
       <div className="text-2xl font-bold text-[#1c1c1c] mt-1 tabular-nums">{value}</div>
       {sub && <div className="text-[11px] text-[#5f5f5d] mt-1">{sub}</div>}
     </div>
@@ -97,10 +97,10 @@ export default function SuperAdminOverview() {
       {error ? (
         <div className="card p-4 text-sm text-red-600">Couldn&apos;t load numbers: {error}</div>
       ) : !data ? (
-        <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
+        <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
       ) : (
         <>
-          <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-3">Organisations</h2>
+          <h2 className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-3">Organisations</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <Tile label="Total" value={data.orgs_total} />
             <Tile label="Active" value={data.orgs_active} />
@@ -108,7 +108,7 @@ export default function SuperAdminOverview() {
             <Tile label="New, last 30 days" value={data.orgs_new_30d} />
           </div>
 
-          <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-3">Users</h2>
+          <h2 className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-3">Users</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <Tile label="Total accounts" value={data.users_total} sub={`${data.users_enabled} enabled`} />
             <Tile label="Active today" value={data.active_1d} sub="Had the app open in the last 24 hours" />
@@ -116,13 +116,13 @@ export default function SuperAdminOverview() {
             <Tile label="Active, 30 days" value={data.active_30d} sub={`${data.users_new_30d} new accounts in 30 days`} />
           </div>
 
-          <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-3">Pipeline and platform</h2>
+          <h2 className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-3">Pipeline and platform</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <Tile label="New requests" value={data.requests_new} sub={`${data.requests_total} received in total`} />
             <Tile label="File storage" value={mb(data.storage_bytes)} sub="All organisations" />
           </div>
 
-          <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-3">Subscriptions</h2>
+          <h2 className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-3">Subscriptions</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             {revenue.length === 0 ? <Tile label="Paid subscriptions" value={0} sub="Assign plans from an organisation's page" /> : revenue.map(r => (
               <Tile key={r.currency} label={`Contracted MRR (${r.currency})`} value={formatMinor(r.contracted_mrr_minor, r.currency)}

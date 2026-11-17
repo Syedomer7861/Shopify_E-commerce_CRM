@@ -15,7 +15,7 @@ export function ModulePage({ title, subtitle, tabs, overview }: { title: string;
   const [active, setActive] = useState<string | null>(() =>
     typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("tab"));
 
-  if (loading) return <div className="py-12 text-center text-gray-400">Loading...</div>;
+  if (loading) return <div className="py-12 text-center text-[#9a9a94]">Loading...</div>;
   const allowed = tabs.filter(t => can(profile, t.config.module, "view") !== null);
   if (!profile || allowed.length === 0) {
     return <AccessDenied title={title} desc="Your role doesn't include this module. An admin can grant it on the Roles page." />;

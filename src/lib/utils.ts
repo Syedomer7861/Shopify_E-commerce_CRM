@@ -51,8 +51,8 @@ export const SEGMENT_CONFIG: Record<CustomerSegment, { label: string; color: str
   inactive:       { label: "Inactive",       color: "text-[#5f5f5d]",  bg: "bg-[#fcfbf8] border-[#ebece6]",   dot: "bg-[#5f5f5d]" },
   risky:          { label: "Risky",          color: "text-rose-700",   bg: "bg-rose-50 border-rose-100",      dot: "bg-rose-500" },
   whale:          { label: "VVIP Whale 👑",  color: "text-amber-700",  bg: "bg-amber-50 border-amber-200",    dot: "bg-amber-500" },
-  loyalist:       { label: "Loyalist ⭐",    color: "text-blue-700",   bg: "bg-blue-50 border-blue-200",      dot: "bg-blue-500" },
-  bargain_hunter: { label: "Deal Hunter 🏷️", color: "text-emerald-700",bg: "bg-emerald-50 border-emerald-200", dot: "bg-emerald-500" },
+  loyalist:       { label: "Loyalist ⭐",    color: "text-[#3d66a6]",   bg: "bg-[#eef4fc] border-[#c7dbf5]",      dot: "bg-[#6f9bdd]" },
+  bargain_hunter: { label: "Deal Hunter 🏷️", color: "text-[#2f8a5f]",bg: "bg-[#ecf8f1] border-[#b5e4ca]", dot: "bg-[#55c08f]" },
   risky_returner: { label: "Risky Returner ⚠️", color: "text-rose-800",  bg: "bg-rose-100 border-rose-300",     dot: "bg-rose-600" },
 };
 
@@ -74,9 +74,9 @@ export const TASK_TYPE_CONFIG: Record<TaskType, { label: string; color: string; 
   transit_update: { label: "Transit Inform", color: "text-[#1c1c1c]",    bg: "bg-[#ebece6]",       accent: "border-l-[#1c1c1c]" },
   ndr:            { label: "NDR Resolution", color: "text-amber-700", bg: "bg-amber-50",     accent: "border-l-amber-500" },
   cod_verify:     { label: "COD Verify",     color: "text-[#1c1c1c]",    bg: "bg-[#1c1c1c]/5",   accent: "border-l-[#1c1c1c]" },
-  manager_audit:  { label: "Manager Audit",  color: "text-indigo-700", bg: "bg-indigo-50",     accent: "border-l-indigo-500" },
-  welcome_call:   { label: "Welcome Call",   color: "text-blue-700",   bg: "bg-blue-50",       accent: "border-l-blue-500" },
-  win_back:       { label: "Win-Back Call",  color: "text-orange-700", bg: "bg-orange-50",     accent: "border-l-orange-500" },
+  manager_audit:  { label: "Manager Audit",  color: "text-[#3d66a6]", bg: "bg-[#eef4fc]",     accent: "border-l-[#6f9bdd]" },
+  welcome_call:   { label: "Welcome Call",   color: "text-[#3d66a6]",   bg: "bg-[#eef4fc]",       accent: "border-l-[#6f9bdd]" },
+  win_back:       { label: "Win-Back Call",  color: "text-[#a8741c]", bg: "bg-[#fdf5e4]",     accent: "border-l-[#f0b43c]" },
   vip_followup:   { label: "VIP Follow-up",  color: "text-amber-700",  bg: "bg-amber-50",      accent: "border-l-amber-500" },
   flagged:        { label: "Flagged Task",   color: "text-red-700",    bg: "bg-red-50",        accent: "border-l-red-500" },
 };

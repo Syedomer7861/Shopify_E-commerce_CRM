@@ -15,7 +15,7 @@ import { DashboardGrid } from "@/components/workspace/WorkspaceHome";
 import { AssignDialog } from "@/components/dashboards/AssignDialog";
 import { loadDirectory, resolveFor, targetLabel, type Dashboard, type Directory } from "@/lib/dashboards";
 
-const STATUS_CLS = { draft: "bg-sky-50 text-sky-700", published: "bg-emerald-50 text-emerald-700", archived: "bg-gray-100 text-[#5f5f5d]" };
+const STATUS_CLS = { draft: "bg-[#eef4fc] text-[#3d66a6]", published: "bg-[#ecf8f1] text-[#2f8a5f]", archived: "bg-[#f0f0ec] text-[#5f5f5d]" };
 const small = "inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#ebece6] disabled:opacity-40";
 
 export default function AllDashboardsPage() {
@@ -79,7 +79,7 @@ export default function AllDashboardsPage() {
       <PageHeader title="All dashboards" subtitle="What each role, team or person lands on. A dashboard only chooses widgets; every widget still follows the viewer's own permissions."
         actions={canManage ? <button onClick={create} disabled={busy} className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-[#1c1c1c] text-white disabled:opacity-50"><Plus className="w-3.5 h-3.5" /> New dashboard</button> : undefined} />
 
-      {!dir ? <div className="py-16 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div> : (
+      {!dir ? <div className="py-16 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div> : (
         <>
           <div className="card p-4 mb-4 text-xs text-[#5f5f5d] flex flex-wrap gap-x-6 gap-y-1">
             <span><b className="text-[#1c1c1c]">{dir.people.length - defaultHome}</b> of {dir.people.length} active people land on an assigned dashboard; the rest get their role&apos;s home screen.</span>

@@ -97,7 +97,7 @@ export default function WorkloadPage() {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-[#5f5f5d] gap-3">
         <RefreshCw className="w-8 h-8 animate-spin" />
-        <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Loading workload…</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Loading workload…</p>
       </div>
     );
   }
@@ -121,7 +121,7 @@ export default function WorkloadPage() {
       />
 
       {rows.length === 0 ? (
-        <div className="bg-white border border-[#ebece6] rounded-2xl p-10 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
+        <div className="bg-white border border-[#ebece6] rounded-2xl p-10 text-center text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d]/50">
           No open assigned tasks
         </div>
       ) : (
@@ -139,7 +139,7 @@ export default function WorkloadPage() {
                 </div>
                 <div className="h-1.5 rounded-full bg-[#ebece6] overflow-hidden mt-2">
                   <div
-                    className={cn("h-full rounded-full", over ? "bg-rose-500" : r.pct > 80 ? "bg-amber-500" : "bg-emerald-500")}
+                    className={cn("h-full rounded-full", over ? "bg-rose-500" : r.pct > 80 ? "bg-amber-500" : "bg-[#55c08f]")}
                     style={{ width: `${Math.min(100, r.pct)}%` }}
                   />
                 </div>

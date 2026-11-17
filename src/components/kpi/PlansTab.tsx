@@ -21,7 +21,7 @@ type Draft = Omit<Plan, "id" | "status" | "approved_at" | "version" | "previous_
 
 const input = "h-9 px-2 bg-white border border-[#ebece6] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
 const small = "text-xs px-3 py-1.5 rounded-lg border border-[#ebece6] disabled:opacity-40";
-const STATUS: Record<Plan["status"], string> = { draft: "bg-sky-50 text-sky-700", active: "bg-emerald-50 text-emerald-700", archived: "bg-gray-100 text-[#5f5f5d]" };
+const STATUS: Record<Plan["status"], string> = { draft: "bg-[#eef4fc] text-[#3d66a6]", active: "bg-[#ecf8f1] text-[#2f8a5f]", archived: "bg-[#f0f0ec] text-[#5f5f5d]" };
 const num = (v: string) => (v.trim() === "" || !Number.isFinite(Number(v)) ? null : Number(v));
 
 const fromTemplate = (t: OrgTemplate): Draft => ({
@@ -87,7 +87,7 @@ export function PlansTab({ templates, departments, designations, canManage, canA
   const nameOf = (list: Named[], id: string | null) => list.find(x => x.id === id)?.name;
   const setItem = (i: number, p: Partial<PlanItem>) => draft && setDraft({ ...draft, items: draft.items.map((it, j) => (j === i ? { ...it, ...p } : it)) });
 
-  if (loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (loading) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
 
   if (draft) {
     const w = weightCheck(draft.items);
@@ -112,7 +112,7 @@ export function PlansTab({ templates, departments, designations, canManage, canA
         <p className="text-[10px] text-[#5f5f5d]">New and moved employees whose designation (or, failing that, department) matches an active plan get it suggested for approval.</p>
         <div className="flex items-center justify-between text-xs">
           <span className="font-bold text-[#1c1c1c]">Targets and weights</span>
-          <span className={cn("font-semibold", w.ok && !m ? "text-emerald-700" : "text-amber-700")}>Weights {w.total}{m ? ` · ${m} without target` : ""}</span>
+          <span className={cn("font-semibold", w.ok && !m ? "text-[#2f8a5f]" : "text-amber-700")}>Weights {w.total}{m ? ` · ${m} without target` : ""}</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">

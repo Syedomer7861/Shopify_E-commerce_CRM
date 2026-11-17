@@ -79,7 +79,7 @@ export function EmployeePlacementFields({ value, onChange, selfId, people }: {
   [adding]);
 
   const managers: ComboOption[] = people.filter(p => p.id !== selfId && p.is_active !== false).map(p => ({ value: p.id, label: p.name || "Unnamed" }));
-  const label = (t: string) => <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">{t}</label>;
+  const label = (t: string) => <label className="text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1">{t}</label>;
   const combo = (k: keyof Placement, t: string, options: ComboOption[], addTable?: UnitTable) => (
     <div>
       {label(t)}

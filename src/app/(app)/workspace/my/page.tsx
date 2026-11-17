@@ -73,7 +73,7 @@ export default function MyWorkPage() {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-[#5f5f5d] gap-3">
         <RefreshCw className="w-8 h-8 animate-spin" />
-        <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Loading your work…</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Loading your work…</p>
       </div>
     );
   }
@@ -88,7 +88,7 @@ export default function MyWorkPage() {
       />
 
       {total === 0 && (
-        <div className="bg-white border border-[#ebece6] rounded-2xl p-10 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
+        <div className="bg-white border border-[#ebece6] rounded-2xl p-10 text-center text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d]/50">
           Nothing on your plate
         </div>
       )}
@@ -98,7 +98,7 @@ export default function MyWorkPage() {
         if (items.length === 0) return null;
         return (
           <div key={label}>
-            <div className={cn("text-[10px] font-black uppercase tracking-widest mb-2", label === "Overdue" ? "text-rose-500" : "text-[#5f5f5d]/60")}>
+            <div className={cn("text-[10px] font-bold uppercase tracking-wider mb-2", label === "Overdue" ? "text-rose-500" : "text-[#5f5f5d]/60")}>
               {label} · {items.length}
             </div>
             <div className="bg-white border border-[#ebece6] rounded-2xl divide-y divide-[#ebece6]">
@@ -114,12 +114,12 @@ export default function MyWorkPage() {
                     <span
                       className={cn(
                         "w-2 h-2 rounded-full flex-shrink-0",
-                        t.priority === "urgent" ? "bg-rose-500" : t.priority === "high" ? "bg-amber-500" : "bg-slate-300"
+                        t.priority === "urgent" ? "bg-rose-500" : t.priority === "high" ? "bg-amber-500" : "bg-[#d4d5cd]"
                       )}
                     />
                     <span className="text-[13px] font-semibold text-[#1c1c1c] flex-1 truncate">{t.title}</span>
                     <span className="hidden sm:block text-[10px] font-bold text-[#5f5f5d]/70 truncate max-w-[120px]">{l?.name ?? "—"}</span>
-                    <span className="hidden min-[420px]:block text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]">{col?.name ?? t.status}</span>
+                    <span className="hidden min-[420px]:block text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d]">{col?.name ?? t.status}</span>
                     {t.due_date && (
                       <span className="text-[10px] font-bold text-[#5f5f5d] w-14 text-right flex-shrink-0">
                         {new Date(t.due_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}

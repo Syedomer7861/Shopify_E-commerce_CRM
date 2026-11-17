@@ -49,8 +49,8 @@ Shipment marked as RTO despite successful customer verification.
             <AlertCircle className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-gray-900">RTO detected</h4>
-            <p className="text-[10px] text-gray-500">Recover lost shipping costs</p>
+            <h4 className="text-xs font-bold text-[#1c1c1c]">RTO detected</h4>
+            <p className="text-[10px] text-[#6b6b67]">Recover lost shipping costs</p>
           </div>
         </div>
         <button 
@@ -58,7 +58,7 @@ Shipment marked as RTO despite successful customer verification.
           className={cn(
             "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
             generated 
-              ? "bg-emerald-500 text-white" 
+              ? "bg-[#55c08f] text-white" 
               : "bg-rose-600 text-white hover:bg-rose-700 shadow-md shadow-rose-200"
           )}
         >
@@ -69,7 +69,7 @@ Shipment marked as RTO despite successful customer verification.
           )}
         </button>
       </div>
-      <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100 text-[10px] text-gray-600 leading-relaxed italic">
+      <div className="bg-[#f6f7f2] p-2.5 rounded-lg border border-[#ebece6] text-[10px] text-[#55554f] leading-relaxed italic">
         &quot;Shipment marked as RTO despite successful customer verification. Requesting reimbursement for shipping charges.&quot;
       </div>
     </div>

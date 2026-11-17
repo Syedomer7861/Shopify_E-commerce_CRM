@@ -142,7 +142,7 @@ export default function RolesPage() {
   }
 
   if (profileLoading || loading) {
-    return <div className="py-12 text-center text-gray-400">Loading roles...</div>;
+    return <div className="py-12 text-center text-[#9a9a94]">Loading roles...</div>;
   }
 
   if (!hasPermission(currentProfile, "manage_team")) {
@@ -173,9 +173,9 @@ export default function RolesPage() {
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-bold text-[#1c1c1c] capitalize">{role.name.replace(/_/g, " ")}</span>
-                      {role.is_system && <Lock className="w-3 h-3 text-gray-300" />}
+                      {role.is_system && <Lock className="w-3 h-3 text-[#d4d5cd]" />}
                     </div>
-                    <div className="text-[10px] text-gray-400 mt-0.5">
+                    <div className="text-[10px] text-[#9a9a94] mt-0.5">
                       {role.name === "admin" ? "All permissions by default" : `${grantedCount} of ${PERMISSION_FIELDS.length} permissions`}
                     </div>
                   </div>
@@ -208,7 +208,7 @@ export default function RolesPage() {
       >
         <div className="space-y-5">
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">Role Name</label>
+            <label className="text-xs font-medium text-[#3a3a36] block mb-1">Role Name</label>
             <input
               type="text"
               className="input"
@@ -218,12 +218,12 @@ export default function RolesPage() {
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
             />
             {editingRole?.is_system && (
-              <p className="text-[9px] text-gray-400 mt-1">System role names can&apos;t be renamed.</p>
+              <p className="text-[9px] text-[#9a9a94] mt-1">System role names can&apos;t be renamed.</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Permissions</label>
+            <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block">Permissions</label>
             {PERMISSION_FIELDS.map(perm => {
               const has = form.permissions[perm.key];
               return (
@@ -232,16 +232,16 @@ export default function RolesPage() {
                   onClick={() => togglePermission(perm.key)}
                   className={cn(
                     "w-full flex items-center justify-between p-3 rounded-lg border transition-all text-left",
-                    has ? "border-[#1c1c1c]/20 bg-[#1c1c1c]/5" : "border-gray-100 hover:border-gray-200"
+                    has ? "border-[#1c1c1c]/20 bg-[#1c1c1c]/5" : "border-[#ebece6] hover:border-[#ebece6]"
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    <perm.icon className={`w-3.5 h-3.5 ${has ? "text-[#1c1c1c]" : "text-gray-300"}`} />
-                    <span className={`text-xs font-medium ${has ? "text-[#1c1c1c]" : "text-gray-500"}`}>{perm.label}</span>
+                    <perm.icon className={`w-3.5 h-3.5 ${has ? "text-[#1c1c1c]" : "text-[#d4d5cd]"}`} />
+                    <span className={`text-xs font-medium ${has ? "text-[#1c1c1c]" : "text-[#6b6b67]"}`}>{perm.label}</span>
                   </div>
                   <div className={cn(
                     "w-5 h-5 rounded flex items-center justify-center transition-all",
-                    has ? "bg-[#1c1c1c] text-white" : "border-2 border-gray-100"
+                    has ? "bg-[#1c1c1c] text-white" : "border-2 border-[#ebece6]"
                   )}>
                     {has && <CheckCircle2 className="w-3 h-3" />}
                   </div>
@@ -251,25 +251,25 @@ export default function RolesPage() {
           </div>
 
           {form.grants && editingRole?.name !== "admin" && (
-            <div className="space-y-3 pt-4 border-t border-gray-100">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Access Matrix</label>
-              <p className="text-[9px] text-gray-400 leading-tight">
+            <div className="space-y-3 pt-4 border-t border-[#ebece6]">
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block">Access Matrix</label>
+              <p className="text-[9px] text-[#9a9a94] leading-tight">
                 What this role can do in each module, and how far it reaches: own records, their reporting team, their department, their branch, or everyone.
               </p>
               {Array.from(new Set(PERMISSION_MODULES.map(m => m.group))).map(group => (
                 <div key={group} className="space-y-1.5">
-                  <div className="text-[9px] font-black text-gray-300 uppercase tracking-widest">{group}</div>
+                  <div className="text-[9px] font-bold text-[#d4d5cd] uppercase tracking-wider">{group}</div>
                   {PERMISSION_MODULES.filter(m => m.group === group).map(mod => (
-                    <div key={mod.key} className="p-2.5 rounded-lg border border-gray-100">
+                    <div key={mod.key} className="p-2.5 rounded-lg border border-[#ebece6]">
                       <div className="text-[11px] font-semibold text-[#1c1c1c] mb-1.5">{mod.label}</div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                         {mod.actions.map(action => (
-                          <label key={action} className="flex items-center justify-between gap-1.5 text-[10px] text-gray-500 capitalize">
+                          <label key={action} className="flex items-center justify-between gap-1.5 text-[10px] text-[#6b6b67] capitalize">
                             {action}
                             <select
                               value={form.grants?.[mod.key]?.[action] ?? ""}
                               onChange={e => setGrant(mod.key, action, e.target.value as Scope | "")}
-                              className="text-[10px] border border-gray-200 rounded px-1 py-0.5 bg-white text-[#1c1c1c] normal-case"
+                              className="text-[10px] border border-[#ebece6] rounded px-1 py-0.5 bg-white text-[#1c1c1c] normal-case"
                             >
                               <option value="">No</option>
                               {SCOPES.map(s => <option key={s} value={s}>{SCOPE_LABELS[s]}</option>)}
@@ -285,14 +285,14 @@ export default function RolesPage() {
           )}
 
           {form.grants && (
-            <div className="space-y-2 pt-4 border-t border-gray-100">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Home Screen</label>
-              <p className="text-[9px] text-gray-400 leading-tight">Widgets this role lands on. All checked = everything it has access to.</p>
+            <div className="space-y-2 pt-4 border-t border-[#ebece6]">
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block">Home Screen</label>
+              <p className="text-[9px] text-[#9a9a94] leading-tight">Widgets this role lands on. All checked = everything it has access to.</p>
               <div className="grid grid-cols-2 gap-2">
                 {HOME_WIDGETS.map(w => {
                   const on = form.home_widgets === null || form.home_widgets.includes(w.key);
                   return (
-                    <label key={w.key} className="flex items-center gap-2 p-2.5 rounded-lg border border-gray-100 text-[11px] text-[#1c1c1c] cursor-pointer">
+                    <label key={w.key} className="flex items-center gap-2 p-2.5 rounded-lg border border-[#ebece6] text-[11px] text-[#1c1c1c] cursor-pointer">
                       <input type="checkbox" checked={on} onChange={() => setForm(f => {
                         const cur = f.home_widgets ?? HOME_WIDGETS.map(x => x.key);
                         const next = on ? cur.filter(k => k !== w.key) : [...cur, w.key];
@@ -306,23 +306,23 @@ export default function RolesPage() {
             </div>
           )}
 
-          <div className="space-y-3 pt-4 border-t border-gray-100">
+          <div className="space-y-3 pt-4 border-t border-[#ebece6]">
             <div className="flex items-center justify-between">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Module Access</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block">Module Access</label>
               {form.nav_modules !== null && (
-                <button onClick={resetModules} className="text-[9px] font-black text-rose-500 uppercase tracking-widest hover:underline">
+                <button onClick={resetModules} className="text-[9px] font-bold text-rose-500 uppercase tracking-wider hover:underline">
                   Reset to all
                 </button>
               )}
             </div>
-            <p className="text-[9px] text-gray-400 leading-tight">
+            <p className="text-[9px] text-[#9a9a94] leading-tight">
               {form.nav_modules === null
                 ? "All pages visible (default). Uncheck any to restrict anyone with this role to a subset."
                 : "Only the checked pages show in the sidebar for anyone with this role."}
             </p>
             {Object.entries(NAV_MODULE_GROUPS).map(([group, keys]) => (
               <div key={group} className="space-y-1.5">
-                <div className="text-[9px] font-black text-gray-300 uppercase tracking-widest">{group}</div>
+                <div className="text-[9px] font-bold text-[#d4d5cd] uppercase tracking-wider">{group}</div>
                 <div className="grid grid-cols-2 gap-2">
                   {keys.map(key => {
                     const has = form.nav_modules === null ? true : form.nav_modules.includes(key);
@@ -332,15 +332,15 @@ export default function RolesPage() {
                         onClick={() => toggleModule(key)}
                         className={cn(
                           "flex items-center justify-between p-2.5 rounded-lg border transition-all text-left",
-                          has ? "border-[#1c1c1c]/20 bg-[#1c1c1c]/5" : "border-gray-100 hover:border-gray-200"
+                          has ? "border-[#1c1c1c]/20 bg-[#1c1c1c]/5" : "border-[#ebece6] hover:border-[#ebece6]"
                         )}
                       >
-                        <span className={cn("text-[11px] font-medium", has ? "text-[#1c1c1c]" : "text-gray-400")}>
+                        <span className={cn("text-[11px] font-medium", has ? "text-[#1c1c1c]" : "text-[#9a9a94]")}>
                           {NAV_MODULE_LABELS[key] || key}
                         </span>
                         <div className={cn(
                           "w-4 h-4 rounded flex items-center justify-center transition-all flex-shrink-0",
-                          has ? "bg-[#1c1c1c] text-white" : "border-2 border-gray-100"
+                          has ? "bg-[#1c1c1c] text-white" : "border-2 border-[#ebece6]"
                         )}>
                           {has && <CheckCircle2 className="w-2.5 h-2.5" />}
                         </div>

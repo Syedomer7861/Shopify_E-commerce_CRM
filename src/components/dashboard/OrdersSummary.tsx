@@ -88,25 +88,25 @@ export function OrdersSummary({ range }: { range?: DateRange }) {
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-[#1c1c1c]">Recent Orders</h3>
-          <Link href="/orders" className="text-[10px] font-black uppercase tracking-widest text-[#5f5f5d] hover:text-[#1c1c1c]">
+          <Link href="/orders" className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] hover:text-[#1c1c1c]">
             View all
           </Link>
         </div>
         {loading ? (
-          <div className="py-8 text-center text-xs text-gray-400">Loading...</div>
+          <div className="py-8 text-center text-xs text-[#9a9a94]">Loading...</div>
         ) : recentOrders.length === 0 ? (
-          <div className="py-8 text-center text-xs text-gray-400">No orders yet.</div>
+          <div className="py-8 text-center text-xs text-[#9a9a94]">No orders yet.</div>
         ) : (
           <div className="space-y-2">
             {recentOrders.map(o => (
               <div key={o.id} className="flex items-center justify-between p-3 rounded-xl border border-[#ebece6]">
                 <div>
                   <div className="text-xs font-bold text-[#1c1c1c]">#{o.order_number || o.shopify_order_id}</div>
-                  <div className="text-[10px] text-gray-400">{(o as any).customer?.name || "Customer"}</div>
+                  <div className="text-[10px] text-[#9a9a94]">{(o as any).customer?.name || "Customer"}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-bold text-[#1c1c1c]">&#8377;{(o.total_price || 0).toLocaleString("en-IN")}</div>
-                  <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400">{o.delivery_status}</div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-[#9a9a94]">{o.delivery_status}</div>
                 </div>
               </div>
             ))}

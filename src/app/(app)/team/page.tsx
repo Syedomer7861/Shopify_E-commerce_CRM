@@ -344,7 +344,7 @@ export default function TeamPage() {
   }
 
   if (profileLoading) {
-    return <div className="py-12 text-center text-gray-400">Loading permissions...</div>;
+    return <div className="py-12 text-center text-[#9a9a94]">Loading permissions...</div>;
   }
 
   if (!hasPermission(currentProfile, "manage_team")) {
@@ -368,16 +368,16 @@ export default function TeamPage() {
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9a9a94]" />
           <input 
             type="text" 
             placeholder="Search by name or email..." 
-            className="input pl-10 h-11 bg-white border-gray-100 shadow-sm"
+            className="input pl-10 h-11 bg-white border-[#ebece6] shadow-sm"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex p-1 bg-gray-100 rounded-xl w-fit max-w-full overflow-x-auto scrollbar-hide">
+        <div className="flex p-1 bg-[#f0f0ec] rounded-xl w-fit max-w-full overflow-x-auto scrollbar-hide">
           {["all", ...roleOptions.map(r => r.name), "demo"].map(role => (
             <button
               key={role}
@@ -386,7 +386,7 @@ export default function TeamPage() {
                 "px-4 py-1.5 text-xs font-bold rounded-lg transition-all capitalize",
                 roleFilter === role 
                   ? "bg-white text-[#1c1c1c] shadow-sm" 
-                  : "text-gray-500 hover:text-gray-700"
+                  : "text-[#6b6b67] hover:text-[#3a3a36]"
               )}
             >
               {role === "demo" ? "Demo Accounts" : role}
@@ -399,15 +399,15 @@ export default function TeamPage() {
         <div className="flex flex-wrap items-center gap-3 mb-4 p-3 rounded-xl bg-[#1c1c1c] text-white">
           <span className="text-xs font-bold">{selectedIds.size} selected</span>
           <button onClick={() => bulkSetActive(true)} disabled={bulkBusy}
-            className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-40">
+            className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-40">
             {bulkBusy ? "…" : "Activate"}
           </button>
           <button onClick={() => bulkSetActive(false)} disabled={bulkBusy}
-            className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-40">
+            className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-40">
             {bulkBusy ? "…" : "Deactivate"}
           </button>
           <button onClick={() => setSelectedIds(new Set())}
-            className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg hover:bg-white/10 ml-auto">
+            className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg hover:bg-white/10 ml-auto">
             Clear
           </button>
         </div>
@@ -415,7 +415,7 @@ export default function TeamPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
-          <div className="col-span-full py-12 text-center text-gray-400">
+          <div className="col-span-full py-12 text-center text-[#9a9a94]">
             <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
             Loading team profiles...
           </div>
@@ -451,12 +451,12 @@ export default function TeamPage() {
             }
             
             const presenceLabel = getPresenceLabel();
-            const dotColor = !p.is_active ? "bg-gray-400" : isOnline ? "bg-[#1c1c1c]" : isRecent ? "bg-amber-400" : "bg-rose-400";
+            const dotColor = !p.is_active ? "bg-[#9a9a94]" : isOnline ? "bg-[#1c1c1c]" : isRecent ? "bg-amber-400" : "bg-rose-400";
             
             return (
             <div 
               key={p.id} 
-              className={`card p-4 hover:shadow-md transition-all group border-l-4 cursor-pointer ${p.is_active ? 'border-l-transparent hover:border-l-[#1c1c1c]' : 'border-l-gray-200 opacity-60'}`}
+              className={`card p-4 hover:shadow-md transition-all group border-l-4 cursor-pointer ${p.is_active ? 'border-l-transparent hover:border-l-[#1c1c1c]' : 'border-l-[#ebece6] opacity-60'}`}
               onClick={(e) => {
                 // Don't trigger if clicking buttons inside
                 if ((e.target as HTMLElement).closest('button')) return;
@@ -470,7 +470,7 @@ export default function TeamPage() {
                     aria-label={selectedIds.has(p.id) ? "Deselect" : "Select"}
                     className={cn(
                       "w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all",
-                      selectedIds.has(p.id) ? "bg-[#1c1c1c] border-[#1c1c1c] text-white" : "border-gray-200 hover:border-gray-400"
+                      selectedIds.has(p.id) ? "bg-[#1c1c1c] border-[#1c1c1c] text-white" : "border-[#ebece6] hover:border-[#9a9a94]"
                     )}
                   >
                     {selectedIds.has(p.id) && <CheckCircle2 className="w-2.5 h-2.5" />}
@@ -482,21 +482,21 @@ export default function TeamPage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   {p.is_demo && (
-                    <div className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-700 border-amber-500/20 shadow-sm animate-fade-in">
+                    <div className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-700 border-amber-500/20 shadow-sm animate-fade-in">
                       Demo
                     </div>
                   )}
                   <div className={cn(
-                    "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border",
-                    p.role === 'admin' && "bg-zinc-900 text-white border-zinc-900",
-                    p.role === 'manager' && "bg-violet-50 text-violet-700 border-violet-100",
-                    p.role === 'marketing' && "bg-blue-50 text-blue-700 border-blue-100",
+                    "text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border",
+                    p.role === 'admin' && "bg-[#1c1c1c] text-white border-[#1c1c1c]",
+                    p.role === 'manager' && "bg-[#eef4fc] text-[#3d66a6] border-[#dfeafa]",
+                    p.role === 'marketing' && "bg-[#eef4fc] text-[#3d66a6] border-[#dfeafa]",
                     p.role === 'hr' && "bg-rose-50 text-rose-700 border-rose-100",
-                    p.role === 'agent' && "bg-emerald-50 text-emerald-700 border-emerald-100"
+                    p.role === 'agent' && "bg-[#ecf8f1] text-[#2f8a5f] border-[#d5f0e1]"
                   )}>
                     {p.role === 'hr' ? 'HR' : p.role === 'marketing' ? 'Workspace' : p.role}
                   </div>
-                  <button aria-label="Delete" onClick={() => handleRemoveMember(p.id)} className="p-1.5 text-gray-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
+                  <button aria-label="Delete" onClick={() => handleRemoveMember(p.id)} className="p-1.5 text-[#d4d5cd] hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -506,18 +506,18 @@ export default function TeamPage() {
                   {p.name || "Pending Signup"}
                   {!p.is_active && <XCircle className="w-3 h-3 text-rose-500" />}
                 </div>
-                <div className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                <div className="text-xs text-[#9a9a94] flex items-center gap-1 mt-0.5">
                   <Mail className="w-3 h-3" /> {p.email}
                 </div>
                 <div className={cn(
                   "text-[10px] font-bold mt-1.5 flex items-center gap-1.5",
-                  isOnline ? "text-[#1c1c1c]" : isRecent ? "text-amber-600" : "text-gray-400"
+                  isOnline ? "text-[#1c1c1c]" : isRecent ? "text-amber-600" : "text-[#9a9a94]"
                 )}>
                   <div className={cn("w-1.5 h-1.5 rounded-full", dotColor)} />
                   {presenceLabel}
                 </div>
               </div>
-              <div className="flex items-center gap-2 pt-3 border-t border-gray-50">
+              <div className="flex items-center gap-2 pt-3 border-t border-[#f6f7f2]">
                 <button 
                   onClick={() => { setSelectedProfile(p); setNewUpdatePassword(""); setNewRevenueTarget(String((p as any).weekly_revenue_target || "")); setEditModal(true); }}
                   className="flex-1 btn-secondary py-1.5 text-xs gap-1.5"
@@ -537,22 +537,22 @@ export default function TeamPage() {
       <Modal open={addModal} onClose={() => setAddModal(false)} title="Create Team Account">
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">Email Address (Login ID)</label>
+            <label className="text-xs font-medium text-[#3a3a36] block mb-1">Email Address (Login ID)</label>
             <input type="email" className="input" placeholder="agent@yourcompany.com"
               value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">Set Password</label>
+            <label className="text-xs font-medium text-[#3a3a36] block mb-1">Set Password</label>
             <input type="password" title="Set Password" name="new-password" placeholder="••••••" className="input" 
               value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">Full Name</label>
+            <label className="text-xs font-medium text-[#3a3a36] block mb-1">Full Name</label>
             <input type="text" className="input" placeholder="John Doe" 
               value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })} />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">Initial Role</label>
+            <label className="text-xs font-medium text-[#3a3a36] block mb-1">Initial Role</label>
             <select className="select" value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })}>
               {roleOptions.map(r => (
                 <option key={r.name} value={r.name}>
@@ -575,31 +575,31 @@ export default function TeamPage() {
         footer={<button className="btn-secondary w-full" onClick={() => setEditModal(false)}>Close</button>}
       >
         <div className="space-y-5">
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+          <div className="flex items-center justify-between p-3 bg-[#f6f7f2] rounded-xl">
              <div className="flex items-center gap-3">
                <Avatar name={selectedProfile?.name || selectedProfile?.email || ""} size="sm" />
                <div>
                   <div className="text-xs font-bold text-[#1c1c1c]">{selectedProfile?.name || "Pending User"}</div>
-                  <div className="text-[10px] text-gray-400">{selectedProfile?.email}</div>
+                  <div className="text-[10px] text-[#9a9a94]">{selectedProfile?.email}</div>
                </div>
              </div>
              <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-medium text-gray-400">Active</span>
+                  <span className="text-[10px] font-medium text-[#9a9a94]">Active</span>
                   <button 
                     onClick={() => updateProfile({ is_active: !selectedProfile?.is_active })}
                     disabled={isUpdating}
-                    className={`w-8 h-4 rounded-full relative transition-colors ${selectedProfile?.is_active ? 'bg-emerald-500' : 'bg-gray-200'}`}
+                    className={`w-8 h-4 rounded-full relative transition-colors ${selectedProfile?.is_active ? 'bg-[#55c08f]' : 'bg-[#e6e7e0]'}`}
                   >
                     <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${selectedProfile?.is_active ? 'left-4.5' : 'left-0.5'}`} />
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-medium text-gray-400">Demo Account</span>
+                  <span className="text-[10px] font-medium text-[#9a9a94]">Demo Account</span>
                   <button 
                     onClick={() => updateProfile({ is_demo: !selectedProfile?.is_demo })}
                     disabled={isUpdating}
-                    className={`w-8 h-4 rounded-full relative transition-colors ${selectedProfile?.is_demo ? 'bg-amber-500' : 'bg-gray-200'}`}
+                    className={`w-8 h-4 rounded-full relative transition-colors ${selectedProfile?.is_demo ? 'bg-amber-500' : 'bg-[#e6e7e0]'}`}
                   >
                     <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${selectedProfile?.is_demo ? 'left-4.5' : 'left-0.5'}`} />
                   </button>
@@ -608,7 +608,7 @@ export default function TeamPage() {
           </div>
 
           <div className="space-y-3">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Security Role</label>
+            <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block">Security Role</label>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {roleOptions.map(r => (
                 <button
@@ -616,17 +616,17 @@ export default function TeamPage() {
                   onClick={() => updateProfile(r.name === "admin"
                     ? { role: r.name }
                     : { role: r.name, permissions: r.permissions })}
-                  className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === r.name ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'}`}
+                  className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === r.name ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-[#ebece6] hover:border-[#ebece6]'}`}
                 >
-                  <div className={`text-xs font-bold capitalize ${selectedProfile?.role === r.name ? 'text-[#1c1c1c]' : 'text-gray-600'}`}>{r.name}</div>
-                  <div className="text-[9px] text-gray-400 mt-0.5">{ROLE_BLURBS[r.name] || "Custom role"}</div>
+                  <div className={`text-xs font-bold capitalize ${selectedProfile?.role === r.name ? 'text-[#1c1c1c]' : 'text-[#55554f]'}`}>{r.name}</div>
+                  <div className="text-[9px] text-[#9a9a94] mt-0.5">{ROLE_BLURBS[r.name] || "Custom role"}</div>
                 </button>
               ))}
             </div>
           </div>
           
           <div className="space-y-3">
-             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Specific Permissions</label>
+             <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block">Specific Permissions</label>
              <div className="space-y-2">
                 {[
                   { key: "view_analytics", label: "View Reports & Analytics", icon: Eye },
@@ -651,15 +651,15 @@ export default function TeamPage() {
                       disabled={isAdmin || isUpdating}
                       className={cn(
                         "w-full flex items-center justify-between p-3 rounded-lg border transition-all text-left group/perm",
-                        has ? 'border-[#1c1c1c]/20 bg-[#1c1c1c]/5' : 'border-gray-100 hover:border-gray-200'
+                        has ? 'border-[#1c1c1c]/20 bg-[#1c1c1c]/5' : 'border-[#ebece6] hover:border-[#ebece6]'
                       )}
                     >
                       <div className="flex items-center gap-3">
-                        <perm.icon className={`w-3.5 h-3.5 ${has ? 'text-[#1c1c1c]' : 'text-gray-300'}`} />
-                        <span className={`text-xs font-medium ${has ? 'text-[#1c1c1c]' : 'text-gray-500'}`}>{perm.label}</span>
+                        <perm.icon className={`w-3.5 h-3.5 ${has ? 'text-[#1c1c1c]' : 'text-[#d4d5cd]'}`} />
+                        <span className={`text-xs font-medium ${has ? 'text-[#1c1c1c]' : 'text-[#6b6b67]'}`}>{perm.label}</span>
                       </div>
                       <div 
-                        className={`w-5 h-5 rounded flex items-center justify-center transition-all ${has ? 'bg-[#1c1c1c] text-white' : 'border-2 border-gray-100'}`}
+                        className={`w-5 h-5 rounded flex items-center justify-center transition-all ${has ? 'bg-[#1c1c1c] text-white' : 'border-2 border-[#ebece6]'}`}
                       >
                         {has && <CheckCircle2 className="w-3 h-3" />}
                       </div>
@@ -668,7 +668,7 @@ export default function TeamPage() {
                 })}
              </div>
              {selectedProfile?.role === "admin" && (
-               <p className="text-[9px] text-gray-400 italic text-center">Administrators have all permissions by default.</p>
+               <p className="text-[9px] text-[#9a9a94] italic text-center">Administrators have all permissions by default.</p>
              )}
           </div>
 
@@ -676,17 +676,17 @@ export default function TeamPage() {
               sidebar. Unset = all visible. A Workspace-role user defaults to
               a locked-down subset; widen it here per user. */}
           {selectedProfile?.role !== "admin" && (
-            <div className="space-y-3 pt-4 border-t border-gray-100">
+            <div className="space-y-3 pt-4 border-t border-[#ebece6]">
               <div className="flex items-center justify-between">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Module Access</label>
+                <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block">Module Access</label>
                 {Array.isArray(selectedProfile?.permissions?.nav_modules) && (
                   <button onClick={resetModules} disabled={isUpdating}
-                    className="text-[9px] font-black text-rose-500 uppercase tracking-widest hover:underline">
+                    className="text-[9px] font-bold text-rose-500 uppercase tracking-wider hover:underline">
                     Reset to all
                   </button>
                 )}
               </div>
-              <p className="text-[9px] text-gray-400 leading-tight">
+              <p className="text-[9px] text-[#9a9a94] leading-tight">
                 {Array.isArray(selectedProfile?.permissions?.nav_modules)
                   ? "Only the checked pages show in this user's sidebar; typing a URL for the rest redirects away. Pages still enforce their own permission checks on top."
                   : allowedNavModules(selectedProfile)
@@ -695,7 +695,7 @@ export default function TeamPage() {
               </p>
               {Object.entries(NAV_MODULE_GROUPS).map(([group, keys]) => (
                 <div key={group} className="space-y-1.5">
-                  <div className="text-[9px] font-black text-gray-300 uppercase tracking-widest">{group}</div>
+                  <div className="text-[9px] font-bold text-[#d4d5cd] uppercase tracking-wider">{group}</div>
                   <div className="grid grid-cols-2 gap-2">
                     {keys.map((key) => {
                       const list = selectedProfile?.permissions?.nav_modules;
@@ -710,15 +710,15 @@ export default function TeamPage() {
                           disabled={isUpdating}
                           className={cn(
                             "flex items-center justify-between p-2.5 rounded-lg border transition-all text-left",
-                            has ? "border-[#1c1c1c]/20 bg-[#1c1c1c]/5" : "border-gray-100 hover:border-gray-200"
+                            has ? "border-[#1c1c1c]/20 bg-[#1c1c1c]/5" : "border-[#ebece6] hover:border-[#ebece6]"
                           )}
                         >
-                          <span className={cn("text-[11px] font-medium", has ? "text-[#1c1c1c]" : "text-gray-400")}>
+                          <span className={cn("text-[11px] font-medium", has ? "text-[#1c1c1c]" : "text-[#9a9a94]")}>
                             {NAV_MODULE_LABELS[key] || key}
                           </span>
                           <div className={cn(
                             "w-4 h-4 rounded flex items-center justify-center transition-all flex-shrink-0",
-                            has ? "bg-[#1c1c1c] text-white" : "border-2 border-gray-100"
+                            has ? "bg-[#1c1c1c] text-white" : "border-2 border-[#ebece6]"
                           )}>
                             {has && <CheckCircle2 className="w-2.5 h-2.5" />}
                           </div>
@@ -736,8 +736,8 @@ export default function TeamPage() {
               0 with no other way to set it, which made every agent's target
               badge show a meaningless 100%. */}
           {selectedProfile?.role === "agent" && (
-            <div className="space-y-3 pt-4 border-t border-gray-100">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Weekly Revenue Target</label>
+            <div className="space-y-3 pt-4 border-t border-[#ebece6]">
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block">Weekly Revenue Target</label>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -755,16 +755,16 @@ export default function TeamPage() {
                   {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Set Target"}
                 </button>
               </div>
-              <p className="text-[9px] text-gray-400 leading-tight">Weekly recovered-revenue goal shown on this agent&apos;s own dashboard.</p>
+              <p className="text-[9px] text-[#9a9a94] leading-tight">Weekly recovered-revenue goal shown on this agent&apos;s own dashboard.</p>
             </div>
           )}
 
           {/* Agent Specialization Section */}
-          <div className="space-y-4 pt-4 border-t border-gray-100">
-             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Agent Specialization</label>
+          <div className="space-y-4 pt-4 border-t border-[#ebece6]">
+             <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block">Agent Specialization</label>
              
              <div className="space-y-3">
-               <div className="text-[10px] font-medium text-gray-500">Target Customer Segments</div>
+               <div className="text-[10px] font-medium text-[#6b6b67]">Target Customer Segments</div>
                <div className="flex flex-wrap gap-2">
                  {["repeat", "one_time", "inactive", "risky", "whale", "loyalist", "bargain_hunter", "risky_returner"].map(segment => {
                    const isSelected = selectedProfile?.assigned_segments?.includes(segment as any);
@@ -776,7 +776,7 @@ export default function TeamPage() {
                          "px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border",
                          isSelected 
                            ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" 
-                           : "bg-white text-gray-500 border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                           : "bg-white text-[#6b6b67] border-[#ebece6] hover:border-[#ebece6] hover:bg-[#f6f7f2]"
                        )}
                      >
                        {segment.replace("_", "-").toUpperCase()}
@@ -784,11 +784,11 @@ export default function TeamPage() {
                    );
                  })}
                </div>
-               <p className="text-[9px] text-gray-400 italic">If none selected, agent sees all customer segments.</p>
+               <p className="text-[9px] text-[#9a9a94] italic">If none selected, agent sees all customer segments.</p>
              </div>
 
              <div className="space-y-3">
-               <div className="text-[10px] font-medium text-gray-500">Priority Task Types</div>
+               <div className="text-[10px] font-medium text-[#6b6b67]">Priority Task Types</div>
                <div className="flex flex-wrap gap-2">
                  {["review", "reorder", "recovery", "issue_resolution", "transit_update", "final_followup", "cod_verify", "ndr", "manager_audit", "welcome_call", "win_back", "vip_followup", "flagged"].map(type => {
                    const isSelected = selectedProfile?.assigned_task_types?.includes(type as any);
@@ -799,8 +799,8 @@ export default function TeamPage() {
                        className={cn(
                          "px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border",
                          isSelected 
-                           ? "bg-indigo-600 text-white border-indigo-600" 
-                           : "bg-white text-gray-500 border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                           ? "bg-[#1c1c1c] text-white border-[#4f7fc8]" 
+                           : "bg-white text-[#6b6b67] border-[#ebece6] hover:border-[#ebece6] hover:bg-[#f6f7f2]"
                        )}
                      >
                        {type.replace("_", " ").toUpperCase()}
@@ -808,11 +808,11 @@ export default function TeamPage() {
                    );
                  })}
                </div>
-               <p className="text-[9px] text-gray-400 italic">If none selected, agent sees all task types.</p>
+               <p className="text-[9px] text-[#9a9a94] italic">If none selected, agent sees all task types.</p>
              </div>
 
              <div className="space-y-3">
-               <div className="text-[10px] font-medium text-gray-500">Field Territory (States)</div>
+               <div className="text-[10px] font-medium text-[#6b6b67]">Field Territory (States)</div>
                <div className="flex flex-wrap gap-2">
                  {INDIAN_STATES.map(state => {
                    const isSelected = selectedProfile?.assigned_states?.includes(state);
@@ -823,8 +823,8 @@ export default function TeamPage() {
                        className={cn(
                          "px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border",
                          isSelected
-                           ? "bg-emerald-600 text-white border-emerald-600"
-                           : "bg-white text-gray-500 border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                           ? "bg-[#3fa877] text-white border-[#3fa877]"
+                           : "bg-white text-[#6b6b67] border-[#ebece6] hover:border-[#ebece6] hover:bg-[#f6f7f2]"
                        )}
                      >
                        {state.toUpperCase()}
@@ -832,12 +832,12 @@ export default function TeamPage() {
                    );
                  })}
                </div>
-               <p className="text-[9px] text-gray-400 italic">For on-field reps. If none selected, no state restriction applies.</p>
+               <p className="text-[9px] text-[#9a9a94] italic">For on-field reps. If none selected, no state restriction applies.</p>
              </div>
           </div>
           
-          <div className="space-y-3 pt-3 border-t border-gray-100">
-             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Security & Access</label>
+          <div className="space-y-3 pt-3 border-t border-[#ebece6]">
+             <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block">Security & Access</label>
              <div className="flex items-center gap-2">
                 <input 
                   type="text" 
@@ -849,12 +849,12 @@ export default function TeamPage() {
                 <button 
                   onClick={handleUpdatePassword} 
                   disabled={isUpdating || newUpdatePassword.length < 6} 
-                  className="btn-secondary whitespace-nowrap bg-gray-900 border-gray-900 text-white hover:bg-[#1c1c1c] hover:border-[#1c1c1c] hover:text-white"
+                  className="btn-secondary whitespace-nowrap bg-[#1c1c1c] border-[#1c1c1c] text-white hover:bg-[#1c1c1c] hover:border-[#1c1c1c] hover:text-white"
                 >
                   {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Set Password"}
                 </button>
              </div>
-             <div className="text-[9px] text-gray-400 leading-tight">
+             <div className="text-[9px] text-[#9a9a94] leading-tight">
                For security, existing passwords cannot be viewed. Setting a new password will immediately overwrite their current login credentials.
              </div>
           </div>

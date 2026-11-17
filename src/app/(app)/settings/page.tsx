@@ -1102,7 +1102,7 @@ export default function SettingsPage() {
 
   if (profileLoading || loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400 gap-3">
+      <div className="flex flex-col items-center justify-center h-[60vh] text-[#9a9a94] gap-3">
         <Loader2 className="w-8 h-8 animate-spin" />
         <p className="text-sm">Loading settings...</p>
       </div>
@@ -1173,7 +1173,7 @@ export default function SettingsPage() {
       {tab === "general" && (
         <div className="space-y-6">
           <div className="card p-6">
-            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2">Cycle Configuration</h3>
+            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2">Cycle Configuration</h3>
             <p className="text-xs text-[#5f5f5d] mb-6 leading-relaxed">Define the temporal triggers for your customer retention sequences. Changes here propagate to all active pending tasks.</p>
             
             {[
@@ -1201,10 +1201,10 @@ export default function SettingsPage() {
           </div>
 
           <div className="flex justify-end gap-3">
-             <button onClick={handleRepairDates} disabled={saving} className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest">
+             <button onClick={handleRepairDates} disabled={saving} className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-wider">
                 Force Realignment
              </button>
-             <button onClick={handleSave} disabled={saving} className="btn-primary py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest min-w-[140px]">
+             <button onClick={handleSave} disabled={saving} className="btn-primary py-2.5 px-8 text-[10px] font-bold uppercase tracking-wider min-w-[140px]">
                 {saving ? "Processing..." : "Commit Changes"}
              </button>
           </div>
@@ -1218,15 +1218,15 @@ export default function SettingsPage() {
           <div className="card overflow-hidden bg-[#fcfbf8]">
             <div className="px-6 py-4 bg-[#1c1c1c] text-[#f6f7f2] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Smartphone className="w-4 h-4 text-emerald-400" />
+                <Smartphone className="w-4 h-4 text-[#6fcb9d]" />
                 <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Cloud Telephony</h3>
               </div>
-              <span className="text-[9px] font-black bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-lg border border-emerald-500/30 tracking-widest">ACTIVE</span>
+              <span className="text-[9px] font-bold bg-[#55c08f]/20 text-[#6fcb9d] px-2.5 py-1 rounded-lg border border-[#55c08f]/30 tracking-wider">ACTIVE</span>
             </div>
             
             <div className="p-6 space-y-6">
               <div>
-                <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-3 block opacity-60">Active Provider</label>
+                <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-3 block opacity-60">Active Provider</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     { key: "none", label: "None (Manual / Webhook)" },
@@ -1239,7 +1239,7 @@ export default function SettingsPage() {
                       type="button"
                       onClick={() => setSettings({ ...settings, telephony_provider: p.key })}
                       className={cn(
-                        "py-3 px-4 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all text-center",
+                        "py-3 px-4 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all text-center",
                         settings.telephony_provider === p.key
                           ? "bg-[#1c1c1c] border-[#1c1c1c] text-white shadow-md shadow-black/10"
                           : "bg-white border-[#ebece6] text-[#5f5f5d] hover:border-[#1c1c1c]/30"
@@ -1254,7 +1254,7 @@ export default function SettingsPage() {
               {settings.telephony_provider === "demo" && (
                 <div className="space-y-4 pt-2 border-t border-[#ebece6]/50 animate-in fade-in duration-300">
                   <div className="bg-[#fcfbf8] border border-amber-200 bg-amber-50/30 rounded-2xl p-5">
-                    <h4 className="text-[10px] font-bold text-amber-800 uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                    <h4 className="text-[10px] font-bold text-amber-800 uppercase tracking-wider mb-1.5 flex items-center gap-2">
                       <AlertCircle className="w-3.5 h-3.5 text-amber-600" /> Simulated Call Sandbox Active
                     </h4>
                     <p className="text-[10px] text-amber-800/80 font-semibold leading-relaxed">
@@ -1265,7 +1265,7 @@ export default function SettingsPage() {
                   {/* Test Connection */}
                   <div className="bg-[#fcfbf8] border border-[#ebece6] rounded-2xl p-4 flex items-center justify-between gap-4">
                     <div className="flex-1">
-                      <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">Verify Simulated Dialer</h4>
+                      <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-1">Verify Simulated Dialer</h4>
                       <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed opacity-70">
                         Initiate a fast simulation callback loop to verify local raw log event streaming.
                       </p>
@@ -1281,7 +1281,7 @@ export default function SettingsPage() {
                       <button
                         onClick={handleTestCall}
                         disabled={testingCall}
-                        className="btn-primary py-2 px-4 text-[9px] font-black uppercase tracking-widest shrink-0 h-9"
+                        className="btn-primary py-2 px-4 text-[9px] font-bold uppercase tracking-wider shrink-0 h-9"
                       >
                         {testingCall ? "SIMULATING..." : "SIMULATE CALL"}
                       </button>
@@ -1294,7 +1294,7 @@ export default function SettingsPage() {
                 <div className="space-y-4 pt-2 border-t border-[#ebece6]/50 animate-in fade-in duration-300">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
-                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Twilio Account SID</label>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-2 block opacity-60">Twilio Account SID</label>
                       <input
                         type="text"
                         value={settings.twilio_account_sid || ""}
@@ -1304,7 +1304,7 @@ export default function SettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Twilio Auth Token</label>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-2 block opacity-60">Twilio Auth Token</label>
                       <input
                         type="password"
                         value={settings.twilio_auth_token || ""}
@@ -1314,7 +1314,7 @@ export default function SettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Caller ID / Verified Twilio Number</label>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-2 block opacity-60">Caller ID / Verified Twilio Number</label>
                       <input
                         type="text"
                         value={settings.twilio_caller_id || ""}
@@ -1328,7 +1328,7 @@ export default function SettingsPage() {
                   {/* Test Connection */}
                   <div className="bg-[#fcfbf8] border border-[#ebece6] rounded-2xl p-4 flex items-center justify-between gap-4 mt-4">
                     <div className="flex-1">
-                      <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">Verify Twilio Credentials</h4>
+                      <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-1">Verify Twilio Credentials</h4>
                       <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed opacity-70">
                         Initiate a test phone call to verify Twilio API and outbound routing connectivity.
                       </p>
@@ -1344,7 +1344,7 @@ export default function SettingsPage() {
                       <button
                         onClick={handleTestCall}
                         disabled={testingCall}
-                        className="btn-primary py-2 px-4 text-[9px] font-black uppercase tracking-widest shrink-0 h-9"
+                        className="btn-primary py-2 px-4 text-[9px] font-bold uppercase tracking-wider shrink-0 h-9"
                       >
                         {testingCall ? "DIALING..." : "TEST DIAL"}
                       </button>
@@ -1357,7 +1357,7 @@ export default function SettingsPage() {
                 <div className="space-y-4 pt-2 border-t border-[#ebece6]/50 animate-in fade-in duration-300">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
-                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Exotel API Key / SID</label>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-2 block opacity-60">Exotel API Key / SID</label>
                       <input
                         type="text"
                         value={settings.exotel_sid || ""}
@@ -1367,7 +1367,7 @@ export default function SettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Exotel API Token</label>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-2 block opacity-60">Exotel API Token</label>
                       <input
                         type="password"
                         value={settings.exotel_token || ""}
@@ -1377,7 +1377,7 @@ export default function SettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Exotel Virtual / Caller Number</label>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-2 block opacity-60">Exotel Virtual / Caller Number</label>
                       <input
                         type="text"
                         value={settings.exotel_caller_id || ""}
@@ -1391,7 +1391,7 @@ export default function SettingsPage() {
                   {/* Test Connection */}
                   <div className="bg-[#fcfbf8] border border-[#ebece6] rounded-2xl p-4 flex items-center justify-between gap-4 mt-4">
                     <div className="flex-1">
-                      <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">Verify Exotel Credentials</h4>
+                      <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-1">Verify Exotel Credentials</h4>
                       <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed opacity-70">
                         Initiate a test phone call to verify Exotel API integration and local virtual number routing.
                       </p>
@@ -1407,7 +1407,7 @@ export default function SettingsPage() {
                       <button
                         onClick={handleTestCall}
                         disabled={testingCall}
-                        className="btn-primary py-2 px-4 text-[9px] font-black uppercase tracking-widest shrink-0 h-9"
+                        className="btn-primary py-2 px-4 text-[9px] font-bold uppercase tracking-wider shrink-0 h-9"
                       >
                         {testingCall ? "DIALING..." : "TEST DIAL"}
                       </button>
@@ -1433,12 +1433,12 @@ export default function SettingsPage() {
                 {settings.sms_fallback_enabled ? (
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1c1c1c] border border-[#1c1c1c] rounded-xl shadow-md">
                     <ToggleRight className="w-4 h-4 text-white" />
-                    <span className="text-[8px] font-black text-white uppercase tracking-widest">BRIDGE ACTIVE</span>
+                    <span className="text-[8px] font-bold text-white uppercase tracking-wider">BRIDGE ACTIVE</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#ebece6] rounded-xl">
-                    <ToggleLeft className="w-4 h-4 text-gray-400" />
-                    <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">BRIDGE INACTIVE</span>
+                    <ToggleLeft className="w-4 h-4 text-[#9a9a94]" />
+                    <span className="text-[8px] font-bold text-[#6b6b67] uppercase tracking-wider">BRIDGE INACTIVE</span>
                   </div>
                 )}
               </button>
@@ -1451,7 +1451,7 @@ export default function SettingsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Twilio Account SID</label>
+                  <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-2 block opacity-60">Twilio Account SID</label>
                   <input
                     type="text"
                     value={settings.sms_twilio_sid || ""}
@@ -1461,7 +1461,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Twilio Auth Token</label>
+                  <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-2 block opacity-60">Twilio Auth Token</label>
                   <input
                     type="password"
                     value={settings.sms_twilio_token || ""}
@@ -1471,7 +1471,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Twilio SMS Phone Number / Short Code</label>
+                  <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-2 block opacity-60">Twilio SMS Phone Number / Short Code</label>
                   <input
                     type="text"
                     value={settings.sms_twilio_number || ""}
@@ -1485,7 +1485,7 @@ export default function SettingsPage() {
               {/* SMS Test Connection */}
               <div className="bg-[#fcfbf8] border border-[#ebece6] rounded-2xl p-4 flex items-center justify-between gap-4 mt-4">
                 <div className="flex-1">
-                  <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">Test SMS Connection</h4>
+                  <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-1">Test SMS Connection</h4>
                   <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed opacity-70">
                     Send a test SMS to confirm API permissions and verify outbound mobile routing.
                   </p>
@@ -1501,7 +1501,7 @@ export default function SettingsPage() {
                   <button
                     onClick={handleTestSMS}
                     disabled={testingSMS}
-                    className="btn-primary py-2 px-4 text-[9px] font-black uppercase tracking-widest shrink-0 h-9"
+                    className="btn-primary py-2 px-4 text-[9px] font-bold uppercase tracking-wider shrink-0 h-9"
                   >
                     {testingSMS ? "SENDING..." : "TEST SMS"}
                   </button>
@@ -1512,7 +1512,7 @@ export default function SettingsPage() {
 
           {/* Manual Webhook dialing (MacroDroid) instructions */}
           <div className="card p-6">
-            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 opacity-60">Manual Agent Handset Integration (MacroDroid)</h3>
+            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4 opacity-60">Manual Agent Handset Integration (MacroDroid)</h3>
             <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Establish a cost-free manual telephony channel by transforming any agent&apos;s Android device into an automated webhook caller via MacroDroid.</p>
             
             <div className="space-y-8">
@@ -1569,11 +1569,11 @@ export default function SettingsPage() {
 
               <div className="bg-[#1c1c1c] border border-white/10 rounded-2xl p-6 shadow-2xl">
                 <div className="flex gap-4">
-                  <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                  <ShieldCheck className="w-5 h-5 text-[#55c08f] shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-2">Manager Live Monitor</h4>
+                    <h4 className="text-[10px] font-bold text-[#55c08f] uppercase tracking-wider mb-2">Manager Live Monitor</h4>
                     <p className="text-[11px] text-[#f6f7f2] leading-relaxed font-medium opacity-90">
-                      Once configured, whenever an agent initiates a call, their status will instantly update to <span className="bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">ON CALL</span> across the CRM. Managers can listen to recorded calls directly from the Audit Queue.
+                      Once configured, whenever an agent initiates a call, their status will instantly update to <span className="bg-[#55c08f]/20 text-[#6fcb9d] px-1.5 py-0.5 rounded font-bold">ON CALL</span> across the CRM. Managers can listen to recorded calls directly from the Audit Queue.
                     </p>
                   </div>
                 </div>
@@ -1583,7 +1583,7 @@ export default function SettingsPage() {
 
           {/* Commit Settings Button */}
           <div className="flex justify-end gap-3 pt-4 border-t border-[#ebece6]/50">
-             <button onClick={handleSave} disabled={saving} className="btn-primary py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest min-w-[140px]">
+             <button onClick={handleSave} disabled={saving} className="btn-primary py-2.5 px-8 text-[10px] font-bold uppercase tracking-wider min-w-[140px]">
                 {saving ? "Saving..." : "Commit Settings"}
              </button>
           </div>
@@ -1598,8 +1598,8 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between gap-6">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-1">
-                    <div className={cn("w-2 h-2 rounded-full", settings.whatsapp_enabled ? "bg-emerald-500 animate-pulse" : "bg-gray-300")} />
-                    <h3 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest">WhatsApp Master Switch</h3>
+                    <div className={cn("w-2 h-2 rounded-full", settings.whatsapp_enabled ? "bg-[#55c08f] animate-pulse" : "bg-[#d4d5cd]")} />
+                    <h3 className="text-xs font-bold text-[#1c1c1c] uppercase tracking-wider">WhatsApp Master Switch</h3>
                   </div>
                   <p className="text-[10px] text-[#5f5f5d] font-medium leading-relaxed italic opacity-60">
                     Turns all WhatsApp messaging on or off. When OFF, no automated or manual WhatsApp messages will send.
@@ -1612,12 +1612,12 @@ export default function SettingsPage() {
                   {settings.whatsapp_enabled ? (
                     <div className="flex items-center gap-2 px-4 py-2 bg-[#1c1c1c] border border-[#1c1c1c] rounded-2xl shadow-lg shadow-black/10">
                       <ToggleRight className="w-5 h-5 text-white" />
-                      <span className="text-[10px] font-black text-white uppercase tracking-widest">ON</span>
+                      <span className="text-[10px] font-bold text-white uppercase tracking-wider">ON</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 px-4 py-2 bg-white border border-[#ebece6] rounded-2xl shadow-sm">
-                      <ToggleLeft className="w-5 h-5 text-gray-400" />
-                      <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">OFF</span>
+                      <ToggleLeft className="w-5 h-5 text-[#9a9a94]" />
+                      <span className="text-[10px] font-bold text-[#6b6b67] uppercase tracking-wider">OFF</span>
                     </div>
                   )}
                 </button>
@@ -1633,13 +1633,13 @@ export default function SettingsPage() {
                     <Smartphone className="w-4 h-4" />
                     <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Enterprise Meta API</h3>
                   </div>
-                  <span className="text-[9px] font-black bg-white/20 text-white px-2.5 py-1 rounded-lg border border-white/30 tracking-widest">PREMIUM</span>
+                  <span className="text-[9px] font-bold bg-white/20 text-white px-2.5 py-1 rounded-lg border border-white/30 tracking-wider">PREMIUM</span>
                 </div>
                 
                 <div className="p-6 space-y-6">
                   <div className="grid grid-cols-2 gap-6">
                     <div className="col-span-2">
-                       <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">System Access Token</label>
+                       <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-2 block opacity-60">System Access Token</label>
                        <input 
                          type="password" 
                          value={settings.whatsapp_token || ""} 
@@ -1649,7 +1649,7 @@ export default function SettingsPage() {
                        />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Phone Number ID</label>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-2 block opacity-60">Phone Number ID</label>
                       <input 
                         type="text" 
                         value={settings.whatsapp_phone_id || ""} 
@@ -1659,7 +1659,7 @@ export default function SettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Meta App ID</label>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-2 block opacity-60">Meta App ID</label>
                       <input 
                         type="text" 
                         value={settings.whatsapp_app_id || ""} 
@@ -1669,7 +1669,7 @@ export default function SettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Meta App Secret</label>
+                      <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-2 block opacity-60">Meta App Secret</label>
                       <input 
                         type="password" 
                         value={settings.whatsapp_app_secret || ""} 
@@ -1681,12 +1681,12 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="pt-6 border-t border-[#ebece6]/50">
-                    <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-2 block opacity-60">Webhook Configuration</label>
+                    <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-2 block opacity-60">Webhook Configuration</label>
                     <p className="text-[10px] text-[#5f5f5d] mb-4 italic opacity-70">Configure these in Meta Dashboard &gt; Webhooks</p>
                     
                     <div className="space-y-4">
                       <div>
-                        <div className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1.5 opacity-60">Callback URL</div>
+                        <div className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-1.5 opacity-60">Callback URL</div>
                         <div className="flex gap-2">
                           <input 
                             type="text" 
@@ -1706,7 +1706,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       <div>
-                        <div className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1.5 opacity-60">Verify Token</div>
+                        <div className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-1.5 opacity-60">Verify Token</div>
                         <input 
                           type="text" 
                           value={settings.whatsapp_verify_token || ""} 
@@ -1742,10 +1742,10 @@ export default function SettingsPage() {
                        {!waStatus.qr && <div className="w-52 h-52 flex items-center justify-center text-[#ebece6]"><Loader2 className="w-10 h-10 animate-spin" /></div>}
                     </div>
                     <div className="mt-8 flex flex-col items-center gap-3">
-                       <div className="flex items-center gap-3 text-[10px] text-[#1c1c1c] font-bold bg-white px-5 py-2 rounded-xl border border-[#ebece6] shadow-sm uppercase tracking-widest">
+                       <div className="flex items-center gap-3 text-[10px] text-[#1c1c1c] font-bold bg-white px-5 py-2 rounded-xl border border-[#ebece6] shadow-sm uppercase tracking-wider">
                           <WifiOff className="w-3.5 h-3.5 animate-pulse" /> Awaiting Handshake...
                        </div>
-                       <button onClick={fetchStatus} className="text-[10px] text-[#5f5f5d] hover:text-[#1c1c1c] underline underline-offset-4 decoration-[#ebece6] transition-all font-bold uppercase tracking-widest">Refresh Sequence</button>
+                       <button onClick={fetchStatus} className="text-[10px] text-[#5f5f5d] hover:text-[#1c1c1c] underline underline-offset-4 decoration-[#ebece6] transition-all font-bold uppercase tracking-wider">Refresh Sequence</button>
                     </div>
                   </div>
                 </div>
@@ -1753,31 +1753,31 @@ export default function SettingsPage() {
 
               {/* Legacy Bridge (Accordion) */}
               <details className="card border-[#ebece6]/60 bg-[#ebece6]/10 group">
-                <summary className="px-6 py-4 text-[10px] font-bold text-[#5f5f5d] cursor-pointer hover:text-[#1c1c1c] transition-colors flex items-center justify-between uppercase tracking-widest list-none">
+                <summary className="px-6 py-4 text-[10px] font-bold text-[#5f5f5d] cursor-pointer hover:text-[#1c1c1c] transition-colors flex items-center justify-between uppercase tracking-wider list-none">
                   <div className="flex items-center gap-3">
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Own bridge server (optional)</span>
                   </div>
-                  <span className="text-[9px] bg-[#ebece6] text-[#1c1c1c] px-2 py-0.5 rounded-lg tracking-widest">v2.0</span>
+                  <span className="text-[9px] bg-[#ebece6] text-[#1c1c1c] px-2 py-0.5 rounded-lg tracking-wider">v2.0</span>
                 </summary>
                 
                 <div className="px-6 pb-6 pt-2 border-t border-[#ebece6]/50 space-y-5">
                   {waStatus.ready ? (
                     <div className="p-4 rounded-xl bg-[#1c1c1c] text-[#f6f7f2] flex items-center justify-between shadow-lg shadow-black/10">
-                      <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Connected
+                      <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider">
+                        <CheckCircle2 className="w-4 h-4 text-[#6fcb9d]" /> Connected
                       </div>
-                      <button onClick={fetchStatus} className="text-[9px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 underline underline-offset-4">Refresh Status</button>
+                      <button onClick={fetchStatus} className="text-[9px] font-bold uppercase tracking-wider opacity-60 hover:opacity-100 underline underline-offset-4">Refresh Status</button>
                     </div>
                   ) : (
                     <div className="p-4 text-center text-[11px] text-[#5f5f5d] leading-relaxed">
-                      <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Not Connected</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Not Connected</p>
                       {waStatus.error && <p className="mt-2">{waStatus.error}</p>}
                     </div>
                   )}
                   
                   <div>
-                    <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-60">Bridge Server URL</label>
+                    <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2 block opacity-60">Bridge Server URL</label>
                     <input 
                       type="text" 
                       value={settings.whatsapp_bridge_url || ""} 
@@ -1792,7 +1792,7 @@ export default function SettingsPage() {
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Admin WhatsApp Number</label>
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-2 opacity-60">Admin WhatsApp Number</label>
                   <input 
                     type="text" 
                     value={settings.whatsapp_admin_phone || ""} 
@@ -1802,7 +1802,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Daily Send Time</label>
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-2 opacity-60">Daily Send Time</label>
                   <input 
                     type="time" 
                     value={settings.whatsapp_send_time || "10:00"} 
@@ -1817,21 +1817,21 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className={cn("w-2.5 h-2.5 rounded-full animate-pulse", 
-                      waStatus.ready ? "bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]" : 
+                      waStatus.ready ? "bg-[#55c08f] shadow-[0_0_12px_rgba(16,185,129,0.4)]" : 
                       waStatus.state === "DISCONNECTED" ? "bg-rose-500" : "bg-amber-500")} />
                     <span className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-[0.2em]">
                       Status: <span className={cn(
-                        waStatus.ready ? "text-emerald-600" : 
+                        waStatus.ready ? "text-[#3fa877]" : 
                         waStatus.state === "DISCONNECTED" ? "text-rose-600" : "text-amber-600"
                       )}>{waStatus.ready ? "Authenticated" : waStatus.state?.replace("_", " ") || "INITIALISING"}</span>
                     </span>
                   </div>
                   {waStatus.ready ? (
-                     <button onClick={() => waAction("logout")} disabled={waBusy} className="text-[10px] font-bold uppercase tracking-widest text-rose-600 hover:text-rose-700 transition-colors disabled:opacity-50">
+                     <button onClick={() => waAction("logout")} disabled={waBusy} className="text-[10px] font-bold uppercase tracking-wider text-rose-600 hover:text-rose-700 transition-colors disabled:opacity-50">
                         Disconnect
                      </button>
                   ) : (
-                     <button onClick={() => waAction("restart")} disabled={waBusy} className="text-[10px] font-bold uppercase tracking-widest rounded-full bg-[#1c1c1c] text-white px-4 py-2 hover:bg-black transition-colors flex items-center gap-2 disabled:opacity-50">
+                     <button onClick={() => waAction("restart")} disabled={waBusy} className="text-[10px] font-bold uppercase tracking-wider rounded-full bg-[#1c1c1c] text-white px-4 py-2 hover:bg-black transition-colors flex items-center gap-2 disabled:opacity-50">
                         <QrCode className={cn("w-3.5 h-3.5", waBusy && "animate-pulse")} /> {waStatus.qr ? "New QR code" : "Connect WhatsApp"}
                      </button>
                   )}
@@ -1840,7 +1840,7 @@ export default function SettingsPage() {
 
               {/* Testing & Tools */}
               <div className="pt-8 mt-4 border-t border-[#ebece6]/50">
-                <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4">Diagnostics & Manual Triggers</h4>
+                <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4">Diagnostics & Manual Triggers</h4>
                 <div className="grid grid-cols-2 gap-4">
                   {[
                     { label: "Dispatch Daily Digest", icon: Send, onClick: async () => {
@@ -1886,7 +1886,7 @@ export default function SettingsPage() {
                   ].map((btn, i) => (
                     <button key={i}
                       onClick={btn.onClick}
-                      className="flex items-center justify-center gap-3 py-3 px-4 bg-[#fcfbf8] hover:bg-[#ebece6] text-[#1c1c1c] rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-[#ebece6] shadow-sm hover:shadow-md"
+                      className="flex items-center justify-center gap-3 py-3 px-4 bg-[#fcfbf8] hover:bg-[#ebece6] text-[#1c1c1c] rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border border-[#ebece6] shadow-sm hover:shadow-md"
                     >
                       <btn.icon className="w-3.5 h-3.5" /> {btn.label}
                     </button>
@@ -1895,9 +1895,9 @@ export default function SettingsPage() {
               </div>
 
               {/* Automation Rules */}
-              <div className="pt-8 mt-8 border-t border-gray-100">
-                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Automation Rules</h4>
-                <p className="text-[10px] text-gray-400 mb-6 italic">Enable these to send WhatsApp messages automatically when certain events occur. <strong>These will be sent instantly via the active bridge.</strong></p>
+              <div className="pt-8 mt-8 border-t border-[#ebece6]">
+                <h4 className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider mb-4">Automation Rules</h4>
+                <p className="text-[10px] text-[#9a9a94] mb-6 italic">Enable these to send WhatsApp messages automatically when certain events occur. <strong>These will be sent instantly via the active bridge.</strong></p>
                 
                 {/* Anti-Ban Safeguard Speed Config */}
                 <div className="border border-[#ebece6] rounded-lg p-3 bg-[#f6f7f2]/30 space-y-3 mb-6">
@@ -1905,13 +1905,13 @@ export default function SettingsPage() {
                     <AlertCircle className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
                     Anti-Ban Sending Speed Safeguard
                   </div>
-                  <p className="text-[10px] text-gray-500 leading-relaxed">
+                  <p className="text-[10px] text-[#6b6b67] leading-relaxed">
                     Standardizing random time delays between messages mimics natural human behaviour, significantly reducing the risk of your phone number being flagged or banned by WhatsApp/Meta.
                   </p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
                     <div>
-                      <label className="text-[10px] font-bold text-gray-700 block mb-1">Speed Preset</label>
+                      <label className="text-[10px] font-bold text-[#3a3a36] block mb-1">Speed Preset</label>
                       <select 
                         className="select text-xs bg-white"
                         value={settings.wa_speed_preset || "safe"}
@@ -1933,7 +1933,7 @@ export default function SettingsPage() {
                     {(settings.wa_speed_preset === "custom" || !settings.wa_speed_preset) && (
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-[10px] font-bold text-gray-700 block mb-0.5">Min Delay (s)</label>
+                          <label className="text-[10px] font-bold text-[#3a3a36] block mb-0.5">Min Delay (s)</label>
                           <input 
                             type="number" 
                             className="input text-xs bg-white" 
@@ -1943,7 +1943,7 @@ export default function SettingsPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-bold text-gray-700 block mb-0.5">Max Delay (s)</label>
+                          <label className="text-[10px] font-bold text-[#3a3a36] block mb-0.5">Max Delay (s)</label>
                           <input 
                             type="number" 
                             className="input text-xs bg-white" 
@@ -1970,11 +1970,11 @@ export default function SettingsPage() {
                     { label: "Stale Shipment Alert", field: "wa_auto_stale_shipment", templateField: "wa_stale_shipment_template", desc: "Sent when a shipment hasn't moved in transit for a while" },
                     { label: "Final Follow-up", field: "wa_auto_final_followup", templateField: "wa_final_followup_template", desc: "Sent as a last re-engagement attempt on stalled tasks" },
                   ].map(rule => (
-                    <div key={rule.field} className="card p-4 border-gray-100 bg-gray-50/30">
+                    <div key={rule.field} className="card p-4 border-[#ebece6] bg-[#f6f7f2]/30">
                       <div className="flex items-center justify-between gap-4 mb-4">
                         <div className="flex-1">
                           <div className="text-xs font-bold text-[#1c1c1c]">{rule.label}</div>
-                          <div className="text-[10px] text-gray-400 mt-0.5">{rule.desc}</div>
+                          <div className="text-[10px] text-[#9a9a94] mt-0.5">{rule.desc}</div>
                         </div>
                         <button 
                           onClick={() => setSettings({ ...settings, [rule.field]: !settings[rule.field] })}
@@ -1983,12 +1983,12 @@ export default function SettingsPage() {
                           {settings[rule.field] ? (
                             <div className="flex items-center gap-1.5 px-2 py-1 bg-[#1c1c1c]/10 border border-[#1c1c1c]/20 rounded-full">
                               <ToggleRight className="w-4 h-4 text-[#1c1c1c]" />
-                              <span className="text-[9px] font-black text-[#1c1c1c] uppercase">ACTIVE</span>
+                              <span className="text-[9px] font-bold text-[#1c1c1c] uppercase">ACTIVE</span>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 border border-gray-200 rounded-full">
-                              <ToggleLeft className="w-4 h-4 text-gray-400" />
-                              <span className="text-[9px] font-black text-gray-500 uppercase">OFF</span>
+                            <div className="flex items-center gap-1.5 px-2 py-1 bg-[#f0f0ec] border border-[#ebece6] rounded-full">
+                              <ToggleLeft className="w-4 h-4 text-[#9a9a94]" />
+                              <span className="text-[9px] font-bold text-[#6b6b67] uppercase">OFF</span>
                             </div>
                           )}
                         </button>
@@ -1998,7 +1998,7 @@ export default function SettingsPage() {
                         <div className="mt-4 animate-fade-in-down border-t border-[#1c1c1c]/5 pt-4">
                           <div className="flex flex-col gap-3">
                             <div className="flex items-center justify-between">
-                              <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest opacity-60">Message Content</label>
+                              <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider opacity-60">Message Content</label>
                               <div className="flex items-center gap-3">
                                 <div className="text-[10px] font-bold text-[#5f5f5d] italic opacity-40">Proposals:</div>
                                 <div className="flex gap-2">
@@ -2037,7 +2037,7 @@ export default function SettingsPage() {
 
                {/* Message Templates */}
                <div className="pt-10 mt-8 border-t border-[#ebece6]">
-                <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-6">Task Specific Prototypes (Scheduled)</h4>
+                <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-6">Task Specific Prototypes (Scheduled)</h4>
                 
                 <div className="space-y-8">
                   {[
@@ -2049,7 +2049,7 @@ export default function SettingsPage() {
                     <div key={t.field} className="grid grid-cols-3 gap-6">
                       <div className="col-span-2">
                         <div className="flex flex-col mb-3">
-                          <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest opacity-60 mb-1">{t.label}</label>
+                          <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider opacity-60 mb-1">{t.label}</label>
                           <p className="text-[9px] text-[#5f5f5d] font-medium opacity-50 italic">{t.desc}</p>
                         </div>
                         <textarea 
@@ -2060,7 +2060,7 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-60">Meta ID</label>
+                        <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2 block opacity-60">Meta ID</label>
                         <input 
                           type="text" 
                           value={settings[t.metaField] || ""} 
@@ -2075,7 +2075,7 @@ export default function SettingsPage() {
                   ))}
 
                   <div className="bg-[#1c1c1c] text-[#f6f7f2] rounded-xl p-5 shadow-lg shadow-black/10">
-                    <h5 className="text-[10px] font-bold uppercase tracking-widest mb-3 opacity-60">System Attributes</h5>
+                    <h5 className="text-[10px] font-bold uppercase tracking-wider mb-3 opacity-60">System Attributes</h5>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-2">
                       <div className="text-[10px] font-bold flex justify-between"><span>{"{{name}}"}</span> <span className="opacity-40">Full Name</span></div>
                       <div className="text-[10px] font-bold flex justify-between"><span>{"{{first_name}}"}</span> <span className="opacity-40">First Name</span></div>
@@ -2092,7 +2092,7 @@ export default function SettingsPage() {
 
                   <div className="pt-4 flex items-center justify-between border-t border-[#ebece6]/50">
                     <div>
-                      <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-1 opacity-60">Recovery Sequence Latency</label>
+                      <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-1 opacity-60">Recovery Sequence Latency</label>
                       <p className="text-[10px] text-[#5f5f5d] italic opacity-50">Hours elapsed before cart abandonment trigger</p>
                     </div>
                     <div className="flex items-center gap-4">
@@ -2103,7 +2103,7 @@ export default function SettingsPage() {
                         onChange={e => setSettings({ ...settings, recovery_delay_hours: parseFloat(e.target.value) })}
                         className="input text-[10px] font-bold text-[#1c1c1c] w-20 bg-[#fcfbf8] h-10 text-center" 
                       />
-                      {settings.recovery_delay_hours === 0.25 && <span className="text-[10px] bg-[#1c1c1c] text-white px-2 py-1 rounded font-bold tracking-widest">RAPID</span>}
+                      {settings.recovery_delay_hours === 0.25 && <span className="text-[10px] bg-[#1c1c1c] text-white px-2 py-1 rounded font-bold tracking-wider">RAPID</span>}
                     </div>
                   </div>
                 </div>
@@ -2113,7 +2113,7 @@ export default function SettingsPage() {
                <div className="pt-10 mt-8 border-t border-[#ebece6]">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Live Pipeline Monitoring</h4>
+                    <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">Live Pipeline Monitoring</h4>
                     <p className="text-[10px] text-[#5f5f5d] mt-1 opacity-60 font-medium">Real-time visibility into administrative communication flows</p>
                   </div>
                   <button onClick={fetchPipelineData} aria-label="Refresh" title="Refresh" className="w-9 h-9 flex items-center justify-center hover:bg-[#ebece6] rounded-lg text-[#5f5f5d] transition-all">
@@ -2124,15 +2124,15 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-2 gap-4">
                     {/* Column 1: Recently Sent */}
                     <div className="space-y-4">
-                      <h5 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest px-1 opacity-40">Recently Dispatched</h5>
+                      <h5 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider px-1 opacity-40">Recently Dispatched</h5>
                       <div className="space-y-2 max-h-[240px] overflow-y-auto pr-2 scroller-hide">
                          {pipeline.sent.length === 0 ? (
-                           <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest p-8 border border-dashed border-[#ebece6] rounded-2xl text-center opacity-30 bg-[#ebece6]/10">No recent activity</div>
+                           <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider p-8 border border-dashed border-[#ebece6] rounded-2xl text-center opacity-30 bg-[#ebece6]/10">No recent activity</div>
                          ) : pipeline.sent.map(log => (
                            <div key={log.id} className="p-4 bg-[#fcfbf8] border border-[#ebece6] rounded-2xl group transition-all hover:border-[#1c1c1c]/30 shadow-sm">
                              <div className="flex justify-between items-start mb-1">
                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-bold text-[#1c1c1c] truncate uppercase tracking-widest">{log.customer?.name || "Customer"}</span>
+                                  <span className="text-[10px] font-bold text-[#1c1c1c] truncate uppercase tracking-wider">{log.customer?.name || "Customer"}</span>
                                   {log.isAuto && <span className="text-[8px] px-1.5 py-0.5 bg-[#1c1c1c] text-white rounded font-bold uppercase tracking-tighter">Auto</span>}
                                 </div>
                                 <span className="text-[9px] text-[#5f5f5d] font-bold opacity-40 tabular-nums">{log.called_at && mounted ? new Date(log.called_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}</span>
@@ -2145,10 +2145,10 @@ export default function SettingsPage() {
 
                     {/* Column 2: In Queue */}
                     <div className="space-y-4">
-                      <h5 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest px-1 opacity-40">Queued for Dispatch</h5>
+                      <h5 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider px-1 opacity-40">Queued for Dispatch</h5>
                       <div className="space-y-2 max-h-[240px] overflow-y-auto pr-2 scroller-hide">
                          {pipeline.waiting.length === 0 ? (
-                           <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest p-8 border border-dashed border-[#ebece6] rounded-2xl text-center opacity-30 bg-[#ebece6]/10">Queue finalized</div>
+                           <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider p-8 border border-dashed border-[#ebece6] rounded-2xl text-center opacity-30 bg-[#ebece6]/10">Queue finalized</div>
                          ) : pipeline.waiting.map(task => {
                             const [h, m] = (settings.whatsapp_send_time || "10:00").split(":");
                             const target = new Date();
@@ -2186,7 +2186,7 @@ export default function SettingsPage() {
                                <div className="flex justify-between items-start mb-2">
                                  <div>
                                    <div className="flex items-center gap-2 mb-1">
-                                     <div className="text-[10px] font-bold text-[#1c1c1c] truncate uppercase tracking-widest">{task.customer?.name || "Customer"}</div>
+                                     <div className="text-[10px] font-bold text-[#1c1c1c] truncate uppercase tracking-wider">{task.customer?.name || "Customer"}</div>
                                      {task.isWorkflow ? (
                                        <span className="text-[8px] px-1.5 py-0.5 bg-[#1c1c1c] text-white rounded font-bold uppercase tracking-tighter">Auto</span>
                                      ) : (
@@ -2194,10 +2194,10 @@ export default function SettingsPage() {
                                      )}
                                    </div>
                                    <div className="flex items-center gap-2">
-                                     <span className={cn("text-[9px] font-bold uppercase tracking-widest", isOverdue ? "text-[#1c1c1c]" : "text-[#5f5f5d] opacity-50")}>
+                                     <span className={cn("text-[9px] font-bold uppercase tracking-wider", isOverdue ? "text-[#1c1c1c]" : "text-[#5f5f5d] opacity-50")}>
                                        {timeText}
                                      </span>
-                                     <span className="text-[8px] px-2 py-0.5 bg-[#ebece6]/30 border border-[#ebece6] text-[#5f5f5d] rounded-lg font-bold uppercase tracking-widest">
+                                     <span className="text-[8px] px-2 py-0.5 bg-[#ebece6]/30 border border-[#ebece6] text-[#5f5f5d] rounded-lg font-bold uppercase tracking-wider">
                                        {task.isWorkflow ? (task.workflowName || "Workflow") : (task.task_type || "manual").replace("_", " ")}
                                      </span>
                                    </div>
@@ -2218,7 +2218,7 @@ export default function SettingsPage() {
                   </div>
                </div>
 
-              <div className="flex justify-end mt-8 pt-8 border-t border-gray-100">
+              <div className="flex justify-end mt-8 pt-8 border-t border-[#ebece6]">
                 <button className="btn-primary" onClick={handleSave} disabled={saving}>
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   {saving ? "Saving..." : "Save Changes"}
@@ -2234,12 +2234,12 @@ export default function SettingsPage() {
           <div className="card p-6">
             <div className="flex items-center gap-3 mb-2">
               <Mail className="w-4 h-4 text-[#1c1c1c]" />
-              <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Google OAuth Configuration</h3>
+              <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">Google OAuth Configuration</h3>
             </div>
             <p className="text-xs text-[#5f5f5d] mb-6 leading-relaxed">Configure your Gmail API credentials to enable automated email communications and re-engagement campaigns.</p>
 
             <div className="bg-[#1c1c1c]/5 border border-[#1c1c1c]/10 rounded-2xl p-5 mb-8">
-              <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-3 opacity-60">Fast Import (credentials.json)</label>
+              <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-3 opacity-60">Fast Import (credentials.json)</label>
               <textarea 
                 className="w-full h-24 bg-white border-[#ebece6] rounded-xl p-4 text-[10px] font-mono mb-3"
                 placeholder='Paste your Google credentials JSON here...'
@@ -2254,7 +2254,7 @@ export default function SettingsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block opacity-60">Client ID</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block opacity-60">Client ID</label>
                 <input 
                   type="text" 
                   value={settings.gmail_client_id || ""} 
@@ -2264,7 +2264,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block opacity-60">Client Secret</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block opacity-60">Client Secret</label>
                 <input 
                   type="password" 
                   value={settings.gmail_client_secret || ""} 
@@ -2274,7 +2274,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block opacity-60">Project ID</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block opacity-60">Project ID</label>
                 <input 
                   type="text" 
                   value={settings.gmail_project_id || ""} 
@@ -2284,7 +2284,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block opacity-60">Redirect URIs</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block opacity-60">Redirect URIs</label>
                 <input 
                   type="text" 
                   value={settings.gmail_redirect_uris?.join(", ") || ""} 
@@ -2296,12 +2296,12 @@ export default function SettingsPage() {
             </div>
 
             <details className="mt-8 pt-8 border-t border-[#ebece6]/50 group">
-              <summary className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest cursor-pointer opacity-40 hover:opacity-100 transition-opacity list-none flex items-center gap-2">
+              <summary className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider cursor-pointer opacity-40 hover:opacity-100 transition-opacity list-none flex items-center gap-2">
                 Advanced Endpoints <Sliders className="w-3 h-3" />
               </summary>
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block opacity-60">Auth URI</label>
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block opacity-60">Auth URI</label>
                   <input 
                     type="text" 
                     value={settings.gmail_auth_uri || ""} 
@@ -2310,7 +2310,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block opacity-60">Token URI</label>
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block opacity-60">Token URI</label>
                   <input 
                     type="text" 
                     value={settings.gmail_token_uri || ""} 
@@ -2324,28 +2324,28 @@ export default function SettingsPage() {
 
           <div className="flex justify-end gap-3">
              {settings.gmail_refresh_token ? (
-               <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100">
+               <div className="flex items-center gap-2 px-4 py-2 bg-[#ecf8f1] text-[#2f8a5f] rounded-xl border border-[#d5f0e1]">
                  <Check className="w-3.5 h-3.5" />
-                 <span className="text-[10px] font-bold uppercase tracking-widest">Authenticated</span>
+                 <span className="text-[10px] font-bold uppercase tracking-wider">Authenticated</span>
                </div>
              ) : (
                <a 
                  href="/api/auth/google" 
                  target="_blank"
                  rel="noopener noreferrer"
-                 className="flex items-center gap-2 px-6 py-2.5 bg-[#fcfbf8] hover:bg-[#ebece6] text-[#1c1c1c] rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-[#ebece6] shadow-sm hover:shadow-md"
+                 className="flex items-center gap-2 px-6 py-2.5 bg-[#fcfbf8] hover:bg-[#ebece6] text-[#1c1c1c] rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border border-[#ebece6] shadow-sm hover:shadow-md"
                >
                  <ShieldCheck className="w-4 h-4" /> Authorize Gmail
                </a>
              )}
-             <button onClick={handleSave} disabled={saving} className="btn-primary py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest min-w-[140px]">
+             <button onClick={handleSave} disabled={saving} className="btn-primary py-2.5 px-8 text-[10px] font-bold uppercase tracking-wider min-w-[140px]">
                 {saving ? "Processing..." : "Commit Gmail Settings"}
              </button>
           </div>
 
           {/* Email Automation Rules */}
           <div className="pt-10 mt-10 border-t border-[#ebece6]">
-            <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 flex items-center gap-2">
+            <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4 flex items-center gap-2">
               <Zap className="w-3.5 h-3.5 text-amber-500" /> Branded Email Automations
             </h4>
             <p className="text-[10px] text-[#5f5f5d] mb-8 italic">Enable these to send professional, branded HTML emails automatically. These will be wrapped in a high-fidelity template.</p>
@@ -2372,12 +2372,12 @@ export default function SettingsPage() {
                       {settings[rule.field] ? (
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1c1c1c] text-[#f6f7f2] rounded-full shadow-lg shadow-black/10">
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span className="text-[9px] font-black uppercase tracking-widest">ACTIVE</span>
+                          <span className="text-[9px] font-bold uppercase tracking-wider">ACTIVE</span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#ebece6] text-[#5f5f5d] rounded-full">
                           <ToggleLeft className="w-3.5 h-3.5 opacity-40" />
-                          <span className="text-[9px] font-black uppercase tracking-widest">DISABLED</span>
+                          <span className="text-[9px] font-bold uppercase tracking-wider">DISABLED</span>
                         </div>
                       )}
                     </button>
@@ -2386,7 +2386,7 @@ export default function SettingsPage() {
                   {settings[rule.field] && (
                     <div className="space-y-4 pt-6 border-t border-[#ebece6] animate-fade-in-down">
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest opacity-40">Configure Template</label>
+                        <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider opacity-40">Configure Template</label>
                         <div className="flex items-center gap-2">
                           <span className="text-[9px] font-bold text-[#5f5f5d] italic mr-1">Load Preset:</span>
                           {EMAIL_PRESETS[rule.templateField]?.map((preset, idx) => (
@@ -2410,7 +2410,7 @@ export default function SettingsPage() {
 
                       <div className="space-y-3">
                         <div>
-                          <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1.5 block opacity-60">Subject Line</label>
+                          <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-1.5 block opacity-60">Subject Line</label>
                           <input 
                             type="text" 
                             value={settings[rule.subjectField] || ""} 
@@ -2420,7 +2420,7 @@ export default function SettingsPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1.5 block opacity-60">Email Body (Plain Text)</label>
+                          <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-1.5 block opacity-60">Email Body (Plain Text)</label>
                           <textarea 
                             value={settings[rule.templateField] || ""} 
                             onChange={e => setSettings({ ...settings, [rule.templateField]: e.target.value })}
@@ -2438,7 +2438,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="flex justify-end mt-10">
-            <button className="btn-primary py-3 px-10 text-[10px] font-bold uppercase tracking-widest" onClick={handleSave} disabled={saving}>
+            <button className="btn-primary py-3 px-10 text-[10px] font-bold uppercase tracking-wider" onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? "Saving Configuration..." : "Save All Email Settings"}
             </button>
@@ -2450,12 +2450,12 @@ export default function SettingsPage() {
       {tab === "shopify" && (
         <div className="space-y-6">
           <div className="card p-6">
-            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 opacity-60">Admin API Integration</h3>
+            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4 opacity-60">Admin API Integration</h3>
             <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Establish a direct secure tunnel to Shopify GraphQL endpoints for high-fidelity data extraction and identity resolution.</p>
             
             <div className="space-y-8">
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Store URL</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-2 opacity-60">Store URL</label>
                 <input 
                   type="text" 
                   value={settings.shopify_store_domain || ""} 
@@ -2467,7 +2467,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Admin API Access Token</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-2 opacity-60">Admin API Access Token</label>
                 <input 
                   type="password" 
                   value={settings.shopify_api_key || ""} 
@@ -2479,7 +2479,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Webhook Signing Secret</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-2 opacity-60">Webhook Signing Secret</label>
                 <input 
                   type="password" 
                   value={settings.shopify_webhook_secret || ""} 
@@ -2506,7 +2506,7 @@ export default function SettingsPage() {
                       toast.error(e instanceof Error ? e.message : "Replay failed");
                     }
                   }}
-                  className="mt-3 text-[10px] font-bold uppercase tracking-widest underline opacity-70 hover:opacity-100"
+                  className="mt-3 text-[10px] font-bold uppercase tracking-wider underline opacity-70 hover:opacity-100"
                 >
                   Process held webhooks
                 </button>
@@ -2514,7 +2514,7 @@ export default function SettingsPage() {
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">OAuth Client ID</label>
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-2 opacity-60">OAuth Client ID</label>
                   <input
                     type="text"
                     value={settings.shopify_client_id || ""}
@@ -2524,7 +2524,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">OAuth Client Secret</label>
+                  <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-2 opacity-60">OAuth Client Secret</label>
                   <input
                     type="password"
                     value={settings.shopify_api_secret || ""}
@@ -2536,7 +2536,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Refresh Token</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-2 opacity-60">Refresh Token</label>
                 <input
                   type="password"
                   value={settings.shopify_refresh_token || ""}
@@ -2548,14 +2548,14 @@ export default function SettingsPage() {
 
               {settings.shopify_token_expires_at && (
                 <div className="text-[10px] font-bold text-[#1c1c1c] bg-[#ebece6]/30 border border-[#ebece6] rounded-xl px-4 py-3 flex items-center justify-between">
-                  <span className="opacity-60 uppercase tracking-widest">Token Lifecycle Ends:</span>
+                  <span className="opacity-60 uppercase tracking-wider">Token Lifecycle Ends:</span>
                   <span className="font-mono">{new Date(settings.shopify_token_expires_at).toLocaleString()}</span>
                 </div>
               )}
 
               <div className="pt-8 border-t border-[#ebece6]/50 flex items-center justify-between">
                 <div>
-                   <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Autonomous Sentinel</h4>
+                   <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">Autonomous Sentinel</h4>
                    <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">
                      {lastSync 
                        ? `Last background sync: ${new Date(lastSync).toLocaleString()}` 
@@ -2563,7 +2563,7 @@ export default function SettingsPage() {
                    </p>
                 </div>
                 <div className={cn(
-                  "px-4 py-1.5 rounded-full text-[9px] font-black tracking-widest border transition-all", 
+                  "px-4 py-1.5 rounded-full text-[9px] font-bold tracking-wider border transition-all", 
                   settings.shopify_api_key ? "bg-[#1c1c1c] text-[#f6f7f2] border-[#1c1c1c]" : "bg-[#ebece6]/30 text-[#5f5f5d] border-[#ebece6]"
                 )}>
                   {settings.shopify_api_key ? "ACTIVE" : "OFFLINE"}
@@ -2573,19 +2573,19 @@ export default function SettingsPage() {
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={handleTestShopifyConnection} disabled={testingShopify}>
+            <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-wider" onClick={handleTestShopifyConnection} disabled={testingShopify}>
               {testingShopify ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-2" />}
               {testingShopify ? "Validating..." : "Ping Shopify API"}
             </button>
             <button
-              className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest border-[#1c1c1c]/10 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-100 transition-all"
+              className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-wider border-[#1c1c1c]/10 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-100 transition-all"
               onClick={handleDeepSync}
               disabled={saving || !settings.shopify_api_key}
             >
               <Zap className={cn("w-3.5 h-3.5 mr-2", saving && "animate-pulse")} /> Run 48h Recovery Audit
             </button>
             <button
-              className="btn-primary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest bg-[#1c1c1c] hover:bg-[#1c1c1c]/90 text-[#f6f7f2]"
+              className="btn-primary py-2.5 px-6 text-[10px] font-bold uppercase tracking-wider bg-[#1c1c1c] hover:bg-[#1c1c1c]/90 text-[#f6f7f2]"
               onClick={() => startSyncStream("/api/sync/shopify")}
               disabled={saving || !settings.shopify_api_key}
             >
@@ -2599,7 +2599,7 @@ export default function SettingsPage() {
               happen through this tab alone. Every other settings tab ends
               with this same Save Settings button; this one just didn't. */}
           <div className="flex justify-end pt-8 mt-8 border-t border-[#ebece6]">
-            <button className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-3 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleSave} disabled={saving}>
+            <button className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-3 px-8 text-[10px] font-bold uppercase tracking-wider shadow-xl shadow-black/10" onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Save className="w-3.5 h-3.5 mr-2" />}
               {saving ? "Saving..." : "Save Settings"}
             </button>
@@ -2612,12 +2612,12 @@ export default function SettingsPage() {
       {tab === "shiprocket" && (
         <div className="space-y-6">
           <div className="card p-6">
-            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-4 opacity-60">Shiprocket Integration</h3>
+            <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4 opacity-60">Shiprocket Integration</h3>
             <p className="text-xs text-[#5f5f5d] mb-8 leading-relaxed">Connect to Shiprocket for real-time shipment tracking and delivery status updates.</p>
             
             <div className="grid grid-cols-2 gap-6 mb-8">
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Email</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-2 opacity-60">Email</label>
                 <input 
                   type="email" 
                   value={settings.shiprocket_email || ""} 
@@ -2627,7 +2627,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Password</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-2 opacity-60">Password</label>
                 <input 
                   type="password" 
                   value={settings.shiprocket_password || ""} 
@@ -2641,7 +2641,7 @@ export default function SettingsPage() {
             <div className="pt-8 border-t border-[#ebece6]/50">
                <div className="flex items-center justify-between mb-6">
                   <div>
-                     <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest flex items-center gap-2">
+                     <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider flex items-center gap-2">
                        <Zap className="w-3.5 h-3.5 text-[#1c1c1c]" /> Fastrr Checkout Sync
                      </h4>
                      <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">Import abandoned carts from Fastrr checkout</p>
@@ -2701,7 +2701,7 @@ export default function SettingsPage() {
               <div className="flex gap-4 relative z-10">
                 <AlertCircle className="w-5 h-5 text-white shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-[10px] font-bold uppercase tracking-widest mb-2 opacity-60">Webhook Setup Instructions</h4>
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider mb-2 opacity-60">Webhook Setup Instructions</h4>
                   <p className="text-[11px] leading-relaxed opacity-80 font-medium">
                     1. Go to Shiprocket &gt; Settings &gt; Webhooks.<br />
                     2. Add a webhook using the URL below.<br />
@@ -2717,11 +2717,11 @@ export default function SettingsPage() {
                 <div className="flex gap-4">
                   <WifiOff className="w-5 h-5 text-rose-500 shrink-0" />
                   <div>
-                    <h4 className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-2">Can&apos;t Reach Localhost</h4>
+                    <h4 className="text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-2">Can&apos;t Reach Localhost</h4>
                     <p className="text-[11px] text-[#f6f7f2] leading-relaxed font-medium">
                       Administrative oversight is compromised. Shiprocket cannot reach <span className="underline decoration-rose-500/50 italic text-[#ebece6]">localhost</span> from the cloud.
                       <br /><br />
-                      <span className="text-rose-500 font-bold uppercase tracking-widest">Remedy:</span> Implement an <span className="bg-white/10 px-2 py-0.5 rounded-lg text-[#ebece6]">ngrok</span> tunnel or deploy to a reachable staging environment to restore live cart visibility.
+                      <span className="text-rose-500 font-bold uppercase tracking-wider">Remedy:</span> Implement an <span className="bg-white/10 px-2 py-0.5 rounded-lg text-[#ebece6]">ngrok</span> tunnel or deploy to a reachable staging environment to restore live cart visibility.
                     </p>
                   </div>
                 </div>
@@ -2730,7 +2730,7 @@ export default function SettingsPage() {
 
             <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Webhook URL</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-2 opacity-60">Webhook URL</label>
                 <div className="flex gap-3">
                   <input 
                     type="text" 
@@ -2751,7 +2751,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-60">Webhook Secret (X-Shiprocket-Secret)</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-2 opacity-60">Webhook Secret (X-Shiprocket-Secret)</label>
                 <input 
                   type="text" 
                   value={settings.shiprocket_webhook_secret || ""} 
@@ -2765,7 +2765,7 @@ export default function SettingsPage() {
               <div className="pt-10 mt-8 border-t border-[#ebece6]">
                  <div className="flex items-center gap-3 mb-6">
                     <Database className="w-4 h-4 text-[#1c1c1c]" />
-                    <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Import Past Fastrr Carts</h3>
+                    <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">Import Past Fastrr Carts</h3>
                  </div>
                  <div className="flex items-center gap-8 bg-[#fcfbf8] border border-[#ebece6] rounded-2xl p-6">
                     <div className="flex-1">
@@ -2827,7 +2827,7 @@ export default function SettingsPage() {
                         />
                         <button 
                             onClick={() => (fileInputRef as any).current?.click()}
-                            className="btn-primary bg-[#1c1c1c] hover:bg-[#1c1c1c]/90 text-[#f6f7f2] py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10"
+                            className="btn-primary bg-[#1c1c1c] hover:bg-[#1c1c1c]/90 text-[#f6f7f2] py-2.5 px-6 text-[10px] font-bold uppercase tracking-wider shadow-xl shadow-black/10"
                             disabled={saving}
                         >
                             <Plus className="w-3.5 h-3.5 mr-2" /> Upload CSV
@@ -2840,12 +2840,12 @@ export default function SettingsPage() {
                 <div className="space-y-8">
                   <div className="flex items-center justify-between">
                      <div>
-                        <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Manual Sync</h4>
+                        <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">Manual Sync</h4>
                         <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">Pull the latest orders and customer data directly from Shiprocket</p>
                      </div>
                       <button
                         onClick={() => startSyncStream("/api/sync/shiprocket")}
-                        className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10"
+                        className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-2.5 px-6 text-[10px] font-bold uppercase tracking-wider shadow-xl shadow-black/10"
                         disabled={saving}
                       >
                         <RefreshCw className={cn("w-3.5 h-3.5 mr-2", syncStatus.active && "animate-spin")} /> Run Sync
@@ -2855,14 +2855,14 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between border-t border-[#ebece6]/50 pt-8">
                      <div className="flex-1 pr-12">
                         <div className="flex items-center gap-3 mb-2">
-                           <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Phone Number Recovery</h4>
+                           <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">Phone Number Recovery</h4>
                            {maskedCount !== null && maskedCount > 0 && (
-                             <span className="px-2 py-0.5 bg-rose-500 text-white text-[9px] font-black rounded-lg tracking-widest uppercase">
+                             <span className="px-2 py-0.5 bg-rose-500 text-white text-[9px] font-bold rounded-lg tracking-wider uppercase">
                                {maskedCount} Masked
                              </span>
                            )}
                            {maskedCount === 0 && (
-                             <span className="px-2 py-0.5 bg-[#1c1c1c] text-[#f6f7f2] text-[9px] font-black rounded-lg tracking-widest uppercase">
+                             <span className="px-2 py-0.5 bg-[#1c1c1c] text-[#f6f7f2] text-[9px] font-bold rounded-lg tracking-wider uppercase">
                                Optimized
                              </span>
                            )}
@@ -2879,7 +2879,7 @@ export default function SettingsPage() {
                         }
                       }}
                       className={cn(
-                        "btn-primary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl transition-all",
+                        "btn-primary py-2.5 px-6 text-[10px] font-bold uppercase tracking-wider shadow-xl transition-all",
                         maskedCount && maskedCount > 0
                           ? "bg-[#1c1c1c] text-[#f6f7f2] shadow-black/10"
                           : "bg-[#ebece6]/50 text-[#5f5f5d] shadow-none cursor-not-allowed border-[#ebece6]"
@@ -2893,12 +2893,12 @@ export default function SettingsPage() {
 
                   <div className="flex items-center justify-between border-t border-[#ebece6]/50 pt-8">
                      <div>
-                        <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Pending Webhooks</h4>
+                        <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">Pending Webhooks</h4>
                         <p className="text-[11px] text-[#5f5f5d] mt-1 font-medium opacity-60">Process any webhook events that are still waiting</p>
                      </div>
                      <button 
                       onClick={() => startSyncStream("/api/sync/all")}
-                      className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest"
+                      className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-wider"
                       disabled={saving}
                      >
                        <RefreshCw className={cn("w-3.5 h-3.5 mr-2", syncStatus.active && "animate-spin")} /> Process Queue
@@ -2910,7 +2910,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="flex justify-end pt-8 mt-8 border-t border-[#ebece6]">
-            <button className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-3 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleSave} disabled={saving}>
+            <button className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-3 px-8 text-[10px] font-bold uppercase tracking-wider shadow-xl shadow-black/10" onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Save className="w-3.5 h-3.5 mr-2" />}
               {saving ? "Saving..." : "Save Settings"}
             </button>
@@ -2921,8 +2921,8 @@ export default function SettingsPage() {
       {/* Manual Dispatch Modal */}
       <Modal open={manualWaModal} onClose={() => setManualWaModal(false)} title="Send Manual Message"
         footer={<>
-          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setManualWaModal(false)}>Cancel</button>
-          <button className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleManualSend} disabled={sendingManualWa}>
+          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-wider" onClick={() => setManualWaModal(false)}>Cancel</button>
+          <button className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-2.5 px-8 text-[10px] font-bold uppercase tracking-wider shadow-xl shadow-black/10" onClick={handleManualSend} disabled={sendingManualWa}>
             {sendingManualWa ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Send className="w-3.5 h-3.5 mr-2" />}
             {sendingManualWa ? "Sending..." : "Send Now"}
           </button>
@@ -2931,13 +2931,13 @@ export default function SettingsPage() {
         <div className="space-y-6 py-4">
           <div className="bg-[#1c1c1c] text-[#f6f7f2] p-5 rounded-2xl flex gap-4 shadow-xl">
              <AlertCircle className="w-4 h-4 text-white shrink-0 mt-0.5" />
-             <div className="text-[10px] font-bold uppercase tracking-widest leading-relaxed opacity-80">
+             <div className="text-[10px] font-bold uppercase tracking-wider leading-relaxed opacity-80">
                 Sends a message to <span className="text-white">{manualWaCustomerName}</span> right now and marks this task as <span className="text-white">Resolved</span>.
              </div>
           </div>
 
           <div>
-            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Message</label>
+            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2 block opacity-40">Message</label>
             <textarea
               className="input text-xs h-40 leading-relaxed bg-[#fcfbf8] border-[#ebece6] rounded-2xl p-5"
               value={manualWaMessage}
@@ -2947,11 +2947,11 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Attachment (Optional)</label>
+            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2 block opacity-40">Attachment (Optional)</label>
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-3 px-5 py-3 border border-dashed border-[#ebece6] rounded-xl hover:border-[#1c1c1c] hover:bg-[#ebece6]/30 transition-all cursor-pointer text-[#5f5f5d]">
                 <Paperclip className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">{manualWaFile ? "Replace File" : "Attach File"}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">{manualWaFile ? "Replace File" : "Attach File"}</span>
                 <input type="file" className="hidden" onChange={e => setManualWaFile(e.target.files?.[0] || null)} />
               </label>
               {manualWaFile && (
@@ -2970,7 +2970,7 @@ export default function SettingsPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between gap-6 p-6 bg-[#fcfbf8] rounded-2xl border border-[#ebece6]">
              <div>
-                <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest">Product Lifecycle Management</h4>
+                <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">Product Lifecycle Management</h4>
                 <p className="text-[11px] text-[#5f5f5d] font-medium opacity-60">Define custom offsets and administrative logic per catalog entity</p>
              </div>
              <div className="flex gap-3">
@@ -2998,7 +2998,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <button 
-                  className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-2 px-6 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" 
+                  className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-2 px-6 text-[10px] font-bold uppercase tracking-wider shadow-xl shadow-black/10" 
                   onClick={() => {
                     setEditingId(null);
                     setNewOverride({
@@ -3022,13 +3022,13 @@ export default function SettingsPage() {
 
           {overrides.length === 0 ? (
             <div className="card p-20 text-center border-dashed border-[#ebece6]">
-              <p className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest opacity-20">No product overrides defined.</p>
+              <p className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider opacity-20">No product overrides defined.</p>
             </div>
           ) : overrides.map(o => (
             <div key={o.id} className="card p-6 border-[#ebece6] hover:border-[#1c1c1c]/30 transition-all">
               <div className="flex items-start justify-between gap-6 mb-6">
                 <div>
-                  <div className="text-[11px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1">{o.product_name}</div>
+                  <div className="text-[11px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-1">{o.product_name}</div>
                   <div className="text-[9px] text-[#5f5f5d] font-mono opacity-40">{o.shopify_product_id}</div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -3069,7 +3069,7 @@ export default function SettingsPage() {
                   { label: "Course Length", value: o.course_duration_days },
                 ].map(f => (
                   <div key={f.label}>
-                    <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-40">{f.label}</label>
+                    <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-2 opacity-40">{f.label}</label>
                     <div className="text-[10px] font-bold text-[#1c1c1c] tabular-nums">{f.value || 0} Days</div>
                   </div>
                 ))}
@@ -3079,7 +3079,7 @@ export default function SettingsPage() {
                 <div className="mt-6 pt-6 border-t border-[#ebece6]/50 grid grid-cols-2 gap-8">
                   {o.usage_notes && (
                     <div className="col-span-2">
-                       <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-2 opacity-40">Operational Notes</label>
+                       <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-2 opacity-40">Operational Notes</label>
                        <p className="text-[10px] text-[#1c1c1c] font-medium italic opacity-70 leading-relaxed">&quot;{o.usage_notes}&quot;</p>
                     </div>
                   )}
@@ -3087,13 +3087,13 @@ export default function SettingsPage() {
                     {o.is_priority && (
                       <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                        <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest">High Priority Boost</span>
+                        <span className="text-[9px] font-bold text-rose-500 uppercase tracking-wider">High Priority Boost</span>
                       </div>
                     )}
                     {o.upsell_product_name && (
                       <div className="flex items-center gap-2">
                         <ShoppingBag className="w-3 h-3 text-[#1c1c1c] opacity-40" />
-                        <span className="text-[9px] font-black text-[#1c1c1c] uppercase tracking-widest opacity-60">Upsell: {o.upsell_product_name}</span>
+                        <span className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider opacity-60">Upsell: {o.upsell_product_name}</span>
                       </div>
                     )}
                   </div>
@@ -3125,9 +3125,9 @@ export default function SettingsPage() {
             <div className="bg-rose-500 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <AlertCircle className="w-4 h-4 text-white" />
-                <h3 className="text-[10px] font-bold text-white uppercase tracking-widest">Danger Zone</h3>
+                <h3 className="text-[10px] font-bold text-white uppercase tracking-wider">Danger Zone</h3>
               </div>
-              <span className="text-[9px] font-black text-white/50 uppercase tracking-widest">Irreversible</span>
+              <span className="text-[9px] font-bold text-white/50 uppercase tracking-wider">Irreversible</span>
             </div>
             <div className="p-8 space-y-8 bg-[#fcfbf8]">
               {[
@@ -3138,10 +3138,10 @@ export default function SettingsPage() {
               ].map(d => (
                 <div key={d.type} className="flex items-center justify-between gap-12 group">
                   <div className="flex-1">
-                    <div className="text-[11px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-1 group-hover:text-rose-500 transition-colors">{d.label}</div>
+                    <div className="text-[11px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-1 group-hover:text-rose-500 transition-colors">{d.label}</div>
                     <div className="text-[10px] text-[#5f5f5d] font-medium opacity-60 leading-relaxed">{d.desc}</div>
                   </div>
-                  <button onClick={() => { setPurgeConfirmText(""); setConfirmModal({ open: true, type: d.type as any }); }} className="btn-primary bg-rose-500 hover:bg-rose-600 text-white py-2 px-6 text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-rose-500/20">
+                  <button onClick={() => { setPurgeConfirmText(""); setConfirmModal({ open: true, type: d.type as any }); }} className="btn-primary bg-rose-500 hover:bg-rose-600 text-white py-2 px-6 text-[10px] font-bold uppercase tracking-wider shadow-lg shadow-rose-500/20">
                     Delete
                   </button>
                 </div>
@@ -3154,8 +3154,8 @@ export default function SettingsPage() {
       {/* Add/Edit Override Modal */}
       <Modal open={showAddOverride} onClose={() => setShowAddOverride(false)} title={editingId ? "Edit Override" : "Add Override"}
         footer={<>
-          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setShowAddOverride(false)}>Cancel</button>
-          <button className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-black/10" onClick={handleAddOverride} disabled={saving}>
+          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-wider" onClick={() => setShowAddOverride(false)}>Cancel</button>
+          <button className="btn-primary bg-[#1c1c1c] text-[#f6f7f2] py-2.5 px-8 text-[10px] font-bold uppercase tracking-wider shadow-xl shadow-black/10" onClick={handleAddOverride} disabled={saving}>
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : (editingId ? <CheckCircle2 className="w-3.5 h-3.5 mr-2" /> : <Plus className="w-3.5 h-3.5 mr-2" />)}
             {saving ? "Saving..." : (editingId ? "Save Changes" : "Add Override")}
           </button>
@@ -3163,7 +3163,7 @@ export default function SettingsPage() {
       >
         <div className="space-y-6 py-4">
           <div>
-            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Product</label>
+            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2 block opacity-40">Product</label>
             <select 
               className="input text-[11px] font-bold bg-[#fcfbf8] border-[#ebece6] rounded-xl h-12 disabled:opacity-30"
               disabled={!!editingId}
@@ -3185,26 +3185,26 @@ export default function SettingsPage() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Review</label>
+              <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2 block opacity-40">Review</label>
               <input type="number" className="input text-[10px] font-bold bg-[#fcfbf8] h-12 text-center" value={newOverride.review_offset_days} onChange={e => setNewOverride({ ...newOverride, review_offset_days: +e.target.value })} />
             </div>
             <div>
-              <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Reorder</label>
+              <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2 block opacity-40">Reorder</label>
               <input type="number" className="input text-[10px] font-bold bg-[#fcfbf8] h-12 text-center" value={newOverride.reorder_offset_days} onChange={e => setNewOverride({ ...newOverride, reorder_offset_days: +e.target.value })} />
             </div>
             <div>
-              <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Exit</label>
+              <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2 block opacity-40">Exit</label>
               <input type="number" className="input text-[10px] font-bold bg-[#fcfbf8] h-12 text-center" value={newOverride.final_offset_days} onChange={e => setNewOverride({ ...newOverride, final_offset_days: +e.target.value })} />
             </div>
             <div>
-              <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Duration</label>
+              <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2 block opacity-40">Duration</label>
               <input type="number" className="input text-[10px] font-bold bg-[#1c1c1c] text-[#f6f7f2] h-12 text-center border-transparent" value={newOverride.course_duration_days} onChange={e => setNewOverride({ ...newOverride, course_duration_days: +e.target.value })} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
              <div>
-                <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Notes</label>
+                <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2 block opacity-40">Notes</label>
                 <textarea
                   value={newOverride.usage_notes}
                   onChange={e => setNewOverride({...newOverride, usage_notes: e.target.value})}
@@ -3214,7 +3214,7 @@ export default function SettingsPage() {
              </div>
              <div className="space-y-4">
                 <div>
-                  <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-40">Upsell Product</label>
+                  <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2 block opacity-40">Upsell Product</label>
                   <input
                     type="text"
                     value={newOverride.upsell_product_name}
@@ -3226,7 +3226,7 @@ export default function SettingsPage() {
                 
                 <div className="flex items-center justify-between p-4 bg-[#fcfbf8] rounded-xl border border-[#ebece6]">
                     <div>
-                      <div className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest">Priority Boost</div>
+                      <div className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider">Priority Boost</div>
                       <div className="text-[8px] text-[#5f5f5d] italic opacity-60">Elevate task score (+50)</div>
                     </div>
                     <button 
@@ -3239,7 +3239,7 @@ export default function SettingsPage() {
              </div>
           </div>
 
-          <div className="p-4 bg-[#1c1c1c] text-[#f6f7f2] text-[10px] font-bold uppercase tracking-widest rounded-2xl flex gap-4 shadow-xl">
+          <div className="p-4 bg-[#1c1c1c] text-[#f6f7f2] text-[10px] font-bold uppercase tracking-wider rounded-2xl flex gap-4 shadow-xl">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <p className="opacity-80 leading-relaxed">Task due dates for orders using this product will update immediately when saved.</p>
           </div>
@@ -3249,9 +3249,9 @@ export default function SettingsPage() {
       {/* Clear Confirmation Modal */}
       <Modal open={confirmModal.open} onClose={() => setConfirmModal({ open: false, type: null })} title="Confirm Deletion"
         footer={<>
-          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest" onClick={() => setConfirmModal({ open: false, type: null })}>Cancel</button>
+          <button className="btn-secondary py-2.5 px-6 text-[10px] font-bold uppercase tracking-wider" onClick={() => setConfirmModal({ open: false, type: null })}>Cancel</button>
           <button
-            className="btn-primary bg-rose-500 text-white py-2.5 px-8 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-rose-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="btn-primary bg-rose-500 text-white py-2.5 px-8 text-[10px] font-bold uppercase tracking-wider shadow-xl shadow-rose-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={() => confirmModal.type && handleClearData(confirmModal.type)}
             disabled={isDeleting || purgeConfirmText !== confirmModal.type}
           >
@@ -3260,12 +3260,12 @@ export default function SettingsPage() {
         </>}
       >
         <div className="space-y-4">
-          <div className="p-6 bg-rose-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-2xl flex gap-4 shadow-2xl">
+          <div className="p-6 bg-rose-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-2xl flex gap-4 shadow-2xl">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <p className="leading-relaxed">Warning: this cannot be undone. All matching data will be permanently deleted.</p>
           </div>
           <div>
-            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2 block opacity-60">
+            <label className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2 block opacity-60">
               Type <span className="font-mono normal-case text-rose-600">{confirmModal.type}</span> to confirm
             </label>
             <input

@@ -79,7 +79,7 @@ export default function GoogleBackupCard() {
           </p>
         </div>
         {s.connected ? (
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#2f8a5f] bg-[#ecf8f1] border border-[#b5e4ca] rounded-full px-3 py-1">
             <CheckCircle2 className="w-3.5 h-3.5" /> Connected{s.email ? ` as ${s.email}` : ""}
           </span>
         ) : null}

@@ -71,14 +71,14 @@ export default function SuperAdminOrganisations() {
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
+        <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
       ) : shown.length === 0 ? (
         <EmptyState icon={<Building2 className="w-6 h-6" />} title="No organisations here" desc="Provision one from a request once you've reviewed it." />
       ) : (
         <div className="card overflow-x-auto">
           <table className="w-full text-sm min-w-[760px]">
             <thead>
-              <tr className="text-left text-[10px] uppercase tracking-widest text-[#5f5f5d] border-b border-[#ebece6]">
+              <tr className="text-left text-[10px] uppercase tracking-wider text-[#5f5f5d] border-b border-[#ebece6]">
                 <th className="p-3">Organisation</th>
                 <th className="p-3">Admin</th>
                 <th className="p-3">Members</th>
@@ -91,7 +91,7 @@ export default function SuperAdminOrganisations() {
             </thead>
             <tbody>
               {shown.map(o => (
-                <tr key={o.org_id} id={`org-${o.org_id}`} className={cn("border-b border-gray-50 last:border-0", focus === o.org_id && "bg-amber-50")}>
+                <tr key={o.org_id} id={`org-${o.org_id}`} className={cn("border-b border-[#f6f7f2] last:border-0", focus === o.org_id && "bg-amber-50")}>
                   <td className="p-3">
                     <Link href={`/superadmin/organisations/${o.org_id}`} className="font-semibold text-[#1c1c1c] hover:underline">{o.name}</Link>
                     <div className="text-[11px] text-[#5f5f5d]">{o.slug} · since {new Date(o.created_at).toLocaleDateString()}{o.plan ? ` · ${o.plan}` : ""}</div>
@@ -102,15 +102,15 @@ export default function SuperAdminOrganisations() {
                   <td className="p-3 text-xs text-[#5f5f5d]">{ago(o.last_seen_at)}</td>
                   <td className="p-3 text-xs text-[#5f5f5d]">{o.disabled_modules?.length ? o.disabled_modules.join(", ") : "None"}</td>
                   <td className="p-3">
-                    <span className={cn("text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full",
-                      o.is_active ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600")}>
+                    <span className={cn("text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+                      o.is_active ? "bg-[#ecf8f1] text-[#2f8a5f]" : "bg-rose-50 text-rose-600")}>
                       {o.is_active ? "Active" : "Suspended"}
                     </span>
                   </td>
                   <td className="p-3 text-right">
                     <button onClick={() => toggleActive(o)} disabled={busyId === o.org_id}
                       className={cn("inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border",
-                        o.is_active ? "border-rose-100 text-rose-600 hover:bg-rose-50" : "border-emerald-100 text-emerald-700 hover:bg-emerald-50")}>
+                        o.is_active ? "border-rose-100 text-rose-600 hover:bg-rose-50" : "border-[#d5f0e1] text-[#2f8a5f] hover:bg-[#ecf8f1]")}>
                       {busyId === o.org_id ? <Loader2 className="w-3 h-3 animate-spin" /> : o.is_active ? <><PowerOff className="w-3 h-3" /> Suspend</> : <><Power className="w-3 h-3" /> Reactivate</>}
                     </button>
                   </td>

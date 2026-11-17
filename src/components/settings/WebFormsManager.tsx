@@ -70,7 +70,7 @@ export function WebFormsManager() {
     <div className="card p-6 space-y-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest mb-2">Web forms</h3>
+          <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2">Web forms</h3>
           <p className="text-xs text-[#5f5f5d]">Put a form on your website or share its link. Every response becomes a new lead.</p>
         </div>
         {!editing && <button onClick={() => { setDraft(EMPTY); setEditing(true); }} className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 h-9 rounded-lg bg-[#1c1c1c] text-white"><Plus className="w-3.5 h-3.5" /> New form</button>}
@@ -112,7 +112,7 @@ export function WebFormsManager() {
         </div>
       )}
 
-      {loading ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : forms.length === 0 && !editing ? (
+      {loading ? <Loader2 className="w-4 h-4 animate-spin text-[#9a9a94]" /> : forms.length === 0 && !editing ? (
         <p className="text-xs text-[#5f5f5d]">No forms yet.</p>
       ) : (
         <div className="divide-y divide-[#ebece6] border border-[#ebece6] rounded-lg">

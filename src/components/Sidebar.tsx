@@ -350,7 +350,7 @@ export default function Sidebar() {
         data.forEach(reminder => {
           toast((t) => (
             <div className="flex flex-col gap-2 p-1 min-w-[200px]">
-              <div className="flex items-center gap-2 font-black text-[#1c1c1c] text-xs">
+              <div className="flex items-center gap-2 font-bold text-[#1c1c1c] text-xs">
                 <BellRing className="w-4 h-4 text-rose-500 animate-bounce" />
                 <span className="uppercase tracking-tight">Personal Reminder</span>
               </div>
@@ -358,7 +358,7 @@ export default function Sidebar() {
               <div className="flex justify-end border-t border-[#ebece6] pt-2">
                 <button 
                   onClick={() => toast.dismiss(t.id)}
-                  className="text-[9px] font-black text-emerald-600 hover:text-emerald-700 uppercase tracking-widest"
+                  className="text-[9px] font-bold text-[#3fa877] hover:text-[#2f8a5f] uppercase tracking-wider"
                 >
                   Got it
                 </button>
@@ -588,7 +588,7 @@ export default function Sidebar() {
     ...adminNav.filter(a => canSeeAdmin(a) && !placed.has(a.href)).map(a => L(a.label, a.href, a.icon))];
   if (leftovers.length) sections.splice(sections.length - 1, 0, { key: "more", label: "More", items: leftovers });
 
-  const statusDot = ({ online: "bg-emerald-500", meeting: "bg-sky-500", training: "bg-sky-500", break: "bg-amber-500", lunch: "bg-amber-500", away: "bg-orange-500" } as Record<string, string>)[profile?.status || ""] || "bg-gray-400";
+  const statusDot = ({ online: "bg-[#55c08f]", meeting: "bg-[#6f9bdd]", training: "bg-[#6f9bdd]", break: "bg-amber-500", lunch: "bg-amber-500", away: "bg-[#f0b43c]" } as Record<string, string>)[profile?.status || ""] || "bg-[#9a9a94]";
   const shiftStartLabel = shiftStart && mounted ? shiftStart.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "--:--";
 
   return (
@@ -601,10 +601,10 @@ export default function Sidebar() {
           </div>
           {/* Wordmark is desktop-only: on a phone it took a third of the bottom bar and squeezed the tabs into each other. */}
           <div className="hidden lg:flex flex-col">
-            <div className="text-[#1c1c1c] font-black text-sm lg:text-xl tracking-tighter lg:tracking-tight font-display">CodeCrest</div>
+            <div className="text-[#1c1c1c] font-bold text-sm lg:text-xl tracking-tighter lg:tracking-tight font-display">CodeCrest</div>
             <div className="hidden lg:flex items-center gap-1.5 mt-0.5">
-              <div className="w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[#5f5f5d]/60 text-[8px] lg:text-[9px] uppercase font-black tracking-widest">Live Engine</span>
+              <div className="w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full bg-[#55c08f] animate-pulse" />
+              <span className="text-[#5f5f5d]/60 text-[8px] lg:text-[9px] uppercase font-bold tracking-wider">Live Engine</span>
             </div>
           </div>
         </div>
@@ -614,7 +614,7 @@ export default function Sidebar() {
         {navGroups.map((g, gi) => (
           <div key={g.key} className="contents">
             {/* Desktop: a small group label. Phones: a thin divider, only where the group has an item shown on phones. */}
-            <div className={cn("hidden text-[#5f5f5d]/40 text-[9px] font-black uppercase tracking-[0.2em] px-4 pb-2", gi > 0 && "pt-6")}>{g.label}</div>
+            <div className={cn("hidden text-[#5f5f5d]/40 text-[9px] font-bold uppercase tracking-[0.2em] px-4 pb-2", gi > 0 && "pt-6")}>{g.label}</div>
             {gi > 0 && g.items.some(i => !i.desktopOnly) && <div aria-hidden className="lg:hidden w-8 h-px bg-[#1c1c1c]/10 my-1.5 flex-shrink-0" />}
         {g.items.map(({ label, href, icon: Icon, badge, desktopOnly }) => {
           const active = path === href || (href !== "/" && path.startsWith(href));
@@ -676,7 +676,7 @@ export default function Sidebar() {
       <Modal open={showMoreMenu} onClose={() => setShowMoreMenu(false)} title="Quick Actions & Menus">
         <div className="space-y-6 pb-8">
            {/* Profile */}
-           <button onClick={() => { setShowMoreMenu(false); setShowProfile(true); }} className="w-full text-left flex items-center gap-3 p-3 rounded-xl bg-white border border-[#ebece6] hover:bg-gray-50">
+           <button onClick={() => { setShowMoreMenu(false); setShowProfile(true); }} className="w-full text-left flex items-center gap-3 p-3 rounded-xl bg-white border border-[#ebece6] hover:bg-[#f6f7f2]">
              <span className="relative flex-shrink-0">
                <UserAvatar profile={profile} className="w-10 h-10 text-xs" />
                <span className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white", statusDot)} />
@@ -685,30 +685,30 @@ export default function Sidebar() {
                <div className="text-sm font-bold text-[#1c1c1c] truncate">{profile?.name || profile?.email || "Loading..."}</div>
                <div className="text-[11px] text-[#5f5f5d] truncate"><span className="capitalize">{profile?.role || "User"}</span>{profile?.email && profile?.name ? ` · ${profile.email}` : ""}</div>
              </div>
-             <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] flex-shrink-0">View</span>
+             <span className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] flex-shrink-0">View</span>
            </button>
 
            {/* Today's shift */}
            <div>
-              <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-2 px-1">Today&apos;s Shift</label>
+              <label className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider block mb-2 px-1">Today&apos;s Shift</label>
               <div className="grid grid-cols-3 gap-2">
                 <div className="p-3 rounded-xl bg-white border border-[#ebece6]">
-                  <div className="text-[9px] font-bold uppercase tracking-widest text-[#5f5f5d]/70">Logged in</div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d]/70">Logged in</div>
                   <div className="text-sm font-bold text-[#1c1c1c] tabular-nums mt-0.5">{shiftStartLabel}</div>
                 </div>
                 <div className="p-3 rounded-xl bg-white border border-[#ebece6]">
-                  <div className="text-[9px] font-bold uppercase tracking-widest text-[#5f5f5d]/70">Productive</div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d]/70">Productive</div>
                   <div className="text-sm font-bold text-[#1c1c1c] tabular-nums mt-0.5">{formatDuration(timers.workMs)}</div>
                 </div>
                 <div className="p-3 rounded-xl bg-white border border-[#ebece6]">
-                  <div className="text-[9px] font-bold uppercase tracking-widest text-[#5f5f5d]/70">Break</div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d]/70">Break</div>
                   <div className="text-sm font-bold text-amber-700 tabular-nums mt-0.5">{formatDuration(timers.breakMs)}</div>
                 </div>
               </div>
               {profile?.role !== "admin" && profile?.role !== "hr" && (
                 <button
                   onClick={() => { setShowMoreMenu(false); setShowLeaveModal(true); }}
-                  className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#ebece6] bg-white text-[#1c1c1c] text-[11px] font-bold uppercase tracking-widest hover:bg-gray-50"
+                  className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#ebece6] bg-white text-[#1c1c1c] text-[11px] font-bold uppercase tracking-wider hover:bg-[#f6f7f2]"
                 >
                   <Calendar className="w-3.5 h-3.5" /> Request Leave
                 </button>
@@ -717,7 +717,7 @@ export default function Sidebar() {
 
            {/* Mobile Status Picker */}
            <div>
-              <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-2 px-1">Shift Status</label>
+              <label className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider block mb-2 px-1">Shift Status</label>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { id: "online", label: "Online", icon: "⚡" },
@@ -740,7 +740,7 @@ export default function Sidebar() {
                     }}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all",
-                      profile?.status === s.id ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#1c1c1c] border-[#ebece6] hover:bg-gray-50"
+                      profile?.status === s.id ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#1c1c1c] border-[#ebece6] hover:bg-[#f6f7f2]"
                     )}
                   >
                     <span>{s.icon}</span> {s.label}
@@ -753,10 +753,10 @@ export default function Sidebar() {
            <div className="space-y-4 pt-4 border-t border-[#ebece6]">
               {moduleNav.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Business</h4>
+                  <h4 className="text-[10px] font-bold text-[#5f5f5d]/40 uppercase tracking-wider px-1">Business</h4>
                   <div className="grid grid-cols-2 gap-1">
                     {moduleNav.map(item => (
-                      <Link key={item.key} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c] min-w-0">
+                      <Link key={item.key} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#f6f7f2] text-sm font-bold text-[#1c1c1c] min-w-0">
                         <item.icon className="w-4 h-4 text-[#5f5f5d]" /> {item.label}
                       </Link>
                     ))}
@@ -765,10 +765,10 @@ export default function Sidebar() {
               )}
               {(adminUser || profile?.role === "manager" || profile?.permissions?.audit_tasks) && !modBlocked("manager") && (
                 <div className="space-y-2">
-                  <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Management</h4>
+                  <h4 className="text-[10px] font-bold text-[#5f5f5d]/40 uppercase tracking-wider px-1">Management</h4>
                   <div className="grid grid-cols-1 gap-1">
                     {managerNav.map(item => (
-                      <Link key={item.label} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                      <Link key={item.label} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#f6f7f2] text-sm font-bold text-[#1c1c1c]">
                         <item.icon className="w-4 h-4 text-[#5f5f5d]" /> {item.label}
                       </Link>
                     ))}
@@ -778,10 +778,10 @@ export default function Sidebar() {
 
               {(adminUser || profile?.role === "hr") && !modBlocked("hr") && (
                 <div className="space-y-2">
-                  <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Human Capital</h4>
+                  <h4 className="text-[10px] font-bold text-[#5f5f5d]/40 uppercase tracking-wider px-1">Human Capital</h4>
                   <div className="grid grid-cols-1 gap-1">
                     {hrNav.map(item => (
-                      <Link key={item.label} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                      <Link key={item.label} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#f6f7f2] text-sm font-bold text-[#1c1c1c]">
                         <item.icon className="w-4 h-4 text-[#5f5f5d]" /> {item.label}
                       </Link>
                     ))}
@@ -791,20 +791,20 @@ export default function Sidebar() {
 
               {(isWorkspaceAdmin(profile) || spaces.length > 0) && (
                 <div className="space-y-2">
-                  <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">Workspace</h4>
+                  <h4 className="text-[10px] font-bold text-[#5f5f5d]/40 uppercase tracking-wider px-1">Workspace</h4>
                   <div className="grid grid-cols-1 gap-1">
-                    <Link href="/workspace/my" onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                    <Link href="/workspace/my" onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#f6f7f2] text-sm font-bold text-[#1c1c1c]">
                       <Sparkles className="w-4 h-4 text-[#5f5f5d]" /> My Work
                     </Link>
-                    <Link href="/workspace/workload" onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                    <Link href="/workspace/workload" onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#f6f7f2] text-sm font-bold text-[#1c1c1c]">
                       <Gauge className="w-4 h-4 text-[#5f5f5d]" /> Workload
                     </Link>
                     {spaces.map(s => (
-                      <Link key={s.id} href={`/workspace?space=${s.id}`} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                      <Link key={s.id} href={`/workspace?space=${s.id}`} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#f6f7f2] text-sm font-bold text-[#1c1c1c]">
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color ?? "#8b8b8b" }} /> {s.name}
                       </Link>
                     ))}
-                    <Link href="/workspace" onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c]">
+                    <Link href="/workspace" onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#f6f7f2] text-sm font-bold text-[#1c1c1c]">
                       <LayoutDashboard className="w-4 h-4 text-[#5f5f5d]" /> All Spaces
                     </Link>
                   </div>
@@ -813,10 +813,10 @@ export default function Sidebar() {
 
               {adminGroups.map(g => (
               <div key={g.label} className="space-y-2">
-                <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-widest px-1">{g.label}</h4>
+                <h4 className="text-[10px] font-bold text-[#5f5f5d]/40 uppercase tracking-wider px-1">{g.label}</h4>
                 <div className="grid grid-cols-2 gap-1">
                   {g.items.map(item => (
-                    <Link key={item.label} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-sm font-bold text-[#1c1c1c] min-w-0">
+                    <Link key={item.label} href={item.href} onClick={() => setShowMoreMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#f6f7f2] text-sm font-bold text-[#1c1c1c] min-w-0">
                       <item.icon className="w-4 h-4 text-[#5f5f5d] flex-shrink-0" /> <span className="truncate">{item.label}</span>
                     </Link>
                   ))}
@@ -826,7 +826,7 @@ export default function Sidebar() {
            </div>
 
            <div className="pt-4 border-t border-[#ebece6]">
-              <button onClick={() => { handleLogout(); setShowMoreMenu(false); }} className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-rose-50 text-rose-600 text-xs font-black uppercase tracking-widest hover:bg-rose-100 transition-all">
+              <button onClick={() => { handleLogout(); setShowMoreMenu(false); }} className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold uppercase tracking-wider hover:bg-rose-100 transition-all">
                 <LogOut className="w-4 h-4" /> Sign Out
               </button>
            </div>
@@ -843,7 +843,7 @@ export default function Sidebar() {
           maxWidth="max-w-xs"
         >
           <div className="space-y-4">
-            <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest mb-1">Select Reason</div>
+            <div className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider mb-1">Select Reason</div>
             <div className="grid grid-cols-1 gap-2">
               {(showStatusModal?.id === "break" ? ["Bio Break", "Personal", "Tea/Smoke", "Tech Issue"] : 
                 showStatusModal?.id === "away" ? ["System Maintenance", "Support Request", "Escalation", "Management"] :
@@ -871,16 +871,16 @@ export default function Sidebar() {
            <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                  <div>
-                    <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-1.5">Start Date</label>
+                    <label className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider block mb-1.5">Start Date</label>
                     <input type="date" className="w-full bg-[#f6f7f2] border-[#ebece6] rounded-lg text-xs font-bold p-2.5 focus:ring-[#1c1c1c] shadow-sm" value={leaveData.start} onChange={e => setLeaveData({...leaveData, start: e.target.value})} />
                  </div>
                  <div>
-                    <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-1.5">End Date</label>
+                    <label className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider block mb-1.5">End Date</label>
                     <input type="date" className="w-full bg-[#f6f7f2] border-[#ebece6] rounded-lg text-xs font-bold p-2.5 focus:ring-[#1c1c1c] shadow-sm" value={leaveData.end} onChange={e => setLeaveData({...leaveData, end: e.target.value})} />
                  </div>
               </div>
               <div>
-                 <label className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest block mb-2.5">Reason for Leave</label>
+                 <label className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider block mb-2.5">Reason for Leave</label>
                  <div className="flex flex-wrap gap-2 mb-4">
                     {[
                       { label: "Sick Leave (SL)", text: "I am taking Sick Leave (SL) due to health issues. Please approve." },
@@ -890,7 +890,7 @@ export default function Sidebar() {
                       <button
                         key={preset.label}
                         onClick={() => setLeaveData({ ...leaveData, reason: preset.text })}
-                        className="text-[10px] px-3 py-1.5 bg-[#f6f7f2] border border-[#ebece6] hover:bg-[#1c1c1c] hover:text-white rounded-lg transition-all text-[#5f5f5d] font-black uppercase tracking-tighter"
+                        className="text-[10px] px-3 py-1.5 bg-[#f6f7f2] border border-[#ebece6] hover:bg-[#1c1c1c] hover:text-white rounded-lg transition-all text-[#5f5f5d] font-bold uppercase tracking-tighter"
                       >
                         {preset.label}
                       </button>
@@ -906,7 +906,7 @@ export default function Sidebar() {
               <button 
                 onClick={handleRequestLeave}
                 disabled={isSubmittingLeave}
-                className="w-full py-4 bg-[#1c1c1c] text-[#f6f7f2] rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-xl flex items-center justify-center gap-2"
+                className="w-full py-4 bg-[#1c1c1c] text-[#f6f7f2] rounded-xl text-[10px] font-bold uppercase tracking-wider hover:opacity-90 transition-all shadow-xl flex items-center justify-center gap-2"
                 style={{ boxShadow: "rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px" }}
               >
                 {isSubmittingLeave ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> Submit to HR</>}
@@ -914,16 +914,16 @@ export default function Sidebar() {
 
               {myLeaves.length > 0 && (
                 <div className="mt-8 border-t border-[#ebece6] pt-8">
-                  <h4 className="text-[10px] font-black text-[#5f5f5d]/40 uppercase tracking-[0.2em] mb-4">Request History</h4>
+                  <h4 className="text-[10px] font-bold text-[#5f5f5d]/40 uppercase tracking-[0.2em] mb-4">Request History</h4>
                   <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                     {myLeaves.map(l => (
                       <div key={l.id} className="p-4 bg-[#ebece6]/20 rounded-xl border border-[#ebece6] group transition-all hover:bg-[#f6f7f2]">
                         <div className="flex justify-between items-start mb-2.5">
-                           <div className="text-[11px] font-black text-[#1c1c1c] tracking-tight">
+                           <div className="text-[11px] font-bold text-[#1c1c1c] tracking-tight">
                              {l.start_date} <span className="text-[#5f5f5d]/20 font-bold mx-1">→</span> {l.end_date}
                            </div>
-                           <div className={cn("text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg border", 
-                             l.status === 'approved' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 
+                           <div className={cn("text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg border", 
+                             l.status === 'approved' ? 'bg-[#ecf8f1] border-[#d5f0e1] text-[#3fa877]' : 
                              l.status === 'rejected' ? 'bg-rose-50 border-rose-100 text-rose-600' : 'bg-amber-50 border-amber-100 text-amber-600'
                            )}>{l.status}</div>
                         </div>
@@ -940,7 +940,7 @@ export default function Sidebar() {
 
       <div className="hidden lg:block px-4 py-6 border-t border-[#ebece6]/50 bg-[rgba(28,28,28,0.01)]">
         <div className="mb-4 px-2">
-          <label className="text-[9px] font-bold text-[#5f5f5d]/60 uppercase tracking-widest block mb-1.5">Shift Status</label>
+          <label className="text-[9px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider block mb-1.5">Shift Status</label>
           <div className="relative">
             <select
               value={profile?.status || "offline"}
@@ -981,7 +981,7 @@ export default function Sidebar() {
         {profile?.role !== 'admin' && profile?.role !== 'hr' && (
            <button 
              onClick={() => setShowLeaveModal(true)}
-             className="w-full flex items-center justify-center gap-2 py-2 mb-4 rounded-lg border border-[#ebece6] text-[#5f5f5d] text-[10px] font-bold uppercase tracking-widest hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
+             className="w-full flex items-center justify-center gap-2 py-2 mb-4 rounded-lg border border-[#ebece6] text-[#5f5f5d] text-[10px] font-bold uppercase tracking-wider hover:bg-[#1c1c1c] hover:text-white transition-all shadow-sm"
            >
              <Calendar className="w-3 h-3" /> Request Leave
            </button>
@@ -990,21 +990,21 @@ export default function Sidebar() {
 
         <div className="flex items-center justify-between px-2 mb-4">
             <div className="flex flex-col">
-                <span className="text-[9px] text-[#5f5f5d] uppercase font-bold tracking-widest opacity-60">Logged in</span>
+                <span className="text-[9px] text-[#5f5f5d] uppercase font-bold tracking-wider opacity-60">Logged in</span>
                 <span className="text-xs font-bold text-[#1c1c1c]">{shiftStartLabel}</span>
             </div>
             <div className="flex flex-col items-center">
-                <span className="text-[9px] text-[#5f5f5d] uppercase font-bold tracking-widest opacity-60">Productive</span>
+                <span className="text-[9px] text-[#5f5f5d] uppercase font-bold tracking-wider opacity-60">Productive</span>
                 <span className="text-xs font-bold text-[#1c1c1c]">{formatDuration(timers.workMs)}</span>
             </div>
             <div className="flex flex-col items-end">
-                <span className="text-[9px] text-[#5f5f5d] uppercase font-bold tracking-widest opacity-60">Break</span>
+                <span className="text-[9px] text-[#5f5f5d] uppercase font-bold tracking-wider opacity-60">Break</span>
                 <span className="text-xs font-bold text-amber-700">{formatDuration(timers.breakMs)}</span>
             </div>
         </div>
 
         <div className="px-2 mb-6 text-center">
-            <span className="text-[8px] text-[#5f5f5d] uppercase font-bold tracking-widest opacity-40">
+            <span className="text-[8px] text-[#5f5f5d] uppercase font-bold tracking-wider opacity-40">
               System Freshness: {mounted ? lastSync.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "--:--:--"}
             </span>
         </div>

@@ -5,7 +5,7 @@ import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 
 export default function ApprovalsPage() {
   const { profile, loading } = useCurrentProfile();
-  if (loading || !profile) return <div className="py-12 text-center text-gray-400">Loading...</div>;
+  if (loading || !profile) return <div className="py-12 text-center text-[#9a9a94]">Loading...</div>;
   return (
     <div className="animate-fade-in">
       <PageHeader title="Approvals" subtitle="Expense claims, task reviews and rule-raised requests. You can't decide your own." />

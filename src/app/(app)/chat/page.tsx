@@ -115,8 +115,8 @@ export default function ChatPage() {
               <div className="flex flex-col">
                 <h1 className="text-xs sm:text-sm font-bold text-[#1c1c1c] tracking-tight truncate max-w-[120px] sm:max-w-none">{activeChannel.name}</h1>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-emerald-500" />
-                  <span className="text-[8px] sm:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60 whitespace-nowrap">Active now</span>
+                  <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#55c08f]" />
+                  <span className="text-[8px] sm:text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider opacity-60 whitespace-nowrap">Active now</span>
                 </div>
               </div>
             </>
@@ -147,9 +147,9 @@ export default function ChatPage() {
 
           {/* Connection status badge */}
           <div className={cn(
-            "flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1 rounded-xl border text-[8px] sm:text-[10px] font-black uppercase tracking-widest transition-all mr-1 sm:mr-2",
+            "flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1 rounded-xl border text-[8px] sm:text-[10px] font-bold uppercase tracking-wider transition-all mr-1 sm:mr-2",
             connected
-              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+              ? "bg-[#ecf8f1] border-[#b5e4ca] text-[#2f8a5f]"
               : "bg-amber-50 border-amber-200 text-amber-700 animate-pulse"
           )}>
             {connected
@@ -202,13 +202,13 @@ export default function ChatPage() {
           <div className="w-80 border-l border-[#ebece6] bg-[#f6f7f2] p-6 hidden lg:block overflow-y-auto">
             {activeChannel?.type === 'task' ? (
               <>
-                <h2 className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-6 opacity-60">Linked Task</h2>
+                <h2 className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-6 opacity-60">Linked Task</h2>
                 <div className="p-4 bg-white border border-[#ebece6] rounded-2xl shadow-sm mb-6">
                   <div className="text-xs font-bold text-[#1c1c1c] mb-2">{activeChannel.metadata?.task_title || "CRM Task Thread"}</div>
                   <p className="text-[10px] text-[#5f5f5d] leading-relaxed mb-4">This discussion is linked to a specific CRM task for full context.</p>
                   <button
                     onClick={handleViewTask}
-                    className="w-full py-2 bg-[#1c1c1c] text-[#fcfbf8] text-[10px] font-bold uppercase tracking-widest rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    className="w-full py-2 bg-[#1c1c1c] text-[#fcfbf8] text-[10px] font-bold uppercase tracking-wider rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
                   >
                     View Task Details
                   </button>
@@ -216,7 +216,7 @@ export default function ChatPage() {
               </>
             ) : (
               <>
-                <h2 className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mb-6 opacity-60">Channel Information</h2>
+                <h2 className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mb-6 opacity-60">Channel Information</h2>
                 <div className="p-4 bg-white border border-[#ebece6] rounded-2xl shadow-sm mb-6">
                   <div className="text-xs font-bold text-[#1c1c1c] mb-2">{activeChannel?.name || "Internal Communications"}</div>
                   <p className="text-[10px] text-[#5f5f5d] leading-relaxed">Official channel for real-time team collaboration and internal updates.</p>
@@ -225,7 +225,7 @@ export default function ChatPage() {
             )}
 
             <div className="space-y-4">
-              <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Shared Files</h3>
+              <h3 className="text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider">Shared Files</h3>
               <div className="py-8 text-center border-2 border-dashed border-[#ebece6] rounded-2xl">
                 <p className="text-[10px] text-[#5f5f5d] font-bold opacity-40">No shared files yet</p>
               </div>
@@ -239,7 +239,7 @@ export default function ChatPage() {
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
             <div className="p-6 border-b border-[#ebece6] flex justify-between items-center">
-              <h2 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest">Chat Settings</h2>
+              <h2 className="text-xs font-bold text-[#1c1c1c] uppercase tracking-wider">Chat Settings</h2>
               <button onClick={() => setShowSettings(false)} className="text-[#5f5f5d] hover:text-[#1c1c1c]">✕</button>
             </div>
             <div className="p-6 space-y-4">
@@ -249,7 +249,7 @@ export default function ChatPage() {
                   onClick={() => setNotifEnabled(!notifEnabled)}
                   className={cn(
                     "w-10 h-5 rounded-full relative transition-colors duration-200",
-                    notifEnabled ? "bg-emerald-500" : "bg-[#ebece6]"
+                    notifEnabled ? "bg-[#55c08f]" : "bg-[#ebece6]"
                   )}
                 >
                   <div className={cn(
@@ -264,7 +264,7 @@ export default function ChatPage() {
                   onClick={() => setSoundEnabled(!soundEnabled)}
                   className={cn(
                     "w-10 h-5 rounded-full relative transition-colors duration-200",
-                    soundEnabled ? "bg-emerald-500" : "bg-[#ebece6]"
+                    soundEnabled ? "bg-[#55c08f]" : "bg-[#ebece6]"
                   )}
                 >
                   <div className={cn(
@@ -277,18 +277,18 @@ export default function ChatPage() {
                 <div className="pt-4 border-t border-[#ebece6]">
                   <button
                     onClick={handleClearHistory}
-                    className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:opacity-80 transition-opacity"
+                    className="text-[10px] font-bold text-rose-500 uppercase tracking-wider hover:opacity-80 transition-opacity"
                   >
                     Clear Conversation History
                   </button>
                 </div>
               )}
             </div>
-            <div className="p-6 bg-gray-50 flex justify-end">
+            <div className="p-6 bg-[#f6f7f2] flex justify-end">
               <button 
                 onClick={handleSaveSettings}
                 disabled={isSaving}
-                className="px-6 py-2 bg-[#1c1c1c] text-[#fcfbf8] text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2"
+                className="px-6 py-2 bg-[#1c1c1c] text-[#fcfbf8] text-[10px] font-bold uppercase tracking-wider rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2"
               >
                 {isSaving ? "Saving..." : "Save Preferences"}
               </button>

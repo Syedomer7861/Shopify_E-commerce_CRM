@@ -60,7 +60,7 @@ export default function SuperAdminCoupons() {
     setCoupons(prev => prev.map(x => (x.id === c.id ? { ...x, is_active: !c.is_active } : x)));
   }
 
-  if (loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (loading) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
 
   return (
     <div>
@@ -87,7 +87,7 @@ export default function SuperAdminCoupons() {
       {coupons.length === 0 ? (
         <EmptyState icon={<Ticket className="w-6 h-6" />} title="No coupons yet" desc="Create one above." />
       ) : (
-        <div className="card divide-y divide-gray-50">
+        <div className="card divide-y divide-[#f6f7f2]">
           {coupons.map(c => (
             <div key={c.id} className={cn("p-3 flex flex-wrap items-center gap-3 text-sm", !c.is_active && "opacity-60")}>
               <span className="font-mono font-bold text-[#1c1c1c] w-32">{c.code}</span>

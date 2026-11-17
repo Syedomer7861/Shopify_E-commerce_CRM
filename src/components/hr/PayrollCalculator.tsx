@@ -226,13 +226,13 @@ export default function PayrollCalculator() {
       {/* Left Config Panel */}
       <div className="lg:col-span-4 space-y-6">
         <div className="card p-6">
-          <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-6 flex items-center gap-3">
-             <Globe className="w-5 h-5 text-gray-400" /> Configuration
+          <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-6 flex items-center gap-3">
+             <Globe className="w-5 h-5 text-[#9a9a94]" /> Configuration
           </h3>
           
           <div className="space-y-5">
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Operating Region</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Operating Region</label>
               <div className="flex gap-2">
                  {(['India', 'US', 'UK', 'UAE'] as Region[]).map(r => (
                    <button
@@ -240,7 +240,7 @@ export default function PayrollCalculator() {
                      onClick={() => setRegion(r)}
                      className={cn(
                        "flex-1 py-2 text-xs font-bold rounded-lg transition-all border",
-                       region === r ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-gray-500 border-gray-200 hover:border-gray-400"
+                       region === r ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#6b6b67] border-[#ebece6] hover:border-[#9a9a94]"
                      )}
                    >
                      {r}
@@ -250,7 +250,7 @@ export default function PayrollCalculator() {
             </div>
 
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Calculator Type</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Calculator Type</label>
               <select 
                 className="input w-full"
                 value={calcType}
@@ -264,7 +264,7 @@ export default function PayrollCalculator() {
                 <option value="Overtime">Overtime (OT) Payout</option>
                 <option value="Commission">Performance / Task Commission</option>
               </select>
-              <p className="text-[10px] text-gray-400 mt-1.5 leading-relaxed">
+              <p className="text-[10px] text-[#9a9a94] mt-1.5 leading-relaxed">
                 {calcType === "Net Salary" && "Estimates monthly take-home after TDS, EPF & Professional Tax."}
                 {calcType === "Full Salary Slip" && "Generates a complete CTC breakdown with earnings & deductions."}
                 {calcType === "PF" && "Splits EPF contributions per EPF Act 1952 — Employee 12%, Employer 3.67% EPF + 8.33% EPS."}
@@ -277,7 +277,7 @@ export default function PayrollCalculator() {
 
             {(calcType === 'Full Salary Slip' || calcType === 'Net Salary') && region === 'India' && (
               <div>
-                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Tax Regime</label>
+                 <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Tax Regime</label>
                  <div className="flex gap-2">
                    {(['New', 'Old'] as const).map(r => (
                      <button
@@ -285,14 +285,14 @@ export default function PayrollCalculator() {
                        onClick={() => setTaxRegime(r)}
                        className={cn(
                          "flex-1 py-2 text-xs font-bold rounded-lg transition-all border",
-                         taxRegime === r ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-gray-500 border-gray-200 hover:border-gray-400"
+                         taxRegime === r ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#6b6b67] border-[#ebece6] hover:border-[#9a9a94]"
                        )}
                      >
                        {r} Regime
                      </button>
                    ))}
                  </div>
-                 <p className="text-[10px] text-gray-400 mt-1.5">
+                 <p className="text-[10px] text-[#9a9a94] mt-1.5">
                    {taxRegime === "New" ? "New: Lower slabs, no exemptions. Best if deductions < ₹1.5L." : "Old: Higher slabs but allows 80C, HRA, LTA exemptions."}
                  </p>
               </div>
@@ -307,19 +307,19 @@ export default function PayrollCalculator() {
             className="w-full flex items-center justify-between p-5 hover:bg-[rgba(28,28,28,0.03)] transition-colors"
           >
             <div className="flex items-center gap-3">
-              <Settings className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest">Company Policy Settings</span>
+              <Settings className="w-4 h-4 text-[#9a9a94]" />
+              <span className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider">Company Policy Settings</span>
               {JSON.stringify(policy) !== JSON.stringify({basicPct:50,hraPct:40,employeePfPct:12,employerEpsPct:8.33,employerEpsCap:1250,profTax:200,workingDays:26,workingHrsPerDay:8,otMultiplier:2,gratuityCapLakh:20,gratuityEligibleYrs:5}) && (
-                <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">CUSTOM</span>
+                <span className="text-[9px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">CUSTOM</span>
               )}
             </div>
-            {showPolicy ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+            {showPolicy ? <ChevronUp className="w-4 h-4 text-[#9a9a94]" /> : <ChevronDown className="w-4 h-4 text-[#9a9a94]" />}
           </button>
 
           {showPolicy && (
             <div className="px-5 pb-5 border-t border-[#ebece6]">
               <div className="flex justify-between items-center py-3 mb-2">
-                <p className="text-[10px] text-gray-400">Override defaults for your company policy. All calculations will reflect these values.</p>
+                <p className="text-[10px] text-[#9a9a94]">Override defaults for your company policy. All calculations will reflect these values.</p>
                 <button onClick={resetPolicy} className="flex items-center gap-1 text-[10px] font-bold text-rose-400 hover:text-rose-600">
                   <RotateCcw className="w-3 h-3" /> Reset
                 </button>
@@ -327,72 +327,72 @@ export default function PayrollCalculator() {
 
               <div className="space-y-3">
                 {/* Earnings Structure */}
-                <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest pt-1">Earnings Structure</p>
+                <p className="text-[9px] font-bold text-[#d4d5cd] uppercase tracking-wider pt-1">Earnings Structure</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 block mb-1">Basic % of Gross</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] block mb-1">Basic % of Gross</label>
                     <div className="flex items-center gap-1">
                       <input type="number" min={1} max={90} className="input w-full text-sm" value={policy.basicPct}
                         onChange={e => updatePolicy("basicPct", Number(e.target.value))} />
-                      <span className="text-xs text-gray-400">%</span>
+                      <span className="text-xs text-[#9a9a94]">%</span>
                     </div>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 block mb-1">HRA % of Basic</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] block mb-1">HRA % of Basic</label>
                     <div className="flex items-center gap-1">
                       <input type="number" min={1} max={60} className="input w-full text-sm" value={policy.hraPct}
                         onChange={e => updatePolicy("hraPct", Number(e.target.value))} />
-                      <span className="text-xs text-gray-400">%</span>
+                      <span className="text-xs text-[#9a9a94]">%</span>
                     </div>
                   </div>
                 </div>
 
                 {/* PF Settings */}
-                <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest pt-1">PF / EPF Settings</p>
+                <p className="text-[9px] font-bold text-[#d4d5cd] uppercase tracking-wider pt-1">PF / EPF Settings</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 block mb-1">Employee PF %</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] block mb-1">Employee PF %</label>
                     <div className="flex items-center gap-1">
                       <input type="number" min={1} max={20} className="input w-full text-sm" value={policy.employeePfPct}
                         onChange={e => updatePolicy("employeePfPct", Number(e.target.value))} />
-                      <span className="text-xs text-gray-400">%</span>
+                      <span className="text-xs text-[#9a9a94]">%</span>
                     </div>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 block mb-1">Employer EPS %</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] block mb-1">Employer EPS %</label>
                     <div className="flex items-center gap-1">
                       <input type="number" min={1} max={15} step={0.01} className="input w-full text-sm" value={policy.employerEpsPct}
                         onChange={e => updatePolicy("employerEpsPct", Number(e.target.value))} />
-                      <span className="text-xs text-gray-400">%</span>
+                      <span className="text-xs text-[#9a9a94]">%</span>
                     </div>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 block mb-1">EPS Monthly Cap (₹)</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] block mb-1">EPS Monthly Cap (₹)</label>
                     <input type="number" className="input w-full text-sm" value={policy.employerEpsCap}
                       onChange={e => updatePolicy("employerEpsCap", Number(e.target.value))} />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 block mb-1">Prof. Tax / Month (₹)</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] block mb-1">Prof. Tax / Month (₹)</label>
                     <input type="number" className="input w-full text-sm" value={policy.profTax}
                       onChange={e => updatePolicy("profTax", Number(e.target.value))} />
                   </div>
                 </div>
 
                 {/* Attendance & OT */}
-                <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest pt-1">Attendance & Overtime</p>
+                <p className="text-[9px] font-bold text-[#d4d5cd] uppercase tracking-wider pt-1">Attendance & Overtime</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 block mb-1">Working Days/Month</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] block mb-1">Working Days/Month</label>
                     <input type="number" min={20} max={31} className="input w-full text-sm" value={policy.workingDays}
                       onChange={e => updatePolicy("workingDays", Number(e.target.value))} />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 block mb-1">Working Hrs/Day</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] block mb-1">Working Hrs/Day</label>
                     <input type="number" min={4} max={12} className="input w-full text-sm" value={policy.workingHrsPerDay}
                       onChange={e => updatePolicy("workingHrsPerDay", Number(e.target.value))} />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 block mb-1">OT Pay Multiplier</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] block mb-1">OT Pay Multiplier</label>
                     <select className="input w-full text-sm" value={policy.otMultiplier}
                       onChange={e => updatePolicy("otMultiplier", Number(e.target.value))}>
                       <option value={1}>1× (Single Rate)</option>
@@ -403,15 +403,15 @@ export default function PayrollCalculator() {
                 </div>
 
                 {/* Gratuity */}
-                <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest pt-1">Gratuity Policy</p>
+                <p className="text-[9px] font-bold text-[#d4d5cd] uppercase tracking-wider pt-1">Gratuity Policy</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 block mb-1">Tax-Free Cap (₹ Lakh)</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] block mb-1">Tax-Free Cap (₹ Lakh)</label>
                     <input type="number" className="input w-full text-sm" value={policy.gratuityCapLakh}
                       onChange={e => updatePolicy("gratuityCapLakh", Number(e.target.value))} />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 block mb-1">Min Eligibility (Yrs)</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] block mb-1">Min Eligibility (Yrs)</label>
                     <input type="number" min={1} max={10} className="input w-full text-sm" value={policy.gratuityEligibleYrs}
                       onChange={e => updatePolicy("gratuityEligibleYrs", Number(e.target.value))} />
                   </div>
@@ -422,23 +422,23 @@ export default function PayrollCalculator() {
         </div>
 
         <div className="card p-6">
-          <h3 className="text-sm font-black text-[#1c1c1c] uppercase tracking-widest mb-6 flex items-center gap-3">
-             <Calculator className="w-5 h-5 text-gray-400" /> Input Parameters
+          <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider mb-6 flex items-center gap-3">
+             <Calculator className="w-5 h-5 text-[#9a9a94]" /> Input Parameters
           </h3>
           <div className="space-y-4">
              {(calcType === "Net Salary" || calcType === "Full Salary Slip") && (
                <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Monthly Gross Pay (CTC ÷ 12)</label>
+                  <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Monthly Gross Pay (CTC ÷ 12)</label>
                   <input type="number" className="input w-full" value={gross} onChange={e => setGross(Number(e.target.value))} placeholder="e.g., 50000" />
-                  <p className="text-[10px] text-gray-400 mt-1">Total monthly salary before any deductions (Basic + HRA + Allowances).</p>
+                  <p className="text-[10px] text-[#9a9a94] mt-1">Total monthly salary before any deductions (Basic + HRA + Allowances).</p>
                </div>
              )}
 
              {["PF", "Gratuity", "Leave Encashment"].includes(calcType) && (
                <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Monthly Basic Pay</label>
+                  <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Monthly Basic Pay</label>
                   <input type="number" className="input w-full" value={basic} onChange={e => setBasic(Number(e.target.value))} placeholder="e.g., 20000" />
-                  <p className="text-[10px] text-gray-400 mt-1">
+                  <p className="text-[10px] text-[#9a9a94] mt-1">
                     {calcType === "PF" && "PF is calculated on Basic Pay only. Typically 40–50% of Gross."}
                     {calcType === "Gratuity" && "Gratuity is calculated on last drawn Basic + DA. Enter current Basic."}
                     {calcType === "Leave Encashment" && "Encashment uses Basic Pay ÷ 26 working days to derive per-day value."}
@@ -448,31 +448,31 @@ export default function PayrollCalculator() {
 
              {calcType === "Gratuity" && (
                <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Completed Years of Service</label>
+                  <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Completed Years of Service</label>
                   <input type="number" className="input w-full" value={yearsOfService} onChange={e => setYearsOfService(Number(e.target.value))} placeholder="e.g., 7" />
-                  <p className="text-[10px] text-gray-400 mt-1">Only full completed years count. Partial years are ignored per the Act.</p>
+                  <p className="text-[10px] text-[#9a9a94] mt-1">Only full completed years count. Partial years are ignored per the Act.</p>
                </div>
              )}
 
              {calcType === "Leave Encashment" && (
                <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Unused Privilege / Earned Leaves</label>
+                  <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Unused Privilege / Earned Leaves</label>
                   <input type="number" className="input w-full" value={plDays} onChange={e => setPlDays(Number(e.target.value))} placeholder="e.g., 12" />
-                  <p className="text-[10px] text-gray-400 mt-1">Enter balance of EL/PL leaves. CL & SL are typically not encashable.</p>
+                  <p className="text-[10px] text-[#9a9a94] mt-1">Enter balance of EL/PL leaves. CL & SL are typically not encashable.</p>
                </div>
              )}
 
              {calcType === "Overtime" && (
                <>
                  <div>
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">OT Hours Logged</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">OT Hours Logged</label>
                     <input type="number" className="input w-full" value={otHours} onChange={e => setOtHours(Number(e.target.value))} placeholder="e.g., 10" />
-                    <p className="text-[10px] text-gray-400 mt-1">Hours worked beyond 9 hrs/day or 48 hrs/week qualify as overtime.</p>
+                    <p className="text-[10px] text-[#9a9a94] mt-1">Hours worked beyond 9 hrs/day or 48 hrs/week qualify as overtime.</p>
                  </div>
                  <div>
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Ordinary Hourly Rate (₹)</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Ordinary Hourly Rate (₹)</label>
                     <input type="number" className="input w-full" value={otRate} onChange={e => setOtRate(Number(e.target.value))} placeholder="e.g., 150" />
-                    <p className="text-[10px] text-gray-400 mt-1">Tip: Monthly Salary ÷ (26 days × 8 hrs) = hourly rate. OT is paid at 2× this.</p>
+                    <p className="text-[10px] text-[#9a9a94] mt-1">Tip: Monthly Salary ÷ (26 days × 8 hrs) = hourly rate. OT is paid at 2× this.</p>
                  </div>
                </>
              )}
@@ -480,16 +480,16 @@ export default function PayrollCalculator() {
              {calcType === "Commission" && (
                <>
                  <div>
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Total Tasks Completed</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Total Tasks Completed</label>
                     <input type="number" className="input w-full" value={tasksCompleted} onChange={e => setTasksCompleted(Number(e.target.value))} placeholder="e.g., 120" />
                  </div>
                  <div>
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Monthly Baseline Target</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Monthly Baseline Target</label>
                     <input type="number" className="input w-full" value={baseTarget} onChange={e => setBaseTarget(Number(e.target.value))} placeholder="e.g., 100" />
-                    <p className="text-[10px] text-gray-400 mt-1">Tasks at or below target earn no bonus. Bonus triggers only for excess.</p>
+                    <p className="text-[10px] text-[#9a9a94] mt-1">Tasks at or below target earn no bonus. Bonus triggers only for excess.</p>
                  </div>
                  <div>
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Bonus Rate per Excess Task (₹)</label>
+                    <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-2">Bonus Rate per Excess Task (₹)</label>
                     <input type="number" className="input w-full" value={ratePerTask} onChange={e => setRatePerTask(Number(e.target.value))} placeholder="e.g., 50" />
                  </div>
                </>
@@ -506,25 +506,25 @@ export default function PayrollCalculator() {
            </div>
            
            <div>
-             <div className="inline-block px-3 py-1 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-8">
+             <div className="inline-block px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#6fcb9d] mb-8">
                {region} • {calcType}
              </div>
 
              {res && !res.isSlip && !res.isPF && (
                <div className="space-y-5 relative z-10">
                   <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                     <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">{res.label1}</span>
-                     <span className="text-lg font-black">
+                     <span className="text-xs text-[#9a9a94] font-bold uppercase tracking-wider">{res.label1}</span>
+                     <span className="text-lg font-bold">
                        {['Gratuity','Overtime','Commission'].includes(calcType) && (res.label1?.includes('Years') || res.label1?.includes('Hours') || res.label1?.includes('Excess'))
                          ? res.val1 : formatCurrency(res.val1 as number)}
                      </span>
                   </div>
                   <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                     <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">{res.label2}</span>
-                     <span className="text-lg font-black">{formatCurrency(res.val2 as number)}</span>
+                     <span className="text-xs text-[#9a9a94] font-bold uppercase tracking-wider">{res.label2}</span>
+                     <span className="text-lg font-bold">{formatCurrency(res.val2 as number)}</span>
                   </div>
                   {res.gratuityNote && (
-                    <div className={`text-xs font-bold px-3 py-2 rounded-lg ${res.gratuityNote.startsWith('⚠️') ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
+                    <div className={`text-xs font-bold px-3 py-2 rounded-lg ${res.gratuityNote.startsWith('⚠️') ? 'bg-amber-500/20 text-amber-300' : 'bg-[#55c08f]/20 text-[#8fd6b0]'}`}>
                       {res.gratuityNote}
                     </div>
                   )}
@@ -534,16 +534,16 @@ export default function PayrollCalculator() {
              {res && res.isPF && (
                <div className="space-y-4 relative z-10">
                  <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                   <div><span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Employee EPF (12%)</span><p className="text-[9px] text-gray-600 mt-0.5">Goes directly to EPF account</p></div>
-                   <span className="text-lg font-black">{formatCurrency(res.employeeEPF as number)}</span>
+                   <div><span className="text-xs text-[#9a9a94] font-bold uppercase tracking-wider">Employee EPF (12%)</span><p className="text-[9px] text-[#55554f] mt-0.5">Goes directly to EPF account</p></div>
+                   <span className="text-lg font-bold">{formatCurrency(res.employeeEPF as number)}</span>
                  </div>
                  <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                   <div><span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Employer EPF (3.67%)</span><p className="text-[9px] text-gray-600 mt-0.5">Employer share to EPF</p></div>
-                   <span className="text-lg font-black">{formatCurrency(res.employerEPF as number)}</span>
+                   <div><span className="text-xs text-[#9a9a94] font-bold uppercase tracking-wider">Employer EPF (3.67%)</span><p className="text-[9px] text-[#55554f] mt-0.5">Employer share to EPF</p></div>
+                   <span className="text-lg font-bold">{formatCurrency(res.employerEPF as number)}</span>
                  </div>
                  <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                   <div><span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Employer EPS (8.33%, max ₹1,250)</span><p className="text-[9px] text-gray-600 mt-0.5">Employee Pension Scheme</p></div>
-                   <span className="text-lg font-black">{formatCurrency(res.employerEPS as number)}</span>
+                   <div><span className="text-xs text-[#9a9a94] font-bold uppercase tracking-wider">Employer EPS (8.33%, max ₹1,250)</span><p className="text-[9px] text-[#55554f] mt-0.5">Employee Pension Scheme</p></div>
+                   <span className="text-lg font-bold">{formatCurrency(res.employerEPS as number)}</span>
                  </div>
                </div>
              )}
@@ -551,19 +551,19 @@ export default function PayrollCalculator() {
              {res && res.isSlip && (
                <div className="grid grid-cols-2 gap-6 relative z-10">
                  <div>
-                   <h4 className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-3">Earnings</h4>
+                   <h4 className="text-[10px] font-bold text-[#6fcb9d] uppercase tracking-wider mb-3">Earnings</h4>
                    <div className="space-y-3">
-                     <div className="flex justify-between text-sm"><span className="text-gray-400">Basic (50%)</span> <span className="font-bold">{formatCurrency(res.basic as number)}</span></div>
-                     <div className="flex justify-between text-sm"><span className="text-gray-400">HRA (40% of Basic)</span> <span className="font-bold">{formatCurrency(res.hra as number)}</span></div>
-                     <div className="flex justify-between text-sm"><span className="text-gray-400">Special Allowance</span> <span className="font-bold">{formatCurrency(res.special as number)}</span></div>
+                     <div className="flex justify-between text-sm"><span className="text-[#9a9a94]">Basic (50%)</span> <span className="font-bold">{formatCurrency(res.basic as number)}</span></div>
+                     <div className="flex justify-between text-sm"><span className="text-[#9a9a94]">HRA (40% of Basic)</span> <span className="font-bold">{formatCurrency(res.hra as number)}</span></div>
+                     <div className="flex justify-between text-sm"><span className="text-[#9a9a94]">Special Allowance</span> <span className="font-bold">{formatCurrency(res.special as number)}</span></div>
                    </div>
                  </div>
                  <div>
-                   <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-3">Deductions</h4>
+                   <h4 className="text-[10px] font-bold text-rose-400 uppercase tracking-wider mb-3">Deductions</h4>
                    <div className="space-y-3">
-                     <div className="flex justify-between text-sm"><span className="text-gray-400">EPF (12% of Basic)</span> <span className="font-bold">{formatCurrency(res.pf as number)}</span></div>
-                     <div className="flex justify-between text-sm"><span className="text-gray-400">Prof. Tax (MH)</span> <span className="font-bold">{formatCurrency(res.pt as number)}</span></div>
-                     <div className="flex justify-between text-sm"><span className="text-gray-400">TDS ({taxRegime} Regime)</span> <span className="font-bold">{formatCurrency(res.tax as number)}</span></div>
+                     <div className="flex justify-between text-sm"><span className="text-[#9a9a94]">EPF (12% of Basic)</span> <span className="font-bold">{formatCurrency(res.pf as number)}</span></div>
+                     <div className="flex justify-between text-sm"><span className="text-[#9a9a94]">Prof. Tax (MH)</span> <span className="font-bold">{formatCurrency(res.pt as number)}</span></div>
+                     <div className="flex justify-between text-sm"><span className="text-[#9a9a94]">TDS ({taxRegime} Regime)</span> <span className="font-bold">{formatCurrency(res.tax as number)}</span></div>
                    </div>
                  </div>
                </div>
@@ -571,11 +571,11 @@ export default function PayrollCalculator() {
            </div>
 
            <div className="mt-12 relative z-10">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">{res?.totalLabel}</p>
-              <div className="text-6xl font-black tracking-tighter text-emerald-400">
+              <p className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-[0.2em] mb-2">{res?.totalLabel}</p>
+              <div className="text-6xl font-bold tracking-tighter text-[#6fcb9d]">
                  {res ? formatCurrency(res.total as number) : formatCurrency(0)}
               </div>
-              <button onClick={() => window.print()} className="no-print mt-8 flex items-center gap-2 text-xs font-bold text-white hover:text-emerald-400 transition-colors">
+              <button onClick={() => window.print()} className="no-print mt-8 flex items-center gap-2 text-xs font-bold text-white hover:text-[#6fcb9d] transition-colors">
                 <FileText className="w-4 h-4" /> Export as PDF Summary <ArrowRight className="w-3 h-3" />
               </button>
            </div>

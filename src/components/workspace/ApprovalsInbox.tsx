@@ -16,8 +16,8 @@ type Approval = {
 };
 
 const STATUS_STYLE: Record<Approval["status"], string> = {
-  pending: "bg-amber-50 text-amber-700", approved: "bg-emerald-50 text-emerald-600",
-  rejected: "bg-rose-50 text-rose-600", cancelled: "bg-gray-100 text-gray-500",
+  pending: "bg-amber-50 text-amber-700", approved: "bg-[#ecf8f1] text-[#3fa877]",
+  rejected: "bg-rose-50 text-rose-600", cancelled: "bg-[#f0f0ec] text-[#6b6b67]",
 };
 
 /**
@@ -59,7 +59,7 @@ export function ApprovalsInbox({ profile, compact = false }: { profile: Profile;
     setBusy(null);
   }
 
-  if (loading) return <div className="py-8 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (loading) return <div className="py-8 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   if (notReady) {
     return compact ? null : (
       <div className="card p-5 flex items-start gap-3 text-sm text-amber-700 bg-amber-50 border-amber-100">
@@ -85,7 +85,7 @@ export function ApprovalsInbox({ profile, compact = false }: { profile: Profile;
       {!compact && <DateRangeFilter className="mb-3" value={range} onChange={setRange} />}
       {shown.length === 0 ? (
         compact
-          ? <div className="py-6 text-center text-xs text-gray-400">Nothing waiting on you.</div>
+          ? <div className="py-6 text-center text-xs text-[#9a9a94]">Nothing waiting on you.</div>
           : <EmptyState icon={<CheckCircle2 className="w-6 h-6" />} title="Nothing here" desc={tab === "todo" ? "No requests are waiting on you." : "No requests yet."} />
       ) : (
         <div className="space-y-2">
@@ -94,9 +94,9 @@ export function ApprovalsInbox({ profile, compact = false }: { profile: Profile;
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-bold text-[#1c1c1c] truncate">{r.title}</span>
-                  <span className={cn("text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full", STATUS_STYLE[r.status])}>{r.status}</span>
+                  <span className={cn("text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full", STATUS_STYLE[r.status])}>{r.status}</span>
                 </div>
-                <div className="text-[10px] text-gray-400 mt-0.5">
+                <div className="text-[10px] text-[#9a9a94] mt-0.5">
                   {r.entity_type} &middot; from {people[r.requested_by] || "someone"}
                   {r.approver_id && <> &middot; approver {people[r.approver_id] || "—"}</>}
                   {" "}&middot; {new Date(r.created_at).toLocaleDateString()}
@@ -104,12 +104,12 @@ export function ApprovalsInbox({ profile, compact = false }: { profile: Profile;
                 {(r.detail || r.decision_note) && <div className="text-[11px] text-[#5f5f5d] mt-1">{r.decision_note ? `Note: ${r.decision_note}` : r.detail}</div>}
               </div>
               {r.status === "pending" && (
-                busy === r.id ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                busy === r.id ? <Loader2 className="w-4 h-4 animate-spin text-[#9a9a94]" />
                 : r.requested_by === profile.id ? (
                   <button onClick={() => decide(r, "cancelled")} className="btn-secondary text-[10px] py-1 px-2">Withdraw</button>
                 ) : (
                   <div className="flex gap-1.5 shrink-0">
-                    <button onClick={() => decide(r, "approved")} aria-label="Approve" className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100"><Check className="w-4 h-4" /></button>
+                    <button onClick={() => decide(r, "approved")} aria-label="Approve" className="p-1.5 rounded-lg bg-[#ecf8f1] text-[#3fa877] hover:bg-[#d5f0e1]"><Check className="w-4 h-4" /></button>
                     <button onClick={() => decide(r, "rejected")} aria-label="Reject" className="p-1.5 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-100"><X className="w-4 h-4" /></button>
                   </div>
                 )

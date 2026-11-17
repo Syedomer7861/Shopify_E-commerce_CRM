@@ -54,7 +54,7 @@ export default function MarketingGantt({ list, tasks, onOpenTask }: Props) {
 
   if (!model) {
     return (
-      <div className="bg-white border border-[#ebece6] rounded-2xl p-10 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
+      <div className="bg-white border border-[#ebece6] rounded-2xl p-10 text-center text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d]/50">
         No tasks with a start or due date
       </div>
     );
@@ -66,7 +66,7 @@ export default function MarketingGantt({ list, tasks, onOpenTask }: Props) {
         <div style={{ width: model.width + 220 }}>
           {/* Header */}
           <div className="flex border-b border-[#ebece6] bg-[#faf9f6] sticky top-0">
-            <div className="w-[220px] flex-shrink-0 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50">
+            <div className="w-[220px] flex-shrink-0 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d]/50">
               Task
             </div>
             <div className="relative flex-1" style={{ height: 28 }}>
@@ -114,7 +114,7 @@ export default function MarketingGantt({ list, tasks, onOpenTask }: Props) {
 
       {unscheduled.length > 0 && (
         <div className="border-t border-[#ebece6] px-3 py-2.5 flex flex-wrap gap-1.5">
-          <span className="text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/50 mr-1 py-1">Unscheduled</span>
+          <span className="text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d]/50 mr-1 py-1">Unscheduled</span>
           {unscheduled.map((t) => (
             <button
               key={t.id}

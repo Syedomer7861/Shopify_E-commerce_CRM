@@ -36,7 +36,7 @@ export function SeatOverridePanel({ orgId }: { orgId: string }) {
   if (!seats) return null;
   return (
     <div className="col-span-2 border-t border-[#ebece6] pt-3">
-      <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-2">Team members</div>
+      <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-2">Team members</div>
       <p className="text-sm tabular-nums">{seats.used} of {seats.limit ?? "unlimited"} in use</p>
       <div className="flex gap-1 mt-2">
         <input value={value} onChange={e => setValue(e.target.value)} inputMode="numeric" placeholder="Follow plan"

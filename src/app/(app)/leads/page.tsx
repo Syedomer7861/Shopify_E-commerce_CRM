@@ -10,7 +10,7 @@ function leadAge(created: any, row: RecordRow) {
   if (!created) return "—";
   const days = Math.floor((Date.now() - new Date(created).getTime()) / 86_400_000);
   const stale = row.status === "new" && days >= 2;
-  return <span className={stale ? "font-bold text-red-600" : "text-gray-500"}>{days}d{stale ? " · not contacted" : ""}</span>;
+  return <span className={stale ? "font-bold text-red-600" : "text-[#6b6b67]"}>{days}d{stale ? " · not contacted" : ""}</span>;
 }
 
 // Turns a qualified lead into a deal linked to it, then marks the lead converted.

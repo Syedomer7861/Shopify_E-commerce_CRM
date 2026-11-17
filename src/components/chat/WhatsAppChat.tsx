@@ -175,22 +175,22 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
   }
 
   return (
-    <div className="flex flex-col h-[500px] bg-[#f0f2f5] rounded-xl overflow-hidden border border-gray-200 shadow-inner">
+    <div className="flex flex-col h-[500px] bg-[#f0f2f5] rounded-xl overflow-hidden border border-[#ebece6] shadow-inner">
       {/* Chat Header */}
-      <div className="px-4 py-3 bg-[#f0f2f5] border-b border-gray-200 flex items-center justify-between shrink-0">
+      <div className="px-4 py-3 bg-[#f0f2f5] border-b border-[#ebece6] flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <Avatar name={customerName} size="sm" />
           <div>
-            <div className="text-sm font-bold text-gray-800 leading-tight">{customerName}</div>
-            <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 mt-0.5">
-               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="text-sm font-bold text-[#262624] leading-tight">{customerName}</div>
+            <div className="text-[10px] text-[#3fa877] font-bold flex items-center gap-1 mt-0.5">
+               <div className="w-1.5 h-1.5 rounded-full bg-[#55c08f] animate-pulse" />
                WhatsApp Active
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-4 text-gray-400">
-          <Phone className="w-4 h-4 cursor-pointer hover:text-gray-600 transition-colors" />
-          <MoreVertical className="w-4 h-4 cursor-pointer hover:text-gray-600 transition-colors" />
+        <div className="flex items-center gap-4 text-[#9a9a94]">
+          <Phone className="w-4 h-4 cursor-pointer hover:text-[#55554f] transition-colors" />
+          <MoreVertical className="w-4 h-4 cursor-pointer hover:text-[#55554f] transition-colors" />
         </div>
       </div>
 
@@ -205,11 +205,11 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
             <div className={cn(
               "max-w-[85%] px-3 py-2 rounded-lg text-[13px] shadow-sm relative group",
               m.type === 'outbound' 
-                ? 'bg-[#dcf8c6] text-gray-800 rounded-tr-none' 
-                : 'bg-white text-gray-800 rounded-tl-none'
+                ? 'bg-[#dcf8c6] text-[#262624] rounded-tr-none' 
+                : 'bg-white text-[#262624] rounded-tl-none'
             )}>
               {m.text}
-              <div className="text-[9px] text-gray-400 mt-1 text-right tabular-nums">
+              <div className="text-[9px] text-[#9a9a94] mt-1 text-right tabular-nums">
                 {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
               
@@ -225,12 +225,12 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
         ))}
         {loading && (
           <div className="flex flex-col items-center justify-center h-full gap-2">
-            <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Encrypting Chat...</span>
+            <Loader2 className="w-6 h-6 text-[#9a9a94] animate-spin" />
+            <span className="text-[10px] text-[#9a9a94] font-bold uppercase tracking-wider">Encrypting Chat...</span>
           </div>
         )}
         {!loading && messages.length === 0 && (
-          <div className="text-center text-[10px] text-gray-400 py-8 italic font-medium px-12">
+          <div className="text-center text-[10px] text-[#9a9a94] py-8 italic font-medium px-12">
             No WhatsApp history found for this customer. Start a new conversation below.
           </div>
         )}
@@ -240,8 +240,8 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
       <div className="px-3 py-3 bg-[#f0f2f5] flex flex-col gap-2 shrink-0 relative">
         {/* Templates Dropdown Popover */}
         {showTemplates && (
-          <div className="absolute bottom-full left-3 mb-2 p-2 bg-white/95 backdrop-blur-md border border-gray-200 rounded-2xl shadow-2xl flex flex-col gap-1 w-72 max-h-60 overflow-y-auto z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-            <div className="px-3 py-2 text-[9px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
+          <div className="absolute bottom-full left-3 mb-2 p-2 bg-white/95 backdrop-blur-md border border-[#ebece6] rounded-2xl shadow-2xl flex flex-col gap-1 w-72 max-h-60 overflow-y-auto z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="px-3 py-2 text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider border-b border-[#ebece6]">
               Select Message Template
             </div>
             {templates.length > 0 ? (
@@ -249,12 +249,12 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
                 <button
                   key={tpl.id}
                   onClick={() => handleApplyTemplate(tpl)}
-                  className="w-full text-left px-3 py-2.5 hover:bg-emerald-50 rounded-xl transition-all group flex flex-col gap-0.5"
+                  className="w-full text-left px-3 py-2.5 hover:bg-[#ecf8f1] rounded-xl transition-all group flex flex-col gap-0.5"
                 >
-                  <span className="text-[11px] font-bold text-gray-800 group-hover:text-emerald-700 transition-colors">
+                  <span className="text-[11px] font-bold text-[#262624] group-hover:text-[#2f8a5f] transition-colors">
                     {tpl.name}
                   </span>
-                  <span className="text-[9px] text-gray-400 line-clamp-1">
+                  <span className="text-[9px] text-[#9a9a94] line-clamp-1">
                     {tpl.body}
                   </span>
                 </button>
@@ -270,21 +270,21 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
                 <button
                   key={tpl.id}
                   onClick={() => handleApplyTemplate(tpl)}
-                  className="w-full text-left px-3 py-2.5 hover:bg-emerald-50 rounded-xl transition-all group flex flex-col gap-0.5"
+                  className="w-full text-left px-3 py-2.5 hover:bg-[#ecf8f1] rounded-xl transition-all group flex flex-col gap-0.5"
                 >
-                  <span className="text-[11px] font-bold text-gray-800 group-hover:text-emerald-700 transition-colors">
+                  <span className="text-[11px] font-bold text-[#262624] group-hover:text-[#2f8a5f] transition-colors">
                     {tpl.name}
                   </span>
-                  <span className="text-[9px] text-gray-400 line-clamp-1">
+                  <span className="text-[9px] text-[#9a9a94] line-clamp-1">
                     {tpl.body}
                   </span>
                 </button>
               ))
             )}
-            <div className="h-px bg-gray-100 my-1" />
+            <div className="h-px bg-[#f0f0ec] my-1" />
             <button
               onClick={() => setShowTemplates(false)}
-              className="w-full py-1.5 text-center text-[9px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-700 transition-colors"
+              className="w-full py-1.5 text-center text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider hover:text-[#3a3a36] transition-colors"
             >
               Close
             </button>
@@ -323,10 +323,10 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
               }
             }}
             disabled={suggesting}
-            className="text-[10px] font-black uppercase tracking-[0.1em] text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+            className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2f8a5f] bg-[#d5f0e1] hover:bg-[#b5e4ca] px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50"
           >
             {suggesting ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-700" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2f8a5f]" />
             ) : (
               <Smile className="w-3.5 h-3.5" />
             )}
@@ -335,18 +335,18 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
 
           <button
             onClick={() => setShowTemplates(!showTemplates)}
-            className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-700 bg-indigo-100 hover:bg-indigo-200 px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+            className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#3d66a6] bg-[#dfeafa] hover:bg-[#c7dbf5] px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
           >
             <BookOpen className="w-3.5 h-3.5" /> Templates
           </button>
         </div>
 
         <div className="flex items-center gap-2">
-          <Smile className="w-6 h-6 text-gray-500 cursor-pointer hover:text-gray-700" />
-          <Paperclip className="w-5 h-5 text-gray-500 cursor-pointer hover:text-gray-700" />
+          <Smile className="w-6 h-6 text-[#6b6b67] cursor-pointer hover:text-[#3a3a36]" />
+          <Paperclip className="w-5 h-5 text-[#6b6b67] cursor-pointer hover:text-[#3a3a36]" />
           <div className="flex-1 relative">
             <input 
-              className="w-full bg-white border-none rounded-lg py-2 px-4 text-sm focus:ring-1 focus:ring-emerald-500 shadow-sm"
+              className="w-full bg-white border-none rounded-lg py-2 px-4 text-sm focus:ring-1 focus:ring-[#55c08f] shadow-sm"
               placeholder="Type a message"
               value={input}
               onChange={e => setInput(e.target.value)}
@@ -357,7 +357,7 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
             onClick={handleSend}
             aria-label="Send message" 
             disabled={!input.trim()}
-            className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white p-2.5 rounded-full shadow-sm transition-all transform active:scale-95"
+            className="bg-[#3fa877] hover:bg-[#2f8a5f] disabled:bg-[#d4d5cd] text-white p-2.5 rounded-full shadow-sm transition-all transform active:scale-95"
           >
             <Send className="w-4 h-4" />
           </button>

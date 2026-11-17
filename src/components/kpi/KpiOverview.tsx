@@ -23,7 +23,7 @@ type Assignment = { id: string; employee_id: string; status: "active" | "suggest
 type Evaluation = { assignment_id: string; employee_id: string; period_start: string; period_end: string; overall: number | null; band: Band | null; status: string };
 
 const BAND_LABEL: Record<Band, string> = { exceeds: "Exceeds", meets: "Meets", needs_improvement: "Needs improvement", below: "Below" };
-const BAND_CLS: Record<Band, string> = { exceeds: "text-emerald-700", meets: "text-sky-700", needs_improvement: "text-amber-700", below: "text-rose-700" };
+const BAND_CLS: Record<Band, string> = { exceeds: "text-[#2f8a5f]", meets: "text-[#3d66a6]", needs_improvement: "text-amber-700", below: "text-rose-700" };
 const avg = (xs: number[]) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : null);
 
 export function KpiOverview({ viewer, departments }: { viewer: Profile | null; departments: Named[] }) {
@@ -57,7 +57,7 @@ export function KpiOverview({ viewer, departments }: { viewer: Profile | null; d
     return () => { live = false; };
   }, [supabase, viewer]);
 
-  if (!people) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (!people) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
 
   const ids = new Set(people.map(p => p.id));
   const active = new Map(assignments.filter(a => a.status === "active" && ids.has(a.employee_id)).map(a => [a.employee_id, a]));

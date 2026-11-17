@@ -131,23 +131,23 @@ export default function ManualCalculator() {
   ];
 
   const styleMap: Record<BtnStyle, string> = {
-    operator: "bg-amber-500 hover:bg-amber-400 text-white font-black",
+    operator: "bg-amber-500 hover:bg-amber-400 text-white font-bold",
     action: "bg-[#e0ddd6] hover:bg-[#d4d1ca] text-[#1c1c1c] font-bold",
-    equals: "bg-emerald-500 hover:bg-emerald-400 text-white font-black",
+    equals: "bg-[#55c08f] hover:bg-[#6fcb9d] text-white font-bold",
     digit: "bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white font-semibold",
   };
 
   return (
     <div className="space-y-4" ref={containerRef}>
-      <div className="card p-5 bg-[#1c1c1c] text-white focus-within:ring-2 ring-emerald-500/50 transition-all outline-none" tabIndex={0}>
-        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+      <div className="card p-5 bg-[#1c1c1c] text-white focus-within:ring-2 ring-[#55c08f]/50 transition-all outline-none" tabIndex={0}>
+        <h3 className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider mb-4 flex items-center gap-2">
           <RotateCcw className="w-3 h-3" /> Manual Calculator
         </h3>
 
         {/* Display */}
         <div className="bg-black/40 rounded-xl p-4 mb-4 text-right cursor-text" onClick={() => containerRef.current?.focus()}>
-          <div className="text-xs text-gray-500 h-5 truncate">{expression || "\u00A0"}</div>
-          <div className="text-4xl font-black tracking-tighter text-white truncate mt-1">
+          <div className="text-xs text-[#6b6b67] h-5 truncate">{expression || "\u00A0"}</div>
+          <div className="text-4xl font-bold tracking-tighter text-white truncate mt-1">
             {display}
           </div>
         </div>
@@ -173,18 +173,18 @@ export default function ManualCalculator() {
       {history.length > 0 && (
         <div className="card p-4">
           <div className="flex justify-between items-center mb-3">
-            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Calculation History</h4>
+            <h4 className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Calculation History</h4>
             <button onClick={() => setHistory([])} className="text-[10px] text-rose-400 font-bold hover:text-rose-600 flex items-center gap-1">
               <Delete className="w-3 h-3" /> Clear
             </button>
           </div>
           <div className="space-y-2 max-h-[200px] overflow-y-auto">
             {history.map((h, i) => (
-              <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                <span className="text-xs text-gray-400 font-mono">{h.expression}</span>
+              <div key={i} className="flex justify-between items-center py-2 border-b border-[#ebece6] last:border-0">
+                <span className="text-xs text-[#9a9a94] font-mono">{h.expression}</span>
                 <button
                   onClick={() => { setDisplay(h.result); setWaitingForOperand(true); }}
-                  className="text-sm font-black text-[#1c1c1c] hover:text-emerald-600 transition-colors"
+                  className="text-sm font-bold text-[#1c1c1c] hover:text-[#3fa877] transition-colors"
                 >
                   {h.result}
                 </button>

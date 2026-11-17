@@ -112,7 +112,7 @@ export function ModuleKpis({ userId, range, grants, isAdminRole }: {
     <div className="space-y-4 mb-6">
       {sections.map(s => (
         <div key={s.key}>
-          <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-2 flex items-center gap-1.5"><s.icon className="w-3.5 h-3.5" /> {s.title}</h3>
+          <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-2 flex items-center gap-1.5"><s.icon className="w-3.5 h-3.5" /> {s.title}</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
             {s.kpis.map(k => <StatCard key={k.label} label={k.label} value={k.value} sub={k.sub} />)}
           </div>

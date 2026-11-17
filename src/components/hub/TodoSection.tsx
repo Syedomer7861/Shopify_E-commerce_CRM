@@ -145,7 +145,7 @@ export function TodoSection() {
         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
           <Star className="w-8 h-8 text-rose-500 animate-pulse" />
         </div>
-        <h3 className="text-xl font-black text-rose-900 mb-2">Hub Not Initialized</h3>
+        <h3 className="text-xl font-bold text-rose-900 mb-2">Hub Not Initialized</h3>
         <p className="text-sm text-rose-700/60 max-w-md mx-auto mb-8 leading-relaxed">
           The personal hub tables are missing from your database. Please run the setup script in the Supabase SQL Editor.
         </p>
@@ -155,7 +155,7 @@ export function TodoSection() {
         <div>
           <button 
             onClick={() => window.location.reload()}
-            className="text-xs font-black text-rose-900 uppercase tracking-widest hover:underline"
+            className="text-xs font-bold text-rose-900 uppercase tracking-wider hover:underline"
           >
             Refresh after running script
           </button>
@@ -167,12 +167,12 @@ export function TodoSection() {
   return (
     <div className="card p-8 bg-white shadow-sm border-[#ebece6]">
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center">
-          <ListTodo className="w-6 h-6 text-emerald-500" />
+        <div className="w-12 h-12 rounded-2xl bg-[#ecf8f1] flex items-center justify-center">
+          <ListTodo className="w-6 h-6 text-[#55c08f]" />
         </div>
         <div>
-          <h3 className="text-xl font-black text-[#1c1c1c] tracking-tight">Your Tasks</h3>
-          <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-0.5">Stay organized and productive</p>
+          <h3 className="text-xl font-bold text-[#1c1c1c] tracking-tight">Your Tasks</h3>
+          <p className="text-xs text-[#9a9a94] font-bold uppercase tracking-wider mt-0.5">Stay organized and productive</p>
         </div>
       </div>
 
@@ -198,15 +198,15 @@ export function TodoSection() {
 
       <div className="space-y-3">
         {loading ? (
-          <div className="py-10 text-center text-gray-300">
+          <div className="py-10 text-center text-[#d4d5cd]">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-            <p className="text-[10px] font-bold uppercase tracking-widest">Loading tasks...</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider">Loading tasks...</p>
           </div>
         ) : todos.length === 0 ? (
-          <div className="py-12 text-center bg-[#f8f7f4] rounded-3xl border-2 border-dashed border-gray-200">
-            <Star className="w-8 h-8 text-gray-200 mx-auto mb-3" />
-            <p className="text-sm font-bold text-gray-400">Your todo list is empty.</p>
-            <p className="text-[10px] text-gray-300 uppercase font-bold mt-1">Ready to start something new?</p>
+          <div className="py-12 text-center bg-[#f8f7f4] rounded-3xl border-2 border-dashed border-[#ebece6]">
+            <Star className="w-8 h-8 text-[#e6e7e0] mx-auto mb-3" />
+            <p className="text-sm font-bold text-[#9a9a94]">Your todo list is empty.</p>
+            <p className="text-[10px] text-[#d4d5cd] uppercase font-bold mt-1">Ready to start something new?</p>
           </div>
         ) : (
           todos.map((todo) => (
@@ -215,8 +215,8 @@ export function TodoSection() {
               className={cn(
                 "flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 group",
                 todo.is_completed 
-                  ? "bg-gray-50 border-gray-100 opacity-60" 
-                  : "bg-white border-[#ebece6] hover:border-gray-300 hover:shadow-lg hover:shadow-gray-100"
+                  ? "bg-[#f6f7f2] border-[#ebece6] opacity-60" 
+                  : "bg-white border-[#ebece6] hover:border-[#d4d5cd] hover:shadow-lg hover:shadow-[#f0f0ec]"
               )}
             >
               <button aria-label="Mark done"
@@ -224,8 +224,8 @@ export function TodoSection() {
                 className={cn(
                   "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all",
                   todo.is_completed 
-                    ? "bg-emerald-500 border-emerald-500 text-white" 
-                    : "border-gray-200 hover:border-emerald-500 text-transparent"
+                    ? "bg-[#55c08f] border-[#55c08f] text-white" 
+                    : "border-[#ebece6] hover:border-[#55c08f] text-transparent"
                 )}
               >
                 <CheckCircle2 className="w-4 h-4" />
@@ -233,14 +233,14 @@ export function TodoSection() {
               
               <span className={cn(
                 "flex-1 text-sm font-medium",
-                todo.is_completed ? "line-through text-gray-400" : "text-[#1c1c1c]"
+                todo.is_completed ? "line-through text-[#9a9a94]" : "text-[#1c1c1c]"
               )}>
                 {todo.text}
               </span>
 
               <button aria-label="Delete"
                 onClick={() => deleteTodo(todo.id)}
-                className="p-2 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                className="p-2 text-[#d4d5cd] hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

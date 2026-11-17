@@ -66,9 +66,9 @@ export function TwoFactorCard({ onEnabled }: { onEnabled?: () => void } = {}) {
   return (
     <div className="bg-white border border-[#ebece6] rounded-2xl p-5">
       <div className="flex items-center gap-2">
-        {factorId ? <ShieldCheck className="w-5 h-5 text-emerald-600" /> : <ShieldOff className="w-5 h-5 text-gray-400" />}
+        {factorId ? <ShieldCheck className="w-5 h-5 text-[#3fa877]" /> : <ShieldOff className="w-5 h-5 text-[#9a9a94]" />}
         <h3 className="text-sm font-bold text-[#1c1c1c]">Two-factor sign-in</h3>
-        <span className={`ml-auto text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${factorId ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+        <span className={`ml-auto text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${factorId ? "bg-[#ecf8f1] text-[#2f8a5f]" : "bg-[#f0f0ec] text-[#6b6b67]"}`}>
           {factorId ? "On" : "Off"}
         </span>
       </div>

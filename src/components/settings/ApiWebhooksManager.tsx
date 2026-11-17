@@ -92,7 +92,7 @@ export function ApiWebhooksManager() {
       )}
 
       <div className="card p-6 space-y-4">
-        <h3 className="flex items-center gap-2 text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest"><KeyRound className="w-3.5 h-3.5" /> API keys</h3>
+        <h3 className="flex items-center gap-2 text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider"><KeyRound className="w-3.5 h-3.5" /> API keys</h3>
         <p className="text-xs text-[#5f5f5d]">Connect other software. Send the key as <code>Authorization: Bearer &lt;key&gt;</code> to <code>{origin}/api/v1/leads</code>, <code>/api/v1/deals</code> or <code>/api/v1/tickets</code>. GET lists (<code>?limit=</code>, <code>?since=</code>); POST creates leads and deals. 120 requests a minute per key.</p>
         {keys.length > 0 && (
           <div className="divide-y divide-[#ebece6] border border-[#ebece6] rounded-lg">
@@ -115,7 +115,7 @@ export function ApiWebhooksManager() {
       </div>
 
       <div className="card p-6 space-y-4">
-        <h3 className="flex items-center gap-2 text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest"><Webhook className="w-3.5 h-3.5" /> Webhooks</h3>
+        <h3 className="flex items-center gap-2 text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider"><Webhook className="w-3.5 h-3.5" /> Webhooks</h3>
         <p className="text-xs text-[#5f5f5d]">We POST JSON to your https address when these happen. Verify the <code>X-CodeCrest-Signature</code> header: hex HMAC-SHA256 of the raw body with your signing secret.</p>
         {hooks.length > 0 && (
           <div className="divide-y divide-[#ebece6] border border-[#ebece6] rounded-lg">
@@ -137,13 +137,13 @@ export function ApiWebhooksManager() {
         </div>
         {deliveries.length > 0 && (
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d] mb-1">Recent deliveries</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d] mb-1">Recent deliveries</div>
             <div className="max-h-56 overflow-y-auto text-[11px] divide-y divide-[#ebece6] border border-[#ebece6] rounded-lg">
               {deliveries.map(d => (
                 <div key={d.id} className="px-3 py-1.5 flex gap-3">
                   <span className="w-28 shrink-0 text-[#5f5f5d]">{new Date(d.created_at).toLocaleString()}</span>
                   <span className="flex-1">{d.event}</span>
-                  <span className={d.status_code && d.status_code < 300 ? "text-emerald-700" : "text-rose-600"}>{d.status_code ?? (d.error ? "failed" : "pending")}</span>
+                  <span className={d.status_code && d.status_code < 300 ? "text-[#2f8a5f]" : "text-rose-600"}>{d.status_code ?? (d.error ? "failed" : "pending")}</span>
                 </div>
               ))}
             </div>

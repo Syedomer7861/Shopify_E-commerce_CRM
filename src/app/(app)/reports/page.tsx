@@ -151,7 +151,7 @@ export default function ReportsPage() {
           { label: "Delivered", value: 120, color: "bg-[#1c1c1c]" },
           { label: "In Transit", value: 15, color: "bg-[#ebece6]" },
           { label: "RTO", value: 8, color: "bg-rose-500" },
-          { label: "Pending", value: 7, color: "bg-gray-300" },
+          { label: "Pending", value: 7, color: "bg-[#d4d5cd]" },
         ],
         dailyTrends: MOCK_ANALYTICS.sales.map(s => ({ date: s.date, revenue: s.amount, calls: 25, orders: 15, recovery: 5, rto: 1 })),
         topProducts: [
@@ -355,7 +355,7 @@ export default function ReportsPage() {
         { label: "Delivered", color: "bg-[#1c1c1c]", key: "delivered" },
         { label: "In Transit", color: "bg-[#ebece6]", key: "in_transit" },
         { label: "RTO", color: "bg-rose-500", key: "rto" },
-        { label: "Pending", color: "bg-gray-300", key: "pending" },
+        { label: "Pending", color: "bg-[#d4d5cd]", key: "pending" },
       ].map(b => ({ label: b.label, value: breakdownCounts[b.key] || 0, color: b.color }));
 
       // ── Segment stats ────────────────────────────────────────────────
@@ -402,7 +402,7 @@ export default function ReportsPage() {
           { segment: "Repeat", count: segmentMap.repeat.count, color: "#1c1c1c", dot: "bg-[#1c1c1c]", avg_orders: segmentMap.repeat.count > 0 ? (segmentMap.repeat.orders / segmentMap.repeat.count).toFixed(1) : "0.0" },
           { segment: "One-time", count: segmentMap.one_time.count, color: "#5f5f5d", dot: "bg-[#5f5f5d]", avg_orders: segmentMap.one_time.count > 0 ? (segmentMap.one_time.orders / segmentMap.one_time.count).toFixed(1) : "0.0" },
           { segment: "Risky", count: segmentMap.risky.count, color: "#b45309", dot: "bg-amber-600", avg_orders: segmentMap.risky.count > 0 ? (segmentMap.risky.orders / segmentMap.risky.count).toFixed(1) : "0.0" },
-          { segment: "Inactive", count: segmentMap.inactive.count, color: "#94a3b8", dot: "bg-gray-400", avg_orders: segmentMap.inactive.count > 0 ? (segmentMap.inactive.orders / segmentMap.inactive.count).toFixed(1) : "0.0" }
+          { segment: "Inactive", count: segmentMap.inactive.count, color: "#94a3b8", dot: "bg-[#9a9a94]", avg_orders: segmentMap.inactive.count > 0 ? (segmentMap.inactive.orders / segmentMap.inactive.count).toFixed(1) : "0.0" }
       ];
 
       const repeatCount = segmentMap.repeat.count;
@@ -739,7 +739,7 @@ export default function ReportsPage() {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-[#5f5f5d] gap-3">
         <RefreshCw className="w-8 h-8 animate-spin" />
-        <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Compiling Analytics Data...</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Compiling Analytics Data...</p>
       </div>
     );
   }
@@ -1233,7 +1233,7 @@ export default function ReportsPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-400">
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-[#9a9a94]">
         <Loader2 className="w-8 h-8 animate-spin mb-2" />
         <p className="text-sm">Loading live analytics...</p>
       </div>
@@ -1265,7 +1265,7 @@ export default function ReportsPage() {
         actions={
           <div className="flex gap-2">
             <div className="hidden md:flex flex-col items-end mr-4">
-              <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Report Delivery</span>
+              <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider opacity-60">Report Delivery</span>
               <span className="text-[11px] font-bold text-[#1c1c1c]">Excel • PDF • WhatsApp</span>
             </div>
             <button
@@ -1297,7 +1297,7 @@ export default function ReportsPage() {
       {/* Filter Toolbar */}
       <div className="flex flex-col lg:flex-row gap-4 mb-10 p-5 bg-[#f6f7f2] rounded-2xl border border-[#ebece6] animate-slide-up">
          <div className="flex items-center gap-1.5 flex-wrap flex-1">
-            <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest mr-2 opacity-60">Presets:</span>
+            <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider mr-2 opacity-60">Presets:</span>
             {[
               { label: "Today", value: "today" },
               { label: "L7D", value: "last7" },
@@ -1381,15 +1381,15 @@ export default function ReportsPage() {
                   <table className="w-full text-left">
                      <thead>
                         <tr className="border-b border-[#ebece6]">
-                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Date</th>
-                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Agent</th>
-                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Status</th>
-                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">In</th>
-                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Out</th>
-                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Work</th>
-                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Break</th>
-                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Tasks</th>
-                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Revenue</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Date</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Agent</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Status</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">In</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">Out</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">Work</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">Break</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">Tasks</th>
+                           <th className="py-3 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-wider">Revenue</th>
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-[#ebece6]/50">
@@ -1399,15 +1399,15 @@ export default function ReportsPage() {
                               <td className="py-4 text-xs font-bold text-[#1c1c1c] uppercase">{log.name.split("@")[0]}</td>
                               <td className="py-4 text-xs font-bold">
                                  <span className={cn(
-                                    "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
-                                    log.status === "Present" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+                                    "px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider",
+                                    log.status === "Present" ? "bg-[#ecf8f1] text-[#2f8a5f]" : "bg-rose-50 text-rose-700"
                                  )}>
                                     {log.status}
                                  </span>
                               </td>
                               <td className="py-4 text-xs font-bold text-[#5f5f5d] text-center tabular-nums">{log.clockIn}</td>
                               <td className="py-4 text-xs font-bold text-[#5f5f5d] text-center tabular-nums">{log.clockOut}</td>
-                              <td className="py-4 text-xs font-bold text-emerald-600 text-center tabular-nums">{log.workHours}</td>
+                              <td className="py-4 text-xs font-bold text-[#3fa877] text-center tabular-nums">{log.workHours}</td>
                               <td className="py-4 text-xs font-bold text-amber-600 text-center tabular-nums">{log.breakHours}</td>
                               <td className="py-4 text-xs font-bold text-[#1c1c1c] text-center">{log.tasks}</td>
                               <td className="py-4 text-xs font-bold text-[#1c1c1c] text-right">{formatCurrency(log.revenue)}</td>
@@ -1427,7 +1427,7 @@ export default function ReportsPage() {
       )}
       
       {activeTab === "overview" && (
-        <div className="space-y-6 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+        <div className="space-y-6 bg-white p-6 rounded-3xl border border-[#ebece6] shadow-sm">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard 
                label="Total Calls" 
@@ -1490,7 +1490,7 @@ export default function ReportsPage() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-            <div className="xl:col-span-3 card p-6 shadow-sm border-gray-100/50">
+            <div className="xl:col-span-3 card p-6 shadow-sm border-[#ebece6]/50">
                 <SectionTitle>
                   <TrendingUp className="w-3.5 h-3.5 text-[#1c1c1c]/60" />
                   Performance Trends
@@ -1533,8 +1533,8 @@ export default function ReportsPage() {
                       </div>
                       <div className="pt-4">
                          <div className="p-4 bg-[#fcfbf8]/10 rounded-xl">
-                            <span className="text-[9px] font-bold text-[#fcfbf8]/60 uppercase block mb-1 tracking-widest">Revenue Impact</span>
-                            <span className="text-2xl font-bold tracking-tighter text-emerald-400">{formatCurrency(stats.totalRevenue + stats.abandonedStats.recovered)}</span>
+                            <span className="text-[9px] font-bold text-[#fcfbf8]/60 uppercase block mb-1 tracking-wider">Revenue Impact</span>
+                            <span className="text-2xl font-bold tracking-tighter text-[#6fcb9d]">{formatCurrency(stats.totalRevenue + stats.abandonedStats.recovered)}</span>
                             <span className="text-[9px] text-[#fcfbf8]/40 italic block mt-1">Net Sales + Recovered Carts</span>
                          </div>
                       </div>
@@ -1554,10 +1554,10 @@ export default function ReportsPage() {
                     <table className="w-full text-left">
                       <thead>
                         <tr className="border-b border-[#ebece6]">
-                          <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">State</th>
-                          <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Orders</th>
-                          <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Revenue</th>
-                          <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Share</th>
+                          <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">State</th>
+                          <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">Orders</th>
+                          <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-wider">Revenue</th>
+                          <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-wider">Share</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#ebece6]/50">
@@ -1592,7 +1592,7 @@ export default function ReportsPage() {
                   </SectionTitle>
                   <div className="flex-1 w-full flex flex-col justify-center items-center gap-6 mt-8">
                       <div className="w-full space-y-1.5">
-                         <div className="flex justify-between text-[9px] font-bold text-[#5f5f5d] uppercase tracking-widest">
+                         <div className="flex justify-between text-[9px] font-bold text-[#5f5f5d] uppercase tracking-wider">
                             <span>Total Leads</span>
                             <span>{stats.funnelData.total}</span>
                          </div>
@@ -1603,7 +1603,7 @@ export default function ReportsPage() {
                       </div>
                       
                       <div className="w-full space-y-1.5 px-4">
-                         <div className="flex justify-between text-[9px] font-bold text-[#5f5f5d] uppercase tracking-widest">
+                         <div className="flex justify-between text-[9px] font-bold text-[#5f5f5d] uppercase tracking-wider">
                             <span>Engagement</span>
                             <span>{stats.funnelData.followed}</span>
                          </div>
@@ -1616,12 +1616,12 @@ export default function ReportsPage() {
                       </div>
 
                       <div className="w-full space-y-1.5 px-8">
-                         <div className="flex justify-between text-[9px] font-bold text-[#5f5f5d] uppercase tracking-widest">
+                         <div className="flex justify-between text-[9px] font-bold text-[#5f5f5d] uppercase tracking-wider">
                             <span>Conversion</span>
                             <span>{stats.funnelData.recovered}</span>
                          </div>
                          <div className="h-10 bg-[#1c1c1c] rounded-lg relative overflow-hidden flex items-center justify-center shadow-lg shadow-[#1c1c1c]/20">
-                            <div className="absolute inset-0 bg-emerald-500/10" style={{ width: `${stats.funnelData.total > 0 ? (stats.funnelData.recovered / stats.funnelData.total) * 100 : 0}%` }} />
+                            <div className="absolute inset-0 bg-[#55c08f]/10" style={{ width: `${stats.funnelData.total > 0 ? (stats.funnelData.recovered / stats.funnelData.total) * 100 : 0}%` }} />
                             <span className="relative text-[11px] font-bold text-[#fcfbf8]">
                                {stats.funnelData.total > 0 ? Math.round((stats.funnelData.recovered / stats.funnelData.total) * 100) : 0}% Success
                             </span>
@@ -1633,7 +1633,7 @@ export default function ReportsPage() {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <div className="card p-6 shadow-sm border-gray-100/50 bg-[#fcfbf8]">
+              <div className="card p-6 shadow-sm border-[#ebece6]/50 bg-[#fcfbf8]">
                 <SectionTitle>
                   <Send className="w-4 h-4 text-[#1c1c1c]" />
                   Top Automations
@@ -1644,16 +1644,16 @@ export default function ReportsPage() {
                   ) : stats.workflowPerformance.map((w: any) => (
                     <div key={w.name} className="p-4 rounded-2xl bg-[#f6f7f2] border border-[#ebece6] shadow-sm flex items-center justify-between">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">{w.name}</span>
+                        <span className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">{w.name}</span>
                         <span className="text-[10px] text-[#5f5f5d] font-bold">{w.conversions} Conversions</span>
                       </div>
-                      <div className="text-sm font-black text-[#1c1c1c]">{formatCurrency(w.revenue)}</div>
+                      <div className="text-sm font-bold text-[#1c1c1c]">{formatCurrency(w.revenue)}</div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="card p-6 shadow-sm border-gray-100/50">
+              <div className="card p-6 shadow-sm border-[#ebece6]/50">
                 <SectionTitle>
                   <Users className="w-4 h-4 text-[#1c1c1c]" />
                   Agent Productivity
@@ -1662,8 +1662,8 @@ export default function ReportsPage() {
                   {stats.agentPerformance.slice(0, 5).map((a: any) => (
                     <div key={a.name} className="space-y-1.5">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-black text-[#1c1c1c] uppercase tracking-tighter">{a.name.split("@")[0]}</span>
-                        <span className="font-black text-[#1c1c1c]">{formatCurrency(a.revenue)}</span>
+                        <span className="font-bold text-[#1c1c1c] uppercase tracking-tighter">{a.name.split("@")[0]}</span>
+                        <span className="font-bold text-[#1c1c1c]">{formatCurrency(a.revenue)}</span>
                       </div>
                       <div className="h-2 bg-[#ebece6] rounded-full overflow-hidden">
                         <div className="h-full bg-[#1c1c1c]" style={{ width: `${(a.count / Math.max(...stats.agentPerformance.map((x: any) => x.count), 1)) * 100}%` }} />
@@ -1692,11 +1692,11 @@ export default function ReportsPage() {
                     <table className="w-full text-left">
                        <thead>
                           <tr className="border-b border-[#ebece6]">
-                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Courier</th>
-                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Total</th>
-                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Delivered %</th>
-                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">RTO %</th>
-                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Performance</th>
+                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Courier</th>
+                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">Total</th>
+                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">Delivered %</th>
+                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">RTO %</th>
+                             <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-wider">Performance</th>
                           </tr>
                        </thead>
                        <tbody className="divide-y divide-[#ebece6]/50">
@@ -1704,7 +1704,7 @@ export default function ReportsPage() {
                              <tr key={c.name} className="hover:bg-[rgba(28,28,28,0.02)] transition-colors">
                                 <td className="py-4 text-xs font-bold text-[#1c1c1c] uppercase">{c.name}</td>
                                 <td className="py-4 text-xs font-bold text-[#5f5f5d] text-center">{c.total}</td>
-                                <td className="py-4 text-xs font-bold text-emerald-600 text-center">{Math.round((c.delivered / c.total) * 100)}%</td>
+                                <td className="py-4 text-xs font-bold text-[#3fa877] text-center">{Math.round((c.delivered / c.total) * 100)}%</td>
                                 <td className="py-4 text-xs font-bold text-rose-600 text-center">{Math.round((c.rto / c.total) * 100)}%</td>
                                 <td className="py-4 text-right">
                                    <div className="w-20 h-1.5 bg-[#ebece6] rounded-full ml-auto overflow-hidden">
@@ -1741,7 +1741,7 @@ export default function ReportsPage() {
                        {stats.shippingMetrics.paymentDistribution.map((p: any, idx: number) => (
                           <div key={p.name} className="flex items-center gap-1.5">
                              <div className={cn("w-2 h-2 rounded-full", idx === 0 ? "bg-[#1c1c1c]" : "bg-[#5f5f5d]")} />
-                             <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">{p.name}</span>
+                             <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">{p.name}</span>
                           </div>
                        ))}
                     </div>
@@ -1752,7 +1752,7 @@ export default function ReportsPage() {
                     <div className="space-y-4 mt-8">
                        {stats.shippingMetrics.weightDistribution.map((w: any) => (
                           <div key={w.name} className="space-y-2">
-                             <div className="flex justify-between text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">
+                             <div className="flex justify-between text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">
                                 <span>{w.name}</span>
                                 <span>{w.value}</span>
                              </div>
@@ -1786,9 +1786,9 @@ export default function ReportsPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#ebece6]">
-                      <th className="text-left py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Agent</th>
-                      <th className="text-center py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Calls</th>
-                      <th className="text-right py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Sales</th>
+                      <th className="text-left py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider">Agent</th>
+                      <th className="text-center py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider">Calls</th>
+                      <th className="text-right py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider">Sales</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#ebece6]/50">
@@ -1823,10 +1823,10 @@ export default function ReportsPage() {
                   <table className="w-full text-left">
                      <thead>
                         <tr className="border-b border-[#ebece6]">
-                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Product</th>
-                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Units</th>
-                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Revenue</th>
-                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Share</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Product</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">Units</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-wider">Revenue</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-wider">Share</th>
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-[#ebece6]/50">
@@ -1850,7 +1850,7 @@ export default function ReportsPage() {
             <div className="card p-6 bg-[#ebece6]/10 flex flex-col">
                <SectionTitle>Revenue Distribution</SectionTitle>
                {stats.topProducts.length === 0 ? (
-                  <div className="flex-1 flex items-center justify-center text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest py-16">
+                  <div className="flex-1 flex items-center justify-center text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider py-16">
                      No product revenue in range
                   </div>
                ) : (
@@ -1882,8 +1882,8 @@ export default function ReportsPage() {
                            </PieChart>
                         </ResponsiveContainer>
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                           <span className="text-[9px] font-bold text-[#5f5f5d] uppercase tracking-widest">Total</span>
-                           <span className="text-sm font-black text-[#1c1c1c]">{formatCurrency(stats.totalProductRevenue || 0)}</span>
+                           <span className="text-[9px] font-bold text-[#5f5f5d] uppercase tracking-wider">Total</span>
+                           <span className="text-sm font-bold text-[#1c1c1c]">{formatCurrency(stats.totalProductRevenue || 0)}</span>
                         </div>
                      </div>
                      <div className="mt-6 space-y-2 flex-1">
@@ -1925,9 +1925,9 @@ export default function ReportsPage() {
                <table className="w-full text-left">
                   <thead>
                      <tr className="border-b border-[#ebece6]">
-                        <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Customer</th>
-                        <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Orders</th>
-                        <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">LTV</th>
+                        <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Customer</th>
+                        <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">Orders</th>
+                        <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-wider">LTV</th>
                      </tr>
                   </thead>
                   <tbody className="divide-y divide-[#ebece6]/50">
@@ -1955,7 +1955,7 @@ export default function ReportsPage() {
                     <div key={p.name} className="flex items-center justify-between p-4 rounded-xl border border-[#ebece6] bg-[#ebece6]/10 hover:shadow-md transition-all">
                         <div className="flex flex-col gap-1 truncate pr-4">
                            <span className="text-xs font-bold text-[#1c1c1c] truncate">{p.name}</span>
-                           <span className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">{p.count} Units Sold</span>
+                           <span className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider">{p.count} Units Sold</span>
                         </div>
                         <div className="text-xs font-bold text-[#1c1c1c] border-l border-[#ebece6] pl-4">{formatCurrency(p.revenue)}</div>
                     </div>
@@ -2002,13 +2002,13 @@ export default function ReportsPage() {
                   <table className="w-full text-left">
                      <thead>
                         <tr className="border-b border-[#ebece6]">
-                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest">Agent Detail</th>
-                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Status / Activity</th>
-                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Net Work</th>
-                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">On Break</th>
-                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Volume</th>
-                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-widest">Total Revenue</th>
-                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-widest">Effort Score</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider">Agent Detail</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">Status / Activity</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">Net Work</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">On Break</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">Volume</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-center tracking-wider">Total Revenue</th>
+                           <th className="py-2 text-[10px] font-bold text-[#5f5f5d] uppercase text-right tracking-wider">Effort Score</th>
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-[#ebece6]/50">
@@ -2028,7 +2028,7 @@ export default function ReportsPage() {
                                          <Avatar name={a.name} size="sm" />
                                          <div className={cn(
                                             "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white",
-                                            isOnline ? "bg-emerald-500 animate-pulse" : isBreak ? "bg-amber-500" : isMeeting ? "bg-indigo-500" : "bg-gray-400"
+                                            isOnline ? "bg-[#55c08f] animate-pulse" : isBreak ? "bg-amber-500" : isMeeting ? "bg-[#6f9bdd]" : "bg-[#9a9a94]"
                                          )} />
                                       </div>
                                       <div className="flex flex-col">
@@ -2040,8 +2040,8 @@ export default function ReportsPage() {
                                 <td className="py-4 text-center">
                                    <div className="flex flex-col items-center">
                                       <span className={cn(
-                                         "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border",
-                                         isOnline ? "bg-emerald-50 text-emerald-700 border-emerald-100" : isBreak ? "bg-amber-50 text-amber-700 border-amber-100" : "bg-gray-50 text-gray-500 border-gray-100"
+                                         "px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider border",
+                                         isOnline ? "bg-[#ecf8f1] text-[#2f8a5f] border-[#d5f0e1]" : isBreak ? "bg-amber-50 text-amber-700 border-amber-100" : "bg-[#f6f7f2] text-[#6b6b67] border-[#ebece6]"
                                       )}>
                                          {a.status || "offline"}
                                       </span>
@@ -2053,22 +2053,22 @@ export default function ReportsPage() {
                                 <td className="py-4 text-center">
                                    <div className="flex flex-col items-center">
                                       <span className="text-xs font-bold text-[#1c1c1c]">{a.taskCount}</span>
-                                      <span className="text-[8px] text-gray-400 font-bold uppercase">Tasks</span>
+                                      <span className="text-[8px] text-[#9a9a94] font-bold uppercase">Tasks</span>
                                    </div>
                                 </td>
                                 <td className="py-4 text-center">
                                    <div className="flex flex-col items-center">
                                       <span className="text-xs font-bold text-[#1c1c1c]">{formatCurrency(a.revenue)}</span>
                                       {a.revenue > 0 && a.taskCount > 0 && (
-                                         <span className="text-[8px] text-emerald-600 font-bold uppercase">Avg: {formatCurrency(a.revenue / a.taskCount)}</span>
+                                         <span className="text-[8px] text-[#3fa877] font-bold uppercase">Avg: {formatCurrency(a.revenue / a.taskCount)}</span>
                                       )}
                                    </div>
                                 </td>
                                 <td className="py-4 text-right">
                                    <div className="flex flex-col items-end">
                                       <span className={cn(
-                                          "px-3 py-1 rounded-full text-[10px] font-black",
-                                          Number(a.productivity) > 5 ? "bg-emerald-500 text-white" : "bg-[#ebece6] text-[#5f5f5d]"
+                                          "px-3 py-1 rounded-full text-[10px] font-bold",
+                                          Number(a.productivity) > 5 ? "bg-[#55c08f] text-white" : "bg-[#ebece6] text-[#5f5f5d]"
                                       )}>
                                           {a.productivity} T/H
                                       </span>
@@ -2092,9 +2092,9 @@ export default function ReportsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[#ebece6]">
-                    <th className="text-left py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Order</th>
-                    <th className="text-left py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Customer</th>
-                    <th className="text-right py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest">Value</th>
+                    <th className="text-left py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider">Order</th>
+                    <th className="text-left py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider">Customer</th>
+                    <th className="text-right py-2 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider">Value</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#ebece6]/50">
@@ -2119,7 +2119,7 @@ export default function ReportsPage() {
         <div className="space-y-6 py-2">
             <p className="text-xs text-[#5f5f5d] italic">Complete data integrity export for audit and compliance purposes.</p>
             <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-2 block tracking-widest">Format</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "xlsx"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "xlsx" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>EXCEL</button><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "csv"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "csv" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>CSV</button><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "pdf"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "pdf" ? "bg-rose-500 text-white border-rose-500" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>PDF</button></div></div>
+                <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-2 block tracking-wider">Format</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "xlsx"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "xlsx" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>EXCEL</button><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "csv"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "csv" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>CSV</button><button onClick={() => setMasterExportOptions({...masterExportOptions, format: "pdf"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", masterExportOptions.format === "pdf" ? "bg-rose-500 text-white border-rose-500" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>PDF</button></div></div>
                 
             </div>
         </div>
@@ -2129,9 +2129,9 @@ export default function ReportsPage() {
         footer={<><button className="btn-secondary" onClick={() => setShowAdvancedExport(false)}>Cancel</button><button className="btn-primary" onClick={handleAdvancedExport} disabled={isExporting}>{isExporting ? "Processing..." : "Generate Report"}</button></>}
       >
         <div className="space-y-8 py-2">
-            <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-4 block tracking-widest opacity-60">Select Modules</label><div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{["Summary", "Calls", "Orders", "Agents", "Products", "Recovery", "Workflows", "Attendance", "Trends"].map((s: any) => (<button key={s} onClick={() => setExportOptions({...exportOptions, sheets: {...exportOptions.sheets, [s.toLowerCase()]: !(exportOptions.sheets as any)[s.toLowerCase()]}})} className={cn("flex items-center justify-center py-3 rounded-xl border text-[11px] font-bold transition-all", (exportOptions.sheets as any)[s.toLowerCase()] ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c] shadow-lg shadow-[#1c1c1c]/10" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>{s}</button>))}</div></div>
+            <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-4 block tracking-wider opacity-60">Select Modules</label><div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{["Summary", "Calls", "Orders", "Agents", "Products", "Recovery", "Workflows", "Attendance", "Trends"].map((s: any) => (<button key={s} onClick={() => setExportOptions({...exportOptions, sheets: {...exportOptions.sheets, [s.toLowerCase()]: !(exportOptions.sheets as any)[s.toLowerCase()]}})} className={cn("flex items-center justify-center py-3 rounded-xl border text-[11px] font-bold transition-all", (exportOptions.sheets as any)[s.toLowerCase()] ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c] shadow-lg shadow-[#1c1c1c]/10" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>{s}</button>))}</div></div>
             <div className="grid grid-cols-2 gap-8 pt-4 border-t border-[#ebece6]">
-                <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-3 block tracking-widest opacity-60">Output Format</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setExportOptions({...exportOptions, format: "xlsx"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "xlsx" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>EXCEL</button><button onClick={() => setExportOptions({...exportOptions, format: "csv"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "csv" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>CSV</button><button onClick={() => setExportOptions({...exportOptions, format: "pdf"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "pdf" ? "bg-rose-500 text-white border-rose-500" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>PDF</button></div></div>
+                <div><label className="text-[10px] font-bold text-[#5f5f5d] uppercase mb-3 block tracking-wider opacity-60">Output Format</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setExportOptions({...exportOptions, format: "xlsx"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "xlsx" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>EXCEL</button><button onClick={() => setExportOptions({...exportOptions, format: "csv"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "csv" ? "bg-[#1c1c1c] text-[#fcfbf8] border-[#1c1c1c]" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>CSV</button><button onClick={() => setExportOptions({...exportOptions, format: "pdf"})} className={cn("py-2 px-1 rounded-lg border text-[10px] font-bold", exportOptions.format === "pdf" ? "bg-rose-500 text-white border-rose-500" : "bg-[#f6f7f2] border-[#ebece6] text-[#5f5f5d]")}>PDF</button></div></div>
                 
             </div>
         </div>

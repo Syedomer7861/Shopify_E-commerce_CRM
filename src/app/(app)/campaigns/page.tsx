@@ -126,7 +126,7 @@ export default function CampaignManager() {
       <div className="flex items-center justify-center h-[60vh] text-[#5f5f5d]">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-[#1c1c1c]/20 border-t-[#1c1c1c] rounded-full animate-spin" />
-          <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Verifying Clearance...</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Verifying Clearance...</p>
         </div>
       </div>
     );
@@ -364,37 +364,37 @@ export default function CampaignManager() {
       <div className="card overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-100">
-              <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Campaign Name</th>
-              <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Template</th>
-              <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Segment</th>
-              <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Progress</th>
-              <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
-              <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
+            <tr className="bg-[#f6f7f2] border-b border-[#ebece6]">
+              <th className="px-6 py-4 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Campaign Name</th>
+              <th className="px-6 py-4 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Template</th>
+              <th className="px-6 py-4 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Segment</th>
+              <th className="px-6 py-4 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Progress</th>
+              <th className="px-6 py-4 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Status</th>
+              <th className="px-6 py-4 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-[#f6f7f2]">
             {paginatedCampaigns.map(c => (
-              <tr key={c.id} className="hover:bg-gray-50/50 transition-colors group">
+              <tr key={c.id} className="hover:bg-[#f6f7f2]/50 transition-colors group">
                 <td className="px-6 py-4">
                   <div className="text-sm font-bold text-[#1c1c1c]">{c.name}</div>
-                  <div className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
+                  <div className="text-[10px] text-[#9a9a94] flex items-center gap-1 mt-0.5">
                     <Clock className="w-2.5 h-2.5" /> Created {new Date(c.created_at).toLocaleDateString()}
                   </div>
                   {c.scheduled_at && (
-                    <div className="text-[9px] text-indigo-600 font-bold flex items-center gap-1 mt-1 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded w-max">
+                    <div className="text-[9px] text-[#4f7fc8] font-bold flex items-center gap-1 mt-1 bg-[#eef4fc] border border-[#dfeafa] px-1.5 py-0.5 rounded w-max">
                       <Clock className="w-2.5 h-2.5" /> Scheduled: {new Date(c.scheduled_at).toLocaleString()}
                     </div>
                   )}
                 </td>
                 <td className="px-6 py-4">
-                  <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
+                  <span className="text-xs font-medium text-[#55554f] bg-[#f0f0ec] px-2 py-0.5 rounded border border-[#ebece6]">
                     {c.template?.name || "No Template"}
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                   <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium capitalize">
-                     <Users className="w-3 h-3 text-gray-400" /> {c.target_segment}
+                   <div className="flex items-center gap-1.5 text-xs text-[#6b6b67] font-medium capitalize">
+                     <Users className="w-3 h-3 text-[#9a9a94]" /> {c.target_segment}
                    </div>
                 </td>
                 <td className="px-6 py-4">
@@ -411,13 +411,13 @@ export default function CampaignManager() {
                       <div 
                         className={cn(
                           "h-full transition-all duration-1000", 
-                          c.status === "completed" ? "bg-emerald-600" : "bg-[#1c1c1c]/40"
+                          c.status === "completed" ? "bg-[#3fa877]" : "bg-[#1c1c1c]/40"
                         )}
                         style={{ width: `${c.total_recipients ? ((c.delivered_count + (c.failed_count || 0)) / c.total_recipients) * 100 : 0}%` }}
                       />
                     </div>
                     <div className="flex items-center gap-2.5 mt-1.5 text-[9px] font-bold">
-                      <span className="inline-flex items-center gap-0.5 text-emerald-600">
+                      <span className="inline-flex items-center gap-0.5 text-[#3fa877]">
                         <CheckCircle2 className="w-2.5 h-2.5" /> Sent: {c.delivered_count}
                       </span>
                       {(c.failed_count || 0) > 0 && (
@@ -452,7 +452,7 @@ export default function CampaignManager() {
                        <button
                          onClick={() => handleEditClick(c)}
                          title="Edit Settings"
-                         className="p-2 bg-[#1c1c1c]/5 text-gray-600 rounded-lg hover:bg-[#1c1c1c]/10 transition-colors shadow-sm border border-[#1c1c1c]/10"
+                         className="p-2 bg-[#1c1c1c]/5 text-[#55554f] rounded-lg hover:bg-[#1c1c1c]/10 transition-colors shadow-sm border border-[#1c1c1c]/10"
                        >
                           <Pencil className="w-3.5 h-3.5" />
                        </button>
@@ -476,7 +476,7 @@ export default function CampaignManager() {
                        </button>
                     )}
                     {c.status === "completed" && (
-                      <BarChart3 className="w-4 h-4 text-gray-300 ml-auto" />
+                      <BarChart3 className="w-4 h-4 text-[#d4d5cd] ml-auto" />
                     )}
                     {(c.status === "draft" || c.status === "paused" || c.status === "completed" || c.status === "scheduled") && (
                        <button
@@ -494,21 +494,21 @@ export default function CampaignManager() {
           </tbody>
         </table>
         {inRange.length === 0 && campaigns.length > 0 && !loading && (
-          <div className="py-12 text-center text-sm text-gray-400">No campaigns in this date range.</div>
+          <div className="py-12 text-center text-sm text-[#9a9a94]">No campaigns in this date range.</div>
         )}
         {campaigns.length === 0 && !loading && (
           <div className="py-20 text-center flex flex-col items-center justify-center gap-4">
-             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
-               <Megaphone className="w-8 h-8 text-gray-200" />
+             <div className="w-16 h-16 bg-[#f6f7f2] rounded-full flex items-center justify-center">
+               <Megaphone className="w-8 h-8 text-[#e6e7e0]" />
              </div>
              <div>
-               <p className="text-sm font-bold text-gray-400">No campaigns launched yet</p>
-               <p className="text-xs text-gray-300 mt-1">Start by creating your first WhatsApp broadcast</p>
+               <p className="text-sm font-bold text-[#9a9a94]">No campaigns launched yet</p>
+               <p className="text-xs text-[#d4d5cd] mt-1">Start by creating your first WhatsApp broadcast</p>
              </div>
           </div>
         )}
         {inRange.length > ITEMS_PER_PAGE && (
-          <div className="px-6 border-t border-gray-100">
+          <div className="px-6 border-t border-[#ebece6]">
             <Pagination 
               current={currentPage} 
               total={inRange.length} 
@@ -538,7 +538,7 @@ export default function CampaignManager() {
             </div>
             <div>
               <p className="text-sm font-bold text-[#1c1c1c]">Confirm permanent deletion</p>
-              <p className="text-xs text-gray-500">This action cannot be undone.</p>
+              <p className="text-xs text-[#6b6b67]">This action cannot be undone.</p>
             </div>
           </div>
           
@@ -567,7 +567,7 @@ export default function CampaignManager() {
       >
          <div className="space-y-4">
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Campaign Name</label>
+              <label className="text-xs font-bold text-[#3a3a36] block mb-1">Campaign Name</label>
               <input 
                 className="input text-sm" 
                 placeholder="e.g. Diwali Flash Sale" 
@@ -577,7 +577,7 @@ export default function CampaignManager() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">WhatsApp Template</label>
+                <label className="text-xs font-bold text-[#3a3a36] block mb-1">WhatsApp Template</label>
                 <select 
                   className="select text-sm"
                   value={formData.template_id}
@@ -588,7 +588,7 @@ export default function CampaignManager() {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Target Segment</label>
+                <label className="text-xs font-bold text-[#3a3a36] block mb-1">Target Segment</label>
                 <select 
                   className="select text-sm capitalize"
                   value={formData.target_segment}
@@ -605,13 +605,13 @@ export default function CampaignManager() {
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
                 Anti-Ban Sending Speed Safeguard
               </div>
-              <p className="text-[10px] text-gray-500 leading-relaxed">
+              <p className="text-[10px] text-[#6b6b67] leading-relaxed">
                 Standardizing random time delays between messages mimics natural human behaviour, significantly reducing the risk of your phone number being flagged or banned by WhatsApp/Meta.
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
                 <div>
-                  <label className="text-[10px] font-bold text-gray-700 block mb-1">Speed Preset</label>
+                  <label className="text-[10px] font-bold text-[#3a3a36] block mb-1">Speed Preset</label>
                   <select 
                     className="select text-xs"
                     value={formData.preset}
@@ -633,7 +633,7 @@ export default function CampaignManager() {
                 {formData.preset === "custom" && (
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[10px] font-bold text-gray-700 block mb-0.5">Min Delay (s)</label>
+                      <label className="text-[10px] font-bold text-[#3a3a36] block mb-0.5">Min Delay (s)</label>
                       <input 
                         type="number" 
                         className="input text-xs" 
@@ -643,7 +643,7 @@ export default function CampaignManager() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-gray-700 block mb-0.5">Max Delay (s)</label>
+                      <label className="text-[10px] font-bold text-[#3a3a36] block mb-0.5">Max Delay (s)</label>
                       <input 
                         type="number" 
                         className="input text-xs" 
@@ -660,16 +660,16 @@ export default function CampaignManager() {
             {/* Campaign Scheduling & Sending Window */}
             <div className="border border-[#ebece6] rounded-lg p-3 bg-[#f6f7f2]/30 space-y-3">
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#1c1c1c]">
-                <Clock className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
+                <Clock className="w-3.5 h-3.5 text-[#4f7fc8] animate-pulse" />
                 Campaign Schedule & Sending Window
               </div>
-              <p className="text-[10px] text-gray-500 leading-relaxed">
+              <p className="text-[10px] text-[#6b6b67] leading-relaxed">
                 Determine exactly when your campaign will launch, and specify allowed operational hours to protect your customer relationships and WhatsApp account integrity.
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-gray-700 block mb-1">Execution Mode</label>
+                  <label className="text-[10px] font-bold text-[#3a3a36] block mb-1">Execution Mode</label>
                   <select 
                     className="select text-xs"
                     value={formData.is_scheduled ? "scheduled" : "immediate"}
@@ -682,7 +682,7 @@ export default function CampaignManager() {
 
                 {formData.is_scheduled && (
                   <div>
-                    <label className="text-[10px] font-bold text-gray-700 block mb-1">Target Launch Time</label>
+                    <label className="text-[10px] font-bold text-[#3a3a36] block mb-1">Target Launch Time</label>
                     <input 
                       type="datetime-local" 
                       className="input text-xs"
@@ -695,12 +695,12 @@ export default function CampaignManager() {
 
               <div className="border-t border-[#ebece6] pt-2 mt-2">
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-[10px] font-bold text-gray-700 block">Daily Active Sending Hours</label>
+                  <label className="text-[10px] font-bold text-[#3a3a36] block">Daily Active Sending Hours</label>
                   <span className="text-[9px] text-[#5f5f5d] font-bold">Local Time</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[9px] font-bold text-gray-500 block mb-0.5">Start Hour</label>
+                    <label className="text-[9px] font-bold text-[#6b6b67] block mb-0.5">Start Hour</label>
                     <input 
                       type="time" 
                       className="input text-xs"
@@ -709,7 +709,7 @@ export default function CampaignManager() {
                     />
                   </div>
                   <div>
-                    <label className="text-[9px] font-bold text-gray-500 block mb-0.5">End Hour</label>
+                    <label className="text-[9px] font-bold text-[#6b6b67] block mb-0.5">End Hour</label>
                     <input 
                       type="time" 
                       className="input text-xs"
@@ -718,7 +718,7 @@ export default function CampaignManager() {
                     />
                   </div>
                 </div>
-                <p className="text-[8px] text-gray-400 mt-1 italic">
+                <p className="text-[8px] text-[#9a9a94] mt-1 italic">
                   * Safeguard active: campaign runner automatically pauses outside this time range to avoid night-time disturbance.
                 </p>
               </div>
@@ -738,21 +738,21 @@ export default function CampaignManager() {
             <>
               {/* Delivery Stats Row */}
               <div className="grid grid-cols-4 gap-2 text-center">
-                <div className="border border-gray-100 rounded-lg p-2 bg-gray-50/50">
-                  <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Total Targets</div>
-                  <div className="text-sm font-black text-[#1c1c1c] mt-0.5">{selectedCampaignForLogs.total_recipients || 0}</div>
+                <div className="border border-[#ebece6] rounded-lg p-2 bg-[#f6f7f2]/50">
+                  <div className="text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider">Total Targets</div>
+                  <div className="text-sm font-bold text-[#1c1c1c] mt-0.5">{selectedCampaignForLogs.total_recipients || 0}</div>
                 </div>
-                <div className="border border-emerald-100 rounded-lg p-2 bg-emerald-50/20">
-                  <div className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider">Sent (Ok)</div>
-                  <div className="text-sm font-black text-emerald-600 mt-0.5">{selectedCampaignForLogs.delivered_count}</div>
+                <div className="border border-[#d5f0e1] rounded-lg p-2 bg-[#ecf8f1]/20">
+                  <div className="text-[9px] font-bold text-[#3fa877] uppercase tracking-wider">Sent (Ok)</div>
+                  <div className="text-sm font-bold text-[#3fa877] mt-0.5">{selectedCampaignForLogs.delivered_count}</div>
                 </div>
                 <div className="border border-rose-100 rounded-lg p-2 bg-rose-50/20">
                   <div className="text-[9px] font-bold text-rose-600 uppercase tracking-wider">Failed</div>
-                  <div className="text-sm font-black text-rose-600 mt-0.5">{selectedCampaignForLogs.failed_count || 0}</div>
+                  <div className="text-sm font-bold text-rose-600 mt-0.5">{selectedCampaignForLogs.failed_count || 0}</div>
                 </div>
                 <div className="border border-amber-100 rounded-lg p-2 bg-amber-50/20">
                   <div className="text-[9px] font-bold text-amber-600 uppercase tracking-wider">Pending</div>
-                  <div className="text-sm font-black text-amber-600 mt-0.5">
+                  <div className="text-sm font-bold text-amber-600 mt-0.5">
                     {Math.max(0, (selectedCampaignForLogs.total_recipients || 0) - selectedCampaignForLogs.delivered_count - (selectedCampaignForLogs.failed_count || 0))}
                   </div>
                 </div>
@@ -760,7 +760,7 @@ export default function CampaignManager() {
 
               {/* Real-time search filter */}
               <div className="relative">
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-300" />
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-[#d4d5cd]" />
                 <input
                   className="input text-xs pl-9"
                   placeholder="Search recipients by name or phone..."
@@ -770,22 +770,22 @@ export default function CampaignManager() {
               </div>
 
               {/* Scrollable Recipients List Table */}
-              <div className="border border-gray-100 rounded-lg overflow-hidden max-h-[300px] overflow-y-auto">
+              <div className="border border-[#ebece6] rounded-lg overflow-hidden max-h-[300px] overflow-y-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100 sticky top-0 font-bold text-gray-500">
+                    <tr className="bg-[#f6f7f2] border-b border-[#ebece6] sticky top-0 font-bold text-[#6b6b67]">
                       <th className="px-4 py-2">Recipient Name</th>
                       <th className="px-4 py-2">Phone Number</th>
                       <th className="px-4 py-2">Status</th>
                       <th className="px-4 py-2 text-right">Sent Time</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-[#f6f7f2]">
                     {(() => {
                       if (logsLoading) {
                         return (
                           <tr>
-                            <td colSpan={4} className="py-8 text-center text-gray-400 italic">
+                            <td colSpan={4} className="py-8 text-center text-[#9a9a94] italic">
                               Loading recipients...
                             </td>
                           </tr>
@@ -800,7 +800,7 @@ export default function CampaignManager() {
                       if (filtered.length === 0) {
                         return (
                           <tr>
-                            <td colSpan={4} className="py-8 text-center text-gray-400 italic">
+                            <td colSpan={4} className="py-8 text-center text-[#9a9a94] italic">
                               No matching recipients found in this log.
                             </td>
                           </tr>
@@ -808,14 +808,14 @@ export default function CampaignManager() {
                       }
 
                       return filtered.map((r: any, idx: number) => (
-                        <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                        <tr key={idx} className="hover:bg-[#f6f7f2]/50 transition-colors">
                           <td className="px-4 py-2 font-bold text-[#1c1c1c]">{r.name}</td>
-                          <td className="px-4 py-2 font-mono text-gray-500">{r.phone || "-"}</td>
+                          <td className="px-4 py-2 font-mono text-[#6b6b67]">{r.phone || "-"}</td>
                           <td className="px-4 py-2">
                             <span
                               className={cn(
                                 "inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border",
-                                r.status === "delivered" ? "bg-emerald-50 border-emerald-200 text-emerald-700" :
+                                r.status === "delivered" ? "bg-[#ecf8f1] border-[#b5e4ca] text-[#2f8a5f]" :
                                 r.status === "failed" ? "bg-rose-50 border-rose-200 text-rose-700" :
                                 "bg-amber-50 border-amber-200 text-amber-700"
                               )}
@@ -828,7 +828,7 @@ export default function CampaignManager() {
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-2 text-right text-gray-400 font-mono">
+                          <td className="px-4 py-2 text-right text-[#9a9a94] font-mono">
                             {r.sent_at ? new Date(r.sent_at).toLocaleTimeString() : "-"}
                           </td>
                         </tr>

@@ -93,7 +93,7 @@ export default function GoalsModal({ open, spaceId, canManage, members, onClose 
         {loading ? (
           <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-[#5f5f5d]" /></div>
         ) : goals.length === 0 ? (
-          <div className="bg-white border border-[#ebece6] rounded-2xl p-6 text-center text-[11px] font-bold uppercase tracking-widest text-[#5f5f5d]/50">
+          <div className="bg-white border border-[#ebece6] rounded-2xl p-6 text-center text-[11px] font-bold uppercase tracking-wider text-[#5f5f5d]/50">
             No goals yet
           </div>
         ) : (
@@ -109,18 +109,18 @@ export default function GoalsModal({ open, spaceId, canManage, members, onClose 
                       <div className="text-[13px] font-bold text-[#1c1c1c] flex items-center gap-1.5">
                         <Target className="w-3.5 h-3.5 text-[#5f5f5d]/50" /> {g.title}
                       </div>
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f5f5d]/60 mt-0.5">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#5f5f5d]/60 mt-0.5">
                         {g.period_start.slice(5)} – {g.period_end.slice(5)}
                         {owner ? ` · ${owner.name || owner.email}` : " · whole Space"}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className={cn("text-[11px] font-black", done ? "text-emerald-600" : "text-[#1c1c1c]")}>
+                      <span className={cn("text-[11px] font-bold", done ? "text-[#3fa877]" : "text-[#1c1c1c]")}>
                         {g.progress ?? 0}/{g.target}
                       </span>
                       {canManage && (
                         confirmDel === g.id ? (
-                          <button onClick={() => remove(g.id)} className="text-[9px] font-black uppercase tracking-widest text-rose-500">
+                          <button onClick={() => remove(g.id)} className="text-[9px] font-bold uppercase tracking-wider text-rose-500">
                             Sure?
                           </button>
                         ) : (
@@ -132,7 +132,7 @@ export default function GoalsModal({ open, spaceId, canManage, members, onClose 
                     </div>
                   </div>
                   <div className="h-1.5 rounded-full bg-[#ebece6] overflow-hidden mt-2">
-                    <div className={cn("h-full rounded-full", done ? "bg-emerald-500" : "bg-[#1c1c1c]")} style={{ width: `${pct}%` }} />
+                    <div className={cn("h-full rounded-full", done ? "bg-[#55c08f]" : "bg-[#1c1c1c]")} style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );
@@ -142,7 +142,7 @@ export default function GoalsModal({ open, spaceId, canManage, members, onClose 
 
         {canManage && (
           <div className="border-t border-[#ebece6] pt-4 space-y-2">
-            <div className="text-[10px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">New goal</div>
+            <div className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider">New goal</div>
             <input
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
@@ -180,7 +180,7 @@ export default function GoalsModal({ open, spaceId, canManage, members, onClose 
             <button
               onClick={create}
               disabled={saving}
-              className="px-4 py-2 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-40"
+              className="px-4 py-2 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 disabled:opacity-40"
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />} Add goal
             </button>

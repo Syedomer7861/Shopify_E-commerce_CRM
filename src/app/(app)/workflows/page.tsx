@@ -58,7 +58,7 @@ export default function WorkflowManager() {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-[#5f5f5d] gap-3">
         <RefreshCw className="w-8 h-8 animate-spin" />
-        <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Synchronizing Automations...</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Synchronizing Automations...</p>
       </div>
     );
   }
@@ -173,7 +173,7 @@ export default function WorkflowManager() {
         title="Automation Engine" 
         subtitle="Manage event-driven CRM workflows and task automation"
         actions={
-          <button onClick={handleNew} className="btn-primary py-2 px-6 text-[10px] font-bold uppercase tracking-widest">
+          <button onClick={handleNew} className="btn-primary py-2 px-6 text-[10px] font-bold uppercase tracking-wider">
             <Plus className="w-3.5 h-3.5" /> Create Workflow
           </button>
         }
@@ -191,7 +191,7 @@ export default function WorkflowManager() {
                 </div>
                 <div>
                    <h3 className="text-sm font-bold text-[#1c1c1c] mb-1">{wf.name}</h3>
-                  <div className="flex items-center gap-3 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-widest opacity-60">
+                  <div className="flex items-center gap-3 text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider opacity-60">
                     <span>{wf.trigger_event.replace("_", " ")}</span>
                     <ArrowRight className="w-3 h-3" />
                     <span>{wf.actions?.length || 0} Actions</span>
@@ -203,8 +203,8 @@ export default function WorkflowManager() {
                  <button 
                    onClick={() => handleToggleStatus(wf)}
                    className={cn(
-                    "px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest border transition-all hover:scale-105 active:scale-95",
-                    wf.is_active ? "bg-emerald-50 border-emerald-100 text-emerald-700" : "bg-amber-50 border-amber-100 text-amber-700"
+                    "px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider border transition-all hover:scale-105 active:scale-95",
+                    wf.is_active ? "bg-[#ecf8f1] border-[#d5f0e1] text-[#2f8a5f]" : "bg-amber-50 border-amber-100 text-amber-700"
                   )}
                  >
                    {wf.is_active ? "Active" : "Paused"}
@@ -246,7 +246,7 @@ export default function WorkflowManager() {
       >
         <div className="space-y-6">
           <div>
-            <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest block mb-2 opacity-60">Workflow Name</label>
+            <label className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider block mb-2 opacity-60">Workflow Name</label>
             <input 
               className="input text-xs bg-[#fcfbf8]" 
               placeholder="e.g. 5-Day Delivery Follow-up" 
@@ -257,14 +257,14 @@ export default function WorkflowManager() {
 
           <div className="flex items-center justify-between p-4 bg-[#ebece6]/20 rounded-2xl border border-[#ebece6]/50">
              <div>
-                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block">Workflow Status</label>
+                <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block">Workflow Status</label>
                 <p className="text-[9px] text-[#5f5f5d] mt-1 font-medium italic opacity-60">Enable or disable this automation globally</p>
              </div>
              <button 
                onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
                className={cn(
                  "relative w-10 h-6 rounded-full transition-all duration-300",
-                 formData.is_active ? "bg-emerald-500" : "bg-[#ebece6]"
+                 formData.is_active ? "bg-[#55c08f]" : "bg-[#ebece6]"
                )}
              >
                 <div className={cn(
@@ -276,7 +276,7 @@ export default function WorkflowManager() {
 
           <div className="grid grid-cols-2 gap-8">
             <div>
-              <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-4">1. Select Trigger</label>
+              <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-4">1. Select Trigger</label>
               <div className="space-y-3">
                 {TRIGGERS.map(t => (
                   <button 
@@ -287,7 +287,7 @@ export default function WorkflowManager() {
                        formData.trigger_event === t.id ? "bg-[#1c1c1c] text-white border-[#1c1c1c] shadow-lg" : "bg-[#fcfbf8] border-[#ebece6] hover:border-[#1c1c1c]/30"
                      )}
                   >
-                    <div className="text-[10px] font-bold uppercase tracking-widest">{t.label}</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider">{t.label}</div>
                     <div className={cn("text-[9px] mt-1 leading-relaxed", formData.trigger_event === t.id ? "text-white/60" : "text-[#5f5f5d] opacity-70")}>{t.desc}</div>
                     {formData.trigger_event === t.id && <div className="absolute right-0 top-0 bottom-0 w-1 bg-white/20" />}
                   </button>
@@ -296,7 +296,7 @@ export default function WorkflowManager() {
             </div>
 
             <div>
-              <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-widest block mb-4">2. Define Actions</label>
+              <label className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider block mb-4">2. Define Actions</label>
               <div className="space-y-4">
                 {formData.actions.map((action, idx) => (
                   <div key={idx} className="p-4 rounded-xl border border-[#ebece6] bg-[#fcfbf8] relative group">
@@ -311,7 +311,7 @@ export default function WorkflowManager() {
                        {action.type === "create_task" && (
                          <>
                             <div className="flex items-center justify-between gap-2 border-b border-[#ebece6]/50 pb-2">
-                               <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Task Type</span>
+                               <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider opacity-60">Task Type</span>
                                <select 
                                  className="bg-[#fcfbf8] border border-[#ebece6] rounded-lg px-2.5 py-1 text-[10px] font-bold text-[#1c1c1c] focus:outline-none focus:border-[#1c1c1c]/30 hover:border-[#1c1c1c]/20 transition-all cursor-pointer shadow-sm text-right max-w-[150px]"
                                  value={action.params?.task_type || "review"}
@@ -337,7 +337,7 @@ export default function WorkflowManager() {
                                </select>
                             </div>
                            <div className="flex items-center justify-between gap-2 border-b border-[#ebece6]/50 pb-2">
-                              <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Delay (Days)</span>
+                              <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider opacity-60">Delay (Days)</span>
                               <input 
                                 type="number" 
                                 className="w-10 bg-transparent text-[10px] font-bold text-[#1c1c1c] text-right focus:outline-none" 
@@ -350,7 +350,7 @@ export default function WorkflowManager() {
                               />
                            </div>
                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Priority Bonus</span>
+                              <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider opacity-60">Priority Bonus</span>
                               <input 
                                 type="number" 
                                 className="w-10 bg-transparent text-[10px] font-bold text-[#1c1c1c] text-right focus:outline-none" 
@@ -368,7 +368,7 @@ export default function WorkflowManager() {
                        {action.type === "message" && (
                          <>
                            <div className="flex flex-col gap-2 border-b border-[#ebece6]/50 pb-2">
-                              <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Template Reference</span>
+                              <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider opacity-60">Template Reference</span>
                               <select 
                                 className="w-full bg-[#fcfbf8] border border-[#ebece6] rounded-lg px-3 py-2 text-[10px] font-bold text-[#1c1c1c] focus:outline-none focus:border-[#1c1c1c]/30 hover:border-[#1c1c1c]/20 transition-all cursor-pointer shadow-sm mt-1"
                                 value={action.params?.template_name || "Review Reminder"}
@@ -385,7 +385,7 @@ export default function WorkflowManager() {
                               </select>
                            </div>
                            <div className="flex flex-col gap-2">
-                              <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-widest opacity-60">Custom Text (Overrides Template)</span>
+                              <span className="text-[10px] font-bold text-[#5f5f5d] uppercase tracking-wider opacity-60">Custom Text (Overrides Template)</span>
                               <textarea 
                                 className="w-full bg-[#f6f7f2]/50 border border-[#ebece6] rounded-lg p-2 text-[10px] font-medium min-h-[60px]"
                                 placeholder="Enter custom WhatsApp text..."
@@ -411,7 +411,7 @@ export default function WorkflowManager() {
                      <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                        <Plus className="w-3 h-3" />
                      </div>
-                     <span className="text-[8px] font-black uppercase tracking-widest">New Task</span>
+                     <span className="text-[8px] font-bold uppercase tracking-wider">New Task</span>
                    </button>
                    <button 
                      onClick={handleWhatsAppAction}
@@ -420,7 +420,7 @@ export default function WorkflowManager() {
                      <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                        <Send className="w-3 h-3" />
                      </div>
-                     <span className="text-[8px] font-black uppercase tracking-widest">New Message</span>
+                     <span className="text-[8px] font-bold uppercase tracking-wider">New Message</span>
                    </button>
                  </div>
               </div>

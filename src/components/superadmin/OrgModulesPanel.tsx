@@ -42,13 +42,13 @@ export function OrgModulesPanel({ orgId }: { orgId: string }) {
     load();
   }
 
-  if (loading) return <div className="card p-4"><Loader2 className="w-4 h-4 animate-spin text-gray-400" /></div>;
+  if (loading) return <div className="card p-4"><Loader2 className="w-4 h-4 animate-spin text-[#9a9a94]" /></div>;
 
   return (
     <div className="card overflow-x-auto">
       <table className="w-full text-sm min-w-[560px]">
         <thead>
-          <tr className="text-left text-[10px] uppercase tracking-widest text-[#5f5f5d] border-b border-[#ebece6]">
+          <tr className="text-left text-[10px] uppercase tracking-wider text-[#5f5f5d] border-b border-[#ebece6]">
             <th className="p-3">Module</th><th className="p-3">Your setting</th><th className="p-3">Result</th>
           </tr>
         </thead>
@@ -58,7 +58,7 @@ export function OrgModulesPanel({ orgId }: { orgId: string }) {
             const result = blocked.includes(m.key) ? (m.is_available ? "Blocked" : "Off platform-wide")
               : ownOff.includes(m.key) ? "Their admin switched it off" : "On";
             return (
-              <tr key={m.key} className="border-b border-gray-50 last:border-0">
+              <tr key={m.key} className="border-b border-[#f6f7f2] last:border-0">
                 <td className="p-3 font-semibold text-[#1c1c1c]">{m.name}</td>
                 <td className="p-3">
                   <div className="inline-flex rounded-lg border border-[#ebece6] overflow-hidden text-xs">
@@ -70,7 +70,7 @@ export function OrgModulesPanel({ orgId }: { orgId: string }) {
                     ))}
                   </div>
                 </td>
-                <td className={cn("p-3 text-xs", result === "On" ? "text-emerald-700" : "text-rose-600")}>{result}</td>
+                <td className={cn("p-3 text-xs", result === "On" ? "text-[#2f8a5f]" : "text-rose-600")}>{result}</td>
               </tr>
             );
           })}

@@ -197,7 +197,7 @@ export default function IndiaSalesMap() {
       <div className="bg-[#f6f7f2] rounded-3xl border border-[#ebece6] shadow-sm flex items-center justify-center h-[500px]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-4 border-[#ebece6] border-t-[#1c1c1c] rounded-full animate-spin" />
-          <span className="text-[10px] text-[#5f5f5d] font-black uppercase tracking-widest">Calibrating Geospatial Data...</span>
+          <span className="text-[10px] text-[#5f5f5d] font-bold uppercase tracking-wider">Calibrating Geospatial Data...</span>
         </div>
       </div>
     );
@@ -215,7 +215,7 @@ export default function IndiaSalesMap() {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen((o) => !o)}
-              className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-[#ebece6] bg-[#f6f7f2] hover:bg-[#ebece6] transition-all text-[11px] font-black text-[#1c1c1c] uppercase tracking-wider shadow-sm"
+              className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-[#ebece6] bg-[#f6f7f2] hover:bg-[#ebece6] transition-all text-[11px] font-bold text-[#1c1c1c] uppercase tracking-wider shadow-sm"
             >
               {selectedMetricLabel}
               <ChevronDown className={`w-4 h-4 text-[#1c1c1c]/40 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`} />
@@ -224,7 +224,7 @@ export default function IndiaSalesMap() {
               <div className="absolute top-[calc(100%+8px)] left-0 z-50 bg-[#f6f7f2] border border-[#ebece6] rounded-2xl shadow-2xl py-2 min-w-[160px] animate-in fade-in zoom-in-95 duration-200">
                 {METRICS.map((m) => (
                   <button key={m.value} onClick={() => { setMetric(m.value as any); setDropdownOpen(false); }}
-                    className={`w-full text-left px-5 py-2.5 text-[10px] font-black uppercase tracking-widest transition-colors ${metric === m.value ? "bg-[#1c1c1c] text-[#f6f7f2]" : "text-[#1c1c1c] hover:bg-[#ebece6]"}`}>
+                    className={`w-full text-left px-5 py-2.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${metric === m.value ? "bg-[#1c1c1c] text-[#f6f7f2]" : "text-[#1c1c1c] hover:bg-[#ebece6]"}`}>
                     {m.label}
                   </button>
                 ))}
@@ -236,7 +236,7 @@ export default function IndiaSalesMap() {
           <div className="relative" ref={daysRef}>
             <button
               onClick={() => setDaysOpen((o) => !o)}
-              className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-[#ebece6] bg-[#f6f7f2] hover:bg-[#ebece6] transition-all text-[11px] font-black text-[#5f5f5d]/60 uppercase tracking-wider shadow-sm"
+              className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-[#ebece6] bg-[#f6f7f2] hover:bg-[#ebece6] transition-all text-[11px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider shadow-sm"
             >
               {selectedDayLabel}
               <ChevronDown className={`w-4 h-4 text-[#1c1c1c]/40 transition-transform duration-200 ${daysOpen ? "rotate-180" : ""}`} />
@@ -245,7 +245,7 @@ export default function IndiaSalesMap() {
               <div className="absolute top-[calc(100%+8px)] left-0 z-50 bg-[#f6f7f2] border border-[#ebece6] rounded-2xl shadow-2xl py-2 min-w-[180px] animate-in fade-in zoom-in-95 duration-200">
                 {DAY_PRESETS.map((d) => (
                   <button key={d.value} onClick={() => { setDays(d.value); setDaysOpen(false); }}
-                    className={`w-full text-left px-5 py-2.5 text-[10px] font-black uppercase tracking-widest transition-colors ${days === d.value ? "bg-[#1c1c1c] text-[#f6f7f2]" : "text-[#1c1c1c] hover:bg-[#ebece6]"}`}>
+                    className={`w-full text-left px-5 py-2.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${days === d.value ? "bg-[#1c1c1c] text-[#f6f7f2]" : "text-[#1c1c1c] hover:bg-[#ebece6]"}`}>
                     {d.label}
                   </button>
                 ))}
@@ -257,17 +257,17 @@ export default function IndiaSalesMap() {
         {/* Right: live badge + last updated + refresh + help */}
         <div className="flex items-center justify-between md:justify-end gap-3 sm:gap-4 w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-[#ebece6]/30">
           {/* Live indicator */}
-          <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+          <div className="flex items-center gap-2 bg-[#ecf8f1] px-3 py-1.5 rounded-full border border-[#d5f0e1]">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#6fcb9d] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#55c08f]" />
             </span>
-            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Live Feed</span>
+            <span className="text-[10px] font-bold text-[#3fa877] uppercase tracking-wider">Live Feed</span>
           </div>
 
           {/* Last updated */}
           {lastUpdated && (
-            <span className="text-[10px] text-[#5f5f5d]/40 font-black uppercase tracking-tight hidden sm:block">
+            <span className="text-[10px] text-[#5f5f5d]/40 font-bold uppercase tracking-tight hidden sm:block">
               SYNCED {formatDistanceToNow(lastUpdated, { addSuffix: true }).toUpperCase()}
             </span>
           )}
@@ -335,7 +335,7 @@ export default function IndiaSalesMap() {
         {refreshing && (
           <div className="absolute top-4 right-4 bg-[#f6f7f2]/90 backdrop-blur-md rounded-2xl px-4 py-2 flex items-center gap-3 shadow-xl border border-[#ebece6] animate-in fade-in slide-in-from-top-4">
             <RefreshCw className="w-4 h-4 text-[#1c1c1c] animate-spin" />
-            <span className="text-[10px] text-[#1c1c1c] font-black uppercase tracking-widest">Syncing Pipeline...</span>
+            <span className="text-[10px] text-[#1c1c1c] font-bold uppercase tracking-wider">Syncing Pipeline...</span>
           </div>
         )}
 
@@ -349,23 +349,23 @@ export default function IndiaSalesMap() {
             }}
           >
             <div className="bg-[#1c1c1c] border border-[#1c1c1c] rounded-2xl shadow-2xl px-5 py-4 min-w-[200px]">
-              <p className="text-[11px] font-black text-[#f6f7f2] uppercase tracking-widest mb-3 border-b border-white/10 pb-2">
+              <p className="text-[11px] font-bold text-[#f6f7f2] uppercase tracking-wider mb-3 border-b border-white/10 pb-2">
                 {tooltip.name}
               </p>
               <div className="space-y-2">
-                <div className="flex justify-between gap-6 uppercase font-black">
+                <div className="flex justify-between gap-6 uppercase font-bold">
                   <span className="text-[9px] text-white/40">Total Orders</span>
-                  <span className="text-[11px] text-blue-400 tabular-nums">{tooltipData.orders}</span>
+                  <span className="text-[11px] text-[#8fb3e8] tabular-nums">{tooltipData.orders}</span>
                 </div>
-                <div className="flex justify-between gap-6 uppercase font-black">
+                <div className="flex justify-between gap-6 uppercase font-bold">
                   <span className="text-[9px] text-white/40">Gross Revenue</span>
-                  <span className="text-[11px] text-emerald-400 tabular-nums">₹{tooltipData.revenue.toLocaleString()}</span>
+                  <span className="text-[11px] text-[#6fcb9d] tabular-nums">₹{tooltipData.revenue.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between gap-6 uppercase font-black">
+                <div className="flex justify-between gap-6 uppercase font-bold">
                   <span className="text-[9px] text-white/40">Market Share</span>
                   <span className="text-[11px] text-[#f6f7f2] tabular-nums">{tooltipData.orderPercentage.toFixed(1)}%</span>
                 </div>
-                <div className="flex justify-between gap-6 pt-2 border-t border-white/5 mt-1 uppercase font-black">
+                <div className="flex justify-between gap-6 pt-2 border-t border-white/5 mt-1 uppercase font-bold">
                   <span className="text-[9px] text-rose-400">RTO Risk</span>
                   <span className="text-[11px] text-rose-400 tabular-nums">{tooltipData.rtoRate.toFixed(1)}%</span>
                 </div>
@@ -380,7 +380,7 @@ export default function IndiaSalesMap() {
         <div className="h-3 w-full rounded-full shadow-inner" style={{ background: GRADIENTS[metric] }} />
         <div className="flex justify-between mt-3">
           {legendSteps.map((v, i) => (
-            <span key={i} className="text-[10px] text-[#5f5f5d]/40 font-black uppercase tracking-tighter tabular-nums">
+            <span key={i} className="text-[10px] text-[#5f5f5d]/40 font-bold uppercase tracking-tighter tabular-nums">
               {metric === "revenue" && v >= 1000 ? `₹${Math.round(v / 1000)}K` : Math.round(v)}
             </span>
           ))}

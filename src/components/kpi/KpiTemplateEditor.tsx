@@ -88,7 +88,7 @@ export function KpiTemplateEditor({ value, onChange, global = false }: { value: 
 
       <div className="flex items-center justify-between">
         <div className="text-xs font-bold text-[#1c1c1c]">KPIs</div>
-        <div className={cn("text-xs font-semibold", w.ok ? "text-emerald-700" : "text-amber-700")}>Weights total {w.total}{w.ok ? "" : " (must be 100 to publish)"}</div>
+        <div className={cn("text-xs font-semibold", w.ok ? "text-[#2f8a5f]" : "text-amber-700")}>Weights total {w.total}{w.ok ? "" : " (must be 100 to publish)"}</div>
       </div>
       {value.items.map((it, i) => {
         const src = it.source_key ? SOURCE_BY_KEY.get(it.source_key) : null;

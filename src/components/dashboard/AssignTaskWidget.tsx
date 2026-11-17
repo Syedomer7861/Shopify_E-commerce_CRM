@@ -86,13 +86,13 @@ export function AssignTaskWidget() {
         <div className="w-8 h-8 rounded-xl bg-[#1c1c1c]/5 flex items-center justify-center">
           <ClipboardPlus className="w-4 h-4 text-[#1c1c1c]" />
         </div>
-        <span className="text-sm font-black tracking-tight text-[#1c1c1c]">Assign a Task</span>
+        <span className="text-sm font-bold tracking-tight text-[#1c1c1c]">Assign a Task</span>
       </button>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Assign a Task" maxWidth="max-w-lg">
         <div className="space-y-4">
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1.5">Assign to</label>
+            <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1.5">Assign to</label>
             <Select
               value={assigneeId}
               onChange={setAssigneeId}
@@ -103,35 +103,35 @@ export function AssignTaskWidget() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1.5">Space</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1.5">Space</label>
               <Select value={spaceId} onChange={setSpaceId} placeholder="Choose a Space" options={spaces.map(s => ({ value: s.id, label: s.name }))} />
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1.5">Board</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1.5">Board</label>
               <Select value={listId} onChange={setListId} placeholder="Choose a board" disabled={!spaceId} options={lists.map(l => ({ value: l.id, label: l.name }))} />
             </div>
           </div>
 
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1.5">Title</label>
+            <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1.5">Title</label>
             <input className="input w-full text-sm" placeholder="e.g. Reconcile October COD payouts" value={title} onChange={e => setTitle(e.target.value)} />
           </div>
 
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1.5">Description (optional)</label>
+            <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1.5">Description (optional)</label>
             <textarea className="input w-full text-sm min-h-[80px]" value={description} onChange={e => setDescription(e.target.value)} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1.5">Priority</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1.5">Priority</label>
               <Select value={priority} onChange={v => setPriority(v as any)} options={[
                 { value: "urgent", label: "Urgent" }, { value: "high", label: "High" },
                 { value: "normal", label: "Normal" }, { value: "low", label: "Low" },
               ]} />
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1.5">Due date</label>
+              <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block mb-1.5">Due date</label>
               <input type="date" className="input w-full text-sm" value={dueDate} onChange={e => setDueDate(e.target.value)} />
             </div>
           </div>

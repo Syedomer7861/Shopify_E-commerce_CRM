@@ -651,7 +651,7 @@ export default function PerformancePage() {
                   <option value="">Select an agent...</option>
                   {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9a9a94] pointer-events-none" />
               </div>
             )}
             <div className="flex items-center bg-[#ebece6]/40 rounded-xl border border-[#ebece6] p-1">
@@ -659,7 +659,7 @@ export default function PerformancePage() {
                 <button
                   key={p}
                   onClick={() => setPreset(p)}
-                  className={cn("px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
+                  className={cn("px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
                     preset === p ? "bg-[#1c1c1c] text-white shadow" : "text-[#5f5f5d]")}
                 >
                   {p === "today" ? "Today" : p.toUpperCase()}
@@ -669,13 +669,13 @@ export default function PerformancePage() {
             <div className="flex items-center gap-1.5">
               <input type="date" className="input text-xs h-9 w-[130px]" value={customStart}
                 onChange={e => { setCustomStart(e.target.value); setPreset("custom"); }} />
-              <span className="text-xs text-gray-400">to</span>
+              <span className="text-xs text-[#9a9a94]">to</span>
               <input type="date" className="input text-xs h-9 w-[130px]" value={customEnd}
                 onChange={e => { setCustomEnd(e.target.value); setPreset("custom"); }} />
             </div>
             {(!canBrowseAgents || selectedAgentId) && !isWorkspaceUser && (
               <button onClick={() => setShowExport(true)}
-                className="h-9 px-3 rounded-lg text-[10px] font-black uppercase tracking-widest bg-[#1c1c1c] text-white flex items-center gap-1.5 hover:opacity-90 transition-all">
+                className="h-9 px-3 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-[#1c1c1c] text-white flex items-center gap-1.5 hover:opacity-90 transition-all">
                 <Download className="w-3.5 h-3.5" /> Export
               </button>
             )}
@@ -685,8 +685,8 @@ export default function PerformancePage() {
 
       {canBrowseAgents && !selectedAgentId ? (
         <div className="card p-16 text-center">
-          <User className="w-10 h-10 text-gray-200 mx-auto mb-4" />
-          <p className="text-sm font-bold text-gray-400">Select an agent to view their performance</p>
+          <User className="w-10 h-10 text-[#e6e7e0] mx-auto mb-4" />
+          <p className="text-sm font-bold text-[#9a9a94]">Select an agent to view their performance</p>
         </div>
       ) : isWorkspaceUser ? (
         <>
@@ -699,7 +699,7 @@ export default function PerformancePage() {
           />
         </>
       ) : loading ? (
-        <div className="p-12 text-center text-gray-400 text-sm">Loading performance data...</div>
+        <div className="p-12 text-center text-[#9a9a94] text-sm">Loading performance data...</div>
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-6">
@@ -722,7 +722,7 @@ export default function PerformancePage() {
 
           <div ref={chartsRef} className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
             <div className="card p-5">
-              <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Daily Activity</h3>
+              <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4">Daily Activity</h3>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData}>
@@ -736,7 +736,7 @@ export default function PerformancePage() {
               </div>
             </div>
             <div className="card p-5">
-              <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Online Hours Trend</h3>
+              <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4">Online Hours Trend</h3>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData}>
@@ -750,7 +750,7 @@ export default function PerformancePage() {
               </div>
             </div>
             <div className="card p-5">
-              <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Revenue Trend</h3>
+              <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4">Revenue Trend</h3>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData}>
@@ -764,10 +764,10 @@ export default function PerformancePage() {
               </div>
             </div>
             <div className="card p-5">
-              <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Task Type Distribution</h3>
+              <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4">Task Type Distribution</h3>
               <div className="h-[240px]">
                 {taskTypeChartData.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-xs text-gray-400">No resolved tasks in this range</div>
+                  <div className="h-full flex items-center justify-center text-xs text-[#9a9a94]">No resolved tasks in this range</div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={taskTypeChartData} layout="vertical" margin={{ left: 8 }}>
@@ -784,10 +784,10 @@ export default function PerformancePage() {
               </div>
             </div>
             <div className="card p-5">
-              <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Order Status Worked</h3>
+              <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4">Order Status Worked</h3>
               <div className="h-[240px]">
                 {orderStatusChartData.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-xs text-gray-400">No order-linked tasks in this range</div>
+                  <div className="h-full flex items-center justify-center text-xs text-[#9a9a94]">No order-linked tasks in this range</div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={orderStatusChartData} layout="vertical" margin={{ left: 8 }}>
@@ -805,7 +805,7 @@ export default function PerformancePage() {
             </div>
             {outcomeChartData.length > 0 && (
               <div className="card p-5 lg:col-span-2">
-                <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Call Outcomes</h3>
+                <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider mb-4">Call Outcomes</h3>
                 <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={outcomeChartData}>
@@ -823,19 +823,19 @@ export default function PerformancePage() {
 
           <div className="card overflow-hidden mb-6">
             <div className="px-5 py-4 border-b border-[#ebece6] bg-[#fcfbf8] flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">Daily Attendance Ledger</h3>
+              <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">Daily Attendance Ledger</h3>
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center bg-[#ebece6]/60 rounded-lg border border-[#ebece6] p-0.5">
                   {(["12h", "24h"] as const).map(f => (
                     <button key={f} onClick={() => setTimeFormat(f)}
-                      className={cn("px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest transition-all",
+                      className={cn("px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all",
                         timeFormat === f ? "bg-[#1c1c1c] text-white shadow-sm" : "text-[#5f5f5d]")}>
                       {f}
                     </button>
                   ))}
                 </div>
                 <button onClick={() => setShowAdvanced(!showAdvanced)}
-                  className={cn("px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border flex items-center gap-1.5",
+                  className={cn("px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all border flex items-center gap-1.5",
                     showAdvanced || minNetHours || minTasks || sortBy !== "date" || sortDir !== "desc"
                       ? "bg-[#1c1c1c] text-white border-[#1c1c1c]"
                       : "bg-white text-[#5f5f5d] border-[#ebece6] hover:border-[#1c1c1c]/40")}>
@@ -847,19 +847,19 @@ export default function PerformancePage() {
             {showAdvanced && (
               <div className="px-5 py-4 border-b border-[#ebece6] bg-[#f6f7f2] flex flex-wrap items-end gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Min Net Hours</label>
+                  <label className="text-[9px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider">Min Net Hours</label>
                   <input type="number" min="0" step="0.5" placeholder="e.g. 4" value={minNetHours}
                     onChange={e => setMinNetHours(e.target.value)}
                     className="text-[11px] font-bold border border-[#ebece6] rounded-lg px-3 py-2 bg-white w-28" />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Min Tasks</label>
+                  <label className="text-[9px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider">Min Tasks</label>
                   <input type="number" min="0" placeholder="e.g. 5" value={minTasks}
                     onChange={e => setMinTasks(e.target.value)}
                     className="text-[11px] font-bold border border-[#ebece6] rounded-lg px-3 py-2 bg-white w-28" />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Sort By</label>
+                  <label className="text-[9px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider">Sort By</label>
                   <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
                     className="text-[11px] font-bold border border-[#ebece6] rounded-lg px-3 py-2 bg-white">
                     <option value="date">Date</option>
@@ -869,7 +869,7 @@ export default function PerformancePage() {
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-black text-[#5f5f5d]/60 uppercase tracking-widest">Direction</label>
+                  <label className="text-[9px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider">Direction</label>
                   <select value={sortDir} onChange={e => setSortDir(e.target.value as typeof sortDir)}
                     className="text-[11px] font-bold border border-[#ebece6] rounded-lg px-3 py-2 bg-white">
                     <option value="desc">Descending</option>
@@ -878,7 +878,7 @@ export default function PerformancePage() {
                 </div>
                 {(minNetHours || minTasks || sortBy !== "date" || sortDir !== "desc") && (
                   <button onClick={() => { setMinNetHours(""); setMinTasks(""); setSortBy("date"); setSortDir("desc"); }}
-                    className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:underline px-2 pb-2">
+                    className="text-[10px] font-bold text-rose-500 uppercase tracking-wider hover:underline px-2 pb-2">
                     Reset
                   </button>
                 )}
@@ -888,25 +888,25 @@ export default function PerformancePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-[#ebece6] bg-gray-50/50">
+                  <tr className="border-b border-[#ebece6] bg-[#f6f7f2]/50">
                     {["Date", "Clock In", "Clock Out", "Work Hours", "Break Hours", "Net Hours", "Tasks", "Revenue"].map(h => (
-                      <th key={h} className="px-4 py-2.5 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
+                      <th key={h} className="px-4 py-2.5 text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-[#f6f7f2]">
                   {filteredLogs.length === 0 ? (
-                    <tr><td colSpan={8} className="px-4 py-10 text-center text-xs text-gray-400">No attendance records match these filters</td></tr>
+                    <tr><td colSpan={8} className="px-4 py-10 text-center text-xs text-[#9a9a94]">No attendance records match these filters</td></tr>
                   ) : filteredLogs.map((d, i) => (
-                    <tr key={i} className="hover:bg-gray-50/50">
+                    <tr key={i} className="hover:bg-[#f6f7f2]/50">
                       <td className="px-4 py-3 text-xs font-bold text-[#1c1c1c] whitespace-nowrap">{d.date}</td>
-                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap tabular-nums">{formatClockTime(d.clockInISO, timeFormat === "24h")}</td>
-                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap tabular-nums">{formatClockTime(d.clockOutISO, timeFormat === "24h")}</td>
+                      <td className="px-4 py-3 text-xs text-[#6b6b67] whitespace-nowrap tabular-nums">{formatClockTime(d.clockInISO, timeFormat === "24h")}</td>
+                      <td className="px-4 py-3 text-xs text-[#6b6b67] whitespace-nowrap tabular-nums">{formatClockTime(d.clockOutISO, timeFormat === "24h")}</td>
                       <td className="px-4 py-3 text-xs font-bold text-[#1c1c1c] tabular-nums">{d.workHours?.slice(0, 5)}</td>
                       <td className="px-4 py-3 text-xs text-amber-600 tabular-nums">{d.breakHours?.slice(0, 5)}</td>
-                      <td className="px-4 py-3 text-xs font-bold text-emerald-600 tabular-nums">{d.netHours?.slice(0, 5)}</td>
+                      <td className="px-4 py-3 text-xs font-bold text-[#3fa877] tabular-nums">{d.netHours?.slice(0, 5)}</td>
                       <td className="px-4 py-3 text-xs font-bold text-[#1c1c1c]">{d.tasks}</td>
-                      <td className="px-4 py-3 text-xs text-gray-500">{formatCurrency(d.revenue || 0)}</td>
+                      <td className="px-4 py-3 text-xs text-[#6b6b67]">{formatCurrency(d.revenue || 0)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -916,7 +916,7 @@ export default function PerformancePage() {
 
           <div className="card overflow-hidden mb-6">
             <div className="px-5 py-4 border-b border-[#ebece6] bg-[#fcfbf8] flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">Tasks Worked</h3>
+              <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">Tasks Worked</h3>
               <div className="flex flex-wrap items-center gap-2">
                 <select value={taskTypeFilter} onChange={e => setTaskTypeFilter(e.target.value)}
                   className="text-[10px] font-bold border border-[#ebece6] rounded-lg px-2.5 py-1.5 bg-white">
@@ -930,7 +930,7 @@ export default function PerformancePage() {
                 </select>
                 {(taskTypeFilter || orderStatusFilter) && (
                   <button onClick={() => { setTaskTypeFilter(""); setOrderStatusFilter(""); }}
-                    className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:underline px-1">
+                    className="text-[10px] font-bold text-rose-500 uppercase tracking-wider hover:underline px-1">
                     Reset
                   </button>
                 )}
@@ -939,26 +939,26 @@ export default function PerformancePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-[#ebece6] bg-gray-50/50">
+                  <tr className="border-b border-[#ebece6] bg-[#f6f7f2]/50">
                     {["Completed", "Task Type", "Task Status", "Order #", "Order Status", "Order Value", "Customer"].map(h => (
-                      <th key={h} className="px-4 py-2.5 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
+                      <th key={h} className="px-4 py-2.5 text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-[#f6f7f2]">
                   {paginatedTasksWorked.length === 0 ? (
-                    <tr><td colSpan={7} className="px-4 py-10 text-center text-xs text-gray-400">No resolved tasks match these filters</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-10 text-center text-xs text-[#9a9a94]">No resolved tasks match these filters</td></tr>
                   ) : paginatedTasksWorked.map(t => (
-                    <tr key={t.id} className="hover:bg-gray-50/50">
-                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap tabular-nums">
+                    <tr key={t.id} className="hover:bg-[#f6f7f2]/50">
+                      <td className="px-4 py-3 text-xs text-[#6b6b67] whitespace-nowrap tabular-nums">
                         {t.completedAt ? new Date(t.completedAt).toLocaleString([], { timeZone: "Asia/Kolkata", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
                       </td>
                       <td className="px-4 py-3"><TaskTypeBadge type={t.taskType} /></td>
                       <td className="px-4 py-3"><TaskStatusBadge status={t.taskStatus} /></td>
                       <td className="px-4 py-3 text-xs font-bold text-[#1c1c1c] whitespace-nowrap">{t.orderNumber ? `#${t.orderNumber}` : "—"}</td>
-                      <td className="px-4 py-3">{t.orderStatus ? <DeliveryBadge status={t.orderStatus} /> : <span className="text-xs text-gray-300">—</span>}</td>
-                      <td className="px-4 py-3 text-xs text-gray-500 tabular-nums">{t.orderValue ? formatCurrency(t.orderValue) : "—"}</td>
-                      <td className="px-4 py-3 text-xs text-gray-500 truncate max-w-[160px]">{t.customerName}</td>
+                      <td className="px-4 py-3">{t.orderStatus ? <DeliveryBadge status={t.orderStatus} /> : <span className="text-xs text-[#d4d5cd]">—</span>}</td>
+                      <td className="px-4 py-3 text-xs text-[#6b6b67] tabular-nums">{t.orderValue ? formatCurrency(t.orderValue) : "—"}</td>
+                      <td className="px-4 py-3 text-xs text-[#6b6b67] truncate max-w-[160px]">{t.customerName}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -971,19 +971,19 @@ export default function PerformancePage() {
 
           <div className="card overflow-hidden">
             <div className="px-5 py-4 border-b border-[#ebece6] bg-[#fcfbf8]">
-              <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">Recent Activity</h3>
+              <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">Recent Activity</h3>
             </div>
-            <div className="divide-y divide-gray-50 max-h-[400px] overflow-y-auto">
+            <div className="divide-y divide-[#f6f7f2] max-h-[400px] overflow-y-auto">
               {recentActivity.length === 0 ? (
-                <div className="px-5 py-10 text-center text-xs text-gray-400">No activity in this range</div>
+                <div className="px-5 py-10 text-center text-xs text-[#9a9a94]">No activity in this range</div>
               ) : recentActivity.slice(0, 30).map((a: any, i: number) => (
                 <div key={a.id || i} className="px-5 py-3 flex items-center gap-3">
-                  {a.activity_type?.includes("whatsapp") ? <MessageSquare className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" /> : <CheckCircle2 className="w-3.5 h-3.5 text-[#1c1c1c]/40 flex-shrink-0" />}
+                  {a.activity_type?.includes("whatsapp") ? <MessageSquare className="w-3.5 h-3.5 text-[#55c08f] flex-shrink-0" /> : <CheckCircle2 className="w-3.5 h-3.5 text-[#1c1c1c]/40 flex-shrink-0" />}
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-bold text-[#1c1c1c] truncate">{(a.activity_type || "").replace(/_/g, " ")}</div>
-                    <div className="text-[10px] text-gray-400 truncate">{a.description || a.metadata?.customer_name || ""}</div>
+                    <div className="text-[10px] text-[#9a9a94] truncate">{a.description || a.metadata?.customer_name || ""}</div>
                   </div>
-                  <div className="text-[10px] text-gray-300 whitespace-nowrap">{new Date(a.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+                  <div className="text-[10px] text-[#d4d5cd] whitespace-nowrap">{new Date(a.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
                 </div>
               ))}
             </div>
@@ -1007,23 +1007,23 @@ export default function PerformancePage() {
                   className="btn-secondary justify-start gap-3 h-12 disabled:opacity-50">
                   <FileText className="w-4 h-4" />
                   <div className="text-left">
-                    <div className="text-xs font-black">CSV</div>
-                    <div className="text-[10px] text-gray-400 font-normal">Plain spreadsheet, opens anywhere</div>
+                    <div className="text-xs font-bold">CSV</div>
+                    <div className="text-[10px] text-[#9a9a94] font-normal">Plain spreadsheet, opens anywhere</div>
                   </div>
                 </button>
                 <button onClick={() => handleExport("xlsx")} disabled={exporting}
                   className="btn-secondary justify-start gap-3 h-12 disabled:opacity-50">
                   <FileSpreadsheet className="w-4 h-4" />
                   <div className="text-left">
-                    <div className="text-xs font-black">Excel (.xlsx)</div>
-                    <div className="text-[10px] text-gray-400 font-normal">Formatted workbook</div>
+                    <div className="text-xs font-bold">Excel (.xlsx)</div>
+                    <div className="text-[10px] text-[#9a9a94] font-normal">Formatted workbook</div>
                   </div>
                 </button>
                 <button onClick={() => handleExport("pdf")} disabled={exporting}
                   className="btn-primary justify-start gap-3 h-12 disabled:opacity-50">
                   {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                   <div className="text-left">
-                    <div className="text-xs font-black">PDF</div>
+                    <div className="text-xs font-bold">PDF</div>
                     <div className="text-[10px] text-white/60 font-normal">Branded report, ready to send</div>
                   </div>
                 </button>

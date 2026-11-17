@@ -102,14 +102,14 @@ export function CheckInCapture({ open, visiting, onClose, onCapture }: {
         </button>
       }>
       <div className="space-y-3">
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-[#55554f]">
           Checking in at <span className="font-bold text-[#1c1c1c]">{visiting}</span>. Your photo and your current location are recorded together and shared with your manager.
         </p>
         <div className="relative rounded-xl overflow-hidden bg-[#1c1c1c] aspect-[4/3]">
           <video ref={videoRef} playsInline muted autoPlay className="w-full h-full object-cover" />
           {!ready && !error && <div className="absolute inset-0 flex items-center justify-center text-white/70"><Loader2 className="w-5 h-5 animate-spin" /></div>}
         </div>
-        <p className="flex items-center gap-1.5 text-[11px] text-gray-500"><MapPin className="w-3.5 h-3.5 shrink-0" /> Location is read at the moment you take the photo.</p>
+        <p className="flex items-center gap-1.5 text-[11px] text-[#6b6b67]"><MapPin className="w-3.5 h-3.5 shrink-0" /> Location is read at the moment you take the photo.</p>
         {error && <p role="alert" className="text-xs font-medium text-rose-600">{error}</p>}
       </div>
     </Modal>

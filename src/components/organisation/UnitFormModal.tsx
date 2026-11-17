@@ -74,7 +74,7 @@ export function UnitFormModal({
 
   const field = (label: string, child: React.ReactNode, htmlFor?: string) => (
     <div>
-      <label htmlFor={htmlFor} className="text-xs font-medium text-gray-700 block mb-1">{label}</label>
+      <label htmlFor={htmlFor} className="text-xs font-medium text-[#3a3a36] block mb-1">{label}</label>
       {child}
     </div>
   );

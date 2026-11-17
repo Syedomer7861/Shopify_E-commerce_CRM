@@ -43,11 +43,11 @@ export function PlanPicker({ plans, versionId, cycle, onChange }: {
                   {p.description && <p className="text-xs text-[#5f5f5d] mt-1 line-clamp-2">{p.description}</p>}
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="font-black text-[#1c1c1c] tabular-nums">{money(priceOf(p, cycle), p.currency)}</div>
+                  <div className="font-bold text-[#1c1c1c] tabular-nums">{money(priceOf(p, cycle), p.currency)}</div>
                   <div className="text-[11px] text-[#5f5f5d]">per {cycle === "monthly" ? "month" : "year"}</div>
                 </div>
               </div>
-              {p.trialDays > 0 && <div className="mt-2 text-[11px] font-bold text-emerald-700">{p.trialDays}-day free trial</div>}
+              {p.trialDays > 0 && <div className="mt-2 text-[11px] font-bold text-[#2f8a5f]">{p.trialDays}-day free trial</div>}
             </button>
           );
         })}

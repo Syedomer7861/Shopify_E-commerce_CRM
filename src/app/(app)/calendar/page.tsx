@@ -37,11 +37,11 @@ const TYPE_COLORS: Record<string, { bg: string; dot: string; label: string }> = 
     { bg: `${cfg.bg} ${cfg.color}`, dot: cfg.accent.replace("border-l-", "bg-"), label: cfg.label },
   ])
 );
-TYPE_COLORS.done = { bg: "bg-gray-100 text-gray-500", dot: "bg-gray-400", label: "Done" };
+TYPE_COLORS.done = { bg: "bg-[#f0f0ec] text-[#6b6b67]", dot: "bg-[#9a9a94]", label: "Done" };
 
 const getTaskColor = (task: any) => {
   if (task.status === "done") return TYPE_COLORS.done;
-  return TYPE_COLORS[task.task_type] || { bg: "bg-gray-100 text-gray-600", dot: "bg-gray-400", label: task.task_type };
+  return TYPE_COLORS[task.task_type] || { bg: "bg-[#f0f0ec] text-[#55554f]", dot: "bg-[#9a9a94]", label: task.task_type };
 };
 
 // ─── safe date parse (fixes UTC→IST shift bug) ───────────────────────────────
@@ -213,10 +213,10 @@ export default function CalendarPage() {
   const heatBg = (count: number) => {
     const pct = count / maxCount;
     if (pct === 0)   return "";
-    if (pct < 0.25)  return "bg-violet-50";
-    if (pct < 0.5)   return "bg-violet-100";
-    if (pct < 0.75)  return "bg-violet-200";
-    return "bg-violet-300";
+    if (pct < 0.25)  return "bg-[#eef4fc]";
+    if (pct < 0.5)   return "bg-[#dfeafa]";
+    if (pct < 0.75)  return "bg-[#c7dbf5]";
+    return "bg-[#a9c6ef]";
   };
 
   const selectedDayTasks = selectedDay ? tasksOnDay(selectedDay) : [];
@@ -244,7 +244,7 @@ export default function CalendarPage() {
             <div className="flex items-center bg-[#ebece6]/40 rounded-xl border border-[#ebece6] p-1" role="group" aria-label="Whose items">
               {(["mine", "all"] as const).map(s => (
                 <button key={s} onClick={() => setScopePick(s)} aria-pressed={scope === s}
-                  className={cn("px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
+                  className={cn("px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
                     scope === s ? "bg-[#1c1c1c] text-white shadow" : "text-[#5f5f5d]")}>
                   {s === "mine" ? "Mine" : broadRole ? "Team" : "All I can see"}
                 </button>
@@ -255,14 +255,14 @@ export default function CalendarPage() {
             <div className="flex items-center bg-[#ebece6]/40 rounded-xl border border-[#ebece6] p-1">
               <button
                 onClick={() => setView("month")}
-                className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
+                className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
                   view === "month" ? "bg-[#1c1c1c] text-white shadow" : "text-[#5f5f5d]")}
               >
                 <LayoutGrid className="w-3 h-3" /> Month
               </button>
               <button
                 onClick={() => setView("week")}
-                className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
+                className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
                   view === "week" ? "bg-[#1c1c1c] text-white shadow" : "text-[#5f5f5d]")}
               >
                 <CalendarDays className="w-3 h-3" /> Week
@@ -270,18 +270,18 @@ export default function CalendarPage() {
             </div>
 
             {/* Navigation */}
-            <div className="flex items-center gap-1 bg-white/60 rounded-xl border border-gray-100 shadow-sm p-1">
-              <button onClick={prev} aria-label="Previous" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <div className="flex items-center gap-1 bg-white/60 rounded-xl border border-[#ebece6] shadow-sm p-1">
+              <button onClick={prev} aria-label="Previous" className="p-2 hover:bg-[#f0f0ec] rounded-lg transition-colors">
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <span className="text-sm font-bold text-[#1c1c1c] min-w-[110px] lg:min-w-[160px] text-center">{headerLabel}</span>
-              <button onClick={next} aria-label="Next" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <button onClick={next} aria-label="Next" className="p-2 hover:bg-[#f0f0ec] rounded-lg transition-colors">
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
-            <button aria-label="Refresh" onClick={() => fetchTasks()} className="p-2 hover:bg-gray-100 rounded-xl border border-gray-100 transition-colors">
-              <RefreshCw className={cn("w-4 h-4 text-gray-400", loading && "animate-spin")} />
+            <button aria-label="Refresh" onClick={() => fetchTasks()} className="p-2 hover:bg-[#f0f0ec] rounded-xl border border-[#ebece6] transition-colors">
+              <RefreshCw className={cn("w-4 h-4 text-[#9a9a94]", loading && "animate-spin")} />
             </button>
           </div>
         }
@@ -289,11 +289,11 @@ export default function CalendarPage() {
 
       {/* ── Sources ──────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 mb-2 flex-wrap">
-        <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mr-1">Show</span>
-        {[...(canSeeCalls ? [{ key: "calls", label: "Call tasks", dot: "bg-violet-500" }] : []), ...sources].map(src => (
+        <span className="text-[9px] font-bold uppercase tracking-wider text-[#9a9a94] mr-1">Show</span>
+        {[...(canSeeCalls ? [{ key: "calls", label: "Call tasks", dot: "bg-[#6f9bdd]" }] : []), ...sources].map(src => (
           <button key={src.key} onClick={() => toggleSource(src.key)} aria-pressed={!hidden.has(src.key)}
             className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all",
-              hidden.has(src.key) ? "bg-white text-gray-300 border-gray-200 line-through" : "bg-white text-[#1c1c1c] border-[#1c1c1c]/30")}>
+              hidden.has(src.key) ? "bg-white text-[#d4d5cd] border-[#ebece6] line-through" : "bg-white text-[#1c1c1c] border-[#1c1c1c]/30")}>
             <span className={cn("w-2 h-2 rounded-full", src.dot, hidden.has(src.key) && "opacity-30")} />
             {src.label}
           </button>
@@ -304,8 +304,8 @@ export default function CalendarPage() {
       <div className={cn("flex items-center gap-2 mb-3 flex-wrap", (!canSeeCalls || hidden.has("calls")) && "hidden")}>
         <button
           onClick={() => setTypeFilter("all")}
-          className={cn("px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all",
-            typeFilter === "all" ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-gray-500 border-gray-200")}
+          className={cn("px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all",
+            typeFilter === "all" ? "bg-[#1c1c1c] text-white border-[#1c1c1c]" : "bg-white text-[#6b6b67] border-[#ebece6]")}
         >
           All Types
         </button>
@@ -314,18 +314,18 @@ export default function CalendarPage() {
             key={key}
             onClick={() => setTypeFilter(key)}
             className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all",
-              typeFilter === key ? `${cfg.bg} border-transparent shadow` : "bg-white text-gray-500 border-gray-200")}
+              typeFilter === key ? `${cfg.bg} border-transparent shadow` : "bg-white text-[#6b6b67] border-[#ebece6]")}
           >
             <span className={cn("w-2 h-2 rounded-full", cfg.dot)} />
             {cfg.label}
           </button>
         ))}
-        <div className="ml-auto flex items-center gap-1.5 text-[10px] text-gray-400 font-bold">
-          <span className="w-2 h-2 rounded-sm bg-violet-100 border border-violet-200" />
+        <div className="ml-auto flex items-center gap-1.5 text-[10px] text-[#9a9a94] font-bold">
+          <span className="w-2 h-2 rounded-sm bg-[#dfeafa] border border-[#c7dbf5]" />
           Low
-          <span className="w-2 h-2 rounded-sm bg-violet-200 border border-violet-300" />
+          <span className="w-2 h-2 rounded-sm bg-[#c7dbf5] border border-[#a9c6ef]" />
           Med
-          <span className="w-2 h-2 rounded-sm bg-violet-300 border border-violet-400" />
+          <span className="w-2 h-2 rounded-sm bg-[#a9c6ef] border border-[#8fb3e8]" />
           High
           <span className="ml-1 opacity-60">Heat map</span>
         </div>
@@ -333,13 +333,13 @@ export default function CalendarPage() {
 
       <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:overflow-hidden min-h-0">
         {/* ── Main calendar ────────────────────────────────────────────────────── */}
-        <div className={cn("flex flex-col min-h-[460px] lg:min-h-0 bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden transition-all duration-300",
+        <div className={cn("flex flex-col min-h-[460px] lg:min-h-0 bg-white rounded-2xl border border-[#ebece6] shadow-xl overflow-hidden transition-all duration-300",
           selectedDay ? "flex-[3]" : "flex-1")}>
 
           {/* Day headers */}
-          <div className="grid grid-cols-7 border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
+          <div className="grid grid-cols-7 border-b border-[#ebece6] bg-[#f6f7f2]/50 flex-shrink-0">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
-              <div key={d} className="py-2.5 text-center text-[10px] font-black uppercase tracking-widest text-gray-400">{d}</div>
+              <div key={d} className="py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-[#9a9a94]">{d}</div>
             ))}
           </div>
 
@@ -369,13 +369,13 @@ export default function CalendarPage() {
                   <div className="flex items-center justify-between mb-0.5">
                     <span className={cn(
                       "text-[11px] font-bold w-6 h-6 flex items-center justify-center rounded-full transition-all",
-                      isToday ? "bg-[#1c1c1c] text-white" : isSelected ? "bg-[#1c1c1c]/20 text-[#1c1c1c]" : "text-gray-400"
+                      isToday ? "bg-[#1c1c1c] text-white" : isSelected ? "bg-[#1c1c1c]/20 text-[#1c1c1c]" : "text-[#9a9a94]"
                     )}>
                       {format(day, "d")}
                     </span>
                     <div className="flex items-center gap-1">
                       {overdue > 0 && (
-                        <span className="text-[8px] font-black text-rose-500 bg-rose-50 px-1 rounded">
+                        <span className="text-[8px] font-bold text-rose-500 bg-rose-50 px-1 rounded">
                           {overdue}⚠
                         </span>
                       )}
@@ -408,7 +408,7 @@ export default function CalendarPage() {
                     })}
                     {(() => {
                       const more = Math.max(0, dayTasks.length - (view === "week" ? 8 : 3)) + Math.max(0, dayEvents.length - (view === "week" ? 4 : 2));
-                      return more > 0 && <div className="text-[8px] font-bold text-gray-300 text-center">+{more} more</div>;
+                      return more > 0 && <div className="text-[8px] font-bold text-[#d4d5cd] text-center">+{more} more</div>;
                     })()}
                   </div>
                 </div>
@@ -419,13 +419,13 @@ export default function CalendarPage() {
 
         {/* ── Day detail panel ──────────────────────────────────────────────────── */}
         {selectedDay && (
-          <div className="w-full lg:w-[340px] flex-shrink-0 bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden flex flex-col animate-in slide-in-from-right-4 duration-300">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
+          <div className="w-full lg:w-[340px] flex-shrink-0 bg-white rounded-2xl border border-[#ebece6] shadow-xl overflow-hidden flex flex-col animate-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#ebece6] bg-[#f6f7f2]/50 flex-shrink-0">
               <div>
-                <div className="text-xs font-black text-[#1c1c1c]">
+                <div className="text-xs font-bold text-[#1c1c1c]">
                   {format(selectedDay, "EEEE, d MMMM")}
                 </div>
-                <div className="text-[10px] text-gray-400 font-medium mt-0.5">
+                <div className="text-[10px] text-[#9a9a94] font-medium mt-0.5">
                   {selectedDayTasks.length} task{selectedDayTasks.length !== 1 ? "s" : ""}
                   {selectedDayEvents.length > 0 && ` · ${selectedDayEvents.length} other`}
                   {selectedDayTasks.filter(t => t.status === "done").length > 0 &&
@@ -434,7 +434,7 @@ export default function CalendarPage() {
               </div>
               <button aria-label="Close"
                 onClick={() => setSelectedDay(null)}
-                className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 transition-colors"
+                className="w-7 h-7 rounded-lg hover:bg-[#f0f0ec] flex items-center justify-center text-[#9a9a94] transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -447,40 +447,40 @@ export default function CalendarPage() {
                   <div className="flex items-start gap-2.5">
                     <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", c.dot)} />
                     <div className="flex-1 min-w-0">
-                      <div className={cn("text-[11px] font-black text-[#1c1c1c] truncate", ev.done && "line-through opacity-60")}>{ev.title}</div>
+                      <div className={cn("text-[11px] font-bold text-[#1c1c1c] truncate", ev.done && "line-through opacity-60")}>{ev.title}</div>
                       <div className="flex items-center gap-1.5 mt-1">
                         <span className={cn("px-1.5 py-0.5 rounded text-[9px] font-bold", c.bg)}>{c.label}</span>
-                        {ev.sub && <span className="text-[9px] text-gray-400 font-medium truncate">{ev.sub}</span>}
+                        {ev.sub && <span className="text-[9px] text-[#9a9a94] font-medium truncate">{ev.sub}</span>}
                       </div>
                     </div>
                   </div>
                 );
                 return ev.href
-                  ? <Link key={ev.id} href={ev.href} className="block px-4 py-3 hover:bg-gray-50/50 transition-colors">{body}</Link>
+                  ? <Link key={ev.id} href={ev.href} className="block px-4 py-3 hover:bg-[#f6f7f2]/50 transition-colors">{body}</Link>
                   : <div key={ev.id} className="px-4 py-3">{body}</div>;
               })}
               {selectedDayTasks.length === 0 && selectedDayEvents.length > 0 ? null : selectedDayTasks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3 py-16 text-center px-4">
-                  <CalendarDays className="w-10 h-10 text-gray-200" />
-                  <p className="text-xs font-bold text-gray-400">No tasks on this day</p>
-                  <p className="text-[10px] text-gray-300">Tasks due on {format(selectedDay, "d MMMM")} will appear here</p>
+                  <CalendarDays className="w-10 h-10 text-[#e6e7e0]" />
+                  <p className="text-xs font-bold text-[#9a9a94]">No tasks on this day</p>
+                  <p className="text-[10px] text-[#d4d5cd]">Tasks due on {format(selectedDay, "d MMMM")} will appear here</p>
                 </div>
               ) : (
                 selectedDayTasks.map(task => {
                   const c = getTaskColor(task);
                   const isOverdue = task.status !== "done" && parseLocalDate(task.due_date) < new Date() && !isTodayFn(parseLocalDate(task.due_date));
                   return (
-                    <div key={task.id} className="px-4 py-3 hover:bg-gray-50/50 transition-colors group">
+                    <div key={task.id} className="px-4 py-3 hover:bg-[#f6f7f2]/50 transition-colors group">
                       <div className="flex items-start gap-2.5">
                         <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", c.dot,
                           task.priority_score > 100 && "animate-pulse")} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-1">
-                            <span className="text-[11px] font-black text-[#1c1c1c] truncate">
+                            <span className="text-[11px] font-bold text-[#1c1c1c] truncate">
                               {task.customer?.name || "Unknown"}
                             </span>
                             {task.status === "done" ? (
-                              <CheckCircle2 className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+                              <CheckCircle2 className="w-3 h-3 text-[#55c08f] flex-shrink-0" />
                             ) : isOverdue ? (
                               <AlertTriangle className="w-3 h-3 text-rose-500 flex-shrink-0" />
                             ) : (
@@ -490,13 +490,13 @@ export default function CalendarPage() {
                           <div className="flex items-center gap-1.5 mt-1">
                             <span className={cn("px-1.5 py-0.5 rounded text-[9px] font-bold", c.bg)}>{c.label}</span>
                             {task.customer?.phone && (
-                              <span className="text-[9px] text-gray-400 font-medium">{task.customer.phone}</span>
+                              <span className="text-[9px] text-[#9a9a94] font-medium">{task.customer.phone}</span>
                             )}
                           </div>
                           {task.priority_score > 0 && (
                             <div className="mt-1.5 flex items-center gap-1">
                               <Zap className="w-2.5 h-2.5 text-amber-400" />
-                              <span className="text-[9px] text-gray-400 font-bold">Priority {task.priority_score}</span>
+                              <span className="text-[9px] text-[#9a9a94] font-bold">Priority {task.priority_score}</span>
                             </div>
                           )}
                         </div>
@@ -518,12 +518,12 @@ export default function CalendarPage() {
                         )}
                         {task.customer?.phone && (
                           <a href={`https://wa.me/${task.customer.phone.replace(/\D/g, "")}`} target="_blank"
-                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[9px] font-bold hover:bg-emerald-600 hover:text-white transition-all">
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#ecf8f1] text-[#2f8a5f] text-[9px] font-bold hover:bg-[#3fa877] hover:text-white transition-all">
                             <MessageSquare className="w-2.5 h-2.5" /> WA
                           </a>
                         )}
                         <Link href={`/tasks?id=${task.id}`}
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 text-blue-700 text-[9px] font-bold hover:bg-blue-600 hover:text-white transition-all">
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#eef4fc] text-[#3d66a6] text-[9px] font-bold hover:bg-[#1c1c1c] hover:text-white transition-all">
                           <User className="w-2.5 h-2.5" /> View Task
                         </Link>
                       </div>
@@ -535,16 +535,16 @@ export default function CalendarPage() {
 
             {/* Day summary footer */}
             {selectedDayTasks.length > 0 && (
-              <div className="border-t border-gray-100 px-4 py-2.5 bg-gray-50/50 flex-shrink-0">
+              <div className="border-t border-[#ebece6] px-4 py-2.5 bg-[#f6f7f2]/50 flex-shrink-0">
                 <div className="grid grid-cols-3 gap-2 text-center">
                   {[
                     { label: "Pending", count: selectedDayTasks.filter(t => t.status !== "done").length, color: "text-amber-600" },
-                    { label: "Done", count: selectedDayTasks.filter(t => t.status === "done").length, color: "text-emerald-600" },
+                    { label: "Done", count: selectedDayTasks.filter(t => t.status === "done").length, color: "text-[#3fa877]" },
                     { label: "Critical", count: selectedDayTasks.filter(t => t.priority_score > 100).length, color: "text-rose-600" },
                   ].map(s => (
                     <div key={s.label} className="flex flex-col">
-                      <span className={cn("text-base font-black", s.color)}>{s.count}</span>
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{s.label}</span>
+                      <span className={cn("text-base font-bold", s.color)}>{s.count}</span>
+                      <span className="text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider">{s.label}</span>
                     </div>
                   ))}
                 </div>

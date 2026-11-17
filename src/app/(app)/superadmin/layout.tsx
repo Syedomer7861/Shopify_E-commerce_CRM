@@ -50,7 +50,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   }, [loading, profile?.is_platform_admin, checkVerified]);
 
   if (loading || (profile?.is_platform_admin && verified === null)) {
-    return <div className="py-12 text-center text-gray-400">Loading...</div>;
+    return <div className="py-12 text-center text-[#9a9a94]">Loading...</div>;
   }
   if (!profile?.is_platform_admin) {
     return <AccessDenied title="Platform Access Only" desc="This area is restricted to the platform owner." />;
@@ -60,7 +60,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       <div className="animate-fade-in max-w-md">
         <PageHeader title="Super Admin" subtitle="Owner access needs two-factor sign-in." />
         <div className="card p-4 mb-4 flex gap-3 text-xs text-[#5f5f5d]">
-          <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+          <ShieldCheck className="w-5 h-5 text-[#3fa877] shrink-0" />
           <p>Set up two-factor below. Once it is on, this area opens. Your normal workspace is not affected. You can also manage it later in Settings, then Security.</p>
         </div>
         <TwoFactorCard onEnabled={checkVerified} />

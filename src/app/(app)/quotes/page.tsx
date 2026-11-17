@@ -25,7 +25,7 @@ const num = (v: string, fallback = 0) => { const n = Number(v); return Number.is
 export default function QuotesPage() {
   const { profile, loading } = useCurrentProfile();
   const [tab, setTab] = useState<"quotes" | "products" | "company">("quotes");
-  if (loading) return <div className="py-12 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (loading) return <div className="py-12 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   if (!profile || can(profile, "deals", "view") === null) return <AccessDenied />;
   const tabs = [{ key: "quotes" as const, label: "Quotes" }, { key: "products" as const, label: "Products" }, ...(isAdmin(profile) ? [{ key: "company" as const, label: "Company details" }] : [])];
   return (
@@ -54,7 +54,7 @@ function QuotesList({ canCreate }: { canCreate: boolean }) {
   }, [supabase]);
   useEffect(() => { load(); }, [load]);
 
-  if (loading) return <Loader2 className="w-5 h-5 animate-spin text-gray-400 mx-auto" />;
+  if (loading) return <Loader2 className="w-5 h-5 animate-spin text-[#9a9a94] mx-auto" />;
   return (
     <div>
       <div className="flex justify-end mb-3">
@@ -63,17 +63,17 @@ function QuotesList({ canCreate }: { canCreate: boolean }) {
       {quotes.length === 0 ? <EmptyState icon={<FileText className="w-6 h-6" />} title="No quotes yet" desc={canCreate ? "Create your first quote." : "Nothing you have access to here."} /> : (
         <div className="card overflow-x-auto">
           <table className="w-full text-xs min-w-[640px]">
-            <thead><tr className="text-left text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-100">
+            <thead><tr className="text-left text-[10px] uppercase tracking-wider text-[#9a9a94] border-b border-[#ebece6]">
               <th className="p-3">Number</th><th className="p-3">Customer</th><th className="p-3">Date</th><th className="p-3 text-right">Total</th><th className="p-3">Status</th>
             </tr></thead>
             <tbody>
               {quotes.map(q => (
-                <tr key={q.id} onClick={() => setOpenId(q.id)} className="border-b border-gray-50 last:border-0 cursor-pointer hover:bg-[#f6f7f2]">
+                <tr key={q.id} onClick={() => setOpenId(q.id)} className="border-b border-[#f6f7f2] last:border-0 cursor-pointer hover:bg-[#f6f7f2]">
                   <td className="p-3 font-semibold">{q.number}</td>
                   <td className="p-3">{q.customer_name}</td>
-                  <td className="p-3 text-gray-500">{new Date(q.issue_date).toLocaleDateString()}</td>
+                  <td className="p-3 text-[#6b6b67]">{new Date(q.issue_date).toLocaleDateString()}</td>
                   <td className="p-3 text-right tabular-nums">{inr(q.total)}</td>
-                  <td className="p-3"><span className="px-2 py-0.5 rounded-full bg-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-600">{q.status}</span></td>
+                  <td className="p-3"><span className="px-2 py-0.5 rounded-full bg-[#f0f0ec] text-[10px] font-bold uppercase tracking-wider text-[#55554f]">{q.status}</span></td>
                 </tr>
               ))}
             </tbody>
@@ -116,17 +116,17 @@ function NewQuote({ onClose, onCreated }: { onClose: () => void; onCreated: (id:
   return (
     <Modal open onClose={onClose} title="New quote" footer={<button onClick={create} disabled={busy} className="btn-primary w-full py-2.5">{busy ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Create quote"}</button>}>
       <div className="space-y-3">
-        <label className="block text-xs font-medium text-gray-700">Customer name *<input className="input mt-1" maxLength={160} value={form.customer_name} onChange={set("customer_name")} /></label>
+        <label className="block text-xs font-medium text-[#3a3a36]">Customer name *<input className="input mt-1" maxLength={160} value={form.customer_name} onChange={set("customer_name")} /></label>
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-xs font-medium text-gray-700">Email<input className="input mt-1" type="email" maxLength={160} value={form.customer_email} onChange={set("customer_email")} /></label>
-          <label className="block text-xs font-medium text-gray-700">GSTIN<input className="input mt-1" maxLength={15} value={form.customer_gstin} onChange={set("customer_gstin")} /></label>
+          <label className="block text-xs font-medium text-[#3a3a36]">Email<input className="input mt-1" type="email" maxLength={160} value={form.customer_email} onChange={set("customer_email")} /></label>
+          <label className="block text-xs font-medium text-[#3a3a36]">GSTIN<input className="input mt-1" maxLength={15} value={form.customer_gstin} onChange={set("customer_gstin")} /></label>
         </div>
-        <label className="block text-xs font-medium text-gray-700">Address<textarea className="input mt-1 min-h-[60px]" maxLength={500} value={form.customer_address} onChange={set("customer_address")} /></label>
+        <label className="block text-xs font-medium text-[#3a3a36]">Address<textarea className="input mt-1 min-h-[60px]" maxLength={500} value={form.customer_address} onChange={set("customer_address")} /></label>
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-xs font-medium text-gray-700">Deal (optional)
+          <label className="block text-xs font-medium text-[#3a3a36]">Deal (optional)
             <select className="input mt-1" value={form.deal_id} onChange={set("deal_id")}><option value="">None</option>{deals.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}</select>
           </label>
-          <label className="block text-xs font-medium text-gray-700">Valid until<input className="input mt-1" type="date" value={form.valid_until} onChange={set("valid_until")} /></label>
+          <label className="block text-xs font-medium text-[#3a3a36]">Valid until<input className="input mt-1" type="date" value={form.valid_until} onChange={set("valid_until")} /></label>
         </div>
       </div>
     </Modal>
@@ -208,10 +208,10 @@ function QuoteEditor({ id, onClose }: { id: string; onClose: () => void }) {
 
   return (
     <Modal open onClose={onClose} title={quote ? `${quote.number} · ${quote.customer_name}` : "Quote"}>
-      {!quote ? <Loader2 className="w-5 h-5 animate-spin text-gray-400 mx-auto" /> : (
+      {!quote ? <Loader2 className="w-5 h-5 animate-spin text-[#9a9a94] mx-auto" /> : (
         <div className="space-y-4 text-sm">
           <div className="flex flex-wrap items-center gap-2">
-            {locked ? <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase">Invoiced</span> : (
+            {locked ? <span className="px-2 py-0.5 rounded-full bg-[#ecf8f1] text-[#2f8a5f] text-[10px] font-bold uppercase">Invoiced</span> : (
               <select className="input w-auto text-xs" value={quote.status} onChange={e => setStatus(e.target.value)}>
                 {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
@@ -222,15 +222,15 @@ function QuoteEditor({ id, onClose }: { id: string; onClose: () => void }) {
           </div>
 
           <div className="divide-y divide-[#ebece6] border border-[#ebece6] rounded-lg">
-            {lines.length === 0 && <p className="p-3 text-xs text-gray-500">No items yet.</p>}
+            {lines.length === 0 && <p className="p-3 text-xs text-[#6b6b67]">No items yet.</p>}
             {lines.map(l => (
               <div key={l.id} className="p-3 flex items-start gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="font-medium">{l.description}</div>
-                  <div className="text-[11px] text-gray-500">{l.qty} × {inr(l.unit_price)}{l.discount_pct > 0 ? ` − ${l.discount_pct}%` : ""} · GST {l.tax_rate}%{l.hsn ? ` · HSN ${l.hsn}` : ""}</div>
+                  <div className="text-[11px] text-[#6b6b67]">{l.qty} × {inr(l.unit_price)}{l.discount_pct > 0 ? ` − ${l.discount_pct}%` : ""} · GST {l.tax_rate}%{l.hsn ? ` · HSN ${l.hsn}` : ""}</div>
                 </div>
                 <div className="tabular-nums">{inr(l.line_total)}</div>
-                {!locked && <button onClick={() => removeLine(l)} aria-label="Remove item" className="text-gray-300 hover:text-rose-500"><Trash2 className="w-3.5 h-3.5" /></button>}
+                {!locked && <button onClick={() => removeLine(l)} aria-label="Remove item" className="text-[#d4d5cd] hover:text-rose-500"><Trash2 className="w-3.5 h-3.5" /></button>}
               </div>
             ))}
           </div>
@@ -245,19 +245,19 @@ function QuoteEditor({ id, onClose }: { id: string; onClose: () => void }) {
               )}
               <input className="input text-xs" placeholder="Item description" maxLength={300} value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} />
               <div className="grid grid-cols-5 gap-2">
-                <label className="text-[10px] text-gray-500">Qty<input className="input text-xs" inputMode="decimal" value={draft.qty} onChange={e => setDraft({ ...draft, qty: e.target.value })} /></label>
-                <label className="text-[10px] text-gray-500">Price ₹<input className="input text-xs" inputMode="decimal" value={draft.unit_price} onChange={e => setDraft({ ...draft, unit_price: e.target.value })} /></label>
-                <label className="text-[10px] text-gray-500">Disc %<input className="input text-xs" inputMode="decimal" value={draft.discount_pct} onChange={e => setDraft({ ...draft, discount_pct: e.target.value })} /></label>
-                <label className="text-[10px] text-gray-500">GST %<input className="input text-xs" inputMode="decimal" value={draft.tax_rate} onChange={e => setDraft({ ...draft, tax_rate: e.target.value })} /></label>
-                <label className="text-[10px] text-gray-500">HSN<input className="input text-xs" maxLength={12} value={draft.hsn} onChange={e => setDraft({ ...draft, hsn: e.target.value })} /></label>
+                <label className="text-[10px] text-[#6b6b67]">Qty<input className="input text-xs" inputMode="decimal" value={draft.qty} onChange={e => setDraft({ ...draft, qty: e.target.value })} /></label>
+                <label className="text-[10px] text-[#6b6b67]">Price ₹<input className="input text-xs" inputMode="decimal" value={draft.unit_price} onChange={e => setDraft({ ...draft, unit_price: e.target.value })} /></label>
+                <label className="text-[10px] text-[#6b6b67]">Disc %<input className="input text-xs" inputMode="decimal" value={draft.discount_pct} onChange={e => setDraft({ ...draft, discount_pct: e.target.value })} /></label>
+                <label className="text-[10px] text-[#6b6b67]">GST %<input className="input text-xs" inputMode="decimal" value={draft.tax_rate} onChange={e => setDraft({ ...draft, tax_rate: e.target.value })} /></label>
+                <label className="text-[10px] text-[#6b6b67]">HSN<input className="input text-xs" maxLength={12} value={draft.hsn} onChange={e => setDraft({ ...draft, hsn: e.target.value })} /></label>
               </div>
               <button onClick={addLine} disabled={busy} className="btn-primary text-xs w-full">{busy ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Add item"}</button>
             </div>
           )}
 
           <div className="text-right space-y-1 tabular-nums">
-            <div className="text-gray-500">Subtotal {inr(quote.subtotal)}</div>
-            <div className="text-gray-500">GST {inr(quote.tax_total)}</div>
+            <div className="text-[#6b6b67]">Subtotal {inr(quote.subtotal)}</div>
+            <div className="text-[#6b6b67]">GST {inr(quote.tax_total)}</div>
             <div className="text-lg font-bold">Total {inr(quote.total)}</div>
           </div>
         </div>
@@ -298,11 +298,11 @@ function Products({ canEdit }: { canEdit: boolean }) {
     <div className="space-y-3">
       {canEdit && (
         <div className="card p-3 grid grid-cols-2 sm:grid-cols-6 gap-2 items-end">
-          <label className="col-span-2 text-[10px] text-gray-500">Product or service<input className="input text-xs" maxLength={160} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></label>
-          <label className="text-[10px] text-gray-500">SKU<input className="input text-xs" maxLength={60} value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} /></label>
-          <label className="text-[10px] text-gray-500">HSN/SAC<input className="input text-xs" maxLength={12} value={form.hsn} onChange={e => setForm({ ...form, hsn: e.target.value })} /></label>
-          <label className="text-[10px] text-gray-500">Price ₹<input className="input text-xs" inputMode="decimal" value={form.unit_price} onChange={e => setForm({ ...form, unit_price: e.target.value })} /></label>
-          <label className="text-[10px] text-gray-500">GST %<input className="input text-xs" inputMode="decimal" value={form.tax_rate} onChange={e => setForm({ ...form, tax_rate: e.target.value })} /></label>
+          <label className="col-span-2 text-[10px] text-[#6b6b67]">Product or service<input className="input text-xs" maxLength={160} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></label>
+          <label className="text-[10px] text-[#6b6b67]">SKU<input className="input text-xs" maxLength={60} value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} /></label>
+          <label className="text-[10px] text-[#6b6b67]">HSN/SAC<input className="input text-xs" maxLength={12} value={form.hsn} onChange={e => setForm({ ...form, hsn: e.target.value })} /></label>
+          <label className="text-[10px] text-[#6b6b67]">Price ₹<input className="input text-xs" inputMode="decimal" value={form.unit_price} onChange={e => setForm({ ...form, unit_price: e.target.value })} /></label>
+          <label className="text-[10px] text-[#6b6b67]">GST %<input className="input text-xs" inputMode="decimal" value={form.tax_rate} onChange={e => setForm({ ...form, tax_rate: e.target.value })} /></label>
           <button onClick={add} disabled={busy} className="btn-primary text-xs col-span-2 sm:col-span-6">Add product</button>
         </div>
       )}
@@ -310,9 +310,9 @@ function Products({ canEdit }: { canEdit: boolean }) {
         <div className="card divide-y divide-[#ebece6]">
           {rows.map(p => (
             <div key={p.id} className={"p-3 flex items-center gap-3 text-sm" + (p.is_active ? "" : " opacity-50")}>
-              <div className="flex-1 min-w-0"><div className="font-medium">{p.name}</div><div className="text-[11px] text-gray-500">{[p.sku, p.hsn && `HSN ${p.hsn}`, `GST ${p.tax_rate}%`].filter(Boolean).join(" · ")}</div></div>
+              <div className="flex-1 min-w-0"><div className="font-medium">{p.name}</div><div className="text-[11px] text-[#6b6b67]">{[p.sku, p.hsn && `HSN ${p.hsn}`, `GST ${p.tax_rate}%`].filter(Boolean).join(" · ")}</div></div>
               <div className="tabular-nums">{inr(p.unit_price)}</div>
-              {canEdit && <button onClick={() => toggle(p)} className="text-[11px] font-semibold text-gray-500">{p.is_active ? "Archive" : "Restore"}</button>}
+              {canEdit && <button onClick={() => toggle(p)} className="text-[11px] font-semibold text-[#6b6b67]">{p.is_active ? "Archive" : "Restore"}</button>}
             </div>
           ))}
         </div>
@@ -343,15 +343,15 @@ function CompanyDetails() {
   const set = (k: keyof typeof d) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setD({ ...d, [k]: e.target.value });
   return (
     <div className="card p-5 space-y-3 max-w-xl">
-      <p className="text-xs text-gray-500">Shown at the top of printed quotes.</p>
-      <label className="block text-xs font-medium text-gray-700">Legal name<input className="input mt-1" maxLength={160} value={d.legal_name} onChange={set("legal_name")} /></label>
+      <p className="text-xs text-[#6b6b67]">Shown at the top of printed quotes.</p>
+      <label className="block text-xs font-medium text-[#3a3a36]">Legal name<input className="input mt-1" maxLength={160} value={d.legal_name} onChange={set("legal_name")} /></label>
       <div className="grid grid-cols-2 gap-3">
-        <label className="block text-xs font-medium text-gray-700">GSTIN<input className="input mt-1" maxLength={15} value={d.gstin} onChange={set("gstin")} /></label>
-        <label className="block text-xs font-medium text-gray-700">Phone<input className="input mt-1" maxLength={40} value={d.phone} onChange={set("phone")} /></label>
+        <label className="block text-xs font-medium text-[#3a3a36]">GSTIN<input className="input mt-1" maxLength={15} value={d.gstin} onChange={set("gstin")} /></label>
+        <label className="block text-xs font-medium text-[#3a3a36]">Phone<input className="input mt-1" maxLength={40} value={d.phone} onChange={set("phone")} /></label>
       </div>
-      <label className="block text-xs font-medium text-gray-700">Email<input className="input mt-1" maxLength={160} value={d.email} onChange={set("email")} /></label>
-      <label className="block text-xs font-medium text-gray-700">Address<textarea className="input mt-1 min-h-[60px]" maxLength={500} value={d.address} onChange={set("address")} /></label>
-      <label className="block text-xs font-medium text-gray-700">Default terms on new quotes<textarea className="input mt-1 min-h-[80px]" maxLength={2000} value={d.quote_terms} onChange={set("quote_terms")} /></label>
+      <label className="block text-xs font-medium text-[#3a3a36]">Email<input className="input mt-1" maxLength={160} value={d.email} onChange={set("email")} /></label>
+      <label className="block text-xs font-medium text-[#3a3a36]">Address<textarea className="input mt-1 min-h-[60px]" maxLength={500} value={d.address} onChange={set("address")} /></label>
+      <label className="block text-xs font-medium text-[#3a3a36]">Default terms on new quotes<textarea className="input mt-1 min-h-[80px]" maxLength={2000} value={d.quote_terms} onChange={set("quote_terms")} /></label>
       <button onClick={save} disabled={busy} className="btn-primary text-xs">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}</button>
     </div>
   );

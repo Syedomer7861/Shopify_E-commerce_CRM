@@ -20,11 +20,11 @@ interface Announcement {
 
 const TYPE_STYLES: Record<AnnouncementType, { bg: string; text: string; icon: any; border: string; glow: string }> = {
   Info: { 
-    bg: "bg-sky-50", 
-    text: "text-sky-700", 
+    bg: "bg-[#eef4fc]", 
+    text: "text-[#3d66a6]", 
     icon: Info, 
-    border: "border-sky-100",
-    glow: "shadow-sky-200/20"
+    border: "border-[#dfeafa]",
+    glow: "shadow-[#c7dbf5]/20"
   },
   Important: { 
     bg: "bg-amber-50", 
@@ -34,11 +34,11 @@ const TYPE_STYLES: Record<AnnouncementType, { bg: string; text: string; icon: an
     glow: "shadow-amber-200/20"
   },
   Celebration: { 
-    bg: "bg-emerald-50", 
-    text: "text-emerald-700", 
+    bg: "bg-[#ecf8f1]", 
+    text: "text-[#2f8a5f]", 
     icon: Star, 
-    border: "border-emerald-100",
-    glow: "shadow-emerald-200/20"
+    border: "border-[#d5f0e1]",
+    glow: "shadow-[#b5e4ca]/20"
   },
   Alert: { 
     bg: "bg-rose-50", 
@@ -130,9 +130,9 @@ export default function AnnouncementFeed() {
       <div className="flex flex-col gap-1 px-2">
         <div className="flex items-center gap-2">
           <Megaphone className="w-4 h-4 text-[#1c1c1c]" />
-          <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-[0.2em]">Team Bulletins</h3>
+          <h3 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-[0.2em]">Team Bulletins</h3>
         </div>
-        <p className="text-[10px] text-gray-500 font-medium">Important broadcasts, company updates, and team announcements.</p>
+        <p className="text-[10px] text-[#6b6b67] font-medium">Important broadcasts, company updates, and team announcements.</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -165,22 +165,22 @@ export default function AnnouncementFeed() {
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={cn("text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border", S.bg, S.border, S.text)}>
+                    <span className={cn("text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border", S.bg, S.border, S.text)}>
                       {a.type}
                     </span>
-                    <span className="text-[9px] font-bold text-gray-400">
+                    <span className="text-[9px] font-bold text-[#9a9a94]">
                       {mounted ? new Date(a.created_at).toLocaleDateString() : "---"}
                     </span>
                   </div>
-                  <h4 className="text-sm font-black text-[#1c1c1c] tracking-tight mb-1 truncate">{a.title}</h4>
-                  <p className="text-[11px] text-gray-600 font-medium leading-relaxed line-clamp-2 break-words">
+                  <h4 className="text-sm font-bold text-[#1c1c1c] tracking-tight mb-1 truncate">{a.title}</h4>
+                  <p className="text-[11px] text-[#55554f] font-medium leading-relaxed line-clamp-2 break-words">
                     {a.body}
                   </p>
                   <div className="mt-3 flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-[#1c1c1c] flex items-center justify-center text-[7px] text-white font-black">
+                    <div className="w-4 h-4 rounded-full bg-[#1c1c1c] flex items-center justify-center text-[7px] text-white font-bold">
                       {a.author_name ? a.author_name.charAt(0).toUpperCase() : "H"}
                     </div>
-                    <span className="text-[9px] font-black text-[#1c1c1c] uppercase tracking-tighter">
+                    <span className="text-[9px] font-bold text-[#1c1c1c] uppercase tracking-tighter">
                       {a.author_name || "HR Intelligence"}
                     </span>
                   </div>
@@ -203,14 +203,14 @@ export default function AnnouncementFeed() {
             {selectedAnnouncement && (
               <>
                 <span className={cn(
-                  "text-[9px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border",
+                  "text-[9px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border",
                   (TYPE_STYLES[selectedAnnouncement.type] || TYPE_STYLES.Info).bg,
                   (TYPE_STYLES[selectedAnnouncement.type] || TYPE_STYLES.Info).border,
                   (TYPE_STYLES[selectedAnnouncement.type] || TYPE_STYLES.Info).text
                 )}>
                   {selectedAnnouncement.type}
                 </span>
-                <span className="text-[9px] font-black text-[#5f5f5d] uppercase tracking-[0.2em] opacity-40">
+                <span className="text-[9px] font-bold text-[#5f5f5d] uppercase tracking-[0.2em] opacity-40">
                   Full Bulletin
                 </span>
               </>
@@ -233,18 +233,18 @@ export default function AnnouncementFeed() {
                 })()}
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-black text-[#1c1c1c] tracking-tight leading-tight mb-2 break-words">
+                <h2 className="text-xl font-bold text-[#1c1c1c] tracking-tight leading-tight mb-2 break-words">
                   {selectedAnnouncement.title}
                 </h2>
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-[#1c1c1c] flex items-center justify-center text-[8px] text-white font-black">
+                  <div className="w-5 h-5 rounded-full bg-[#1c1c1c] flex items-center justify-center text-[8px] text-white font-bold">
                     {selectedAnnouncement.author_name ? selectedAnnouncement.author_name.charAt(0).toUpperCase() : "H"}
                   </div>
-                  <span className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest">
+                  <span className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-wider">
                     {selectedAnnouncement.author_name || "HR Intelligence"}
                   </span>
-                  <span className="text-[10px] font-bold text-gray-300">|</span>
-                  <span className="text-[10px] font-bold text-gray-500">
+                  <span className="text-[10px] font-bold text-[#d4d5cd]">|</span>
+                  <span className="text-[10px] font-bold text-[#6b6b67]">
                     {mounted ? new Date(selectedAnnouncement.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "---"}
                   </span>
                 </div>
@@ -258,7 +258,7 @@ export default function AnnouncementFeed() {
             <div className="flex justify-end">
               <button 
                 onClick={() => setSelectedAnnouncement(null)}
-                className="btn-secondary py-2.5 px-6 bg-[#1c1c1c] text-white hover:bg-black transition-all shadow-lg text-[10px] font-black uppercase tracking-widest"
+                className="btn-secondary py-2.5 px-6 bg-[#1c1c1c] text-white hover:bg-black transition-all shadow-lg text-[10px] font-bold uppercase tracking-wider"
               >
                 Close Bulletin
               </button>

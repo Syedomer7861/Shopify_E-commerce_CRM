@@ -346,7 +346,7 @@ function HRDashboardContent() {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-[#5f5f5d] gap-3">
         <RefreshCw className="w-8 h-8 animate-spin" />
-        <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Synchronizing HR Telemetry...</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Synchronizing HR Telemetry...</p>
       </div>
     );
   }
@@ -373,18 +373,18 @@ function HRDashboardContent() {
                 <LayoutDashboard className="w-5 h-5 text-white" />
              </div>
              <div>
-                <h1 className="text-2xl font-black text-[#1c1c1c] tracking-tight">HR Intelligence</h1>
+                <h1 className="text-2xl font-bold text-[#1c1c1c] tracking-tight">HR Intelligence</h1>
                 <p className="text-xs text-[#6b6b67] font-medium tracking-tight mt-0.5">Live monitoring & administrative control</p>
              </div>
           </div>
         }
         subtitle={
-          <div className="flex items-center gap-2 mt-2">
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded-lg border border-emerald-100/50 shadow-sm">
-               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-               <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Live Engine: Online</span>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-[#ecf8f1] rounded-lg border border-[#d5f0e1]/50 shadow-sm">
+               <div className="w-1.5 h-1.5 rounded-full bg-[#55c08f] animate-pulse" />
+               <span className="text-[10px] font-bold text-[#2f8a5f] uppercase tracking-wider">Live Engine: Online</span>
             </div>
-            <span className="text-[10px] text-[#6b6b67] font-bold uppercase tracking-widest ml-2">Last updated {mounted ? lastUpdated.toLocaleTimeString() : "--:--:--"}</span>
+            <span className="text-[10px] text-[#6b6b67] font-bold uppercase tracking-wider">Last updated {mounted ? lastUpdated.toLocaleTimeString() : "--:--:--"}</span>
           </div>
         }
         actions={
@@ -404,7 +404,7 @@ function HRDashboardContent() {
           <Info className="w-5 h-5 text-[#1c1c1c]" />
         </div>
         <div>
-          <p className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest leading-none mt-1">
+          <p className="text-xs font-bold text-[#1c1c1c] uppercase tracking-wider leading-none mt-1">
             {activeTab === 'attendance-reg' ? 'Attendance Register' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace('-', ' ')}
           </p>
           <p className="text-[13px] text-[#6b6b67] mt-2 font-medium leading-relaxed">
@@ -418,7 +418,7 @@ function HRDashboardContent() {
           <WorkforceOverview employees={data.employees} leaves={data.leaves} attendance={data.attendance} holidays={data.holidays} payrollStatus={data.payrollStatus} payrollMonth={data.payrollMonth} />
           {/* Top Performance Ribbon */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <MetricCard label="Active Strength" value={onlineMembers.length} icon={UserCheck} sub={`${data.members.length} total profiles`} accent="text-emerald-600" />
+            <MetricCard label="Active Strength" value={onlineMembers.length} icon={UserCheck} sub={`${data.members.length} total profiles`} accent="text-[#3fa877]" />
             <MetricCard label="Revenue at Risk" value={`₹${Object.values(data.revenueAtRiskByAgent).reduce((a, b) => a + b, 0).toLocaleString()}`} icon={ShieldAlert} sub="Open orders behind on tasks" accent="text-rose-600" />
             <MetricCard label="Leave Pipeline" value={pendingLeaves.length} icon={Calendar} sub="Awaiting HR approval" accent="text-amber-600" />
             <MetricCard label="Avg Efficiency" value={`${data.stats.avgProductive}m`} icon={TrendingUp} sub="Daily productive avg" accent="text-[#1c1c1c]" />
@@ -428,7 +428,7 @@ function HRDashboardContent() {
             {/* Main Productivity Graph */}
             <div className="xl:col-span-2 card p-8">
                <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest flex items-center gap-2">
+                  <h3 className="text-xs font-bold text-[#1c1c1c] uppercase tracking-wider flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" /> Team Productivity trends
                   </h3>
                   <div className="flex items-center gap-4">
@@ -461,7 +461,7 @@ function HRDashboardContent() {
 
             {/* Status Breakdown Pie */}
             <div className="card p-8 flex flex-col items-center justify-center relative overflow-hidden">
-               <h3 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest mb-4 absolute top-8 left-8">Shift Distribution</h3>
+               <h3 className="text-xs font-bold text-[#1c1c1c] uppercase tracking-wider mb-4 absolute top-8 left-8">Shift Distribution</h3>
                <div className="h-[220px] w-full mt-8">
                   <ResponsiveContainer width="100%" height="100%">
                      <PieChart>
@@ -487,15 +487,15 @@ function HRDashboardContent() {
                </div>
                <div className="grid grid-cols-3 gap-8 mt-4 w-full px-4">
                   <div className="text-center">
-                     <div className="text-sm font-black text-emerald-600">{onlineMembers.length}</div>
+                     <div className="text-sm font-bold text-[#3fa877]">{onlineMembers.length}</div>
                      <div className="text-[9px] font-bold text-[#6b6b67] uppercase">Live</div>
                   </div>
                   <div className="text-center">
-                     <div className="text-sm font-black text-amber-600">{awayMembers.length}</div>
+                     <div className="text-sm font-bold text-amber-600">{awayMembers.length}</div>
                      <div className="text-[9px] font-bold text-[#6b6b67] uppercase">Break</div>
                   </div>
                   <div className="text-center">
-                     <div className="text-sm font-black text-[#6b6b67]">{data.members.filter(m => m.status === 'Offline').length}</div>
+                     <div className="text-sm font-bold text-[#6b6b67]">{data.members.filter(m => m.status === 'Offline').length}</div>
                      <div className="text-[9px] font-bold text-[#6b6b67] uppercase">Off</div>
                   </div>
                </div>
@@ -506,7 +506,7 @@ function HRDashboardContent() {
              {/* Backlog Intensity Monitor */}
              <div className="card p-8">
                 <div className="flex justify-between items-center mb-8">
-                   <h3 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest flex items-center gap-2">
+                   <h3 className="text-xs font-bold text-[#1c1c1c] uppercase tracking-wider flex items-center gap-2">
                      <Target className="w-4 h-4" /> High Intensity Agents
                    </h3>
                    <span className="text-[10px] font-bold text-rose-500 uppercase px-2 py-1 bg-rose-50 rounded-lg animate-pulse">Backlog Alert</span>
@@ -515,22 +515,22 @@ function HRDashboardContent() {
                    {data.members.filter(m => (m.taskCount || 0) > 0).sort((a,b) => (b.taskCount || 0) - (a.taskCount || 0)).slice(0, 4).map(m => {
                      const atRisk = data.revenueAtRiskByAgent[m.id] || 0;
                      return (
-                     <div key={m.id} className="flex items-center justify-between p-4 bg-[#f6f7f2] rounded-2xl border border-transparent hover:border-gray-200 transition-all group">
+                     <div key={m.id} className="flex items-center justify-between p-4 bg-[#f6f7f2] rounded-2xl border border-transparent hover:border-[#ebece6] transition-all group">
                         <div className="flex items-center gap-3">
                            <Avatar name={m.name} size="sm" />
                            <div>
-                              <div className="text-xs font-black text-[#1c1c1c]">{m.name}</div>
+                              <div className="text-xs font-bold text-[#1c1c1c]">{m.name}</div>
                               <div className="text-[10px] font-bold text-[#6b6b67] uppercase">{m.role}</div>
                            </div>
                         </div>
                         <div className="flex items-center gap-6">
                            <div className="text-right">
-                              <div className="text-xs font-black text-[#1c1c1c]">{m.taskCount} Tasks</div>
+                              <div className="text-xs font-bold text-[#1c1c1c]">{m.taskCount} Tasks</div>
                               <div className="text-[9px] font-bold text-rose-500 uppercase tracking-tighter">
                                 {atRisk > 0 ? `₹${atRisk.toLocaleString()} at risk` : "No order value linked"}
                               </div>
                            </div>
-                           <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#1c1c1c] group-hover:translate-x-1 transition-all" />
+                           <ChevronRight className="w-4 h-4 text-[#d4d5cd] group-hover:text-[#1c1c1c] group-hover:translate-x-1 transition-all" />
                         </div>
                      </div>
                    );})}
@@ -551,11 +551,11 @@ function HRDashboardContent() {
                 <div className="relative z-10">
                    <div className="flex justify-between items-start mb-8">
                       <div>
-                         <h3 className="text-xs font-black text-white/60 uppercase tracking-widest">Efficiency Benchmark</h3>
-                         <div className="text-5xl font-black mt-2 tracking-tighter">{gradeMain}{gradeHasPlus && <span className="text-emerald-400">+</span>}</div>
+                         <h3 className="text-xs font-bold text-white/60 uppercase tracking-wider">Efficiency Benchmark</h3>
+                         <div className="text-5xl font-bold mt-2 tracking-tighter">{gradeMain}{gradeHasPlus && <span className="text-[#6fcb9d]">+</span>}</div>
                       </div>
                       <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-sm">
-                         <Zap className="w-6 h-6 text-emerald-400" />
+                         <Zap className="w-6 h-6 text-[#6fcb9d]" />
                       </div>
                    </div>
                    <p className="text-[13px] text-white/70 leading-relaxed mb-10 max-w-[80%]">
@@ -564,12 +564,12 @@ function HRDashboardContent() {
                      ) : !b.hasBaseline ? (
                        <>SLA adherence is <span className="text-white font-bold">{b.slaPct.toFixed(1)}%</span> across <span className="text-white font-bold">{b.doneCount}</span> tasks completed this week. Not enough history last week to compare a trend yet.</>
                      ) : (
-                       <>The team is <span className="text-white font-bold">{b.resolutionDeltaPct >= 0 ? "outperforming" : "behind"}</span> last week&apos;s pace by <span className="text-emerald-400 font-bold">{Math.abs(b.resolutionDeltaPct).toFixed(0)}%</span>. Tasks are resolving <span className="text-white font-bold">{Math.abs(b.resolutionDeltaMinutes).toFixed(0)}m</span> {b.resolutionDeltaMinutes >= 0 ? "faster" : "slower"}.</>
+                       <>The team is <span className="text-white font-bold">{b.resolutionDeltaPct >= 0 ? "outperforming" : "behind"}</span> last week&apos;s pace by <span className="text-[#6fcb9d] font-bold">{Math.abs(b.resolutionDeltaPct).toFixed(0)}%</span>. Tasks are resolving <span className="text-white font-bold">{Math.abs(b.resolutionDeltaMinutes).toFixed(0)}m</span> {b.resolutionDeltaMinutes >= 0 ? "faster" : "slower"}.</>
                      )}
                    </p>
                    <div className="grid grid-cols-2 gap-10">
                       <div className="space-y-3">
-                         <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-white/40">
+                         <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-white/40">
                             <span>SLA Adherence</span>
                             <span className="text-white">{b.slaPct.toFixed(1)}%</span>
                          </div>
@@ -578,12 +578,12 @@ function HRDashboardContent() {
                          </div>
                       </div>
                       <div className="space-y-3">
-                         <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-white/40">
+                         <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-white/40">
                             <span>Tasks / Productive Hr</span>
                             <span className="text-white">{tasksPerHour.toFixed(1)}x</span>
                          </div>
                          <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" style={{ width: `${Math.min(100, tasksPerHour * 20)}%` }} />
+                            <div className="h-full bg-[#6fcb9d] shadow-[0_0_8px_rgba(52,211,153,0.5)]" style={{ width: `${Math.min(100, tasksPerHour * 20)}%` }} />
                          </div>
                       </div>
                    </div>
@@ -607,7 +607,7 @@ function HRDashboardContent() {
       {activeTab === 'attendance' && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <MetricCard label="Active Strength" value={onlineMembers.length} icon={UserCheck} sub={`${data.members.length} total profiles`} accent="text-emerald-600" />
+            <MetricCard label="Active Strength" value={onlineMembers.length} icon={UserCheck} sub={`${data.members.length} total profiles`} accent="text-[#3fa877]" />
             <MetricCard label="System Idleness" value={awayMembers.length} icon={Clock} sub="Agents currently away" accent="text-amber-600" />
             <MetricCard label="Leave Pipeline" value={pendingLeaves.length} icon={Calendar} sub="Awaiting HR approval" accent="text-rose-600" />
             <MetricCard label="Avg Efficiency" value={`${data.stats.avgProductive}m`} icon={TrendingUp} sub="Daily productive avg" accent="text-[#1c1c1c]" />
@@ -619,20 +619,20 @@ function HRDashboardContent() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-[#fcfbf8] border-b border-[#ebece6]">
-                        <th className="px-6 py-4 text-[10px] font-black text-[#6b6b67] uppercase tracking-[0.2em]">Team Member</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-[#6b6b67] uppercase tracking-[0.2em]">State</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-[#6b6b67] uppercase tracking-[0.2em] text-center">Work/Break</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-[#6b6b67] uppercase tracking-[0.2em] text-right">Actions</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-[#6b6b67] uppercase tracking-[0.2em]">Team Member</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-[#6b6b67] uppercase tracking-[0.2em]">State</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-[#6b6b67] uppercase tracking-[0.2em] text-center">Work/Break</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-[#6b6b67] uppercase tracking-[0.2em] text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-[#f6f7f2]">
                       {data.members.slice((attendancePage - 1) * ITEMS_PER_PAGE, attendancePage * ITEMS_PER_PAGE).map(m => (
                         <tr key={m.id} className="hover:bg-[#f6f7f2]/50 transition-colors group">
                           <td className="px-6 py-5">
                              <div className="flex items-center gap-4">
                                <Avatar name={m.name} size="md" />
                                <div>
-                                 <div className="text-sm font-black text-[#1c1c1c] tracking-tight">{m.name}</div>
+                                 <div className="text-sm font-bold text-[#1c1c1c] tracking-tight">{m.name}</div>
                                  <div className="text-[10px] font-bold text-[#6b6b67]">{m.email}</div>
                                </div>
                              </div>
@@ -642,11 +642,11 @@ function HRDashboardContent() {
                                <div className="flex items-center gap-1.5">
                                   <div className={cn(
                                     "w-1.5 h-1.5 rounded-full",
-                                    m.status === 'Online' ? 'bg-emerald-500' : m.status === 'Away' ? 'bg-amber-500' : 'bg-gray-300'
+                                    m.status === 'Online' ? 'bg-[#55c08f]' : m.status === 'Away' ? 'bg-amber-500' : 'bg-[#d4d5cd]'
                                   )} />
                                   <span className={cn(
-                                    "text-[11px] font-black uppercase tracking-wider",
-                                    m.status === 'Online' ? 'text-emerald-600' : m.status === 'Away' ? 'text-amber-600' : 'text-[#6b6b67]'
+                                    "text-[11px] font-bold uppercase tracking-wider",
+                                    m.status === 'Online' ? 'text-[#3fa877]' : m.status === 'Away' ? 'text-amber-600' : 'text-[#6b6b67]'
                                   )}>{m.status}</span>
                                </div>
                                {m.statusSince && <span className="text-[9px] font-bold text-[#6b6b67]">Since {m.statusSince}</span>}
@@ -656,12 +656,12 @@ function HRDashboardContent() {
                              <div className="flex flex-col items-center gap-1.5">
                                 <div className="flex gap-4">
                                    <div className="text-center">
-                                      <div className="text-[9px] font-black text-[#6b6b67] uppercase tracking-tighter">Work</div>
-                                      <div className="text-xs font-black text-[#1c1c1c]">{formatMins(m.productiveMinutes)}</div>
+                                      <div className="text-[9px] font-bold text-[#6b6b67] uppercase tracking-tighter">Work</div>
+                                      <div className="text-xs font-bold text-[#1c1c1c]">{formatMins(m.productiveMinutes)}</div>
                                    </div>
                                    <div className="text-center">
-                                      <div className="text-[9px] font-black text-[#6b6b67] uppercase tracking-tighter">Break</div>
-                                      <div className={cn("text-xs font-black", getBreakColor(m.breakMinutes))}>{m.breakMinutes}m</div>
+                                      <div className="text-[9px] font-bold text-[#6b6b67] uppercase tracking-tighter">Break</div>
+                                      <div className={cn("text-xs font-bold", getBreakColor(m.breakMinutes))}>{m.breakMinutes}m</div>
                                    </div>
                                 </div>
                                 <div className="w-24 h-1 bg-[#f0f0ec] rounded-full overflow-hidden">
@@ -701,7 +701,7 @@ function HRDashboardContent() {
             <div className="space-y-6">
                {/* Team Utilization Bar Chart */}
                <div className="card p-6">
-                  <h3 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest mb-6 flex items-center gap-2">
+                  <h3 className="text-xs font-bold text-[#1c1c1c] uppercase tracking-wider mb-6 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" /> Productivity Mix
                   </h3>
                   <div className="h-[250px]">
@@ -723,7 +723,7 @@ function HRDashboardContent() {
 
                {/* Real-time Activity Feed */}
                <div className="card p-6">
-                  <h3 className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <h3 className="text-xs font-bold text-[#1c1c1c] uppercase tracking-wider mb-4 flex items-center gap-2">
                     <History className="w-4 h-4" /> Recent Transitions
                   </h3>
                   <div className="space-y-4">
@@ -732,10 +732,10 @@ function HRDashboardContent() {
                           {i < 4 && <div className="absolute left-[7px] top-4 bottom-0 w-[2px] bg-[#f6f7f2]" />}
                           <div className={cn(
                             "w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm shrink-0 z-10 mt-0.5",
-                            log.status === 'online' ? 'bg-emerald-500' : log.status === 'offline' ? 'bg-gray-400' : 'bg-amber-500'
+                            log.status === 'online' ? 'bg-[#55c08f]' : log.status === 'offline' ? 'bg-[#9a9a94]' : 'bg-amber-500'
                           )} />
                           <div className="flex-1 min-w-0">
-                             <div className="text-[10px] font-black text-[#1c1c1c] tracking-tight">{log.name} → <span className="uppercase">{log.status}</span></div>
+                             <div className="text-[10px] font-bold text-[#1c1c1c] tracking-tight">{log.name} → <span className="uppercase">{log.status}</span></div>
                              <div className="text-[9px] text-[#6b6b67] font-bold">{log.time} {log.reason && `• ${log.reason}`}</div>
                           </div>
                        </div>
@@ -751,15 +751,15 @@ function HRDashboardContent() {
         <div className="space-y-6">
            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-4">
-                 <h2 className="text-xs font-black text-[#6b6b67] uppercase tracking-widest flex items-center gap-2 px-2">
+                 <h2 className="text-xs font-bold text-[#6b6b67] uppercase tracking-wider flex items-center gap-2 px-2">
                    <Calendar className="w-4 h-4 text-[#1c1c1c]" /> Awaiting Review
                  </h2>
                  {pendingLeaves.length === 0 ? (
                    <div className="card p-12 flex flex-col items-center text-center">
-                      <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
-                         <CheckCircle className="w-8 h-8 text-emerald-500" />
+                      <div className="w-16 h-16 bg-[#ecf8f1] rounded-full flex items-center justify-center mb-4">
+                         <CheckCircle className="w-8 h-8 text-[#55c08f]" />
                       </div>
-                      <h3 className="text-sm font-black text-[#1c1c1c]">No Pending Requests</h3>
+                      <h3 className="text-sm font-bold text-[#1c1c1c]">No Pending Requests</h3>
                       <p className="text-xs text-[#6b6b67] mt-1">Great! Your leave inbox is empty.</p>
                    </div>
                  ) : (
@@ -770,33 +770,33 @@ function HRDashboardContent() {
                               <div className="flex items-center gap-3">
                                  <Avatar name={leave.profile.name} size="sm" />
                                  <div>
-                                    <div className="text-xs font-black text-[#1c1c1c]">{leave.profile.name}</div>
+                                    <div className="text-xs font-bold text-[#1c1c1c]">{leave.profile.name}</div>
                                     <div className="text-[9px] text-[#6b6b67] font-bold">{mounted ? new Date(leave.created_at).toLocaleDateString() : "--"}</div>
                                  </div>
                               </div>
-                              <div className="bg-amber-50 text-amber-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest">Pending</div>
+                              <div className="bg-amber-50 text-amber-600 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">Pending</div>
                            </div>
                            <div className="space-y-3">
                               <div className="p-3 bg-[#f6f7f2] rounded-xl">
                                  <div className="text-[9px] font-bold text-[#6b6b67] uppercase mb-1">Duration</div>
-                                 <div className="text-xs font-black text-[#1c1c1c] flex items-center gap-2">
-                                    <Calendar className="w-3 h-3" /> {leave.start_date} <span className="text-gray-300">→</span> {leave.end_date}
+                                 <div className="text-xs font-bold text-[#1c1c1c] flex items-center gap-2">
+                                    <Calendar className="w-3 h-3" /> {leave.start_date} <span className="text-[#d4d5cd]">→</span> {leave.end_date}
                                  </div>
                               </div>
                               <div className="p-3 bg-[#f6f7f2] rounded-xl">
                                  <div className="text-[9px] font-bold text-[#6b6b67] uppercase mb-1">Reason</div>
-                                 <p className="text-xs text-gray-600 leading-relaxed italic">&quot;{leave.reason}&quot;</p>
+                                 <p className="text-xs text-[#55554f] leading-relaxed italic">&quot;{leave.reason}&quot;</p>
                               </div>
                               <div className="flex gap-2 pt-2">
                                  <button 
                                    onClick={() => setLeaveActionModal({ id: leave.id, action: 'approved' })}
-                                   className="flex-1 h-9 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black rounded-lg flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/10 transition-all"
+                                   className="flex-1 h-9 bg-[#55c08f] hover:bg-[#3fa877] text-white text-[10px] font-bold rounded-lg flex items-center justify-center gap-1.5 shadow-lg shadow-[#55c08f]/10 transition-all"
                                  >
                                     <CheckCircle className="w-3 h-3" /> Approve
                                  </button>
                                  <button 
                                    onClick={() => setLeaveActionModal({ id: leave.id, action: 'rejected' })}
-                                   className="flex-1 h-9 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black rounded-lg flex items-center justify-center gap-1.5 shadow-lg shadow-rose-500/10 transition-all"
+                                   className="flex-1 h-9 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-bold rounded-lg flex items-center justify-center gap-1.5 shadow-lg shadow-rose-500/10 transition-all"
                                  >
                                     <XCircle className="w-3 h-3" /> Reject
                                  </button>
@@ -809,7 +809,7 @@ function HRDashboardContent() {
               </div>
 
               <div className="space-y-4">
-                 <h2 className="text-xs font-black text-[#6b6b67] uppercase tracking-widest flex items-center gap-2 px-2">
+                 <h2 className="text-xs font-bold text-[#6b6b67] uppercase tracking-wider flex items-center gap-2 px-2">
                    <History className="w-4 h-4 text-[#1c1c1c]" /> Processed Leaves
                  </h2>
                  <div className="card p-5 space-y-4">
@@ -818,18 +818,18 @@ function HRDashboardContent() {
                          <div className="flex items-center gap-3">
                             <div className={cn(
                               "w-8 h-8 rounded-full flex items-center justify-center",
-                              leave.status === 'approved' ? 'bg-emerald-50' : 'bg-rose-50'
+                              leave.status === 'approved' ? 'bg-[#ecf8f1]' : 'bg-rose-50'
                             )}>
-                               {leave.status === 'approved' ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : <XCircle className="w-4 h-4 text-rose-500" />}
+                               {leave.status === 'approved' ? <CheckCircle className="w-4 h-4 text-[#55c08f]" /> : <XCircle className="w-4 h-4 text-rose-500" />}
                             </div>
                             <div>
-                               <div className="text-[10px] font-black text-[#1c1c1c] tracking-tight">{leave.profile.name}</div>
+                               <div className="text-[10px] font-bold text-[#1c1c1c] tracking-tight">{leave.profile.name}</div>
                                <div className="text-[8px] font-bold text-[#6b6b67]">{leave.start_date}</div>
                             </div>
                          </div>
                          <div className={cn(
-                           "text-[8px] font-black uppercase tracking-widest",
-                           leave.status === 'approved' ? 'text-emerald-500' : 'text-rose-500'
+                           "text-[8px] font-bold uppercase tracking-wider",
+                           leave.status === 'approved' ? 'text-[#55c08f]' : 'text-rose-500'
                          )}>
                             {leave.status}
                          </div>
@@ -904,36 +904,36 @@ function HRDashboardContent() {
            <div className="flex items-center gap-3 pb-4 border-b border-[#ebece6]">
               <Avatar name={selectedMember?.name || ""} size="md" />
               <div>
-                 <div className="text-sm font-black text-[#1c1c1c] tracking-tight">{selectedMember?.name}</div>
-                 <div className="text-[10px] text-[#6b6b67] font-bold uppercase tracking-widest">Shift Activity Feed</div>
+                 <div className="text-sm font-bold text-[#1c1c1c] tracking-tight">{selectedMember?.name}</div>
+                 <div className="text-[10px] text-[#6b6b67] font-bold uppercase tracking-wider">Shift Activity Feed</div>
               </div>
            </div>
            
            <div className="pt-2 space-y-6">
            <div className="grid grid-cols-2 gap-4">
               <div className="p-3 bg-[#f6f7f2] rounded-xl border border-[#ebece6]">
-                 <div className="text-[9px] font-black text-[#6b6b67] uppercase tracking-widest mb-1">Total Productivity</div>
-                 <div className="text-lg font-black text-[#1c1c1c]">{selectedMember ? formatMins(selectedMember.productiveMinutes) : '—'}</div>
+                 <div className="text-[9px] font-bold text-[#6b6b67] uppercase tracking-wider mb-1">Total Productivity</div>
+                 <div className="text-lg font-bold text-[#1c1c1c]">{selectedMember ? formatMins(selectedMember.productiveMinutes) : '—'}</div>
               </div>
               <div className="p-3 bg-[#f6f7f2] rounded-xl border border-[#ebece6]">
-                 <div className="text-[9px] font-black text-[#6b6b67] uppercase tracking-widest mb-1">Break Utilization</div>
-                 <div className={cn("text-lg font-black", selectedMember && getBreakColor(selectedMember.breakMinutes))}>{selectedMember?.breakMinutes}m</div>
+                 <div className="text-[9px] font-bold text-[#6b6b67] uppercase tracking-wider mb-1">Break Utilization</div>
+                 <div className={cn("text-lg font-bold", selectedMember && getBreakColor(selectedMember.breakMinutes))}>{selectedMember?.breakMinutes}m</div>
               </div>
            </div>
 
            <div className="space-y-4">
-              <h4 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-[0.2em] px-1">Raw Transition Logs</h4>
+              <h4 className="text-[10px] font-bold text-[#1c1c1c] uppercase tracking-[0.2em] px-1">Raw Transition Logs</h4>
               <div className="space-y-4">
                  {selectedMember?.timeline.map((log, i) => (
                    <div key={i} className="flex gap-4 relative pb-4 last:pb-0">
                       {i < (selectedMember?.timeline.length - 1) && <div className="absolute left-[7px] top-4 bottom-0 w-[2px] bg-[#f0f0ec]" />}
                       <div className={cn(
                         "w-4 h-4 rounded-full border-2 border-white shadow-sm shrink-0 z-10 mt-0.5",
-                        log.status === 'online' ? 'bg-emerald-500' : log.status === 'offline' ? 'bg-gray-400' : 'bg-amber-500'
+                        log.status === 'online' ? 'bg-[#55c08f]' : log.status === 'offline' ? 'bg-[#9a9a94]' : 'bg-amber-500'
                       )} />
                       <div className="flex-1">
                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-black text-[#1c1c1c] uppercase tracking-wider">{log.status}</span>
+                            <span className="text-[11px] font-bold text-[#1c1c1c] uppercase tracking-wider">{log.status}</span>
                             <span className="text-[10px] font-bold text-[#6b6b67]">{log.time}</span>
                          </div>
                          {log.reason && <p className="text-[10px] text-[#6b6b67] mt-0.5 italic">&quot;{log.reason}&quot;</p>}
@@ -965,7 +965,7 @@ function HRDashboardContent() {
       >
         <div className="space-y-4">
           <div>
-            <label className="text-[10px] font-bold text-[#6b6b67] uppercase tracking-widest block mb-2">Remarks (Optional)</label>
+            <label className="text-[10px] font-bold text-[#6b6b67] uppercase tracking-wider block mb-2">Remarks (Optional)</label>
             <textarea 
               className="input text-xs min-h-[80px] py-2" 
               placeholder={`Any remarks for ${leaveActionModal?.action}?`}
@@ -977,7 +977,7 @@ function HRDashboardContent() {
             onClick={handleLeaveAction}
             className={cn(
               "btn w-full py-3 text-xs gap-2 text-white",
-              leaveActionModal?.action === 'approved' ? "bg-emerald-500 hover:bg-emerald-600 border-none" : "bg-rose-500 hover:bg-rose-600 border-none"
+              leaveActionModal?.action === 'approved' ? "bg-[#55c08f] hover:bg-[#3fa877] border-none" : "bg-rose-500 hover:bg-rose-600 border-none"
             )}
           >
             {leaveActionModal?.action === 'approved' ? 'Confirm Approval' : 'Confirm Rejection'}

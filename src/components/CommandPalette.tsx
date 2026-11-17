@@ -175,7 +175,7 @@ export function CommandPalette() {
             placeholder="Search customers, orders, leads, deals, tickets, invoices, people..."
             className="flex-1 bg-transparent outline-none text-sm font-medium text-[#1c1c1c] placeholder:text-[#1c1c1c]/30"
           />
-          <kbd className="text-[9px] font-black text-[#5f5f5d] bg-[#ebece6] px-1.5 py-0.5 rounded uppercase tracking-widest">Esc</kbd>
+          <kbd className="text-[9px] font-bold text-[#5f5f5d] bg-[#ebece6] px-1.5 py-0.5 rounded uppercase tracking-wider">Esc</kbd>
         </div>
 
         <div className="max-h-[50vh] overflow-y-auto">
@@ -186,7 +186,7 @@ export function CommandPalette() {
           ) : (
             groups.map((s, gi) => (
               <div key={s.key} className={`py-2 ${gi ? "border-t border-[#ebece6]" : ""}`}>
-                <div className="px-5 pb-1 text-[9px] font-black uppercase tracking-widest text-[#5f5f5d]/60">{s.label}</div>
+                <div className="px-5 pb-1 text-[9px] font-bold uppercase tracking-wider text-[#5f5f5d]/60">{s.label}</div>
                 {results[s.key].map(r => (
                   <button key={r.id} onClick={() => goTo(s.href(r, cleanQuery))}
                     className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-[#ebece6]/50 transition-colors text-left">

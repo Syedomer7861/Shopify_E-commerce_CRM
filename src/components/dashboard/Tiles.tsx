@@ -66,15 +66,15 @@ function Shell({ href, className, children }: { href?: string; className: string
 
 export function Tile({ icon, label, value, sub, href, tone = "lime", ring, className, spark, trend }: TileProps) {
   return (
-    <Shell href={href} className={cn("block bg-white rounded-[20px] p-5 shadow-[0_1px_2px_rgba(16,24,16,0.04)] border border-[#ebece6] transition-all hover:shadow-md hover:-translate-y-0.5", className)}>
-      <div className="flex items-center gap-2.5">
-        <span className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", TONES[tone].chip)}>{icon}</span>
-        <span className="text-[13px] font-semibold text-[#1c1c1c] flex-1 truncate">{label}</span>
+    <Shell href={href} className={cn("block bg-white rounded-[20px] p-4 sm:p-5 shadow-[0_1px_2px_rgba(16,24,16,0.04)] border border-[#ebece6] transition-all hover:shadow-md hover:-translate-y-0.5", className)}>
+      <div className="flex items-center gap-2 sm:gap-2.5">
+        <span className={cn("w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center flex-shrink-0", TONES[tone].chip)}>{icon}</span>
+        <span className="text-[12px] sm:text-[13px] leading-tight font-semibold text-[#1c1c1c] flex-1 min-w-0 line-clamp-2 break-words">{label}</span>
         {href && <span className="w-7 h-7 rounded-full border border-[#ebece6] flex items-center justify-center text-[#5f5f5d] group-hover:bg-[#1c1c1c] group-hover:text-white transition-colors"><ArrowUpRight className="w-3.5 h-3.5" /></span>}
       </div>
       <div className="flex items-end justify-between gap-3 mt-4">
         <div className="min-w-0">
-          <div className="text-[28px] leading-none font-bold tracking-tight text-[#1c1c1c] tabular-nums">{value}</div>
+          <div className="text-[22px] sm:text-[28px] leading-none font-bold tracking-tight text-[#1c1c1c] tabular-nums break-words">{value}</div>
           <div className="flex items-center gap-1.5 mt-2 min-w-0">
             {trend && <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap", TREND[trend.dir])}>{trend.text}</span>}
             {sub && <span className="text-xs text-[#6b6b67] truncate">{sub}</span>}

@@ -10,10 +10,10 @@ export type CalKind = "work" | "visit" | "leave" | "holiday";
 export type CalEvent = { id: string; kind: CalKind; start: string; end: string; title: string; sub?: string; href?: string; done?: boolean };
 
 export const CAL_KINDS: { key: CalKind; label: string; dot: string; bg: string }[] = [
-  { key: "work", label: "Work tasks", dot: "bg-sky-500", bg: "bg-sky-50 text-sky-700" },
+  { key: "work", label: "Work tasks", dot: "bg-[#6f9bdd]", bg: "bg-[#eef4fc] text-[#3d66a6]" },
   { key: "visit", label: "Field visits", dot: "bg-amber-500", bg: "bg-amber-50 text-amber-700" },
   { key: "leave", label: "Leave", dot: "bg-rose-400", bg: "bg-rose-50 text-rose-700" },
-  { key: "holiday", label: "Holidays", dot: "bg-emerald-500", bg: "bg-emerald-50 text-emerald-700" },
+  { key: "holiday", label: "Holidays", dot: "bg-[#55c08f]", bg: "bg-[#ecf8f1] text-[#2f8a5f]" },
 ];
 
 const day = (v: string) => format(new Date(v), "yyyy-MM-dd");

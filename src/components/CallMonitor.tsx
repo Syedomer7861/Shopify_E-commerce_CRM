@@ -77,7 +77,7 @@ export function CallMonitor() {
 
   if (loading) return (
     <div className="flex items-center justify-center p-12">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4f7fc8]"></div>
     </div>
   );
 
@@ -86,30 +86,30 @@ export function CallMonitor() {
       <audio ref={audioRef} onEnded={() => setPlayingId(null)} className="hidden" />
       
       {/* Live Monitor */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-rose-50/30">
+      <div className="bg-white rounded-3xl border border-[#ebece6] shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-[#f6f7f2] flex items-center justify-between bg-rose-50/30">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-            <h2 className="font-black text-xs uppercase tracking-widest text-rose-600">Live Agent Activity</h2>
+            <h2 className="font-bold text-xs uppercase tracking-wider text-rose-600">Live Agent Activity</h2>
           </div>
           <span className="text-[10px] font-bold text-rose-500">{activeCalls.length} Agent(s) currently on call</span>
         </div>
         
-        <div className="divide-y divide-gray-50">
+        <div className="divide-y divide-[#f6f7f2]">
           {activeCalls.length === 0 ? (
-            <div className="p-8 text-center text-gray-400 text-xs font-medium italic">
+            <div className="p-8 text-center text-[#9a9a94] text-xs font-medium italic">
               No active calls right now.
             </div>
           ) : (
             activeCalls.map((call) => (
-              <div key={call.id} className="p-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+              <div key={call.id} className="p-4 flex items-center justify-between hover:bg-[#f6f7f2]/50 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
+                  <div className="w-10 h-10 rounded-2xl bg-[#eef4fc] flex items-center justify-center text-[#4f7fc8]">
                     <User className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="font-bold text-gray-900 text-sm">{call.agent?.name || 'Unknown Agent'}</div>
-                    <div className="text-[10px] text-gray-500 flex items-center gap-1">
+                    <div className="font-bold text-[#1c1c1c] text-sm">{call.agent?.name || 'Unknown Agent'}</div>
+                    <div className="text-[10px] text-[#6b6b67] flex items-center gap-1">
                       <Clock className="w-2.5 h-2.5" /> 
                       Started {formatDistanceToNow(new Date(call.start_time))} ago
                     </div>
@@ -118,12 +118,12 @@ export function CallMonitor() {
                 
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <div className="font-mono text-sm font-bold text-gray-700">{call.customer_phone}</div>
-                    <div className="text-[9px] uppercase font-black tracking-tighter text-blue-500">
+                    <div className="font-mono text-sm font-bold text-[#3a3a36]">{call.customer_phone}</div>
+                    <div className="text-[9px] uppercase font-bold tracking-tighter text-[#6f9bdd]">
                       {call.task?.task_type?.replace('_', ' ') || 'Direct Call'}
                     </div>
                   </div>
-                  <div className="px-3 py-1 bg-rose-500 text-white rounded-full text-[10px] font-black animate-pulse uppercase">
+                  <div className="px-3 py-1 bg-rose-500 text-white rounded-full text-[10px] font-bold animate-pulse uppercase">
                     ON CALL
                   </div>
                 </div>
@@ -134,18 +134,18 @@ export function CallMonitor() {
       </div>
 
       {/* Recent History & Recordings */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-gray-50 flex items-center justify-between">
+      <div className="bg-white rounded-3xl border border-[#ebece6] shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-[#f6f7f2] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            <h2 className="font-black text-xs uppercase tracking-widest text-gray-600">Recent Recordings</h2>
+            <CheckCircle2 className="w-4 h-4 text-[#55c08f]" />
+            <h2 className="font-bold text-xs uppercase tracking-wider text-[#55554f]">Recent Recordings</h2>
           </div>
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Last 10 Logs</div>
+          <div className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Last 10 Logs</div>
         </div>
         
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+            <thead className="bg-[#f6f7f2]/50 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">
               <tr>
                 <th className="px-6 py-4">Agent</th>
                 <th className="px-6 py-4">Customer</th>
@@ -154,27 +154,27 @@ export function CallMonitor() {
                 <th className="px-6 py-4 text-right">Recording</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-[#f6f7f2]">
               {recentCalls.map((call) => (
-                <tr key={call.id} className="hover:bg-gray-50/50 transition-colors group">
+                <tr key={call.id} className="hover:bg-[#f6f7f2]/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                       <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 text-[10px] font-bold">
+                       <div className="w-6 h-6 rounded-lg bg-[#f0f0ec] flex items-center justify-center text-[#6b6b67] text-[10px] font-bold">
                          {call.agent?.name?.substring(0,1)}
                        </div>
-                       <span className="font-bold text-gray-700 text-xs">{call.agent?.name}</span>
+                       <span className="font-bold text-[#3a3a36] text-xs">{call.agent?.name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-xs font-mono text-gray-600">{call.customer_phone}</div>
-                    <div className="text-[9px] text-gray-400 uppercase font-bold">{call.task?.task_type?.replace('_', ' ')}</div>
+                    <div className="text-xs font-mono text-[#55554f]">{call.customer_phone}</div>
+                    <div className="text-[9px] text-[#9a9a94] uppercase font-bold">{call.task?.task_type?.replace('_', ' ')}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-xs font-bold text-gray-500">
+                    <span className="text-xs font-bold text-[#6b6b67]">
                       {Math.floor(call.duration_seconds / 60)}:{(call.duration_seconds % 60).toString().padStart(2, '0')}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-[10px] text-gray-400 font-medium">
+                  <td className="px-6 py-4 text-[10px] text-[#9a9a94] font-medium">
                     {formatDistanceToNow(new Date(call.end_time || call.created_at))} ago
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -183,13 +183,13 @@ export function CallMonitor() {
                         onClick={() => togglePlay(call.recording_url, call.id)}
                         className={cn(
                           "p-2 rounded-xl transition-all active:scale-95",
-                          playingId === call.id ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                          playingId === call.id ? "bg-[#1c1c1c] text-white" : "bg-[#eef4fc] text-[#4f7fc8] hover:bg-[#dfeafa]"
                         )}
                       >
                         {playingId === call.id ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                       </button>
                     ) : (
-                      <span className="text-[9px] font-black text-gray-300 uppercase italic">No Recording</span>
+                      <span className="text-[9px] font-bold text-[#d4d5cd] uppercase italic">No Recording</span>
                     )}
                   </td>
                 </tr>

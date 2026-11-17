@@ -154,29 +154,29 @@ export function AddCustomerModal({ open, onClose, onSuccess }: AddCustomerModalP
       <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto px-1 scroller-hide">
         {/* Customer Section */}
         <div className="space-y-4">
-          <div className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Customer Details</div>
+          <div className="text-[10px] uppercase font-bold text-[#9a9a94] tracking-wider">Customer Details</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-700">Name *</label>
+              <label className="text-xs font-semibold text-[#3a3a36]">Name *</label>
               <div className="relative">
-                <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9a9a94]" />
                 <input type="text" required placeholder="John Doe" className="input pl-9"
                   value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-700">Phone *</label>
+              <label className="text-xs font-semibold text-[#3a3a36]">Phone *</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9a9a94]" />
                 <input type="tel" required placeholder="+91 98765 43210" className="input pl-9"
                   value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
               </div>
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-gray-700">Email (Optional)</label>
+            <label className="text-xs font-semibold text-[#3a3a36]">Email (Optional)</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9a9a94]" />
               <input type="email" placeholder="john@example.com" className="input pl-9"
                 value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
             </div>
@@ -184,29 +184,29 @@ export function AddCustomerModal({ open, onClose, onSuccess }: AddCustomerModalP
         </div>
 
         {/* Order Section */}
-        <div className="space-y-4 border-t border-gray-100 pt-5">
-           <div className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Initial Order Details (Optional)</div>
+        <div className="space-y-4 border-t border-[#ebece6] pt-5">
+           <div className="text-[10px] uppercase font-bold text-[#9a9a94] tracking-wider">Initial Order Details (Optional)</div>
            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-700">Product Name</label>
+              <label className="text-xs font-semibold text-[#3a3a36]">Product Name</label>
               <div className="relative">
-                <ShoppingBag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <ShoppingBag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9a9a94]" />
                 <input type="text" placeholder="e.g. Health Kit" className="input pl-9"
                   value={formData.productName} onChange={e => setFormData({ ...formData, productName: e.target.value })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-700">Price</label>
+                <label className="text-xs font-semibold text-[#3a3a36]">Price</label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9a9a94]" />
                   <input type="number" placeholder="0.00" className="input pl-9"
                     value={formData.productPrice} onChange={e => setFormData({ ...formData, productPrice: e.target.value })} />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-700">Date</label>
+                <label className="text-xs font-semibold text-[#3a3a36]">Date</label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9a9a94]" />
                   <input type="date" className="input pl-9 text-xs"
                     value={formData.orderDate} onChange={e => setFormData({ ...formData, orderDate: e.target.value })} />
                 </div>
@@ -215,9 +215,9 @@ export function AddCustomerModal({ open, onClose, onSuccess }: AddCustomerModalP
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-gray-700">Notes (Optional)</label>
+          <label className="text-xs font-semibold text-[#3a3a36]">Notes (Optional)</label>
           <div className="relative">
-            <FileText className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+            <FileText className="absolute left-3 top-3 w-4 h-4 text-[#9a9a94]" />
             <textarea placeholder="Any additional details..." className="input pl-9 min-h-[60px] py-2"
               value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} />
           </div>
