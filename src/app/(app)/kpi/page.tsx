@@ -113,7 +113,7 @@ export default function KpiPage() {
         <div className="card p-4 mb-4 space-y-3">
           <div className="text-xs font-bold text-[#1c1c1c]">{editing.id ? "Edit template" : "New template"}</div>
           <KpiTemplateEditor value={editing.draft} onChange={draft => setEditing({ ...editing, draft })} />
-          <p className="text-[10px] text-[#5f5f5d]">Changes here don't alter plans already made from this template.</p>
+          <p className="text-[10px] text-[#5f5f5d]">Changes here don&apos;t alter plans already made from this template.</p>
           <div className="flex gap-2">
             <button onClick={save} disabled={busy} className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#1c1c1c] text-white disabled:opacity-50">Save</button>
             <button onClick={() => setEditing(null)} className={small}>Cancel</button>
