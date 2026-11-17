@@ -37,6 +37,7 @@ export const PERMISSION_MODULES: { key: string; label: string; group: string; ac
   { key: "team", label: "Team", group: "Administration", actions: ["view", "manage"] },
   { key: "organisation", label: "Organisation", group: "Administration", actions: ["view", "manage"] },
   { key: "audit", label: "Audit Log", group: "Administration", actions: ["view", "export"] },
+  { key: "kpi", label: "KPIs & performance plans", group: "Administration", actions: ["view", "manage", "approve"] },
 ];
 
 type WithGrants = Partial<Profile> & { role_grants?: Grants; org_disabled_modules?: string[]; org_platform_blocked_modules?: string[] };

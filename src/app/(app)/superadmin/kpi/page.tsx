@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { SOURCE_BY_KEY } from "@/lib/kpi/sources";
 import { weightCheck } from "@/lib/kpi/score";
-import { KpiTemplateEditor, blankDraft, draftProblems, MEASUREMENTS, type KpiItem, type KpiTemplateDraft } from "@/components/superadmin/KpiTemplateEditor";
+import { KpiTemplateEditor, blankDraft, draftProblems, toDraft, toPayload, MEASUREMENTS, type KpiItem, type KpiTemplateDraft } from "@/components/kpi/KpiTemplateEditor";
 
 type Template = {
   id: string; family_id: string; version: number; name: string; collection: string; description: string;
@@ -20,17 +20,6 @@ const STATUS_STYLE: Record<Template["status"], string> = {
   draft: "bg-sky-50 text-sky-700", published: "bg-emerald-50 text-emerald-700", archived: "bg-gray-100 text-[#5f5f5d]",
 };
 const small = "text-xs px-3 py-1.5 rounded-lg border border-[#eceae4] disabled:opacity-40";
-
-const toDraft = (t: Template): KpiTemplateDraft => ({
-  name: t.name, collection: t.collection, description: t.description, department_hint: t.department_hint ?? "",
-  designation_hints: t.designation_hints, industry: t.industry ?? "", period: t.period, visibility: t.visibility,
-  items: [...t.kpi_template_items].sort((a, b) => a.sort_order - b.sort_order).map(({ sort_order: _s, ...i }) => i),
-});
-const toPayload = (d: KpiTemplateDraft) => ({
-  ...d, name: d.name.trim(), designation_hints: d.designation_hints.map(s => s.trim()).filter(Boolean),
-  department_hint: d.department_hint.trim() || null, industry: d.industry.trim() || null,
-  items: d.items.map(i => ({ ...i, name: i.name.trim() })),
-});
 
 /** Imported JSON is untrusted: keep known fields only and let the DB checks do the rest. */
 function parseImport(raw: unknown): KpiTemplateDraft | null {
@@ -61,6 +50,7 @@ function parseImport(raw: unknown): KpiTemplateDraft | null {
 export default function SuperAdminKpiLibrary() {
   const supabase = useMemo(() => createClient(), []);
   const [rows, setRows] = useState<Template[]>([]);
+  const [usage, setUsage] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<{ id: string | null; draft: KpiTemplateDraft } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -69,10 +59,13 @@ export default function SuperAdminKpiLibrary() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase.from("kpi_templates")
+    const [{ data, error }, u] = await Promise.all([supabase.from("kpi_templates")
       .select("id, family_id, version, name, collection, description, department_hint, designation_hints, industry, period, status, visibility, updated_at, kpi_template_items(name, description, source_key, measurement, direction, unit, default_target, weight, cap, threshold, missing_rule, sort_order)")
-      .is("org_id", null).order("collection").order("version", { ascending: false });
+      .is("org_id", null).order("collection").order("version", { ascending: false }),
+      supabase.rpc("platform_kpi_usage")]);
     if (error) toast.error(error.message);
+    // Before migration 20261117e the function is missing: usage just stays blank.
+    setUsage(Object.fromEntries(((u.data || []) as { template_id: string; orgs: number }[]).map(r => [r.template_id, Number(r.orgs)])));
     setRows((data || []) as Template[]);
     setLoading(false);
   }, [supabase]);
@@ -134,7 +127,7 @@ export default function SuperAdminKpiLibrary() {
       {editing ? (
         <div className="card p-4 mb-4 space-y-3">
           <div className="text-xs font-bold text-[#1c1c1c]">{editing.id ? "Edit draft" : "New template"}</div>
-          <KpiTemplateEditor value={editing.draft} onChange={draft => setEditing({ ...editing, draft })} />
+          <KpiTemplateEditor global value={editing.draft} onChange={draft => setEditing({ ...editing, draft })} />
           <div className="flex gap-2">
             <button onClick={save} disabled={busy} className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#1c1c1c] text-white disabled:opacity-50">Save draft</button>
             <button onClick={() => setEditing(null)} className={small}>Cancel</button>
@@ -178,6 +171,7 @@ export default function SuperAdminKpiLibrary() {
                       {t.kpi_template_items.length} KPIs · {t.kpi_template_items.length - manual} automatic, {manual} manual
                       {unconfigured > 0 && `, ${unconfigured} data source not configured`} · weights {w.total}
                       {t.department_hint && ` · ${t.department_hint}`} · {t.period.replace("_", "-")}
+                      {usage[t.id] ? ` · used by ${usage[t.id]} organisation${usage[t.id] === 1 ? "" : "s"}` : ""}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5">

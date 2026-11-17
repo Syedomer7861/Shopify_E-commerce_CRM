@@ -13,6 +13,22 @@ export type KpiTemplateDraft = {
   industry: string; period: string; visibility: "public" | "hidden"; items: KpiItem[];
 };
 
+/** A template row as read from kpi_templates with its items embedded. */
+export type TemplateRow = {
+  name: string; collection: string; description: string; department_hint: string | null; designation_hints: string[];
+  industry: string | null; period: string; visibility: "public" | "hidden"; kpi_template_items: (KpiItem & { sort_order: number })[];
+};
+export const toDraft = (t: TemplateRow): KpiTemplateDraft => ({
+  name: t.name, collection: t.collection, description: t.description, department_hint: t.department_hint ?? "",
+  designation_hints: t.designation_hints, industry: t.industry ?? "", period: t.period, visibility: t.visibility,
+  items: [...t.kpi_template_items].sort((a, b) => a.sort_order - b.sort_order).map(({ sort_order: _s, ...i }) => i),
+});
+export const toPayload = (d: KpiTemplateDraft) => ({
+  ...d, name: d.name.trim(), designation_hints: d.designation_hints.map(s => s.trim()).filter(Boolean),
+  department_hint: d.department_hint.trim() || null, industry: d.industry.trim() || null,
+  items: d.items.map(i => ({ ...i, name: i.name.trim() })),
+});
+
 export const MEASUREMENTS: Measurement[] = ["numeric", "percentage", "currency", "time", "rating", "boolean", "milestone"];
 export const PERIODS = ["weekly", "monthly", "quarterly", "half_yearly", "yearly"];
 const input = "h-9 px-2 bg-white border border-[#eceae4] rounded-lg text-sm focus:outline-none focus:border-[#1c1c1c]/30";
@@ -35,7 +51,8 @@ export function draftProblems(d: KpiTemplateDraft): string | null {
   return null;
 }
 
-export function KpiTemplateEditor({ value, onChange }: { value: KpiTemplateDraft; onChange: (d: KpiTemplateDraft) => void }) {
+/** `global`: the Super Admin library (adds visibility). Organisations get the same editor without it. */
+export function KpiTemplateEditor({ value, onChange, global = false }: { value: KpiTemplateDraft; onChange: (d: KpiTemplateDraft) => void; global?: boolean }) {
   const set = (p: Partial<KpiTemplateDraft>) => onChange({ ...value, ...p });
   const setItem = (i: number, p: Partial<KpiItem>) => set({ items: value.items.map((it, j) => (j === i ? { ...it, ...p } : it)) });
   const move = (i: number) => { const a = [...value.items]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; set({ items: a }); };
@@ -61,10 +78,12 @@ export function KpiTemplateEditor({ value, onChange }: { value: KpiTemplateDraft
         <select className={input} value={value.period} onChange={e => set({ period: e.target.value })}>
           {PERIODS.map(p => <option key={p} value={p}>{p.replace("_", "-")} review</option>)}
         </select>
-        <select className={input} value={value.visibility} onChange={e => set({ visibility: e.target.value as KpiTemplateDraft["visibility"] })}>
-          <option value="public">Visible to organisations once published</option>
-          <option value="hidden">Hidden from organisations</option>
-        </select>
+        {global && (
+          <select className={input} value={value.visibility} onChange={e => set({ visibility: e.target.value as KpiTemplateDraft["visibility"] })}>
+            <option value="public">Visible to organisations once published</option>
+            <option value="hidden">Hidden from organisations</option>
+          </select>
+        )}
       </div>
 
       <div className="flex items-center justify-between">
