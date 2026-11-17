@@ -3,7 +3,7 @@ import { confirmDialog } from "@/components/ConfirmDialog";
 import { useState, useEffect, useMemo } from "react";
 import { Users, Phone, Mail, MapPin, Briefcase, Calendar, CheckCircle, Clock, Plus, Search, X, Edit3, UserPlus, UserMinus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar } from "@/components/ui";
+import { Avatar, ActionButton } from "@/components/ui";
 import toast from "react-hot-toast";
 import { isDemoMode } from "@/lib/demo";
 import { EmployeePlacementFields, EMPTY_PLACEMENT, placementFrom, type Placement } from "@/components/organisation/EmployeePlacementFields";
@@ -782,9 +782,9 @@ export default function EmployeeDirectory({ data, onRefresh }: Props) {
                 </div>
               </div>
             </div>
-            <button onClick={addEmployee} className="btn-primary w-full py-2.5 text-xs gap-2">
+            <ActionButton onClick={addEmployee} className="btn-primary w-full py-2.5 text-xs gap-2">
               <UserPlus className="w-3.5 h-3.5" /> Add Employee
-            </button>
+            </ActionButton>
           </div>
         </div>
       )}

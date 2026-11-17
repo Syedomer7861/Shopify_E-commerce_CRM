@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Flag, Loader2, Plus } from "lucide-react";
 import toast from "react-hot-toast";
-import { PageHeader, EmptyState } from "@/components/ui";
+import { PageHeader, EmptyState, ActionButton } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -69,7 +69,7 @@ export default function SuperAdminFlags() {
       <div className="card p-4 mb-4 flex flex-wrap items-end gap-2">
         <label className="text-[10px] text-[#5f5f5d]">Key (code uses this)<br /><input className={cn(input, "w-48 font-mono")} value={newKey} onChange={e => setNewKey(e.target.value.toLowerCase())} placeholder="new-dashboard" /></label>
         <label className="text-[10px] text-[#5f5f5d] flex-1 min-w-[180px]">What it does<br /><input className={cn(input, "w-full")} value={newDesc} onChange={e => setNewDesc(e.target.value)} maxLength={500} /></label>
-        <button onClick={create} className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-[#1c1c1c] text-white"><Plus className="w-3.5 h-3.5" /> New flag</button>
+        <ActionButton onClick={create} className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-[#1c1c1c] text-white"><Plus className="w-3.5 h-3.5" /> New flag</ActionButton>
       </div>
 
       {flags.length === 0 ? (

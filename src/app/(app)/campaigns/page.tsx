@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { Megaphone, Plus, Search, Play, Pause, BarChart3, Users, Clock, AlertCircle, CheckCircle2, Pencil, XCircle, Eye, Trash2 } from "lucide-react";
-import { PageHeader, Modal, StatCard, Pagination } from "@/components/ui";
+import { PageHeader, Modal, StatCard, Pagination, ActionButton } from "@/components/ui";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { AccessDenied } from "@/components/ui";
@@ -526,9 +526,9 @@ export default function CampaignManager() {
         title="Delete Campaign Permanently"
         footer={<>
           <button className="btn-secondary" onClick={() => setDeleteCampaignId(null)}>Cancel</button>
-          <button className="btn-primary bg-rose-600 border-rose-600 hover:bg-rose-700 hover:border-rose-700 text-[#f6f7f2] font-bold" onClick={handleConfirmDelete}>
+          <ActionButton className="btn-primary bg-rose-600 border-rose-600 hover:bg-rose-700 hover:border-rose-700 text-[#f6f7f2] font-bold" onClick={handleConfirmDelete}>
             Delete Permanently
-          </button>
+          </ActionButton>
         </>}
       >
         <div className="space-y-4 py-2">
@@ -560,9 +560,9 @@ export default function CampaignManager() {
         title={editId ? "Edit Campaign Settings" : "Launch New Campaign"}
         footer={<>
           <button className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-          <button className="btn-primary" onClick={handleCreate}>
+          <ActionButton className="btn-primary" onClick={handleCreate}>
             {editId ? "Save Changes" : "Create Campaign"}
-          </button>
+          </ActionButton>
         </>}
       >
          <div className="space-y-4">

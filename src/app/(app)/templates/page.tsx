@@ -2,7 +2,7 @@
 import { confirmDialog } from "@/components/ConfirmDialog";
 import { useState, useEffect } from "react";
 import { Plus, Search, MessageSquare, Save, Trash2, Edit3, Type, CheckCircle2, ChevronRight, Hash } from "lucide-react";
-import { PageHeader, Modal } from "@/components/ui";
+import { PageHeader, Modal, ActionButton } from "@/components/ui";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { AccessDenied } from "@/components/ui";
@@ -210,7 +210,7 @@ export default function TemplateManager() {
         maxWidth="max-w-xl"
         footer={<>
           <button className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-          <button className="btn-primary" onClick={handleSave}>Save Template</button>
+          <ActionButton className="btn-primary" onClick={handleSave}>Save Template</ActionButton>
         </>}
       >
         <div className="space-y-4">

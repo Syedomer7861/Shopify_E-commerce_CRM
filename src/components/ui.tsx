@@ -307,6 +307,33 @@ export function Select({
   );
 }
 
+/**
+ * Button for an async action: locks itself and shows a spinner until the
+ * returned promise settles, so a double tap can't save twice.
+ */
+export function ActionButton({ onClick, disabled, children, ...rest }: Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> & { onClick: (e: React.MouseEvent<HTMLButtonElement>) => unknown }) {
+  const [busy, setBusy] = useState(false);
+  const running = useRef(false);
+  return (
+    <button
+      {...rest}
+      disabled={disabled || busy}
+      aria-busy={busy}
+      onClick={async e => {
+        if (running.current) return;
+        const r = onClick(e);
+        if (!(r instanceof Promise)) return;
+        running.current = true;
+        setBusy(true);
+        try { await r; } catch { /* the handler reports its own errors */ } finally { running.current = false; setBusy(false); }
+      }}
+    >
+      {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+      {children}
+    </button>
+  );
+}
+
 export function PageHeader({ title, subtitle, actions }: { title: React.ReactNode; subtitle?: React.ReactNode; actions?: React.ReactNode }) {
   return (
     <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 rise">

@@ -1,4 +1,5 @@
 "use client";
+import { ActionButton } from "@/components/ui";
 import { useState, useEffect } from "react";
 import { DollarSign, CheckCircle, Clock, TrendingUp, Plus, FileText, History, X, RotateCcw, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -185,9 +186,9 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
           <div className="card overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-[#ebece6] bg-[#fcfbf8]">
               <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider">Payslip Register — {MONTH}</h3>
-              <button onClick={runAll} className="btn-primary text-xs gap-2 px-4 py-2">
+              <ActionButton onClick={runAll} className="btn-primary text-xs gap-2 px-4 py-2">
                 <CheckCircle className="w-3.5 h-3.5" /> Mark All Paid
-              </button>
+              </ActionButton>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">

@@ -1,4 +1,5 @@
 "use client";
+import { ActionButton } from "@/components/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { X, Trash2, Loader2, Plus, Send, Link2, Paperclip, Download, Play, Square, Clock } from "lucide-react";
 import toast from "react-hot-toast";
@@ -464,10 +465,10 @@ export default function TaskPanel({ taskId, list, members, siblingTasks = [], on
                     onChange={(e) => setLogNote(e.target.value)}
                     className="flex-1 min-w-0 text-xs font-medium bg-[#f6f7f2] border border-[#ebece6] rounded-lg px-2 py-2"
                   />
-                  <button onClick={submitLog}
+                  <ActionButton onClick={submitLog}
                     className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg bg-[#1c1c1c] text-white flex-shrink-0">
                     Log
-                  </button>
+                  </ActionButton>
                 </div>
 
                 {timeEntries.length > 0 && (

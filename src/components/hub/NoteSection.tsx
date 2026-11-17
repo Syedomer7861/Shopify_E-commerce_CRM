@@ -1,4 +1,5 @@
 "use client";
+import { ActionButton } from "@/components/ui";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { StickyNote, Plus, Trash2, Loader2, Save, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
@@ -183,9 +184,9 @@ export function NoteSection() {
             <button onClick={() => setIsAdding(false)} className="px-4 py-2 text-xs font-bold text-amber-900/50 hover:text-amber-900 transition-colors">
               Cancel
             </button>
-            <button onClick={addNote} className="btn-primary !bg-amber-900 !text-white flex items-center gap-2">
+            <ActionButton onClick={addNote} className="btn-primary !bg-amber-900 !text-white flex items-center gap-2">
               <Save className="w-4 h-4" /> Save Note
-            </button>
+            </ActionButton>
           </div>
         </div>
       )}

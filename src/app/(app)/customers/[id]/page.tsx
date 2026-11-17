@@ -3,7 +3,7 @@ import { useState, useEffect, use, useCallback, useMemo } from "react";
 import { ArrowLeft, Phone, Mail, ShoppingBag, PhoneCall, CheckSquare, FileText, AlertTriangle, RefreshCw, ToggleLeft, ToggleRight, MapPin, Home, Info, Smartphone, Headphones } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Avatar, SegmentBadge, DeliveryBadge, TaskTypeBadge, TaskStatusBadge, Modal, Pagination } from "@/components/ui";
+import { Avatar, SegmentBadge, DeliveryBadge, TaskTypeBadge, TaskStatusBadge, Modal, Pagination, ActionButton } from "@/components/ui";
 import ShiprocketOrderView from "@/components/ShiprocketOrderView";
 import { createClient } from "@/lib/supabase";
 import { cn, formatDate, formatDateTime, timeAgo, formatCurrency, orQuote } from "@/lib/utils";
@@ -688,7 +688,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
         <div className="card p-4">
           <textarea className="input resize-none min-h-[120px] mb-3" placeholder="Add a note for this customer..."
             value={notes} onChange={e => setNotes(e.target.value)} />
-          <button className="btn-primary" onClick={handleSaveNote}>Save Note</button>
+          <ActionButton className="btn-primary" onClick={handleSaveNote}>Save Note</ActionButton>
         </div>
       )}
 
@@ -696,7 +696,7 @@ export default function CustomerProfile({ params }: { params: { id: string } }) 
       <Modal open={clearRtoModal} onClose={() => setClearRtoModal(false)} title="Clear RTO Flag"
         footer={<>
           <button className="btn-secondary" onClick={() => setClearRtoModal(false)}>Cancel</button>
-          <button className="btn-primary" onClick={handleClearRTO}>Confirm</button>
+          <ActionButton className="btn-primary" onClick={handleClearRTO}>Confirm</ActionButton>
         </>}
       >
         <p className="text-sm text-[#55554f]">Are you sure you want to clear the RTO flag for <strong>{customer.name}</strong>? Future orders will generate follow-up tasks normally.</p>

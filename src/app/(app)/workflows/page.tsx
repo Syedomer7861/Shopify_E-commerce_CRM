@@ -2,7 +2,7 @@
 import { confirmDialog } from "@/components/ConfirmDialog";
 import { useState, useEffect } from "react";
 import { Zap, Plus, Trash2, Edit3, CheckCircle2, AlertCircle, Play, Settings, ArrowRight, Send, RefreshCw } from "lucide-react";
-import { PageHeader, Modal } from "@/components/ui";
+import { PageHeader, Modal, ActionButton } from "@/components/ui";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { AccessDenied } from "@/components/ui";
@@ -242,7 +242,7 @@ export default function WorkflowManager() {
         maxWidth="max-w-2xl"
         footer={<>
           <button className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-          <button className="btn-primary" onClick={handleSave}>Save Workflow</button>
+          <ActionButton className="btn-primary" onClick={handleSave}>Save Workflow</ActionButton>
         </>}
       >
         <div className="space-y-6">
