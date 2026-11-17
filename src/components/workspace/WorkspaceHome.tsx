@@ -11,6 +11,7 @@ import { visibleModules } from "@/lib/modules";
 import { AssignedTasksPanel } from "@/components/dashboard/AssignedTasksPanel";
 import { OrdersSummary } from "@/components/dashboard/OrdersSummary";
 import { ApprovalsInbox } from "./ApprovalsInbox";
+import { MyWorkOverview } from "./MyWorkOverview";
 
 /** Live counts for the modules this person can open. RLS scopes every number to what they may see. */
 function Pulse({ profile }: { profile: Profile }) {
@@ -50,6 +51,8 @@ function Pulse({ profile }: { profile: Profile }) {
  * Adding a widget = one entry here.
  */
 export const HOME_WIDGETS: { key: string; label: string; allowed: (p: Profile) => boolean; wide?: boolean; title?: string; href?: string; render: (p: Profile) => ReactNode }[] = [
+  // Own Workspace tasks, projects, deadlines and logged hours. Shown to anyone in a Space (or a workspace admin).
+  { key: "my-work", label: "My work overview", wide: true, allowed: () => true, render: p => <MyWorkOverview profile={p} /> },
   { key: "pulse", label: "Module counts", wide: true, allowed: p => visibleModules(p).length > 0, render: p => <Pulse profile={p} /> },
   {
     key: "orders", label: "Orders & revenue", wide: true,
@@ -72,7 +75,15 @@ export function WorkspaceHome({ profile }: { profile: Profile }) {
     <div className="animate-fade-in pb-10">
       <PageHeader
         title={<div className="flex items-center gap-3"><Icon className="w-7 h-7 text-[#1c1c1c]" /><span>{hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"}, {profile.name?.split(" ")[0]}</span></div>}
-        subtitle={[profile.designation, profile.department].filter(Boolean).join(" · ") || "Your workspace"}
+        subtitle={
+          <span className="flex flex-wrap items-center gap-2 mt-1">
+            {profile.designation && <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold">{profile.designation}</span>}
+            {profile.department && <span className="px-2.5 py-1 rounded-full bg-[#eceae4] text-[#1c1c1c] text-xs font-medium">{profile.department}</span>}
+            <span className="px-2.5 py-1 rounded-full border border-[#eceae4] text-xs text-[#5f5f5d]">
+              {new Date().toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
+            </span>
+          </span>
+        }
       />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {widgets.map(w => (

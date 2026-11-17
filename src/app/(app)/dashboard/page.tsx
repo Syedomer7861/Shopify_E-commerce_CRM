@@ -698,10 +698,13 @@ export default function Dashboard() {
   // escalations) - meaningless for a role that can't see Tasks at all
   // (Accountant, Logistics Manager, etc. - see allowedNavModules). They get
   // an order/revenue-centric home instead. Roles with no nav_modules
-  // allowlist (admin/manager/agent/hr by default) are unaffected.
+  // allowlist keep the cockpit only if they are a call-queue role: an empty
+  // allowlist on a custom role (e.g. web_developer) means "every page", not
+  // "works the call queue", so a developer was landing on agents' calls.
   if (profile && !isDemoMode()) {
     const allowed = allowedNavModules(profile);
-    if (allowed && !allowed.includes("tasks")) {
+    const queueRole = ["admin", "manager", "agent"].includes(profile.role);
+    if (allowed ? !allowed.includes("tasks") : !queueRole) {
       return <WorkspaceHome profile={profile} />;
     }
   }
