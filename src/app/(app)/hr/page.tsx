@@ -64,6 +64,7 @@ interface LeaveRequest {
   start_date: string;
   end_date: string;
   reason: string;
+  leave_type?: string | null;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   profile: {
@@ -102,6 +103,7 @@ const MODULE_DESCRIPTIONS: Record<string, string> = {
 };
 
 import { Suspense } from "react";
+import { leaveTypeLabel } from "@/lib/leave-types";
 
 function HRDashboardContent() {
   const { profile: currentProfile, loading: profileLoading } = useCurrentProfile();
@@ -784,7 +786,7 @@ function HRDashboardContent() {
                                  </div>
                               </div>
                               <div className="p-3 bg-[#f6f7f2] rounded-xl">
-                                 <div className="text-[9px] font-bold text-[#6b6b67] uppercase mb-1">Reason</div>
+                                 <div className="text-[9px] font-bold text-[#6b6b67] uppercase mb-1">Reason{leaveTypeLabel(leave.leave_type) ? ` · ${leaveTypeLabel(leave.leave_type)}` : ""}</div>
                                  <p className="text-xs text-[#55554f] leading-relaxed italic">&quot;{leave.reason}&quot;</p>
                               </div>
                               <div className="flex gap-2 pt-2">

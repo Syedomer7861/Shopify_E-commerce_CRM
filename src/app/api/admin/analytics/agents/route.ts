@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
 
     // 3. Fetch Work Performance & Heartbeats
     const [callsRes, activityRes, tasksRes] = await Promise.all([
-        supabase.from("call_logs").select("called_at, agent_name, outcome").gte("called_at", start).lte("called_at", end),
+        supabase.from("call_logs").select("called_at, agent_id, agent_name, outcome").gte("called_at", start).lte("called_at", end),
         supabase.from("agent_activity_logs").select("created_at, agent_id, activity_type, metadata").gte("created_at", start).lte("created_at", end),
         // "Worked on" = actually resolved (done/skipped/cancelled) in this
         // window, not just assigned - a still-pending task isn't something
@@ -114,6 +114,10 @@ export async function GET(req: NextRequest) {
     ]);
 
     const callsData = callsRes.data || [];
+    // Calls logged since 20261117k carry agent_id; older rows only have agent_name,
+    // which the app filled with the agent's email (or name), so match either.
+    const callOwner = (call: any) => (call.agent_id && agentStats[call.agent_id])
+        || Object.values(agentStats).find((s: any) => call.agent_name && (s.name === call.agent_name || s.email === call.agent_name));
     const activityData = activityRes.data || [];
     const tasksData = tasksRes.data || [];
     if (tasksRes.error) console.error("Tasks-worked fetch failed:", tasksRes.error.message);
@@ -237,7 +241,7 @@ export async function GET(req: NextRequest) {
 
     // 6. Merge Performance Data
     callsData?.forEach(call => {
-        const stats = Object.values(agentStats).find(s => s.name === call.agent_name);
+        const stats = callOwner(call);
         if (stats) {
             stats.taskCount++;
             const callDate = toISTDateKey(call.called_at);
@@ -309,7 +313,7 @@ export async function GET(req: NextRequest) {
     // only one is being viewed.
     const tasksWorkedByAgent: Record<string, any[]> = {};
     callsData.forEach(call => {
-        const stats = Object.values(agentStats).find((s: any) => s.name === call.agent_name);
+        const stats = callOwner(call);
         if (!stats) return;
         (stats.outcomeBreakdown ||= {});
         const key = call.outcome || "unspecified";

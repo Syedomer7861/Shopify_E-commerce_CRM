@@ -82,6 +82,7 @@ const managerNav = [
 
 
 import type { Profile } from "@/types";
+import { LEAVE_TYPES, leaveTypeLabel } from "@/lib/leave-types";
 
 export default function Sidebar() {
   const path = usePathname();
@@ -102,7 +103,7 @@ export default function Sidebar() {
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [myLeaves, setMyLeaves] = useState<any[]>([]);
-  const [leaveData, setLeaveData] = useState({ start: "", end: "", reason: "" });
+  const [leaveData, setLeaveData] = useState({ start: "", end: "", reason: "", type: "" });
   const [isSubmittingLeave, setIsSubmittingLeave] = useState(false);
   const [lastSync, setLastSync] = useState<Date>(new Date());
 
@@ -494,7 +495,8 @@ export default function Sidebar() {
           agentId: profile?.id,
           startDate: leaveData.start,
           endDate: leaveData.end,
-          reason: leaveData.reason
+          reason: leaveData.reason,
+          leaveType: leaveData.type || null
         })
       });
       
@@ -502,7 +504,7 @@ export default function Sidebar() {
       
       toast.success("Leave request submitted to HR");
       fetchMyLeaves();
-      setLeaveData({ start: "", end: "", reason: "" });
+      setLeaveData({ start: "", end: "", reason: "", type: "" });
     } catch (err) {
       toast.error("Request failed. Try again.");
     } finally {
@@ -880,16 +882,22 @@ export default function Sidebar() {
                  </div>
               </div>
               <div>
+                 <label htmlFor="leave-type" className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider block mb-2.5">Leave type</label>
+                 <select id="leave-type" className="select mb-4" value={leaveData.type} onChange={e => setLeaveData({ ...leaveData, type: e.target.value })}>
+                   <option value="">Not specified</option>
+                   {LEAVE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                 </select>
                  <label className="text-[10px] font-bold text-[#5f5f5d]/60 uppercase tracking-wider block mb-2.5">Reason for Leave</label>
                  <div className="flex flex-wrap gap-2 mb-4">
                     {[
-                      { label: "Sick Leave (SL)", text: "I am taking Sick Leave (SL) due to health issues. Please approve." },
-                      { label: "Casual Leave (CL)", text: "I would like to take Casual Leave (CL) for some personal work. Please approve." },
-                      { label: "Privilege Leave (PL)", text: "I would like to take my Privilege Leave (PL) as planned. Please approve." }
+                      { label: "Sick Leave (SL)", type: "sick", text: "I am taking Sick Leave (SL) due to health issues. Please approve." },
+                      { label: "Casual Leave (CL)", type: "casual", text: "I would like to take Casual Leave (CL) for some personal work. Please approve." },
+                      { label: "Privilege Leave (PL)", type: "annual", text: "I would like to take my Privilege Leave (PL) as planned. Please approve." }
                     ].map(preset => (
                       <button
                         key={preset.label}
-                        onClick={() => setLeaveData({ ...leaveData, reason: preset.text })}
+                        type="button"
+                        onClick={() => setLeaveData({ ...leaveData, reason: preset.text, type: preset.type })}
                         className="text-[10px] px-3 py-1.5 bg-[#f6f7f2] border border-[#ebece6] hover:bg-[#1c1c1c] hover:text-white rounded-lg transition-all text-[#5f5f5d] font-bold uppercase tracking-tighter"
                       >
                         {preset.label}
@@ -928,7 +936,7 @@ export default function Sidebar() {
                            )}>{l.status}</div>
                         </div>
                         <p className="text-[11px] text-[#5f5f5d] font-medium leading-relaxed italic line-clamp-2">
-                          &ldquo;{l.reason}&rdquo;
+                          {leaveTypeLabel(l.leave_type) && <span className="not-italic font-bold text-[#1c1c1c]">{leaveTypeLabel(l.leave_type)} · </span>}&ldquo;{l.reason}&rdquo;
                         </p>
                       </div>
                     ))}

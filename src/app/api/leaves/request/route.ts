@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireInternal } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
+import { LEAVE_TYPES } from "@/lib/leave-types";
 
 export async function POST(req: NextRequest) {
   const unauthorized = await requireInternal(req);
@@ -9,10 +10,13 @@ export async function POST(req: NextRequest) {
   const supabase = createServerClient();
 
   try {
-    const { agentId, startDate, endDate, reason } = await req.json();
+    const { agentId, startDate, endDate, reason, leaveType } = await req.json();
 
     if (!agentId || !startDate || !endDate || !reason) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    }
+    if (leaveType != null && !LEAVE_TYPES.some(t => t.value === leaveType)) {
+      return NextResponse.json({ error: "Unknown leave type" }, { status: 400 });
     }
 
     const { error } = await supabase
@@ -22,6 +26,7 @@ export async function POST(req: NextRequest) {
         start_date: startDate,
         end_date: endDate,
         reason,
+        leave_type: leaveType ?? null,
         status: 'pending'
       });
 
