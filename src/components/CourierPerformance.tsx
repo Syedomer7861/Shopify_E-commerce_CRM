@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import IndiaSalesMap from "./IndiaSalesMap";
 
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#6366f1', '#8b5cf6'];
+const COLORS = ['#55c08f', '#a9c92a', '#f0b43c', '#ef8a7c', '#6b6b67', '#8fb3e8'];
 
 export default function LogisticsPulse() {
   const [data, setData] = useState<any>(null);
@@ -218,7 +218,7 @@ export default function LogisticsPulse() {
           <div className="w-14 h-14 relative flex items-center justify-center">
             <svg className="w-full h-full -rotate-90">
               <circle cx="28" cy="28" r="24" fill="none" stroke="white" strokeWidth="4" className="opacity-10" />
-              <circle cx="28" cy="28" r="24" fill="none" stroke="#3b82f6" strokeWidth="4" strokeDasharray={150.8} strokeDashoffset={150.8 - (150.8 * syncProgress / 100)} className="transition-all duration-500" />
+              <circle cx="28" cy="28" r="24" fill="none" stroke="#a9c92a" strokeWidth="4" strokeDasharray={150.8} strokeDashoffset={150.8 - (150.8 * syncProgress / 100)} className="transition-all duration-500" />
             </svg>
             <span className="absolute text-[10px] font-black">{Math.round(syncProgress)}%</span>
           </div>
@@ -401,7 +401,7 @@ export default function LogisticsPulse() {
                 />
                 <Bar dataKey="successRate" radius={[0, 8, 8, 0]} barSize={24}>
                   {couriers.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={entry.successRate > 70 ? '#10b981' : entry.successRate > 50 ? '#f59e0b' : '#ef4444'} />
+                    <Cell key={`cell-${index}`} fill={entry.successRate > 70 ? '#55c08f' : entry.successRate > 50 ? '#f0b43c' : '#ef8a7c'} />
                   ))}
                 </Bar>
               </BarChart>

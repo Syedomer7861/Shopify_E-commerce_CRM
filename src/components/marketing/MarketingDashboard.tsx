@@ -12,8 +12,8 @@ type Props = {
 
 const TYPE_COLOR: Record<string, string> = {
   not_started: "#8b8b8b",
-  active: "#3b82f6",
-  done: "#10b981",
+  active: "#a9c92a",
+  done: "#55c08f",
 };
 
 export default function MarketingDashboard({ lists, tasks, members }: Props) {
@@ -99,7 +99,7 @@ export default function MarketingDashboard({ lists, tasks, members }: Props) {
               <BarChart data={byAssignee} layout="vertical" margin={{ left: 8, right: 16 }}>
                 <XAxis type="number" allowDecimals={false} hide />
                 <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
-                <Tooltip cursor={{ fill: "#f2efe8" }} />
+                <Tooltip cursor={{ fill: "#f0f0ec" }} />
                 <Bar dataKey="value" fill="#1c1c1c" radius={[0, 4, 4, 0]} barSize={16} />
               </BarChart>
             </ResponsiveContainer>
@@ -112,7 +112,7 @@ export default function MarketingDashboard({ lists, tasks, members }: Props) {
             <BarChart data={byType} margin={{ left: -20, right: 8 }}>
               <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip cursor={{ fill: "#f2efe8" }} />
+              <Tooltip cursor={{ fill: "#f0f0ec" }} />
               <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={48}>
                 {byType.map((d) => (
                   <Cell key={d.key} fill={TYPE_COLOR[d.key]} />

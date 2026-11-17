@@ -51,9 +51,9 @@ export default function RevenueDashboard() {
   ];
 
   const pieData = [
-    { name: "Abandoned Cart", value: data.breakdown.recovery.recovered, color: "#10b981" },
-    { name: "NDR Resolution", value: data.breakdown.ndr.recovered, color: "#0ea5e9" },
-    { name: "COD Verify", value: data.breakdown.cod.recovered, color: "#f59e0b" },
+    { name: "Abandoned Cart", value: data.breakdown.recovery.recovered, color: "#55c08f" },
+    { name: "NDR Resolution", value: data.breakdown.ndr.recovered, color: "#8fb3e8" },
+    { name: "COD Verify", value: data.breakdown.cod.recovered, color: "#f0b43c" },
   ];
 
   return (
@@ -117,8 +117,8 @@ export default function RevenueDashboard() {
                     return null;
                   }}
                 />
-                <Bar dataKey="potential" fill="#f1f5f9" radius={[10, 10, 10, 10]} barSize={40} />
-                <Bar dataKey="recovered" fill="#10b981" radius={[10, 10, 10, 10]} barSize={40} />
+                <Bar dataKey="potential" fill="#f0f0ec" radius={[10, 10, 10, 10]} barSize={40} />
+                <Bar dataKey="recovered" fill="#55c08f" radius={[10, 10, 10, 10]} barSize={40} />
               </BarChart>
             </ResponsiveContainer>
           </div>

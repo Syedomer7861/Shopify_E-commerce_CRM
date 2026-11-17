@@ -41,7 +41,7 @@ function Card({ title, icon: Icon, href, cta, children, className }: { title: st
   );
 }
 
-const Empty = ({ children }: { children: React.ReactNode }) => <div className="text-xs text-gray-400 py-6 text-center">{children}</div>;
+const Empty = ({ children }: { children: React.ReactNode }) => <div className="text-xs text-[#6b6b67] py-6 text-center">{children}</div>;
 
 export function MyWorkOverview({ profile, range }: { profile: Profile; range: DateRange }) {
   const [tasks, setTasks] = useState<MktTask[] | null>(null);
@@ -131,7 +131,7 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
   const maxDay = Math.max(60, ...days.map(d => d.mins));
   const hm = (m: number) => `${Math.floor(m / 60)}h ${m % 60 ? `${m % 60}m` : ""}`.trim();
 
-  if (tasks === null) return <div className="py-10 text-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
+  if (tasks === null) return <div className="py-10 text-center text-[#6b6b67]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
   // Not in any Space and nothing assigned: this overview has nothing real to show.
   if (!failed && lists.length === 0 && tasks.length === 0) return null;
 
@@ -158,7 +158,7 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
                   <Link href={linkFor(t)} className="flex items-start gap-2.5 text-sm text-[#1c1c1c] hover:underline">
                     <Circle className={cn("w-4 h-4 mt-0.5 shrink-0", t.due_date && t.due_date < today ? "text-rose-500" : "text-gray-300")} />
                     <span className="flex-1 truncate">{t.title}</span>
-                    {t.due_date && <span className={cn("text-xs shrink-0", t.due_date < today ? "text-rose-500" : "text-gray-400")}>{t.due_date === today ? "Today" : fmtDue(t.due_date)}</span>}
+                    {t.due_date && <span className={cn("text-xs shrink-0", t.due_date < today ? "text-rose-500" : "text-[#6b6b67]")}>{t.due_date === today ? "Today" : fmtDue(t.due_date)}</span>}
                   </Link>
                 </li>
               ))}
@@ -180,7 +180,7 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
               <s.icon className={cn("w-5 h-5", s.alert ? "text-rose-500" : "text-emerald-600")} />
             </div>
             <div className={cn("text-3xl font-bold mt-2", s.alert && "text-rose-600")}>{s.value}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{s.sub}</div>
+            <div className="text-xs text-[#6b6b67] mt-0.5">{s.sub}</div>
           </Link>
         ))}
       </div>
@@ -195,9 +195,9 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
             { label: "Hours logged", value: rangeMins === null ? "—" : hm(rangeMins) || "0h" },
           ].map(s => (
             <div key={s.label}>
-              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">{s.label}</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-[#6b6b67]">{s.label}</div>
               <div className="text-2xl font-bold mt-1">{s.value}</div>
-              {s.sub && <div className="text-[11px] text-gray-400">{s.sub}</div>}
+              {s.sub && <div className="text-[11px] text-[#6b6b67]">{s.sub}</div>}
             </div>
           ))}
         </div>
@@ -216,9 +216,9 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-[#1c1c1c] truncate">{p.list?.name || "Untitled list"}</div>
-                      <div className="text-xs text-gray-500">{p.done} of {p.total} done</div>
+                      <div className="text-xs text-[#6b6b67]">{p.done} of {p.total} done</div>
                     </div>
-                    <div className="w-28 h-2 rounded-full bg-gray-100 overflow-hidden shrink-0"><div className="h-full bg-emerald-600 rounded-full" style={{ width: `${pct}%` }} /></div>
+                    <div className="w-28 h-2 rounded-full bg-[#f0f0ec] overflow-hidden shrink-0"><div className="h-full bg-emerald-600 rounded-full" style={{ width: `${pct}%` }} /></div>
                     <span className="text-xs font-semibold w-9 text-right">{pct}%</span>
                   </li>
                 );
@@ -233,8 +233,8 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
               {view.deadlines.map(t => (
                 <li key={t.id}>
                   <Link href={linkFor(t)} className="flex items-center gap-3 hover:bg-[#f6f7f2] rounded-lg p-1 -m-1">
-                    <span className="w-12 shrink-0 text-center rounded-lg bg-gray-100 py-1 leading-tight">
-                      <span className="block text-[10px] text-gray-500">{new Date(`${t.due_date}T00:00:00`).toLocaleDateString(undefined, { month: "short" })}</span>
+                    <span className="w-12 shrink-0 text-center rounded-lg bg-[#f0f0ec] py-1 leading-tight">
+                      <span className="block text-[10px] text-[#6b6b67]">{new Date(`${t.due_date}T00:00:00`).toLocaleDateString(undefined, { month: "short" })}</span>
                       <span className="block text-sm font-bold">{new Date(`${t.due_date}T00:00:00`).getDate()}</span>
                     </span>
                     <span className="flex-1 text-sm text-[#1c1c1c] truncate">{t.title}</span>
@@ -255,7 +255,7 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
                 <li key={t.id} className="flex items-center gap-3 text-sm">
                   {done ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <Circle className="w-4 h-4 text-gray-300 shrink-0" />}
                   <Link href={linkFor(t)} className="flex-1 truncate text-[#1c1c1c] hover:underline">{done ? "Completed" : "Updated"} &ldquo;{t.title}&rdquo;</Link>
-                  {t.updated_at && <span className="text-xs text-gray-400 shrink-0">{ago(t.updated_at)}</span>}
+                  {t.updated_at && <span className="text-xs text-[#6b6b67] shrink-0">{ago(t.updated_at)}</span>}
                 </li>
               ))}
             </ul>
@@ -266,19 +266,19 @@ export function MyWorkOverview({ profile, range }: { profile: Profile; range: Da
           <Card title="My hours this week" icon={Clock}>
             <div className="flex items-end justify-between">
               <span className="text-3xl font-bold">{hm(weekMins) || "0h"}</span>
-              <span className="text-xs text-gray-500">of {capHours}h · {Math.min(100, Math.round((weekMins / (capHours * 60)) * 100))}%</span>
+              <span className="text-xs text-[#6b6b67]">of {capHours}h · {Math.min(100, Math.round((weekMins / (capHours * 60)) * 100))}%</span>
             </div>
-            <div className="h-2 rounded-full bg-gray-100 mt-3 overflow-hidden"><div className="h-full bg-emerald-600 rounded-full" style={{ width: `${Math.min(100, (weekMins / (capHours * 60)) * 100)}%` }} /></div>
+            <div className="h-2 rounded-full bg-[#f0f0ec] mt-3 overflow-hidden"><div className="h-full bg-emerald-600 rounded-full" style={{ width: `${Math.min(100, (weekMins / (capHours * 60)) * 100)}%` }} /></div>
             <div className="grid grid-cols-5 gap-3 mt-5 items-end h-28">
               {days.map(d => (
                 <div key={d.label} className="flex flex-col items-center gap-1 h-full justify-end">
                   <div className={cn("w-full rounded-md", d.d === today ? "bg-emerald-700" : "bg-emerald-200")} style={{ height: `${d.mins ? Math.max(6, (d.mins / maxDay) * 80) : 2}%` }} />
-                  <span className="text-[11px] text-gray-500">{d.label}</span>
+                  <span className="text-[11px] text-[#6b6b67]">{d.label}</span>
                   <span className="text-[11px] font-semibold">{d.mins ? `${(d.mins / 60).toFixed(1)}h` : "—"}</span>
                 </div>
               ))}
             </div>
-            <p className="text-[11px] text-gray-400 mt-3">Logged with the timer on Workspace tasks.</p>
+            <p className="text-[11px] text-[#6b6b67] mt-3">Logged with the timer on Workspace tasks.</p>
           </Card>
         )}
       </div>

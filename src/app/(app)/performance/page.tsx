@@ -29,12 +29,12 @@ import toast from "react-hot-toast";
 // say the same thing.
 const TASK_TYPE_CHART_COLORS: Record<TaskType, string> = {
   review: "#1c1c1c", reorder: "#1c1c1c", final_followup: "#9c9a94", recovery: "#1c1c1c",
-  issue_resolution: "#e11d48", transit_update: "#5f5f5d", ndr: "#d97706", cod_verify: "#1c1c1c",
-  manager_audit: "#4f46e5", welcome_call: "#2563eb", win_back: "#ea580c", vip_followup: "#d97706", flagged: "#dc2626",
+  issue_resolution: "#ef8a7c", transit_update: "#5f5f5d", ndr: "#d97706", cod_verify: "#1c1c1c",
+  manager_audit: "#4f46e5", welcome_call: "#2563eb", win_back: "#ea580c", vip_followup: "#d97706", flagged: "#e0604f",
 };
 const DELIVERY_CHART_COLORS: Record<DeliveryStatus, string> = {
   pending: "#9c9a94", in_transit: "#1c1c1c", out_for_delivery: "#5f5f5d",
-  delivered: "#16a34a", rto: "#e11d48", failed: "#dc2626",
+  delivered: "#16a34a", rto: "#ef8a7c", failed: "#e0604f",
 };
 
 type RangePreset = "today" | "7d" | "30d" | "90d" | "custom";

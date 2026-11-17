@@ -515,11 +515,11 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={analytics.perAgent} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0ec" />
                   <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} unit="%" />
-                  <Tooltip cursor={{ fill: "#f8fafc" }} />
-                  <Bar dataKey="attendanceRate" name="Attendance Rate" fill="#10b981" radius={[8, 8, 0, 0]} barSize={36} />
+                  <Tooltip cursor={{ fill: "#f6f7f2" }} />
+                  <Bar dataKey="attendanceRate" name="Attendance Rate" fill="#55c08f" radius={[8, 8, 0, 0]} barSize={36} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -533,10 +533,10 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={analytics.trend} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0ec" />
                   <XAxis dataKey="day" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} unit="h" />
-                  <Tooltip cursor={{ stroke: "#e2e8f0" }} />
+                  <Tooltip cursor={{ stroke: "#ebece6" }} />
                   <Line type="monotone" dataKey="avgHours" name="Avg Hours" stroke="#1c1c1c" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>

@@ -145,8 +145,8 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
     [data],
   );
 
-  if (loading) return <div className="p-12 text-center text-gray-400 text-sm">Loading workspace performance…</div>;
-  if (!data) return <div className="card p-12 text-center text-sm text-gray-400">No workspace data for {name} in this range.</div>;
+  if (loading) return <div className="p-12 text-center text-[#6b6b67] text-sm">Loading workspace performance…</div>;
+  if (!data) return <div className="card p-12 text-center text-sm text-[#6b6b67]">No workspace data for {name} in this range.</div>;
 
   const s = data.summary;
   const d = data.deltas;
@@ -230,7 +230,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
           <div className="card p-5">
             <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Personal Goals</h3>
             {data.goals.length === 0 ? (
-              <div className="text-[11px] text-gray-400 font-bold uppercase tracking-widest py-8 text-center">No goals assigned</div>
+              <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-widest py-8 text-center">No goals assigned</div>
             ) : (
               <div className="space-y-4">
                 {data.goals.map((g) => {
@@ -256,7 +256,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
               <Flag className="w-3.5 h-3.5" /> Completed by Priority
             </h3>
             {pmTotal === 0 ? (
-              <div className="text-[11px] text-gray-400 font-bold uppercase tracking-widest py-8 text-center">Nothing completed in range</div>
+              <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-widest py-8 text-center">Nothing completed in range</div>
             ) : (
               <div className="space-y-3">
                 {(["urgent", "high", "normal", "low"] as const).map((k) => (
@@ -280,13 +280,13 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
             <Timer className="w-3.5 h-3.5" /> Avg Cycle Time
           </div>
           <div className="text-2xl font-black text-[#1c1c1c] tabular-nums">{dl.cycleTimeDays == null ? "—" : `${dl.cycleTimeDays}d`}</div>
-          <div className="text-[10px] text-gray-400 font-bold mt-1">Created → done, tasks in range</div>
+          <div className="text-[10px] text-[#6b6b67] font-bold mt-1">Created → done, tasks in range</div>
         </div>
 
         <div className="card p-5">
           <div className="text-[10px] font-black text-[#5f5f5d]/50 uppercase tracking-widest mb-2">Estimate Accuracy</div>
           {estH === 0 ? (
-            <div className="text-[11px] text-gray-400 font-bold py-3">No estimates on completed tasks</div>
+            <div className="text-[11px] text-[#6b6b67] font-bold py-3">No estimates on completed tasks</div>
           ) : (
             <>
               <div className="text-2xl font-black text-[#1c1c1c] tabular-nums">
@@ -295,7 +295,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
                   {estRatio != null && estRatio > 115 ? "over" : estRatio != null && estRatio < 85 ? "under" : "on target"}
                 </span>
               </div>
-              <div className="text-[10px] text-gray-400 font-bold mt-1 tabular-nums">est {estH}h · logged {logH}h</div>
+              <div className="text-[10px] text-[#6b6b67] font-bold mt-1 tabular-nums">est {estH}h · logged {logH}h</div>
             </>
           )}
         </div>
@@ -305,7 +305,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
             <Gauge className="w-3.5 h-3.5" /> Open Capacity
           </div>
           <div className="text-2xl font-black text-[#1c1c1c] tabular-nums">
-            {openH}h <span className="text-[10px] text-gray-400 font-bold">/ {weeklyCap}h wk</span>
+            {openH}h <span className="text-[10px] text-[#6b6b67] font-bold">/ {weeklyCap}h wk</span>
           </div>
           <div className="h-2 rounded-full bg-[#ebece6] overflow-hidden mt-2">
             <div className={cn("h-full rounded-full", capPct > 100 ? "bg-rose-500" : capPct > 80 ? "bg-amber-500" : "bg-emerald-500")} style={{ width: `${Math.min(100, capPct)}%` }} />
@@ -317,7 +317,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
             <AlertTriangle className="w-3.5 h-3.5" /> Rework
           </div>
           <div className={cn("text-2xl font-black tabular-nums", data.reworkCount > 0 ? "text-amber-600" : "text-[#1c1c1c]")}>{data.reworkCount}</div>
-          <div className="text-[10px] text-gray-400 font-bold mt-1">Moved back out of a done column</div>
+          <div className="text-[10px] text-[#6b6b67] font-bold mt-1">Moved back out of a done column</div>
         </div>
       </div>
 
@@ -326,7 +326,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
           <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Daily Output</h3>
           <div className="h-[240px]">
             {chartData.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-[11px] text-gray-400 font-bold uppercase tracking-widest">No activity in range</div>
+              <div className="h-full flex items-center justify-center text-[11px] text-[#6b6b67] font-bold uppercase tracking-widest">No activity in range</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 0, right: 8, left: -18, bottom: 0 }}>
@@ -334,8 +334,8 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
                   <XAxis dataKey="date" tick={{ fontSize: 9, fontWeight: 700, fill: "#5f5f5d" }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 9, fontWeight: 700, fill: "#5f5f5d" }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ background: "#1c1c1c", border: "none", borderRadius: 8, fontSize: 10 }} itemStyle={{ color: "#fcfbf8" }} labelStyle={{ color: "#fcfbf8" }} />
-                  <Bar dataKey="Hours" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={14} />
-                  <Bar dataKey="Done" fill="#10b981" radius={[4, 4, 0, 0]} barSize={14} />
+                  <Bar dataKey="Hours" fill="#a9c92a" radius={[4, 4, 0, 0]} barSize={14} />
+                  <Bar dataKey="Done" fill="#55c08f" radius={[4, 4, 0, 0]} barSize={14} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -345,7 +345,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
         <div className="card p-5">
           <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">By Space</h3>
           {data.bySpace.length === 0 ? (
-            <div className="text-[11px] text-gray-400 font-bold uppercase tracking-widest py-8 text-center">No tasks assigned</div>
+            <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-widest py-8 text-center">No tasks assigned</div>
           ) : (
             <div className="space-y-2">
               <div className="grid grid-cols-[1fr_auto_auto] gap-4 text-[9px] font-black text-[#5f5f5d]/50 uppercase tracking-widest px-1 pb-1">
@@ -367,7 +367,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
         <div className="card p-5">
           <h3 className="text-[10px] font-black text-[#1c1c1c] uppercase tracking-widest mb-4">Attendance Ledger</h3>
           {attendance.length === 0 ? (
-            <div className="text-[11px] text-gray-400 font-bold uppercase tracking-widest py-8 text-center">No attendance rows</div>
+            <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-widest py-8 text-center">No attendance rows</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -403,7 +403,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
             </div>
           )}
           {data.recentActivity.length === 0 ? (
-            <div className="text-[11px] text-gray-400 font-bold uppercase tracking-widest py-8 text-center">No recent activity</div>
+            <div className="text-[11px] text-[#6b6b67] font-bold uppercase tracking-widest py-8 text-center">No recent activity</div>
           ) : (
             <div className="space-y-2.5 max-h-[280px] overflow-y-auto">
               {data.recentActivity.map((a) => (
@@ -411,7 +411,7 @@ export default function WorkspacePerformance({ userId, name, range }: Props) {
                   <div className="w-1.5 h-1.5 rounded-full bg-[#1c1c1c]/30 mt-1.5 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-bold text-[#1c1c1c]">{a.summary || a.action}</div>
-                    <div className="text-[10px] text-gray-400">
+                    <div className="text-[10px] text-[#6b6b67]">
                       {new Date(a.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </div>
