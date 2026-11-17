@@ -15,6 +15,24 @@ const securityHeaders = [
   // Directives that block injection tricks without touching how pages load
   // scripts or styles. A strict script-src needs per-request nonces (later step).
   { key: "Content-Security-Policy", value: "base-uri 'self'; object-src 'none'; frame-ancestors 'none'" },
+  // Trial run of a full allowlist: the browser only REPORTS what it would block
+  // (to /api/csp-report and the console), nothing is blocked. Enforce it once the
+  // reports are clean. Inline scripts stay allowed: blocking them needs nonces,
+  // which would make every page server-rendered on each request.
+  { key: "Content-Security-Policy-Report-Only", value: [
+    "default-src 'self'",
+    `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'"} https://checkout.razorpay.com https://us-assets.i.posthog.com`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "media-src 'self' blob: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.razorpay.com https://lumberjack.razorpay.com https://us.i.posthog.com https://us-assets.i.posthog.com",
+    "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
+    "worker-src 'self' blob:",
+    "manifest-src 'self'",
+    "form-action 'self'",
+    "report-uri /api/csp-report",
+  ].join("; ") },
 ];
 
 const nextConfig = {
@@ -32,7 +50,7 @@ const nextConfig = {
       // Everything except public web forms (/f/<id>) refuses to be framed.
       { source: "/((?!f/).*)", headers: securityHeaders },
       // Public web forms are made to be embedded on customers' own sites.
-      { source: "/f/:path*", headers: [...securityHeaders.filter((h) => h.key !== "X-Frame-Options" && h.key !== "Content-Security-Policy"), { key: "Content-Security-Policy", value: "base-uri 'self'; object-src 'none'; frame-ancestors *" }] },
+      { source: "/f/:path*", headers: [...securityHeaders.filter((h) => h.key !== "X-Frame-Options" && !h.key.startsWith("Content-Security-Policy")), { key: "Content-Security-Policy", value: "base-uri 'self'; object-src 'none'; frame-ancestors *" }] },
       // The service worker must be revalidated on every load so a fix reaches
       // installed apps at once instead of after a cached copy expires.
       { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] },

@@ -24,6 +24,7 @@ const ALLOWED_PUBLIC = new Set([
   "contact/route.ts",            // public lead form; no session to require - rate-limited instead
   "billing/signup/route.ts",     // public self-serve signup; off without Razorpay keys, rate-limited, org created on hold
   "forms/[id]/route.ts",         // public web-to-lead form: rate-limited, honeypot; submit_web_form() refuses paused/held forms
+  "csp-report/route.ts",         // browser CSP violation reports, sent without cookies; logs one short line, writes nothing
 ]);
 
 // Any one of these inside a handler body counts as a guard.
