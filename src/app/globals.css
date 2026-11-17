@@ -245,3 +245,10 @@ h1, h2, h3, h4 {
   :where(body:has(.app-ui)) .text-\[11px\] { font-size: 11.5px; }
   :where(body:has(.app-ui)) .text-xs { font-size: 12.5px; }
 }
+
+/* Chart bars grow in from their base (horizontal / vertical). */
+@keyframes grow-x { from { transform: scaleX(0); } }
+@keyframes grow-y { from { transform: scaleY(0); } }
+.grow-x { transform-origin: left; animation: grow-x 0.7s cubic-bezier(0.21, 0.47, 0.32, 0.98) backwards; }
+.grow-y { transform-origin: bottom; animation: grow-y 0.7s cubic-bezier(0.21, 0.47, 0.32, 0.98) backwards; }
+@media (prefers-reduced-motion: reduce) { .grow-x, .grow-y { animation: none; } }

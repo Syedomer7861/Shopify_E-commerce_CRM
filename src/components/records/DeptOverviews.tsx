@@ -30,7 +30,7 @@ function useRows(table: string, module: string, cols: string): Row[] | null {
 }
 
 const grid4 = "grid grid-cols-2 lg:grid-cols-4 gap-4";
-const Loading = () => <div className="h-28 mb-6 rounded-2xl bg-gray-50 animate-pulse" aria-label="Loading overview" />;
+const Loading = () => <div className="h-28 mb-6 rounded-2xl bg-[#f6f7f2] animate-pulse" aria-label="Loading overview" />;
 const days = (iso: string) => Math.round((new Date(`${iso}T00:00:00`).getTime() - new Date(new Date().toDateString()).getTime()) / 86_400_000);
 const dueTag = (d: string) => { const n = days(d); return n < 0 ? `${-n}d overdue` : n === 0 ? "Due today" : `In ${n}d`; };
 
@@ -81,7 +81,7 @@ export function ServiceDeskOverview() {
         <Panel title="Open by category" className="xl:col-span-2">
           <BarList rows={v.openByCategory} empty="No open tickets." />
           <div className="flex gap-2 flex-wrap mt-5">
-            {v.openByPriority.map(p => <span key={p.label} className="text-[10px] font-bold px-2 py-1 rounded-lg bg-gray-50 capitalize">{p.label} {p.count}</span>)}
+            {v.openByPriority.map(p => <span key={p.label} className="text-[10px] font-bold px-2 py-1 rounded-lg bg-[#f6f7f2] capitalize">{p.label} {p.count}</span>)}
           </div>
         </Panel>
       </div>

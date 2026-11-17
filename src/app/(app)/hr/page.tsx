@@ -29,6 +29,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { PageHeader, Avatar, Modal, Pagination, AccessDenied } from "@/components/ui";
+import { Tile } from "@/components/dashboard/Tiles";
 import { 
   BarChart, 
   Bar, 
@@ -336,7 +337,7 @@ function HRDashboardContent() {
   };
 
   const getBreakColor = (mins: number) => {
-    if (mins < 30) return "text-gray-500";
+    if (mins < 30) return "text-[#6b6b67]";
     if (mins < 45) return "text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded";
     return "text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded";
   };
@@ -373,7 +374,7 @@ function HRDashboardContent() {
              </div>
              <div>
                 <h1 className="text-2xl font-black text-[#1c1c1c] tracking-tight">HR Intelligence</h1>
-                <p className="text-xs text-gray-400 font-medium tracking-tight mt-0.5">Live monitoring & administrative control</p>
+                <p className="text-xs text-[#6b6b67] font-medium tracking-tight mt-0.5">Live monitoring & administrative control</p>
              </div>
           </div>
         }
@@ -383,7 +384,7 @@ function HRDashboardContent() {
                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Live Engine: Online</span>
             </div>
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-2">Last updated {mounted ? lastUpdated.toLocaleTimeString() : "--:--:--"}</span>
+            <span className="text-[10px] text-[#6b6b67] font-bold uppercase tracking-widest ml-2">Last updated {mounted ? lastUpdated.toLocaleTimeString() : "--:--:--"}</span>
           </div>
         }
         actions={
@@ -406,7 +407,7 @@ function HRDashboardContent() {
           <p className="text-xs font-black text-[#1c1c1c] uppercase tracking-widest leading-none mt-1">
             {activeTab === 'attendance-reg' ? 'Attendance Register' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace('-', ' ')}
           </p>
-          <p className="text-[13px] text-gray-500 mt-2 font-medium leading-relaxed">
+          <p className="text-[13px] text-[#6b6b67] mt-2 font-medium leading-relaxed">
             {MODULE_DESCRIPTIONS[activeTab]}
           </p>
         </div>
@@ -433,11 +434,11 @@ function HRDashboardContent() {
                   <div className="flex items-center gap-4">
                      <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-[#1c1c1c]" />
-                        <span className="text-[10px] font-bold text-gray-400 uppercase">Work</span>
+                        <span className="text-[10px] font-bold text-[#6b6b67] uppercase">Work</span>
                      </div>
                      <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                        <span className="text-[10px] font-bold text-gray-400 uppercase">Break</span>
+                        <span className="text-[10px] font-bold text-[#6b6b67] uppercase">Break</span>
                      </div>
                   </div>
                </div>
@@ -487,15 +488,15 @@ function HRDashboardContent() {
                <div className="grid grid-cols-3 gap-8 mt-4 w-full px-4">
                   <div className="text-center">
                      <div className="text-sm font-black text-emerald-600">{onlineMembers.length}</div>
-                     <div className="text-[9px] font-bold text-gray-400 uppercase">Live</div>
+                     <div className="text-[9px] font-bold text-[#6b6b67] uppercase">Live</div>
                   </div>
                   <div className="text-center">
                      <div className="text-sm font-black text-amber-600">{awayMembers.length}</div>
-                     <div className="text-[9px] font-bold text-gray-400 uppercase">Break</div>
+                     <div className="text-[9px] font-bold text-[#6b6b67] uppercase">Break</div>
                   </div>
                   <div className="text-center">
-                     <div className="text-sm font-black text-gray-400">{data.members.filter(m => m.status === 'Offline').length}</div>
-                     <div className="text-[9px] font-bold text-gray-400 uppercase">Off</div>
+                     <div className="text-sm font-black text-[#6b6b67]">{data.members.filter(m => m.status === 'Offline').length}</div>
+                     <div className="text-[9px] font-bold text-[#6b6b67] uppercase">Off</div>
                   </div>
                </div>
             </div>
@@ -514,12 +515,12 @@ function HRDashboardContent() {
                    {data.members.filter(m => (m.taskCount || 0) > 0).sort((a,b) => (b.taskCount || 0) - (a.taskCount || 0)).slice(0, 4).map(m => {
                      const atRisk = data.revenueAtRiskByAgent[m.id] || 0;
                      return (
-                     <div key={m.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-gray-200 transition-all group">
+                     <div key={m.id} className="flex items-center justify-between p-4 bg-[#f6f7f2] rounded-2xl border border-transparent hover:border-gray-200 transition-all group">
                         <div className="flex items-center gap-3">
                            <Avatar name={m.name} size="sm" />
                            <div>
                               <div className="text-xs font-black text-[#1c1c1c]">{m.name}</div>
-                              <div className="text-[10px] font-bold text-gray-400 uppercase">{m.role}</div>
+                              <div className="text-[10px] font-bold text-[#6b6b67] uppercase">{m.role}</div>
                            </div>
                         </div>
                         <div className="flex items-center gap-6">
@@ -617,22 +618,22 @@ function HRDashboardContent() {
                <div className="card overflow-hidden">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-[#fcfbf8] border-b border-gray-100">
-                        <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Team Member</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">State</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Work/Break</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-right">Actions</th>
+                      <tr className="bg-[#fcfbf8] border-b border-[#ebece6]">
+                        <th className="px-6 py-4 text-[10px] font-black text-[#6b6b67] uppercase tracking-[0.2em]">Team Member</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-[#6b6b67] uppercase tracking-[0.2em]">State</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-[#6b6b67] uppercase tracking-[0.2em] text-center">Work/Break</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-[#6b6b67] uppercase tracking-[0.2em] text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {data.members.slice((attendancePage - 1) * ITEMS_PER_PAGE, attendancePage * ITEMS_PER_PAGE).map(m => (
-                        <tr key={m.id} className="hover:bg-gray-50/50 transition-colors group">
+                        <tr key={m.id} className="hover:bg-[#f6f7f2]/50 transition-colors group">
                           <td className="px-6 py-5">
                              <div className="flex items-center gap-4">
                                <Avatar name={m.name} size="md" />
                                <div>
                                  <div className="text-sm font-black text-[#1c1c1c] tracking-tight">{m.name}</div>
-                                 <div className="text-[10px] font-bold text-gray-400">{m.email}</div>
+                                 <div className="text-[10px] font-bold text-[#6b6b67]">{m.email}</div>
                                </div>
                              </div>
                           </td>
@@ -645,25 +646,25 @@ function HRDashboardContent() {
                                   )} />
                                   <span className={cn(
                                     "text-[11px] font-black uppercase tracking-wider",
-                                    m.status === 'Online' ? 'text-emerald-600' : m.status === 'Away' ? 'text-amber-600' : 'text-gray-400'
+                                    m.status === 'Online' ? 'text-emerald-600' : m.status === 'Away' ? 'text-amber-600' : 'text-[#6b6b67]'
                                   )}>{m.status}</span>
                                </div>
-                               {m.statusSince && <span className="text-[9px] font-bold text-gray-400">Since {m.statusSince}</span>}
+                               {m.statusSince && <span className="text-[9px] font-bold text-[#6b6b67]">Since {m.statusSince}</span>}
                              </div>
                           </td>
                           <td className="px-6 py-5">
                              <div className="flex flex-col items-center gap-1.5">
                                 <div className="flex gap-4">
                                    <div className="text-center">
-                                      <div className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">Work</div>
+                                      <div className="text-[9px] font-black text-[#6b6b67] uppercase tracking-tighter">Work</div>
                                       <div className="text-xs font-black text-[#1c1c1c]">{formatMins(m.productiveMinutes)}</div>
                                    </div>
                                    <div className="text-center">
-                                      <div className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">Break</div>
+                                      <div className="text-[9px] font-black text-[#6b6b67] uppercase tracking-tighter">Break</div>
                                       <div className={cn("text-xs font-black", getBreakColor(m.breakMinutes))}>{m.breakMinutes}m</div>
                                    </div>
                                 </div>
-                                <div className="w-24 h-1 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="w-24 h-1 bg-[#f0f0ec] rounded-full overflow-hidden">
                                    <div 
                                      className="h-full bg-[#1c1c1c] transition-all duration-1000" 
                                      style={{ width: `${Math.min(100, (m.productiveMinutes / 480) * 100)}%` }}
@@ -674,7 +675,7 @@ function HRDashboardContent() {
                           <td className="px-6 py-5 text-right">
                              <button 
                                onClick={() => setSelectedMember(m)}
-                               className="p-2 hover:bg-[#1c1c1c] hover:text-white rounded-lg transition-all text-gray-400"
+                               className="p-2 hover:bg-[#1c1c1c] hover:text-white rounded-lg transition-all text-[#6b6b67]"
                                title="View Timeline"
                              >
                                 <Eye className="w-4 h-4" />
@@ -686,7 +687,7 @@ function HRDashboardContent() {
                   </table>
                </div>
                {data.members.length > ITEMS_PER_PAGE && (
-                 <div className="px-6 border-t border-gray-100 bg-white">
+                 <div className="px-6 border-t border-[#ebece6] bg-white">
                    <Pagination 
                      current={attendancePage} 
                      total={data.members.length} 
@@ -728,14 +729,14 @@ function HRDashboardContent() {
                   <div className="space-y-4">
                      {data.members.flatMap(m => m.timeline.map(t => ({ ...t, name: m.name }))).sort((a,b) => b.time.localeCompare(a.time)).slice(0, 5).map((log, i) => (
                        <div key={i} className="flex gap-3 relative pb-4 last:pb-0">
-                          {i < 4 && <div className="absolute left-[7px] top-4 bottom-0 w-[2px] bg-gray-50" />}
+                          {i < 4 && <div className="absolute left-[7px] top-4 bottom-0 w-[2px] bg-[#f6f7f2]" />}
                           <div className={cn(
                             "w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm shrink-0 z-10 mt-0.5",
                             log.status === 'online' ? 'bg-emerald-500' : log.status === 'offline' ? 'bg-gray-400' : 'bg-amber-500'
                           )} />
                           <div className="flex-1 min-w-0">
                              <div className="text-[10px] font-black text-[#1c1c1c] tracking-tight">{log.name} → <span className="uppercase">{log.status}</span></div>
-                             <div className="text-[9px] text-gray-400 font-bold">{log.time} {log.reason && `• ${log.reason}`}</div>
+                             <div className="text-[9px] text-[#6b6b67] font-bold">{log.time} {log.reason && `• ${log.reason}`}</div>
                           </div>
                        </div>
                      ))}
@@ -750,7 +751,7 @@ function HRDashboardContent() {
         <div className="space-y-6">
            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-4">
-                 <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 px-2">
+                 <h2 className="text-xs font-black text-[#6b6b67] uppercase tracking-widest flex items-center gap-2 px-2">
                    <Calendar className="w-4 h-4 text-[#1c1c1c]" /> Awaiting Review
                  </h2>
                  {pendingLeaves.length === 0 ? (
@@ -759,7 +760,7 @@ function HRDashboardContent() {
                          <CheckCircle className="w-8 h-8 text-emerald-500" />
                       </div>
                       <h3 className="text-sm font-black text-[#1c1c1c]">No Pending Requests</h3>
-                      <p className="text-xs text-gray-400 mt-1">Great! Your leave inbox is empty.</p>
+                      <p className="text-xs text-[#6b6b67] mt-1">Great! Your leave inbox is empty.</p>
                    </div>
                  ) : (
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -770,20 +771,20 @@ function HRDashboardContent() {
                                  <Avatar name={leave.profile.name} size="sm" />
                                  <div>
                                     <div className="text-xs font-black text-[#1c1c1c]">{leave.profile.name}</div>
-                                    <div className="text-[9px] text-gray-400 font-bold">{mounted ? new Date(leave.created_at).toLocaleDateString() : "--"}</div>
+                                    <div className="text-[9px] text-[#6b6b67] font-bold">{mounted ? new Date(leave.created_at).toLocaleDateString() : "--"}</div>
                                  </div>
                               </div>
                               <div className="bg-amber-50 text-amber-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest">Pending</div>
                            </div>
                            <div className="space-y-3">
-                              <div className="p-3 bg-gray-50 rounded-xl">
-                                 <div className="text-[9px] font-bold text-gray-400 uppercase mb-1">Duration</div>
+                              <div className="p-3 bg-[#f6f7f2] rounded-xl">
+                                 <div className="text-[9px] font-bold text-[#6b6b67] uppercase mb-1">Duration</div>
                                  <div className="text-xs font-black text-[#1c1c1c] flex items-center gap-2">
                                     <Calendar className="w-3 h-3" /> {leave.start_date} <span className="text-gray-300">→</span> {leave.end_date}
                                  </div>
                               </div>
-                              <div className="p-3 bg-gray-50 rounded-xl">
-                                 <div className="text-[9px] font-bold text-gray-400 uppercase mb-1">Reason</div>
+                              <div className="p-3 bg-[#f6f7f2] rounded-xl">
+                                 <div className="text-[9px] font-bold text-[#6b6b67] uppercase mb-1">Reason</div>
                                  <p className="text-xs text-gray-600 leading-relaxed italic">&quot;{leave.reason}&quot;</p>
                               </div>
                               <div className="flex gap-2 pt-2">
@@ -808,12 +809,12 @@ function HRDashboardContent() {
               </div>
 
               <div className="space-y-4">
-                 <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 px-2">
+                 <h2 className="text-xs font-black text-[#6b6b67] uppercase tracking-widest flex items-center gap-2 px-2">
                    <History className="w-4 h-4 text-[#1c1c1c]" /> Processed Leaves
                  </h2>
                  <div className="card p-5 space-y-4">
                     {data.leaves.filter(l => l.status !== 'pending').slice((leavesPage - 1) * 8, leavesPage * 8).map(leave => (
-                      <div key={leave.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-transparent hover:border-gray-100 transition-all group">
+                      <div key={leave.id} className="flex items-center justify-between p-3 bg-[#f6f7f2] rounded-xl border border-transparent hover:border-[#ebece6] transition-all group">
                          <div className="flex items-center gap-3">
                             <div className={cn(
                               "w-8 h-8 rounded-full flex items-center justify-center",
@@ -823,7 +824,7 @@ function HRDashboardContent() {
                             </div>
                             <div>
                                <div className="text-[10px] font-black text-[#1c1c1c] tracking-tight">{leave.profile.name}</div>
-                               <div className="text-[8px] font-bold text-gray-400">{leave.start_date}</div>
+                               <div className="text-[8px] font-bold text-[#6b6b67]">{leave.start_date}</div>
                             </div>
                          </div>
                          <div className={cn(
@@ -835,10 +836,10 @@ function HRDashboardContent() {
                       </div>
                     ))}
                     {data.leaves.filter(l => l.status !== 'pending').length === 0 && (
-                      <p className="text-[10px] text-gray-400 italic text-center py-4">No processed history found.</p>
+                      <p className="text-[10px] text-[#6b6b67] italic text-center py-4">No processed history found.</p>
                     )}
                     {data.leaves.filter(l => l.status !== 'pending').length > 8 && (
-                      <div className="pt-2 border-t border-gray-100">
+                      <div className="pt-2 border-t border-[#ebece6]">
                         <Pagination 
                           current={leavesPage} 
                           total={data.leaves.filter(l => l.status !== 'pending').length} 
@@ -900,22 +901,22 @@ function HRDashboardContent() {
         title="Member Timeline"
       >
         <div className="py-2 space-y-6">
-           <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+           <div className="flex items-center gap-3 pb-4 border-b border-[#ebece6]">
               <Avatar name={selectedMember?.name || ""} size="md" />
               <div>
                  <div className="text-sm font-black text-[#1c1c1c] tracking-tight">{selectedMember?.name}</div>
-                 <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Shift Activity Feed</div>
+                 <div className="text-[10px] text-[#6b6b67] font-bold uppercase tracking-widest">Shift Activity Feed</div>
               </div>
            </div>
            
            <div className="pt-2 space-y-6">
            <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                 <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Productivity</div>
+              <div className="p-3 bg-[#f6f7f2] rounded-xl border border-[#ebece6]">
+                 <div className="text-[9px] font-black text-[#6b6b67] uppercase tracking-widest mb-1">Total Productivity</div>
                  <div className="text-lg font-black text-[#1c1c1c]">{selectedMember ? formatMins(selectedMember.productiveMinutes) : '—'}</div>
               </div>
-              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                 <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Break Utilization</div>
+              <div className="p-3 bg-[#f6f7f2] rounded-xl border border-[#ebece6]">
+                 <div className="text-[9px] font-black text-[#6b6b67] uppercase tracking-widest mb-1">Break Utilization</div>
                  <div className={cn("text-lg font-black", selectedMember && getBreakColor(selectedMember.breakMinutes))}>{selectedMember?.breakMinutes}m</div>
               </div>
            </div>
@@ -925,7 +926,7 @@ function HRDashboardContent() {
               <div className="space-y-4">
                  {selectedMember?.timeline.map((log, i) => (
                    <div key={i} className="flex gap-4 relative pb-4 last:pb-0">
-                      {i < (selectedMember?.timeline.length - 1) && <div className="absolute left-[7px] top-4 bottom-0 w-[2px] bg-gray-100" />}
+                      {i < (selectedMember?.timeline.length - 1) && <div className="absolute left-[7px] top-4 bottom-0 w-[2px] bg-[#f0f0ec]" />}
                       <div className={cn(
                         "w-4 h-4 rounded-full border-2 border-white shadow-sm shrink-0 z-10 mt-0.5",
                         log.status === 'online' ? 'bg-emerald-500' : log.status === 'offline' ? 'bg-gray-400' : 'bg-amber-500'
@@ -933,15 +934,15 @@ function HRDashboardContent() {
                       <div className="flex-1">
                          <div className="flex items-center justify-between">
                             <span className="text-[11px] font-black text-[#1c1c1c] uppercase tracking-wider">{log.status}</span>
-                            <span className="text-[10px] font-bold text-gray-400">{log.time}</span>
+                            <span className="text-[10px] font-bold text-[#6b6b67]">{log.time}</span>
                          </div>
-                         {log.reason && <p className="text-[10px] text-gray-500 mt-0.5 italic">&quot;{log.reason}&quot;</p>}
+                         {log.reason && <p className="text-[10px] text-[#6b6b67] mt-0.5 italic">&quot;{log.reason}&quot;</p>}
                       </div>
                    </div>
                  ))}
                  {(!selectedMember?.timeline || selectedMember?.timeline.length === 0) && (
                    <div className="py-8 text-center">
-                      <p className="text-xs text-gray-400 font-medium italic">No transitions recorded for this shift yet.</p>
+                      <p className="text-xs text-[#6b6b67] font-medium italic">No transitions recorded for this shift yet.</p>
                    </div>
                  )}
               </div>
@@ -964,7 +965,7 @@ function HRDashboardContent() {
       >
         <div className="space-y-4">
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Remarks (Optional)</label>
+            <label className="text-[10px] font-bold text-[#6b6b67] uppercase tracking-widest block mb-2">Remarks (Optional)</label>
             <textarea 
               className="input text-xs min-h-[80px] py-2" 
               placeholder={`Any remarks for ${leaveActionModal?.action}?`}
@@ -987,26 +988,9 @@ function HRDashboardContent() {
   );
 }
 
-function MetricCard({ label, value, icon: Icon, sub, accent = "text-[#1c1c1c]" }: any) {
-  return (
-    <div className="card p-6 relative overflow-hidden group hover:shadow-xl transition-all duration-500 border border-transparent hover:border-gray-100">
-      <div className="flex justify-between items-start mb-3">
-        <div className="space-y-1">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{label}</p>
-          <h3 className={cn("text-3xl font-black tracking-tighter", accent)}>{value}</h3>
-        </div>
-        <div className="p-3 bg-gray-50 rounded-2xl group-hover:bg-[#1c1c1c] group-hover:text-white transition-all duration-500 scale-110 shadow-sm">
-          <Icon className="w-5 h-5" />
-        </div>
-      </div>
-      <p className="text-[11px] text-gray-400 font-bold truncate opacity-80 mt-3">{sub}</p>
-      
-      {/* Subtle Background Pattern */}
-      <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-500">
-         <Icon size={120} />
-      </div>
-    </div>
-  );
+function MetricCard({ label, value, icon: Icon, sub, accent = "" }: { label: string; value: React.ReactNode; icon: React.ElementType; sub?: string; accent?: string }) {
+  const tone = accent.includes("rose") ? "coral" : accent.includes("amber") ? "amber" : accent.includes("emerald") ? "mint" : "lime";
+  return <Tile icon={<Icon className="w-4 h-4" />} label={label} value={value} sub={sub} tone={tone} className="h-full" />;
 }
 
 export default function HRDashboard() {
