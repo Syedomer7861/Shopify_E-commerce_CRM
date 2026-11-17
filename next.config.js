@@ -40,11 +40,10 @@ const nextConfig = {
     serverActions: { allowedOrigins: serverActionAllowedOrigins }
   },
   allowedDevOrigins: ['192.168.0.131', 'localhost:3000', 'supplemental-hero-indexed-overseas.trycloudflare.com', 'cureforeverpc.tail1b3337.ts.net'],
-  images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: 'example.com' }
-    ]
-  },
+  // The image optimizer is off: every <Image> here already passes `unoptimized`,
+  // and Next 14's optimizer endpoint has known remote-code-execution and DoS
+  // advisories (fixed only in 15.5+). Off means /_next/image serves nothing.
+  images: { unoptimized: true },
   async headers() {
     return [
       // Everything except public web forms (/f/<id>) refuses to be framed.
