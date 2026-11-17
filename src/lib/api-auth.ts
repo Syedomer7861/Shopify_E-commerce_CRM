@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { checkSharedRateLimit, rateLimit } from "@/lib/rate-limit";
 
-export type ApiScope = "leads:read" | "leads:write" | "deals:read" | "deals:write" | "tickets:read";
+export type ApiScope = "leads:read" | "leads:write" | "deals:read" | "deals:write" | "tickets:read" | "attendance:write";
 export type ApiCaller = { orgId: string; keyId: string; admin: ReturnType<typeof createAdminClient> };
 
 export const apiError = (status: number, error: string) => NextResponse.json({ error }, { status });

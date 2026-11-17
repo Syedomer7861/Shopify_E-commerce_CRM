@@ -295,6 +295,12 @@ export default function Sidebar() {
     }).eq("id", profile.id);
     
     if (!error) {
+      // Remember a deliberate Offline for this browser session, so the
+      // heartbeat's auto clock-in below doesn't flip it back to Online.
+      try {
+        const k = `manual-offline:${profile.id}`;
+        if (status === "offline" && !reasonCode) sessionStorage.setItem(k, "1"); else if (status !== "offline") sessionStorage.removeItem(k);
+      } catch { /* storage blocked */ }
       try {
         await supabase.from("agent_attendance").insert({ 
           agent_id: profile.id, 
@@ -393,7 +399,9 @@ export default function Sidebar() {
       try {
         if (profile.id === "demo-presenter-id") return; // Skip heartbeat for demo profile
 
-        if (profile.status === "offline" && !path.includes("login")) {
+        let choseOffline = false;
+        try { choseOffline = sessionStorage.getItem(`manual-offline:${profile.id}`) === "1"; } catch { /* storage blocked */ }
+        if (profile.status === "offline" && !path.includes("login") && !choseOffline) {
            await updateStatus("online", "Auto-Active");
            return;
         }

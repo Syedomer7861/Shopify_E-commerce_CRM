@@ -58,6 +58,10 @@ const nextConfig = {
     ];
   },
   // The owner area moved from /platform to /superadmin; old links and bookmarks still work.
+  // eSSL / ZKTeco devices push to fixed paths /iclock/cdata and /iclock/getrequest.
+  async rewrites() {
+    return [{ source: "/iclock/:path*", destination: "/api/biometric/iclock/:path*" }];
+  },
   async redirects() {
     return [{ source: "/platform", destination: "/superadmin", permanent: true }];
   },

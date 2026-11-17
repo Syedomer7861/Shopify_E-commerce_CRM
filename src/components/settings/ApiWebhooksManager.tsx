@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
-const SCOPES = ["leads:read", "leads:write", "deals:read", "deals:write", "tickets:read"];
+const SCOPES = ["leads:read", "leads:write", "deals:read", "deals:write", "tickets:read", "attendance:write"];
 const EVENTS = ["lead.created", "deal.created", "deal.won", "ticket.created", "quote.accepted", "invoice.created"];
 type Key = { id: string; name: string; prefix: string; scopes: string[]; created_at: string; last_used_at: string | null; revoked_at: string | null };
 type Hook = { id: string; url: string; events: string[]; is_active: boolean; created_at: string };

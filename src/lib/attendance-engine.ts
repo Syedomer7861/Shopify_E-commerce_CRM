@@ -39,6 +39,17 @@ export const SHIFT_START_MINUTES: Record<string, number> = {
 /** Minutes of grace after shift start before a clock-in counts as late. */
 export const LATE_GRACE_MINUTES = 15;
 
+/** Per-org overrides from org_shift_timings; missing shift types use the defaults above. */
+export type ShiftTimings = Record<string, { start: number; grace: number }>;
+
+function lateFor(shiftType: string, clockIn: Date | null, timings: ShiftTimings) {
+  const t = timings[shiftType];
+  const start = t ? t.start : (SHIFT_START_MINUTES[shiftType] ?? SHIFT_START_MINUTES.Morning);
+  const grace = t ? t.grace : LATE_GRACE_MINUTES;
+  if (!clockIn || start < 0 || shiftType === "Off") return false;
+  return toISTDateParts(clockIn).minutesSinceMidnight > start + grace;
+}
+
 /** Minimum productive minutes to count as a full day. */
 export const FULL_DAY_MINUTES = 360; // 6h
 /** Minimum productive minutes to count as a half day. */
@@ -108,7 +119,9 @@ interface DayBucket {
 export function computeAutoAttendance(
   rawLogs: RawStatusEvent[],
   manualLogs: ManualAttendanceRow[],
-  shiftByAgent: Record<string, string>
+  shiftByAgent: Record<string, string>,
+  timings: ShiftTimings = {},
+  biometric: ComputedAttendanceRow[] = []
 ): ComputedAttendanceRow[] {
   const byAgent = new Map<string, RawStatusEvent[]>();
   for (const log of rawLogs) {
@@ -175,14 +188,7 @@ export function computeAutoAttendance(
   const computed: ComputedAttendanceRow[] = [];
   for (const [key, bucket] of buckets) {
     const [agentId, date] = key.split("::");
-    const shiftType = shiftByAgent[agentId] || "Morning";
-    const shiftStart = SHIFT_START_MINUTES[shiftType] ?? SHIFT_START_MINUTES.Morning;
-
-    let isLate = false;
-    if (bucket.clockIn && shiftStart >= 0) {
-      const { minutesSinceMidnight } = toISTDateParts(bucket.clockIn);
-      isLate = minutesSinceMidnight > shiftStart + LATE_GRACE_MINUTES;
-    }
+    const isLate = lateFor(shiftByAgent[agentId] || "Morning", bucket.clockIn, timings);
 
     let status: AttendanceStatus;
     if (bucket.productiveMinutes >= FULL_DAY_MINUTES) status = isLate ? "Late" : "Present";
@@ -206,7 +212,12 @@ export function computeAutoAttendance(
   // Manual entries win. Build a lookup so we can drop any auto row a manual
   // one already covers, then merge both into one list.
   const manualKeys = new Set(manualLogs.map((m) => `${m.agent_id}::${m.date}`));
-  const autoOnly = computed.filter((c) => !manualKeys.has(`${c.agent_id}::${c.date}`));
+  // Biometric (device) days beat the CRM status log for the same agent+date.
+  const bioKeys = new Set(biometric.map((c) => `${c.agent_id}::${c.date}`));
+  const autoOnly = [
+    ...biometric,
+    ...computed.filter((c) => !bioKeys.has(`${c.agent_id}::${c.date}`)),
+  ].filter((c) => !manualKeys.has(`${c.agent_id}::${c.date}`));
 
   const manualAsComputed: ComputedAttendanceRow[] = manualLogs.map((m) => ({
     agent_id: m.agent_id,
@@ -221,4 +232,37 @@ export function computeAutoAttendance(
   }));
 
   return [...manualAsComputed, ...autoOnly];
+}
+
+/** One row per employee per IST day, from the biometric_daily() DB function. */
+export interface BiometricDay { agent_id: string; day: string; first_at: string; last_at: string; n: number }
+
+/**
+ * Daily attendance from biometric punches: first punch of the IST day is
+ * clock-in, last is clock-out, the span between them is time on site.
+ * A single punch shows the day as present-but-incomplete ("Half Day") rather
+ * than inventing a clock-out.
+ */
+export function computeBiometricDays(
+  rows: BiometricDay[],
+  shiftByAgent: Record<string, string>,
+  timings: ShiftTimings = {}
+): ComputedAttendanceRow[] {
+  const out: ComputedAttendanceRow[] = [];
+  for (const r of rows) {
+    const d = { first: new Date(r.first_at), last: new Date(r.last_at), n: r.n };
+    if (Number.isNaN(d.first.getTime()) || Number.isNaN(d.last.getTime())) continue;
+    const agentId = r.agent_id, date = r.day;
+    const minutes = d.n > 1 ? Math.round((d.last.getTime() - d.first.getTime()) / 60000) : 0;
+    const isLate = lateFor(shiftByAgent[agentId] || "Morning", d.first, timings);
+    const status: AttendanceStatus = minutes >= FULL_DAY_MINUTES ? (isLate ? "Late" : "Present") : "Half Day";
+    out.push({
+      agent_id: agentId, date, status,
+      clock_in: d.first.toISOString(),
+      clock_out: d.n > 1 ? d.last.toISOString() : null,
+      productive_minutes: minutes, break_minutes: 0,
+      is_auto: true, is_late: isLate,
+    });
+  }
+  return out;
 }

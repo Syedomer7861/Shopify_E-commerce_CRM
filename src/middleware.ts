@@ -114,7 +114,8 @@ export async function middleware(request: NextRequest) {
   // src/app/signup/page.tsx) - and this is also the landing page's "Contact
   // Us" CTA, so it has to be reachable logged-out same as /login.
   const isContactPage = request.nextUrl.pathname.startsWith('/contact')
-  const isApiRoute = request.nextUrl.pathname.startsWith('/api')
+  // Biometric devices (eSSL ADMS) push to /iclock/*, rewritten to /api/biometric/iclock; they carry no session.
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api') || request.nextUrl.pathname.startsWith('/iclock/')
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
   const isStaticFile = request.nextUrl.pathname.includes('.')
   // "/" is the public marketing page for a logged-out visitor (src/app/

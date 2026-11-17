@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { seatLimitError } from "@/lib/seats";
 import { requireInternal, hasInternalSecret, getAuthenticatedSession } from "@/lib/auth-utils";
 import { createServerClient, createAdminClient } from "@/lib/supabase";
-import { computeAutoAttendance } from "@/lib/attendance-engine";
+import { computeAutoAttendance, computeBiometricDays, type BiometricDay, type ShiftTimings } from "@/lib/attendance-engine";
 import { computeBenchmark } from "@/lib/hr-benchmark";
 
 export async function GET(req: NextRequest) {
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
     // GET /api/hr/data?type=attendance&days=N.
     const attendanceSince = new Date(Date.now() - 90 * 86_400_000).toISOString();
     const attendanceSinceDate = attendanceSince.slice(0, 10);
-    const [employees, announcements, policies, revisions, expenses, reviews, training, grievances, attendance, rawLogs, holidays, slaTasks, openTasksWithOrders, payrollRuns] = await Promise.all([
+    const [employees, announcements, policies, revisions, expenses, reviews, training, grievances, attendance, rawLogs, holidays, slaTasks, openTasksWithOrders, payrollRuns, bioDays, shiftTimings] = await Promise.all([
       supabase.from("profiles").select("*").order("is_active", { ascending: false }),
       supabase.from("announcements").select("*").order("is_pinned", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from("hr_policies").select("*").order("created_at", { ascending: false }),
@@ -138,15 +138,23 @@ export async function GET(req: NextRequest) {
       // Real persisted Mark Paid / Toggle status for the current month -
       // was pure local React state before, reset on every page refresh.
       supabase.from("payroll_runs").select("agent_id, status, marked_at").eq("month", currentMonth),
+      // Biometric (eSSL) days, summarised in the DB: one row per person per day.
+      supabase.rpc("biometric_daily", { p_since: attendanceSinceDate }),
+      supabase.from("org_shift_timings").select("shift_type, start_minute, grace_minutes"),
     ]);
 
     const shiftByAgent: Record<string, string> = {};
     for (const p of employees.data || []) shiftByAgent[p.id] = p.shift_type || "Morning";
 
+    const timings: ShiftTimings = {};
+    for (const t of shiftTimings.data || []) timings[t.shift_type] = { start: t.start_minute, grace: t.grace_minutes };
+    // Before the biometric migration exists these two simply return errors; the register then works as before.
     const finalAttendance = computeAutoAttendance(
       rawLogs.data || [],
       attendance.data || [],
-      shiftByAgent
+      shiftByAgent,
+      timings,
+      computeBiometricDays((bioDays.data || []) as BiometricDay[], shiftByAgent, timings)
     );
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
@@ -533,6 +541,21 @@ export async function POST(req: NextRequest) {
         .eq("id", agent_id)
         .select("id, shift_type");
       if (error) throw error;
+      return NextResponse.json(res);
+    }
+
+    if (type === "biometric_code") {
+      // Employee's user ID on the eSSL device. Unique per workspace (DB index).
+      const { agent_id } = data;
+      const code = typeof data.biometric_code === "string" ? data.biometric_code.trim() : "";
+      if (code && !/^[A-Za-z0-9_-]{1,24}$/.test(code)) {
+        return NextResponse.json({ error: "Device code: letters, numbers, - or _ (max 24)" }, { status: 400 });
+      }
+      const { data: res, error } = await supabase.from("profiles")
+        .update({ biometric_code: code || null }).eq("id", agent_id).select("id, biometric_code");
+      if (error?.code === "23505") return NextResponse.json({ error: "Another employee already has this device code" }, { status: 409 });
+      if (error) throw error;
+      if (!res?.length) return NextResponse.json({ error: "Employee not found" }, { status: 404 });
       return NextResponse.json(res);
     }
 

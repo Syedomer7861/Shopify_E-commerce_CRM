@@ -4,6 +4,8 @@ import { Calendar, Clock, Plus, Sun, Moon, Sunset, CheckCircle, X, ChevronLeft, 
 import { cn } from "@/lib/utils";
 import { toast } from "react-hot-toast";
 import { isDemoMode } from "@/lib/demo";
+import { BiometricPanel } from "@/components/hr/BiometricPanel";
+import { ShiftTimings, shiftLabel } from "@/components/hr/ShiftTimings";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, Legend,
@@ -62,7 +64,8 @@ function fmtHours(mins: number) {
 
 export default function AttendanceRegister({ members, employees, attendanceLogs, holidays, onRefresh }: Props) {
   const [mounted, setMounted] = useState(false);
-  const [tab, setTab] = useState<"register" | "shifts" | "holidays" | "analytics">("register");
+  const [tab, setTab] = useState<"register" | "shifts" | "holidays" | "analytics" | "biometric">("register");
+  const [shiftStarts, setShiftStarts] = useState<Record<string, number>>({});
   const [month, setMonth] = useState(new Date().getMonth());
   const [year, setYear] = useState(new Date().getFullYear());
   const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
@@ -279,11 +282,11 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
     <div className="space-y-5">
       {/* Sub-tabs */}
       <div className="flex flex-wrap gap-1 bg-[#f0f0ec] p-1 rounded-xl w-full sm:w-fit">
-        {(["register", "shifts", "holidays", "analytics"] as const).map(t => (
+        {(["register", "shifts", "holidays", "analytics", "biometric"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={cn("px-4 py-1.5 text-xs font-bold rounded-lg capitalize transition-all",
               tab === t ? "bg-[#1c1c1c] text-white" : "text-[#6b6b67] hover:text-[#1c1c1c]")}>
-            {t === "register" ? "Monthly Register" : t === "shifts" ? "Shift Assignment" : t === "holidays" ? "Holiday Calendar" : "Analytics"}
+            {t === "register" ? "Monthly Register" : t === "shifts" ? "Shift Assignment" : t === "holidays" ? "Holiday Calendar" : t === "biometric" ? "Biometric (eSSL)" : "Analytics"}
           </button>
         ))}
       </div>
@@ -384,6 +387,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
           <p className="text-xs text-[#9a9a94] mb-6">
             Assign shift rotations per agent. Saved immediately and used to flag late clock-ins in the register above.
           </p>
+          <ShiftTimings onLoaded={setShiftStarts} />
           <div className="space-y-3">
             {employees.map(emp => {
               const currentShift = (emp.shift_type as ShiftType) || "Morning";
@@ -395,7 +399,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
                   </div>
                   <div>
                     <div className="text-sm font-bold text-[#1c1c1c]">{emp.name}</div>
-                    <div className="text-[9px] text-[#9a9a94] font-bold uppercase tracking-wider">Starts {SHIFT_START_LABEL[currentShift]}</div>
+                    <div className="text-[9px] text-[#9a9a94] font-bold uppercase tracking-wider">Starts {shiftStarts[currentShift] !== undefined ? shiftLabel(shiftStarts[currentShift]) : SHIFT_START_LABEL[currentShift]}</div>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 w-full sm:w-auto">
@@ -429,6 +433,8 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
           </div>
         </div>
       )}
+
+      {tab === "biometric" && <BiometricPanel employees={employees} onRefresh={onRefresh} />}
 
       {/* ── Holiday Calendar ── */}
       {tab === "holidays" && (

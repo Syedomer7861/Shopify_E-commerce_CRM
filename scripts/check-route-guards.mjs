@@ -24,6 +24,7 @@ const ALLOWED_PUBLIC = new Set([
   "contact/route.ts",            // public lead form; no session to require - rate-limited instead
   "billing/signup/route.ts",     // public self-serve signup; off without Razorpay keys, rate-limited, org created on hold
   "forms/[id]/route.ts",         // public web-to-lead form: rate-limited, honeypot; submit_web_form() refuses paused/held forms
+  "biometric/iclock/[...path]/route.ts", // eSSL device push: serial must be registered by an admin, rate-limited, writes only to that device's workspace
   "csp-report/route.ts",         // browser CSP violation reports, sent without cookies; logs one short line, writes nothing
 ]);
 
