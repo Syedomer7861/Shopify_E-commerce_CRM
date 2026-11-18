@@ -5,9 +5,10 @@ import { DollarSign, CheckCircle, Clock, TrendingUp, Plus, FileText, History, X,
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { isDemoMode } from "@/lib/demo";
+import AttendancePayroll from "@/components/hr/AttendancePayroll";
+import type { AttendancePolicy } from "@/lib/attendance-engine";
 
 
-interface PayslipRow { id: string; name: string; basic: number; hra: number; special: number; pf: number; pt: number; tds: number; net: number; status: "Paid" | "Pending" }
 interface SalaryRevision { id: string; agent: string; date: string; oldSalary: number; newSalary: number; reason: string; }
 interface Expense { id: string; agent: string; date: string; category: string; amount: number; description: string; status: "Pending" | "Approved" | "Rejected"; }
 
@@ -22,9 +23,14 @@ interface Props {
   payrollStatus: Record<string, { status: string; marked_at: string | null }>;
   payrollMonth: string;
   onRefresh: () => void;
+  attendance: any[];
+  leaves: any[];
+  holidays: { date: string }[];
+  policy?: AttendancePolicy;
+  payrollRuns: any[];
 }
 
-export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpenses, employees, payrollStatus, payrollMonth, onRefresh }: Props) {
+export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpenses, employees, onRefresh, attendance, leaves, holidays, policy, payrollRuns }: Props) {
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<"payroll" | "revisions" | "expenses">("payroll");
 
@@ -32,7 +38,6 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
     setMounted(true);
   }, []);
 
-  const MONTH = mounted ? new Date().toLocaleString("default", { month: "long", year: "numeric" }) : "---";
   const [revisions, setRevisions] = useState<SalaryRevision[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [newRev, setNewRev] = useState({ agent_id: "", oldSalary: "", newSalary: "", reason: "" });
@@ -58,30 +63,6 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
     })));
   }, [dbRevisions, dbExpenses]);
 
-  // Salary breakdown stays computed live from employees (derived, not
-  // stored), but status now comes from payrollStatus - real persisted data
-  // from payroll_runs, not local-only state that reset on every refresh.
-  const payslips: PayslipRow[] = employees.map(a => {
-    const gross = Number(a.monthly_salary) || 0;
-    const basic = Math.round(gross * 0.5);
-    const pf = Math.round(basic * 0.12);
-    const hra = Math.round(basic * 0.4);
-    const special = gross - basic - hra;
-    // Professional tax was a flat ₹200 applied unconditionally, even to
-    // employees with no salary configured at all (gross=0, meaning HR
-    // never entered it - not that they're paid ₹0). That made every such
-    // row net to -₹200 and the whole payroll total went negative.
-    const pt = gross > 0 ? 200 : 0;
-    const tds = gross > 41666 ? Math.round(gross * 0.05) : 0;
-    return {
-      id: a.id,
-      name: a.name || a.email.split("@")[0],
-      basic, hra, special, pf, pt, tds,
-      net: gross > 0 ? gross - pf - pt - tds : 0,
-      status: payrollStatus[a.id]?.status === "paid" ? "Paid" : "Pending",
-    };
-  });
-
   const handleAction = async (type: string, data: any, action = "insert") => {
     // Demo mode is a real Supabase login - without this, Add Salary
     // Revision / Approve or Reject Expense / Add Expense all wrote to the
@@ -103,55 +84,6 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
     }
   };
 
-  const runAll = async () => {
-    if (isDemoMode()) {
-      toast.success("Demo: all payslips marked paid (local only)");
-      return;
-    }
-    try {
-      const res = await fetch("/api/hr/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "payroll", action: "mark_all_paid",
-          data: { agent_ids: employees.map(e => e.id), month: payrollMonth },
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to mark payroll paid");
-      toast.success("All payslips marked paid");
-      onRefresh();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to mark payroll paid");
-    }
-  };
-
-  const toggleSlip = async (id: string, currentStatus: "Paid" | "Pending") => {
-    if (isDemoMode()) {
-      toast.success("Demo: payslip status toggled (local only)");
-      return;
-    }
-    const nextStatus = currentStatus === "Paid" ? "pending" : "paid";
-    try {
-      const res = await fetch("/api/hr/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "payroll", action: nextStatus === "paid" ? "mark_paid" : "mark_pending",
-          data: { agent_id: id, month: payrollMonth, status: nextStatus },
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to update payslip status");
-      onRefresh();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update payslip status");
-    }
-  };
-
-  const totalPayroll = payslips.reduce((s, r) => s + r.net, 0);
-  const paidCount = payslips.filter(p => p.status === "Paid").length;
-
   return (
     <div className="space-y-5">
       <div className="flex gap-1 bg-[#f0f0ec] p-1 rounded-xl w-fit">
@@ -166,69 +98,8 @@ export default function PayrollRun({ revisions: dbRevisions, expenses: dbExpense
 
       {/* ── Payroll Run ── */}
       {tab === "payroll" && (
-        <div className="space-y-5">
-          {/* Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="card p-5 bg-[#1c1c1c] text-white">
-              <p className="text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">Total Payroll — {MONTH}</p>
-              <div className="text-3xl font-bold text-[#6fcb9d]">{FMT(totalPayroll)}</div>
-            </div>
-            <div className="card p-5">
-              <p className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider mb-1">Disbursed</p>
-              <div className="text-3xl font-bold text-[#1c1c1c]">{paidCount} / {payslips.length}</div>
-            </div>
-            <div className="card p-5">
-              <p className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider mb-1">Pending</p>
-              <div className="text-3xl font-bold text-amber-500">{FMT(payslips.filter(p => p.status === "Pending").reduce((s, r) => s + r.net, 0))}</div>
-            </div>
-          </div>
-
-          <div className="card overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#ebece6] bg-[#fcfbf8]">
-              <h3 className="text-sm font-bold text-[#1c1c1c] uppercase tracking-wider">Payslip Register — {MONTH}</h3>
-              <ActionButton onClick={runAll} className="btn-primary text-xs gap-2 px-4 py-2">
-                <CheckCircle className="w-3.5 h-3.5" /> Mark All Paid
-              </ActionButton>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-[#f6f7f2]">
-                    {["Agent", "Basic", "HRA", "Special", "EPF(-)", "Prof Tax(-)", "TDS(-)", "Net Pay", "Status", ""].map(h => (
-                      <th key={h} className="px-4 py-3 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#f6f7f2]">
-                  {payslips.map(row => (
-                    <tr key={row.id} className="hover:bg-[#f6f7f2]/50">
-                      <td className="px-4 py-4 text-xs font-bold text-[#1c1c1c]">{row.name}</td>
-                      <td className="px-4 py-4 text-xs text-[#55554f]">{FMT(row.basic)}</td>
-                      <td className="px-4 py-4 text-xs text-[#55554f]">{FMT(row.hra)}</td>
-                      <td className="px-4 py-4 text-xs text-[#55554f]">{FMT(row.special)}</td>
-                      <td className="px-4 py-4 text-xs text-rose-500">{FMT(row.pf)}</td>
-                      <td className="px-4 py-4 text-xs text-rose-500">{FMT(row.pt)}</td>
-                      <td className="px-4 py-4 text-xs text-rose-500">{FMT(row.tds)}</td>
-                      <td className="px-4 py-4 text-sm font-bold text-[#3fa877]">{FMT(row.net)}</td>
-                      <td className="px-4 py-4">
-                        <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full",
-                          row.status === "Paid" ? "bg-[#ecf8f1] text-[#2f8a5f]" : "bg-amber-50 text-amber-700")}>
-                          {row.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <button onClick={() => toggleSlip(row.id, row.status)}
-                          className="text-[10px] font-bold text-[#9a9a94] hover:text-[#1c1c1c] transition-colors">
-                          Toggle
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <AttendancePayroll employees={employees} attendance={attendance} leaves={leaves} holidays={holidays}
+          policy={policy} payrollRuns={payrollRuns} onRefresh={onRefresh} />
       )}
 
       {/* ── Salary Revision History ── */}

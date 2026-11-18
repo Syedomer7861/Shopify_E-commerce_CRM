@@ -128,6 +128,7 @@ function HRDashboardContent() {
     revenueAtRiskByAgent: Record<string, number>;
     payrollStatus: Record<string, { status: string; marked_at: string | null }>;
     payrollMonth: string;
+    payrollRuns?: any[];
   }>({
     members: [],
     leaves: [],
@@ -285,7 +286,8 @@ function HRDashboardContent() {
         benchmark: hrData.benchmark || { slaPct: 0, grade: "—", doneCount: 0, resolutionDeltaPct: 0, resolutionDeltaMinutes: 0, hasBaseline: false },
         revenueAtRiskByAgent: hrData.revenueAtRiskByAgent || {},
         payrollStatus: hrData.payrollStatus || {},
-        payrollMonth: hrData.payrollMonth || new Date().toISOString().slice(0, 7)
+        payrollMonth: hrData.payrollMonth || new Date().toISOString().slice(0, 7),
+        payrollRuns: hrData.payrollRuns || [],
       });
       setLastUpdated(new Date());
       setIsStale(false);
@@ -880,7 +882,8 @@ function HRDashboardContent() {
       )}
 
       {activeTab === 'payroll' && (
-        <PayrollRun revisions={data.revisions} expenses={data.expenses} employees={data.employees} payrollStatus={data.payrollStatus} payrollMonth={data.payrollMonth} onRefresh={fetchData} />
+        <PayrollRun revisions={data.revisions} expenses={data.expenses} employees={data.employees} payrollStatus={data.payrollStatus} payrollMonth={data.payrollMonth} onRefresh={fetchData}
+          attendance={data.attendance} leaves={data.leaves} holidays={data.holidays} policy={data.attendancePolicy} payrollRuns={data.payrollRuns || []} />
       )}
 
       {activeTab === 'documents' && (

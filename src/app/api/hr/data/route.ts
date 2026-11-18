@@ -100,6 +100,8 @@ export async function GET(req: NextRequest) {
 
     // Default: Fetch everything for a full sync
     const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
+    const pm = new Date(); pm.setUTCDate(1); pm.setUTCMonth(pm.getUTCMonth() - 2);
+    const payrollFromMonth = pm.toISOString().slice(0, 7);
     // attendance_log / agent_attendance are append-only and were fetched in
     // full (SELECT *) on every page load, every realtime event, and (until
     // Phase 1) every 3 min. The HR views are a rolling recent window, so
@@ -137,7 +139,8 @@ export async function GET(req: NextRequest) {
         .not("order_id", "is", null),
       // Real persisted Mark Paid / Toggle status for the current month -
       // was pure local React state before, reset on every page refresh.
-      supabase.from("payroll_runs").select("agent_id, status, marked_at").eq("month", currentMonth),
+      // Current month + the two before it (the attendance window covers them fully).
+      supabase.from("payroll_runs").select("*").gte("month", payrollFromMonth),
       // Biometric (eSSL) days, summarised in the DB: one row per person per day.
       supabase.rpc("biometric_daily", { p_since: attendanceSinceDate }),
       supabase.from("org_shift_timings").select("shift_type, start_minute, grace_minutes"),
@@ -174,7 +177,7 @@ export async function GET(req: NextRequest) {
 
     const payrollStatus: Record<string, { status: string; marked_at: string | null }> = {};
     for (const r of payrollRuns.data || []) {
-      payrollStatus[r.agent_id] = { status: r.status, marked_at: r.marked_at };
+      if (r.month === currentMonth) payrollStatus[r.agent_id] = { status: r.status, marked_at: r.marked_at };
     }
 
     return NextResponse.json({
@@ -193,6 +196,7 @@ export async function GET(req: NextRequest) {
       revenueAtRiskByAgent,
       payrollStatus,
       payrollMonth: currentMonth,
+      payrollRuns: payrollRuns.data || [],
     });
 
   } catch (err: any) {
@@ -308,32 +312,61 @@ export async function POST(req: NextRequest) {
     }
 
     if (type === "payroll") {
-      // Mark All Paid / per-row Toggle used to be pure local React state
-      // with no database write at all - refreshing the page reset every
-      // payslip back to "Pending". This persists real status per
-      // (agent, month), with who marked it and when.
+      // Status per (agent, month) plus, once paid, the frozen pay figures
+      // (paid days, LOP, gross, net) so later attendance edits never change
+      // a slip that was already paid. Figures are computed in the browser
+      // from attendance; RLS limits writes to admin/HR of the same org.
+      const monthOk = (m: unknown) => typeof m === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(m);
+      const n = (v: unknown, lo: number, hi: number) => {
+        const x = Number(v);
+        return Number.isFinite(x) && x >= lo && x <= hi ? x : null;
+      };
+      const snapshot = (s: any) => s && typeof s === "object" ? {
+        paid_days: n(s.paid_days, 0, 31),
+        lop_days: n(s.lop_days, 0, 31),
+        gross_pay: n(s.gross_pay, 0, 1e9),
+        net_pay: n(s.net_pay, -1e9, 1e9),
+        breakdown: s.breakdown && typeof s.breakdown === "object" && !Array.isArray(s.breakdown) ? s.breakdown : null,
+      } : {};
+      const now = new Date().toISOString();
+
       if (action === "mark_all_paid") {
-        const { agent_ids, month } = data;
-        if (!Array.isArray(agent_ids) || !month) {
+        const { agent_ids, month, snapshots } = data;
+        if (!Array.isArray(agent_ids) || !monthOk(month)) {
           return NextResponse.json({ error: "agent_ids and month are required" }, { status: 400 });
         }
         const rows = agent_ids.map((agent_id: string) => ({
-          agent_id, month, status: "paid", marked_by: currentUserId, marked_at: new Date().toISOString(),
+          agent_id, month, status: "paid", marked_by: currentUserId, marked_at: now,
+          ...snapshot(snapshots?.[agent_id]),
         }));
         const { error } = await supabase.from("payroll_runs").upsert(rows, { onConflict: "agent_id,month" });
         if (error) throw error;
         return NextResponse.json({ success: true });
       }
 
+      if (action === "adjust") {
+        const { agent_id, month, adjust_days } = data;
+        const adj = n(adjust_days, -31, 31);
+        if (!agent_id || !monthOk(month) || adj === null) {
+          return NextResponse.json({ error: "agent_id, month and adjust_days (-31..31) are required" }, { status: 400 });
+        }
+        const { error } = await supabase.from("payroll_runs").upsert(
+          { agent_id, month, adjust_days: Math.round(adj * 2) / 2 }, { onConflict: "agent_id,month" });
+        if (error) throw error;
+        return NextResponse.json({ success: true });
+      }
+
       // mark_paid / mark_pending (per-row Toggle)
       const { agent_id, month, status } = data;
-      if (!agent_id || !month || !status) {
+      if (!agent_id || !monthOk(month) || !["paid", "pending"].includes(status)) {
         return NextResponse.json({ error: "agent_id, month, and status are required" }, { status: 400 });
       }
+      const paid = status === "paid";
       const { error } = await supabase.from("payroll_runs").upsert({
         agent_id, month, status,
-        marked_by: status === "paid" ? currentUserId : null,
-        marked_at: status === "paid" ? new Date().toISOString() : null,
+        marked_by: paid ? currentUserId : null,
+        marked_at: paid ? now : null,
+        ...(paid ? snapshot(data.snapshot) : { paid_days: null, lop_days: null, gross_pay: null, net_pay: null, breakdown: null }),
       }, { onConflict: "agent_id,month" });
       if (error) throw error;
       return NextResponse.json({ success: true });
