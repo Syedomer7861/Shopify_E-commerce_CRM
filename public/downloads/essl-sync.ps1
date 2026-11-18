@@ -57,8 +57,11 @@ foreach ($table in $months) {
   $cmd = $conn.CreateCommand()
   $cmd.CommandText = "SELECT UserId, LogDate, Direction FROM [$table] WHERE LogDate > ? ORDER BY LogDate"
   if ($SqlConnection) { $cmd.CommandText = $cmd.CommandText.Replace("?", "@since"); [void]$cmd.Parameters.AddWithValue("@since", $since) }
-  else { [void]$cmd.Parameters.AddWithValue("p1", $since) }
-  try { $reader = $cmd.ExecuteReader() } catch { Write-Host "Skipping $table (not found)"; continue }
+  else {
+    # Access rejects a plain DateTime parameter ("data type mismatch"); send it as an OLE date.
+    $p = $cmd.Parameters.Add("p1", [System.Data.OleDb.OleDbType]::Date); $p.Value = $since
+  }
+  try { $reader = $cmd.ExecuteReader() } catch { Write-Host "Skipping $table ($($_.Exception.GetBaseException().Message))"; continue }
   while ($reader.Read()) {
     $dir = "$($reader["Direction"])".Trim().ToLower()
     $rows.Add([ordered]@{
