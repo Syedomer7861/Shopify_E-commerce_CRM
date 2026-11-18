@@ -2,8 +2,9 @@
 import { confirmDialog } from "@/components/ConfirmDialog";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CloudUpload, CheckCircle2, WifiOff, ShoppingBag, Zap, Mail, Check, ShieldCheck, ListPlus, FileInput, KeyRound, GitBranch, Palette } from "lucide-react";
+import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CloudUpload, CheckCircle2, WifiOff, ShoppingBag, Zap, Mail, Check, ShieldCheck, ListPlus, FileInput, KeyRound, GitBranch, Palette, ArrowLeft } from "lucide-react";
 import { PageHeader, Modal, SyncProgressBar } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn, toDbDateString } from "@/lib/utils";
@@ -39,6 +40,33 @@ interface PipelineState {
 }
 
 type Tab = "general" | "appearance" | "fields" | "forms" | "api" | "security" | "telephony" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database" | "backup" | "devtools";
+
+const SETTINGS_SECTIONS: { label: string; items: { key: Tab; label: string; icon: typeof Sliders; desc: string }[] }[] = [
+  { label: "Organisation", items: [
+    { key: "general", label: "Preferences", icon: Sliders, desc: "Follow-up timings for customer retention tasks." },
+    { key: "appearance", label: "Appearance", icon: Palette, desc: "Theme, colours and branding your team sees." },
+    { key: "security", label: "Security", icon: ShieldCheck, desc: "Two-step sign-in for your own account." },
+  ] },
+  { label: "Data", items: [
+    { key: "fields", label: "Custom Fields", icon: ListPlus, desc: "Extra fields on customers, leads and other records." },
+    { key: "forms", label: "Web Forms", icon: FileInput, desc: "Forms on your website that create records here." },
+    { key: "overrides", label: "Product Rules", icon: Package, desc: "Per-product follow-up and usage rules." },
+  ] },
+  { label: "Integrations", items: [
+    { key: "notifications", label: "WhatsApp Hub", icon: Bell, desc: "WhatsApp connection, templates and messages." },
+    { key: "email", label: "Email API", icon: Mail, desc: "Outgoing email provider and sender." },
+    { key: "telephony", label: "Telephony", icon: Smartphone, desc: "Calling and call recording setup." },
+    { key: "shopify", label: "Shopify", icon: ShoppingBag, desc: "Store connection and order sync." },
+    { key: "shiprocket", label: "Logistics", icon: Package, desc: "Shiprocket shipping and tracking." },
+    { key: "api", label: "API & Webhooks", icon: KeyRound, desc: "API keys and webhooks for other systems." },
+    { key: "backup", label: "Backup & Google", icon: CloudUpload, desc: "Google account link and data backups." },
+  ] },
+  { label: "Advanced", items: [
+    { key: "devtools", label: "Developer Tools", icon: GitBranch, desc: "Tools for developers working on this CRM." },
+    { key: "database", label: "Danger Zone", icon: Database, desc: "Permanently delete data. Cannot be undone." },
+  ] },
+];
+const ALL_SECTIONS = SETTINGS_SECTIONS.flatMap(g => g.items);
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -104,6 +132,7 @@ export default function SettingsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>((searchParams.get("tab") as Tab) || "general");
+  const activeSection = ALL_SECTIONS.find(t => t.key === tab) ?? ALL_SECTIONS[0];
   const supabase = useMemo(() => createClient(), []);
 
 
@@ -1126,8 +1155,11 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="animate-fade-in max-w-3xl">
-      <PageHeader title="Settings" subtitle="Configure your CRM behaviour, integrations, and notifications" />
+    <div className="animate-fade-in max-w-6xl">
+      <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-[#5f5f5d] hover:text-[#1c1c1c] mb-3">
+        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+      </Link>
+      <PageHeader title="Settings" subtitle="Your organisation's preferences, integrations and security, in one place" />
 
       {syncStatus.active && (
         <div className="mb-8 card p-5 bg-[#ebece6]/30 shadow-inner animate-in slide-in-from-top-4 duration-500">
@@ -1140,32 +1172,31 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="flex border-b border-[#ebece6] mb-8 gap-0 overflow-x-auto scroller-hide">
-        {[
-          { key: "general", label: "Preferences", icon: Sliders },
-          { key: "appearance", label: "Appearance", icon: Palette },
-          { key: "fields", label: "Custom Fields", icon: ListPlus },
-          { key: "forms", label: "Web Forms", icon: FileInput },
-          { key: "api", label: "API & Webhooks", icon: KeyRound },
-          { key: "security", label: "Security", icon: ShieldCheck },
-          { key: "telephony", label: "Telephony", icon: Smartphone },
-          { key: "notifications", label: "WhatsApp Hub", icon: Bell },
-          { key: "email", label: "Email API", icon: Mail },
-          { key: "overrides", label: "Product Rules", icon: Package },
-          { key: "shopify", label: "Shopify API", icon: ShoppingBag },
-          { key: "shiprocket", label: "Logistics", icon: Package },
-          { key: "backup", label: "Backup & Google", icon: CloudUpload },
-          { key: "devtools", label: "Developer Tools", icon: GitBranch },
-          { key: "database", label: "Danger Zone", icon: Database },
-        ].map(t => (
-          <button key={t.key} onClick={() => setTab(t.key as Tab)}
-            className={cn("flex items-center gap-2.5 px-6 py-3.5 text-[10px] font-bold uppercase tracking-[0.2em] border-b-2 transition-all whitespace-nowrap",
-              tab === t.key ? "border-[#1c1c1c] text-[#1c1c1c]" : "border-transparent text-[#5f5f5d] hover:text-[#1c1c1c] opacity-50"
-            )}>
-            <t.icon className="w-3.5 h-3.5" /> {t.label}
-          </button>
-        ))}
-      </div>
+      <div className="grid gap-6 lg:grid-cols-[232px_minmax(0,1fr)] items-start">
+        {/* Section menu: a sticky list on desktop, a scrolling strip of chips on phones. */}
+        <nav aria-label="Settings sections" className="card p-2 lg:sticky lg:top-6">
+          <div className="flex lg:flex-col gap-1 overflow-x-auto scroller-hide lg:overflow-visible">
+            {SETTINGS_SECTIONS.map(group => (
+              <div key={group.label} className="contents lg:block lg:pb-2">
+                <div className="hidden lg:block px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#9a9a94]">{group.label}</div>
+                {group.items.map(t => (
+                  <button key={t.key} onClick={() => setTab(t.key)} aria-current={tab === t.key ? "page" : undefined}
+                    className={cn("flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors lg:w-full text-left",
+                      tab === t.key ? "bg-[color:var(--accent-3,#eef3d6)] text-[#1c1c1c] font-semibold" : "text-[#5f5f5d] hover:bg-[#f6f7f2] hover:text-[#1c1c1c]",
+                      t.key === "database" && tab !== t.key && "text-rose-500 hover:text-rose-600")}>
+                    <t.icon className="w-4 h-4 shrink-0" /> {t.label}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </nav>
+
+        <div className="min-w-0 space-y-6">
+          <div className="hidden lg:block">
+            <h2 className="text-lg font-bold text-[#1c1c1c]">{activeSection.label}</h2>
+            <p className="text-sm text-[#5f5f5d]">{activeSection.desc}</p>
+          </div>
 
       {tab === "appearance" && <AppearanceManager />}
       {tab === "fields" && <CustomFieldsManager canEdit={isAdmin(profile)} />}
@@ -3154,6 +3185,9 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+        </div>
+      </div>
 
       {/* Add/Edit Override Modal */}
       <Modal open={showAddOverride} onClose={() => setShowAddOverride(false)} title={editingId ? "Edit Override" : "Add Override"}
