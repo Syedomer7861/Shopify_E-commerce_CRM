@@ -217,11 +217,15 @@ export async function POST(req: NextRequest) {
   // that here too.
   let currentUserId: string | null = null;
   let currentOrgId: string | null = null;
+  // Roles the caller may hand out. Only an admin can create another admin;
+  // HR creating logins goes through the service key, which skips RLS.
+  let grantableRoles = ["admin", "agent", "manager", "hr"];
   if (!hasInternalSecret(req)) {
     const { profile } = await getAuthenticatedSession();
     if (profile?.role !== "admin" && profile?.role !== "hr") {
       return NextResponse.json({ error: "Forbidden: Admin or HR access required" }, { status: 403 });
     }
+    if (profile.role !== "admin") grantableRoles = ["agent", "manager", "hr"];
     currentUserId = profile?.id || null;
     currentOrgId = (profile as { org_id?: string } | null)?.org_id || null;
   }
@@ -422,10 +426,10 @@ export async function POST(req: NextRequest) {
             // random password and the admin sets one from Team > Reset password.
             password: process.env.HR_EMPLOYEE_DEFAULT_KEY || `${crypto.randomUUID()}Aa1!`,
             email_confirm: true,
-            app_metadata: { org_id: currentOrgId, role: ["admin", "agent", "manager", "hr"].includes(role) ? role : "agent" },
+            app_metadata: { org_id: currentOrgId, role: grantableRoles.includes(role) ? role : "agent" },
             user_metadata: {
               name,
-              role: role || "agent",
+              role: grantableRoles.includes(role) ? role : "agent",
               designation: designation || "Agent",
               department: profileData.department || "General",
               location: profileData.location || "",
@@ -486,7 +490,7 @@ export async function POST(req: NextRequest) {
               id: authUserId,
               email,
               name,
-              role: ["admin", "agent", "manager", "hr"].includes(role) ? role : "agent",
+              role: grantableRoles.includes(role) ? role : "agent",
               designation: designation || "Agent",
               ...profileData,
               org_id: currentOrgId,

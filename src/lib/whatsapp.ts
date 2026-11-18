@@ -166,7 +166,10 @@ async function sendTwilioSMS(
   }
 }
 
-export async function sendWhatsApp(phone: string, message: string, imagePath?: string, orgId?: string): Promise<WhatsAppResponse> {
+/** An attachment sent as bytes. A file path is never accepted: the bridge would read it off its own disk. */
+export type WhatsAppMedia = { data: string; mimetype: string; filename: string };
+
+export async function sendWhatsApp(phone: string, message: string, media?: WhatsAppMedia, orgId?: string): Promise<WhatsAppResponse> {
   return sendQueue.enqueue(async () => {
     const supabase = createServerClient();
     await enforceSafeguardDelay(supabase);
@@ -183,7 +186,7 @@ export async function sendWhatsApp(phone: string, message: string, imagePath?: s
         const res = await fetch(`${bridgeUrl}/send`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone, message, imagePath }),
+          body: JSON.stringify({ phone, message, ...(media ? { mediaData: media.data, mimetype: media.mimetype, filename: media.filename } : {}) }),
         });
 
         const data = await res.json();

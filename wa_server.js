@@ -92,7 +92,6 @@ const SendMessageSchema = z.object({
   phone: z.string().min(10).max(20),
   message: z.string().min(1),
   buttons: z.array(z.object({ text: z.string(), id: z.string() })).optional(),
-  imagePath: z.string().optional(),
   mediaData: z.string().optional(),
   mimetype: z.string().optional(),
   filename: z.string().optional()
@@ -111,7 +110,7 @@ let processing = false;
 async function processQueue() {
     if (processing || msgQueue.length === 0) return;
     processing = true;
-    const { phone, message, buttons, imagePath, mediaData, mimetype, filename, resolve } = msgQueue.shift();
+    const { phone, message, buttons, mediaData, mimetype, filename, resolve } = msgQueue.shift();
     try {
         // 1. Clean and Format Number
         let cleaned = phone.replace(/[^\d]/g, "");
@@ -143,9 +142,6 @@ async function processQueue() {
         if (mediaData && mimetype) {
             console.log(`[WA] Sending media to ${chatId}...`);
             const media = new MessageMedia(mimetype, mediaData, filename || "file");
-            await waClient.sendMessage(chatId, media, { caption: message });
-        } else if (imagePath) {
-            const media = MessageMedia.fromFilePath(imagePath);
             await waClient.sendMessage(chatId, media, { caption: message });
         } else {
             await waClient.sendMessage(chatId, content);
@@ -340,7 +336,7 @@ api.post("/send", limiter, async (req, res) => {
     try {
         // Validate Input
         const validated = SendMessageSchema.parse(req.body);
-        const { phone, message, buttons, imagePath, mediaData, mimetype, filename } = validated;
+        const { phone, message, buttons, mediaData, mimetype, filename } = validated;
 
         if (!isReady) {
             return res.status(503).json({ ok: false, error: `WhatsApp not ready — state: ${clientState}` });
@@ -351,7 +347,7 @@ api.post("/send", limiter, async (req, res) => {
         if (!cleaned.startsWith("+")) cleaned = "+" + cleaned;
 
         const result = await new Promise((resolve) => {
-            msgQueue.push({ phone: cleaned, message, buttons, imagePath, mediaData, mimetype, filename, resolve });
+            msgQueue.push({ phone: cleaned, message, buttons, mediaData, mimetype, filename, resolve });
             processQueue();
         });
 

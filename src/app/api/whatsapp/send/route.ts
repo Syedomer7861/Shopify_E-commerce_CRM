@@ -8,7 +8,12 @@ const WhatsAppSendSchema = z.object({
   phone: z.string(),
   message: z.string(),
   customerData: z.any().optional(),
-  imagePath: z.string().optional()
+  // Attachment as base64 bytes (images and PDFs, about 3 MB). File paths are not accepted.
+  media: z.object({
+    data: z.string().min(1).max(4_200_000).regex(/^[A-Za-z0-9+/=]+$/),
+    mimetype: z.enum(["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"]),
+    filename: z.string().min(1).max(120).regex(/^[^/\\\r\n"]+$/),
+  }).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -21,12 +26,12 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const validated = WhatsAppSendSchema.parse(body);
-    const { phone, message, customerData, imagePath } = validated;
+    const { phone, message, customerData, media } = validated;
 
     const cleanedPhone = cleanPhone(phone);
     const finalMessage = customerData ? personaliseTemplate(message, customerData) : message;
 
-    const result = await sendWhatsApp(cleanedPhone, finalMessage, imagePath);
+    const result = await sendWhatsApp(cleanedPhone, finalMessage, media);
 
     if (result.ok) {
       return NextResponse.json({ ok: true });

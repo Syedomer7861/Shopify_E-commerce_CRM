@@ -647,20 +647,16 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     }
     setSendingWa(true);
     try {
-      let imagePath = undefined;
-      
+      let media: { data: string; mimetype: string; filename: string } | undefined;
       if (waFile) {
-        const formData = new FormData();
-        formData.append("file", waFile);
-        
-        const uploadRes = await fetch("/api/whatsapp/upload", {
-          method: "POST",
-          body: formData
+        if (waFile.size > 3 * 1024 * 1024) throw new Error("Attachments can be up to 3 MB.");
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result));
+          r.onerror = () => reject(new Error("Could not read the file."));
+          r.readAsDataURL(waFile);
         });
-        
-        const uploadData = await uploadRes.json();
-        if (!uploadData.ok) throw new Error(uploadData.error || "File upload failed");
-        imagePath = uploadData.filePath;
+        media = { data: dataUrl.slice(dataUrl.indexOf(",") + 1), mimetype: waFile.type, filename: waFile.name };
       }
 
       const res = await fetch("/api/whatsapp/send", {
@@ -669,7 +665,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
         body: JSON.stringify({
           phone: task.customer.phone,
           message: waMessage,
-          imagePath
+          media
         }),
       });
       
@@ -1465,6 +1461,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
               <span className="text-xs font-medium">{waFile ? "Change File" : "Attach File (Media/PDF)"}</span>
               <input 
                 type="file" 
+                accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
                 className="hidden" 
                 onChange={e => setWaFile(e.target.files?.[0] || null)} 
               />

@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { ensureAdmin, safeEqual } from "@/lib/auth-utils";
 import { getGmailClient } from "@/lib/gmail";
 import { createServerClient } from "@/lib/supabase";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
   const error = searchParams.get('error');
@@ -14,6 +15,14 @@ export async function GET(req: Request) {
   if (!code) {
     return NextResponse.json({ error: "No code provided" }, { status: 400 });
   }
+
+  // Only the admin who started "Connect Gmail" in this browser can finish it.
+  const expected = req.cookies.get("gmail_oauth_state")?.value;
+  if (!expected || !safeEqual(searchParams.get("state"), expected)) {
+    return NextResponse.redirect(new URL('/settings?tab=email&auth=error', req.url));
+  }
+  const { errorResponse } = await ensureAdmin();
+  if (errorResponse) return errorResponse;
 
   try {
     const oauth2Client = await getGmailClient();
@@ -40,7 +49,9 @@ export async function GET(req: Request) {
     }
 
     // Redirect back to settings page
-    return NextResponse.redirect(new URL('/settings?tab=email&auth=success', req.url));
+    const ok = NextResponse.redirect(new URL('/settings?tab=email&auth=success', req.url));
+    ok.cookies.delete({ name: "gmail_oauth_state", path: "/api/auth/google" });
+    return ok;
   } catch (err: any) {
     console.error("[AUTH-GOOGLE-CALLBACK] Error:", err);
     return NextResponse.redirect(new URL('/settings?tab=email&auth=error', req.url));
