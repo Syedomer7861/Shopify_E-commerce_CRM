@@ -124,13 +124,15 @@ export async function middleware(request: NextRequest) {
   // before that page's own client-side logic ever ran, so the marketing
   // page could never actually be seen.
   const isRootPage = request.nextUrl.pathname === '/'
+  // Public quote links (/q/<token>) are read through a token-checked RPC, no session.
+  const isSharedQuote = request.nextUrl.pathname.startsWith('/q/')
   // Public marketing sections (src/app/(site)). Static content, no data.
   const isSitePage = ['features', 'solutions', 'integrations', 'compare', 'resources', 'tools', 'blog', 'pricing', 'f', 'legal']
     .includes(request.nextUrl.pathname.split('/')[1])
 
   // Demo mode is a real login (see login/page.tsx): the demo cookie is only set
   // after signInWithPassword succeeds, so it must never stand in for a session.
-  if (!user && !isLoginPage && !isSignupPage && !isContactPage && !isApiRoute && !isAuthRoute && !isStaticFile && !isRootPage && !isSitePage) {
+  if (!user && !isLoginPage && !isSignupPage && !isContactPage && !isApiRoute && !isAuthRoute && !isStaticFile && !isRootPage && !isSitePage && !isSharedQuote) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -140,7 +142,7 @@ export async function middleware(request: NextRequest) {
   // what src/app/page.tsx did client-side before.
   if (user && isRootPage) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    const home = profile?.role === 'manager' ? '/manager' : profile?.role === 'hr' ? '/hr' : '/dashboard'
+    const home = profile?.role === 'admin' ? '/organisation/overview' : profile?.role === 'manager' ? '/manager' : profile?.role === 'hr' ? '/hr' : '/dashboard'
     return NextResponse.redirect(new URL(home, request.url))
   }
 
@@ -154,7 +156,7 @@ export async function middleware(request: NextRequest) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
     // Matches src/app/page.tsx and login/page.tsx's own role routing exactly.
     const landingPage = profile?.role === 'manager' ? '/manager'
-      : profile?.role === 'admin' ? '/my-hub'
+      : profile?.role === 'admin' ? '/organisation/overview'
       : profile?.role === 'hr' ? '/hr'
       : '/dashboard'
     return NextResponse.redirect(new URL(landingPage, request.url))

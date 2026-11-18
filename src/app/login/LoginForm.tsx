@@ -61,7 +61,9 @@ export default function LoginForm({ googleEnabled, signupOpen, googleError }: { 
 
     // Force a clean hard-redirect to guarantee cookies sync with Next.js SSR
     // middleware. Matches src/app/page.tsx's role routing exactly.
-    const landingPage = profile?.role === "manager" ? "/manager"
+    // Organisation admins start on the Admin Dashboard (org overview).
+    const landingPage = profile?.role === "admin" ? "/organisation/overview"
+      : profile?.role === "manager" ? "/manager"
       : profile?.role === "hr" ? "/hr"
         : "/dashboard";
     window.location.href = landingPage;

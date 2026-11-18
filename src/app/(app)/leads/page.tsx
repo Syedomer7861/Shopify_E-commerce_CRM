@@ -31,7 +31,7 @@ async function convertToDeal(lead: RecordRow, reload: () => void) {
 }
 
 const leads: RecordsConfig = {
-  table: "leads", module: "leads", noun: "lead", ownerCol: "owner_id", editable: true,
+  table: "leads", module: "leads", noun: "lead", ownerCol: "owner_id", editable: true, board: true,
   dedupe: ["email", "phone"],
   rowActions: (row, reload) => row.status === "converted" || row.status === "lost" ? null : (
     <button onClick={() => convertToDeal(row, reload)} className="px-2.5 py-1.5 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-bold">Convert to deal</button>
@@ -57,7 +57,7 @@ const leads: RecordsConfig = {
 };
 
 const deals: RecordsConfig = {
-  table: "deals", module: "deals", noun: "deal", ownerCol: "owner_id", editable: true,
+  table: "deals", module: "deals", noun: "deal", ownerCol: "owner_id", editable: true, board: true,
   columns: [
     { key: "title", label: "Deal" },
     { key: "value", label: "Value", format: money },

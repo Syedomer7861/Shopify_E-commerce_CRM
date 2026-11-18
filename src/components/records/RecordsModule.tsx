@@ -1,7 +1,8 @@
 "use client";
 import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Plus, Loader2, Download, Trash2, AlertTriangle, Pencil, Search } from "lucide-react";
+import { Plus, Loader2, Download, Trash2, AlertTriangle, Pencil, Search, List, Columns3 } from "lucide-react";
+import { RecordsBoard } from "@/components/records/RecordsBoard";
 import { Modal, EmptyState, Select } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
@@ -40,6 +41,8 @@ export type RecordsConfig = {
   createAndAct?: { label: string; run: (row: RecordRow, reload: () => void) => void };
   /** Before adding, warn if a row with the same value in any of these fields already exists (Leads: email, phone). */
   dedupe?: string[];
+  /** Offers a Kanban board (one column per status) next to the list. */
+  board?: boolean;
 };
 
 const label = (s: string) => s.replace(/_/g, " ");
@@ -75,6 +78,14 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   const [dateCol, setDateCol] = useState("created_at");
   const [owner, setOwner] = useState("");
   const [loadedOnce, setLoadedOnce] = useState(false);
+  // Status a new record starts in when added from a board column's "+".
+  const [newStatus, setNewStatus] = useState<string | null>(null);
+  const viewKey = `records-view:${config.table}`;
+  const [view, setViewState] = useState<"list" | "board">(() => {
+    if (!config.board || typeof window === "undefined") return "list";
+    try { return localStorage.getItem(viewKey) === "board" ? "board" : "list"; } catch { return "list"; }
+  });
+  const setView = (v: "list" | "board") => { setViewState(v); if (v === "board") setStatusFilter(null); try { localStorage.setItem(viewKey, v); } catch { /* private mode */ } };
 
   const { table, module, noun, ownerCol } = config;
   const { access, dataCol, filter } = config;
@@ -177,7 +188,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
         return;
       }
     }
-    const payload: Record<string, any> = { id: crypto.randomUUID(), [ownerCol]: profile.id, ...(filter || {}), ...(dataCol ? { [dataCol]: values } : values) };
+    const payload: Record<string, any> = { id: crypto.randomUUID(), [ownerCol]: profile.id, ...(filter || {}), ...(dataCol ? { [dataCol]: values } : values), ...(newStatus && !dataCol ? { status: newStatus } : {}) };
     const { error } = await supabase.from(table).insert(payload);
     if (error) toast.error(error.code === "23505" ? `That ${noun} already exists` : error.message);
     else {
@@ -187,7 +198,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
     setSaving(false);
   }
 
-  function closeForm() { setOpen(false); setEditing(null); setForm({}); }
+  function closeForm() { setOpen(false); setEditing(null); setForm({}); setNewStatus(null); }
 
   function openEdit(row: RecordRow) {
     const next: Record<string, string> = {};
@@ -266,12 +277,22 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
         {canExport && rows.length > 0 && (
           <button onClick={exportCsv} className="btn-secondary flex items-center gap-1.5 text-xs"><Download className="w-3.5 h-3.5" /> Export</button>
         )}
+        {config.board && config.statuses && (
+          <div role="radiogroup" aria-label="View" className="inline-flex rounded-lg border border-[#ebece6] bg-white p-0.5">
+            {([["list", "List", List], ["board", "Board", Columns3]] as const).map(([k, t, Icon]) => (
+              <button key={k} role="radio" aria-checked={view === k} onClick={() => setView(k)}
+                className={"px-2.5 py-1 rounded-md text-[11px] font-bold inline-flex items-center gap-1 " + (view === k ? "bg-[#1c1c1c] text-white" : "text-[#6b6b67] hover:text-[#1c1c1c]")}>
+                <Icon className="w-3.5 h-3.5" /> {t}
+              </button>
+            ))}
+          </div>
+        )}
         {canCreate && (
           <button onClick={() => setOpen(true)} className="btn-primary flex items-center gap-1.5 text-xs"><Plus className="w-3.5 h-3.5" /> New {noun}</button>
         )}
       </div>
 
-      {Object.keys(statusCounts).length > 1 && (
+      {view === "list" && Object.keys(statusCounts).length > 1 && (
         <div className="flex gap-1.5 mb-3 overflow-x-auto scrollbar-hide">
           {[[null, all.length] as const, ...Object.entries(statusCounts)].map(([s, n]) => (
             <button key={s ?? "all"} onClick={() => setStatusFilter(s)} aria-pressed={statusFilter === s}
@@ -282,7 +303,10 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
         </div>
       )}
 
-      {(all.length > 0 || filtering) && shown.length === 0 ? (
+      {view === "board" && config.statuses ? (
+        <RecordsBoard config={config} rows={shown} columns={columns} people={people} canEditRow={canEditRow} canCreate={canCreate}
+          onMove={setStatus} onAdd={s => { setNewStatus(s); setOpen(true); }} onEdit={openEdit} reload={load} />
+      ) : (all.length > 0 || filtering) && shown.length === 0 ? (
         <EmptyState icon={<Search className="w-6 h-6" />} title="No matches" desc="Try a different search, status, date range or owner." />
       ) : shown.length === 0 ? (
         <EmptyState icon={<Plus className="w-6 h-6" />} title={`No ${noun}s yet`} desc={canCreate ? `Add the first one with "New ${noun}".` : "Nothing you have access to here."} />
@@ -328,7 +352,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
         </div>
       )}
 
-      <Modal open={open} onClose={closeForm} title={editing ? `Edit ${noun}` : `New ${noun}`}
+      <Modal open={open} onClose={closeForm} title={editing ? `Edit ${noun}` : newStatus ? `New ${noun} · ${label(newStatus)}` : `New ${noun}`}
         footer={
           <div className="flex flex-col gap-2 w-full">
             {config.createAndAct && !editing && (
