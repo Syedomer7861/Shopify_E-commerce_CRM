@@ -12,6 +12,7 @@ import { DEFAULT_PERMISSIONS, NAV_MODULE_GROUPS, ALL_NAV_MODULES, allowedNavModu
 import { isDemoMode } from "@/lib/demo";
 import type { Role } from "@/types";
 import { INDIAN_STATES } from "@/components/hr/EmployeeDirectory";
+import { grantSummary, roleInfo } from "@/lib/role-templates";
 
 // Short blurb for the system roles seeded by Phase 2a; any other role
 // (admin-created) just reads as "Custom role".
@@ -610,20 +611,46 @@ export default function TeamPage() {
 
           <div className="space-y-3">
             <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block">Security Role</label>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-              {roleOptions.map(r => (
-                <button
-                  key={r.name}
-                  onClick={() => updateProfile(r.name === "admin"
-                    ? { role: r.name }
-                    : { role: r.name, permissions: r.permissions })}
-                  className={`p-3 rounded-lg border text-left transition-all ${selectedProfile?.role === r.name ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-[#ebece6] hover:border-[#ebece6]'}`}
-                >
-                  <div className={`text-xs font-bold capitalize ${selectedProfile?.role === r.name ? 'text-[#1c1c1c]' : 'text-[#55554f]'}`}>{r.name}</div>
-                  <div className="text-[9px] text-[#9a9a94] mt-0.5">{ROLE_BLURBS[r.name] || "Custom role"}</div>
-                </button>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {roleOptions.map(r => {
+                const { icon: Icon, info } = roleInfo(r.name);
+                const on = selectedProfile?.role === r.name;
+                return (
+                  <button
+                    key={r.name}
+                    // Picking a role resets this person's own overrides (extra permissions and menu pages) to the role's.
+                    onClick={() => updateProfile(r.name === "admin"
+                      ? { role: r.name }
+                      : { role: r.name, permissions: { ...r.permissions, ...(r.nav_modules ? { nav_modules: r.nav_modules } : {}) } as UserPermissions })}
+                    disabled={isUpdating}
+                    title={info}
+                    className={`p-3 rounded-lg border text-left transition-all flex gap-2 ${on ? 'border-[#1c1c1c] bg-[#1c1c1c]/5' : 'border-[#ebece6] hover:border-[#c4c5bd]'}`}
+                  >
+                    <span className={`w-7 h-7 rounded-lg grid place-items-center shrink-0 ${on ? 'bg-[var(--accent)]' : 'bg-[#f0f0ec]'}`}><Icon className="w-3.5 h-3.5 text-[#1c1c1c]" /></span>
+                    <span className="min-w-0">
+                      <span className={`block text-xs font-bold capitalize ${on ? 'text-[#1c1c1c]' : 'text-[#55554f]'}`}>{r.name.replace(/_/g, " ")}</span>
+                      <span className="block text-[9px] text-[#9a9a94] mt-0.5 leading-snug line-clamp-2">{info}</span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
+            {(() => {
+              const current = roleOptions.find(r => r.name === selectedProfile?.role);
+              if (!current || current.name === "admin") return null;
+              const mods = grantSummary(current.grants);
+              return (
+                <div className="rounded-xl border border-[#ebece6] bg-[#fcfbf8] p-3">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#9a9a94] mb-1.5">What the {current.name.replace(/_/g, " ")} role can open</div>
+                  {mods.length ? (
+                    <div className="flex flex-wrap gap-1">
+                      {mods.map(m => <span key={m.label} className="px-1.5 py-0.5 rounded bg-white border border-[#ebece6] text-[10px] text-[#1c1c1c]">{m.label} <span className="text-[#9a9a94]">· {m.scope}</span></span>)}
+                    </div>
+                  ) : <p className="text-[11px] text-amber-700">Nothing yet: this role has no data modules. Give it some on the Roles page (or fill it from a template).</p>}
+                  <p className="text-[10px] text-[#9a9a94] mt-1.5">These show in the sidebar on top of the menu pages below. Change them for everyone with this role on the Roles page.</p>
+                </div>
+              );
+            })()}
           </div>
           
           <div className="space-y-3">

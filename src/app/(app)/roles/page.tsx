@@ -17,6 +17,8 @@ import { HOME_WIDGETS as ALL_HOME_WIDGETS } from "@/components/workspace/Workspa
 // Builder-only widgets live in dashboards, not in a role's default list.
 const HOME_WIDGETS = ALL_HOME_WIDGETS.filter(w => !w.builderOnly);
 import { PERMISSION_MODULES, SCOPES, SCOPE_LABELS, type Action, type Grants, type Scope } from "@/lib/access";
+import { ROLE_TEMPLATES, grantSummary, roleInfo, roleTemplate, type RoleTemplate } from "@/lib/role-templates";
+import { Sparkles } from "lucide-react";
 
 const NAV_MODULE_LABELS: Record<string, string> = {
   dashboard: "Dashboard", tasks: "Tasks", chat: "Chat", "my-hub": "My Hub",
@@ -81,6 +83,23 @@ export default function RolesPage() {
     // A new role starts with the neutral menu, not every page: the admin ticks what the job needs.
     setForm({ name: "", permissions: { ...EMPTY_PERMISSIONS }, nav_modules: [...NEUTRAL_NAV_MODULES], grants: roles.some(r => r.grants !== undefined) ? {} : null, home_widgets: null });
     setModalOpen(true);
+  }
+
+  // A template fills everything but the name of a role being edited.
+  const fromTemplate = (t: RoleTemplate, name?: string): RoleForm => ({
+    name: name ?? t.key, permissions: { ...EMPTY_PERMISSIONS, ...t.permissions }, nav_modules: t.nav ? [...t.nav] : null,
+    grants: roles.some(r => r.grants !== undefined) ? structuredClone(t.grants) : null, home_widgets: null,
+  });
+  function openTemplate(t: RoleTemplate) {
+    const existing = roles.find(r => r.name === t.key);
+    if (existing) return openEdit(existing);
+    setEditingRole(null);
+    setForm(fromTemplate(t));
+    setModalOpen(true);
+  }
+  function applyTemplate(key: string) {
+    const t = roleTemplate(key);
+    if (t) setForm(f => fromTemplate(t, f.name));
   }
 
   function openEdit(role: Role) {
@@ -168,18 +187,32 @@ export default function RolesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {roles.map(role => {
             const grantedCount = PERMISSION_FIELDS.filter(f => role.permissions?.[f.key]).length;
+            const { icon: Icon, info } = roleInfo(role.name);
+            const mods = grantSummary(role.grants);
             return (
-              <div key={role.id} className="card p-4 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div>
+              <div key={role.id} className="card p-4 flex flex-col gap-3">
+                <div className="flex items-start gap-3">
+                  <span className="w-9 h-9 rounded-xl bg-[var(--accent)] grid place-items-center shrink-0"><Icon className="w-4 h-4 text-[#1c1c1c]" /></span>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-bold text-[#1c1c1c] capitalize">{role.name.replace(/_/g, " ")}</span>
-                      {role.is_system && <Lock className="w-3 h-3 text-[#d4d5cd]" />}
+                      {role.is_system && <Lock className="w-3 h-3 text-[#d4d5cd]" aria-label="Built-in role" />}
                     </div>
-                    <div className="text-[10px] text-[#9a9a94] mt-0.5">
-                      {role.name === "admin" ? "All permissions by default" : `${grantedCount} of ${PERMISSION_FIELDS.length} permissions`}
-                    </div>
+                    <p className="text-[11px] text-[#6b6b67] leading-snug">{info}</p>
                   </div>
+                </div>
+                <div className="text-[10px] text-[#9a9a94] flex-1">
+                  {role.name === "admin" ? "Everything, by default." : (
+                    <>
+                      {mods.length ? (
+                        <span className="flex flex-wrap gap-1 mb-1">
+                          {mods.slice(0, 6).map(m => <span key={m.label} className="px-1.5 py-0.5 rounded bg-[#f0f0ec] text-[#3a3a36]">{m.label} <span className="text-[#9a9a94]">· {m.scope}</span></span>)}
+                          {mods.length > 6 && <span className="px-1.5 py-0.5 text-[#6b6b67]">+{mods.length - 6} more</span>}
+                        </span>
+                      ) : <span className="block mb-1 text-amber-700">No data modules yet. Edit it or fill it from a template.</span>}
+                      {grantedCount} of {PERMISSION_FIELDS.length} extra permissions · {role.nav_modules ? `${role.nav_modules.length} menu pages` : "all menu pages"}
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 pt-1">
                   <button onClick={() => openEdit(role)} className="btn-secondary flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5">
@@ -196,6 +229,34 @@ export default function RolesPage() {
           })}
         </div>
       )}
+
+      <section aria-labelledby="role-templates" className="mt-10">
+        <div className="flex items-center gap-2 mb-1">
+          <Sparkles className="w-4 h-4 text-[#1c1c1c]" />
+          <h2 id="role-templates" className="text-base font-bold text-[#1c1c1c]">Role templates</h2>
+        </div>
+        <p className="text-xs text-[#6b6b67] mb-4">Start from a ready-made role for a common job. You can change anything before saving.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {ROLE_TEMPLATES.map(t => {
+            const exists = roles.some(r => r.name === t.key);
+            return (
+              <div key={t.key} className="card p-4 flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <span className="w-9 h-9 rounded-xl bg-[#1c1c1c] grid place-items-center shrink-0"><t.icon className="w-4 h-4 text-[var(--accent)]" /></span>
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-[#1c1c1c]">{t.label}</div>
+                    <div className="text-[11px] text-[#6b6b67]">{t.info}</div>
+                  </div>
+                </div>
+                <p className="text-[11px] text-[#3a3a36] leading-snug flex-1">{t.covers}</p>
+                <button onClick={() => openTemplate(t)} className="btn-secondary text-xs py-1.5 flex items-center justify-center gap-1.5">
+                  {exists ? <><Edit2 className="w-3 h-3" /> Open &ldquo;{t.key.replace(/_/g, " ")}&rdquo; role</> : <><Plus className="w-3 h-3" /> Use template</>}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       <Modal
         open={modalOpen}
@@ -222,6 +283,17 @@ export default function RolesPage() {
               <p className="text-[9px] text-[#9a9a94] mt-1">System role names can&apos;t be renamed.</p>
             )}
           </div>
+
+          {editingRole?.name !== "admin" && (
+            <div className="rounded-xl border border-[#ebece6] bg-[#fcfbf8] p-3">
+              <label htmlFor="role-template" className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider flex items-center gap-1.5 mb-1.5"><Sparkles className="w-3 h-3" /> Fill from a template</label>
+              <select id="role-template" defaultValue="" onChange={e => { applyTemplate(e.target.value); e.target.value = ""; }} className="select w-full text-xs">
+                <option value="" disabled>Choose a job to copy its access…</option>
+                {ROLE_TEMPLATES.map(t => <option key={t.key} value={t.key}>{t.label}: {t.info}</option>)}
+              </select>
+              <p className="text-[10px] text-[#9a9a94] mt-1.5">Replaces the permissions, menu pages and access matrix below. Nothing is saved until you press Save Role.</p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider block">Permissions</label>
