@@ -63,6 +63,7 @@ export default function RolesPage() {
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [form, setForm] = useState<RoleForm>({ name: "", permissions: EMPTY_PERMISSIONS, nav_modules: null, grants: null, home_widgets: null });
   const [saving, setSaving] = useState(false);
+  const [tpl, setTpl] = useState("");
 
   const { profile: currentProfile, loading: profileLoading } = useCurrentProfile();
   const supabase = createClient();
@@ -80,6 +81,7 @@ export default function RolesPage() {
 
   function openCreate() {
     setEditingRole(null);
+    setTpl("");
     // A new role starts with the neutral menu, not every page: the admin ticks what the job needs.
     setForm({ name: "", permissions: { ...EMPTY_PERMISSIONS }, nav_modules: [...NEUTRAL_NAV_MODULES], grants: roles.some(r => r.grants !== undefined) ? {} : null, home_widgets: null });
     setModalOpen(true);
@@ -94,16 +96,19 @@ export default function RolesPage() {
     const existing = roles.find(r => r.name === t.key);
     if (existing) return openEdit(existing);
     setEditingRole(null);
+    setTpl(t.key);
     setForm(fromTemplate(t));
     setModalOpen(true);
   }
   function applyTemplate(key: string) {
     const t = roleTemplate(key);
+    setTpl(key);
     if (t) setForm(f => fromTemplate(t, f.name));
   }
 
   function openEdit(role: Role) {
     setEditingRole(role);
+    setTpl("");
     setForm({ name: role.name, permissions: { ...EMPTY_PERMISSIONS, ...role.permissions }, nav_modules: role.nav_modules, grants: role.grants ?? null, home_widgets: role.home_widgets ?? null });
     setModalOpen(true);
   }
@@ -143,6 +148,13 @@ export default function RolesPage() {
     const name = form.name.trim().toLowerCase().replace(/\s+/g, "_");
     if (!name) return toast.error("Role name is required");
 
+    // People hold a role by its name, so a rename has to move them too, or they would lose its access.
+    const renamedFrom = editingRole && editingRole.name !== name ? editingRole.name : null;
+    if (renamedFrom) {
+      const { count } = await supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", renamedFrom);
+      if (count && !await confirmDialog(`${count} ${count === 1 ? "person has" : "people have"} the "${renamedFrom}" role. Rename it to "${name}" and move them with it?`)) return;
+    }
+
     setSaving(true);
     // A new role saved with an empty matrix gets its grants derived from the flags by the DB trigger.
     const payload = { name, permissions: form.permissions, nav_modules: form.nav_modules, ...(form.grants ? { grants: form.grants, home_widgets: form.home_widgets } : {}) };
@@ -150,6 +162,18 @@ export default function RolesPage() {
     const { error } = editingRole
       ? await supabase.from("roles").update(payload).eq("id", editingRole.id)
       : await supabase.from("roles").insert(payload);
+
+    if (!error && renamedFrom && editingRole) {
+      const moved = await supabase.from("profiles").update({ role: name }).eq("role", renamedFrom);
+      if (moved.error) {
+        // Put the old name back so nobody is left holding a role that no longer exists.
+        await supabase.from("roles").update({ name: renamedFrom }).eq("id", editingRole.id);
+        toast.error(`Couldn't move people to the new name, so the role keeps "${renamedFrom}". ${moved.error.message}`);
+        setSaving(false);
+        fetchRoles();
+        return;
+      }
+    }
 
     if (error) {
       toast.error(error.message.includes("duplicate") ? `A role named "${name}" already exists.` : error.message);
@@ -287,11 +311,13 @@ export default function RolesPage() {
           {editingRole?.name !== "admin" && (
             <div className="rounded-xl border border-[#ebece6] bg-[#fcfbf8] p-3">
               <label htmlFor="role-template" className="text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider flex items-center gap-1.5 mb-1.5"><Sparkles className="w-3 h-3" /> Fill from a template</label>
-              <select id="role-template" defaultValue="" onChange={e => { applyTemplate(e.target.value); e.target.value = ""; }} className="select w-full text-xs">
+              <select id="role-template" value={tpl} onChange={e => applyTemplate(e.target.value)} className="select w-full text-xs">
                 <option value="" disabled>Choose a job to copy its access…</option>
                 {ROLE_TEMPLATES.map(t => <option key={t.key} value={t.key}>{t.label}: {t.info}</option>)}
               </select>
-              <p className="text-[10px] text-[#9a9a94] mt-1.5">Replaces the permissions, menu pages and access matrix below. Nothing is saved until you press Save Role.</p>
+              {tpl ? (
+                <p className="text-[11px] text-emerald-700 mt-1.5 font-medium">Filled from &ldquo;{roleTemplate(tpl)?.label}&rdquo;. Check the permissions, menu pages and access below, then press Save Role.</p>
+              ) : <p className="text-[10px] text-[#9a9a94] mt-1.5">Replaces the permissions, menu pages and access matrix below. Nothing is saved until you press Save Role.</p>}
             </div>
           )}
 

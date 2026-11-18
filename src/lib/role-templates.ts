@@ -121,7 +121,8 @@ const OTHER_INFO: Record<string, { icon: LucideIcon; info: string }> = {
   web_developer: { icon: Code2, info: "Builds and looks after the website; own tasks and tickets." },
 };
 
-export const roleTemplate = (name: string) => ROLE_TEMPLATES.find(t => t.key === name);
+const slug = (s: string) => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+export const roleTemplate = (name: string) => ROLE_TEMPLATES.find(t => t.key === name || slug(t.label) === name);
 
 /** Icon and one-line use case for any role name; custom roles fall back to a generic line. */
 export function roleInfo(name: string): { icon: LucideIcon; info: string } {

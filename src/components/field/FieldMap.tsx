@@ -14,7 +14,31 @@ type Place = { name: string; lat: number; lng: number };
  * pins, the chosen rep's route, live team positions and "you are here".
  * Leaflet touches `window`, so it is imported inside the effect.
  */
-export function FieldMap({ points, live, me, trailLine, selectedId, selectedLive, onSelect, onSelectLive, fitToken, className }: {
+/** Base maps. All are free image tiles: switching costs the browser a few images, nothing on our side. */
+export const MAP_STYLES = [
+  { key: "colour", label: "Colour" },
+  { key: "street", label: "Street" },
+  { key: "satellite", label: "Satellite" },
+  { key: "light", label: "Light" },
+] as const;
+export type MapStyle = (typeof MAP_STYLES)[number]["key"];
+
+const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>';
+function baseLayers(mod: typeof import("leaflet"), style: MapStyle) {
+  if (style === "satellite") return [
+    mod.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Imagery &copy; Esri" }),
+    // Place names and borders on top, so the photo still reads as a map.
+    mod.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19 }),
+  ];
+  if (style === "colour") return [mod.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+    maxZoom: 20, subdomains: "abcd", attribution: `${OSM_ATTR} &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>`,
+  })];
+  return [mod.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19, subdomains: "abc", className: style === "light" ? "field-tiles" : "", attribution: OSM_ATTR,
+  })];
+}
+
+export function FieldMap({ points, live, me, trailLine, selectedId, selectedLive, onSelect, onSelectLive, fitToken, className, mapStyle = "colour" }: {
   points: MapPoint[];
   live: LivePoint[];
   me: MePoint | null;
@@ -26,11 +50,15 @@ export function FieldMap({ points, live, me, trailLine, selectedId, selectedLive
   /** Change it to fit the map to everything shown. */
   fitToken: number;
   className?: string;
+  mapStyle?: MapStyle;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<LeafletMap | null>(null);
   const layer = useRef<LayerGroup | null>(null);
   const L = useRef<typeof import("leaflet") | null>(null);
+  const tiles = useRef<import("leaflet").TileLayer[]>([]);
+  const styleRef = useRef(mapStyle);
+  styleRef.current = mapStyle;
   const cb = useRef({ onSelect, onSelectLive });
   cb.current = { onSelect, onSelectLive };
   const lastFit = useRef<string>("");
@@ -42,10 +70,7 @@ export function FieldMap({ points, live, me, trailLine, selectedId, selectedLive
       if (dead || !box.current || map.current) return;
       L.current = mod;
       const m = mod.map(box.current, { zoomControl: false, attributionControl: true, scrollWheelZoom: false }).setView([20.6, 78.9], 5);
-      mod.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19, subdomains: "abc", className: "field-tiles",
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
-      }).addTo(m);
+      tiles.current = baseLayers(mod, styleRef.current).map(t => t.addTo(m));
       // Scroll zooms only after the map is clicked, so the page still scrolls past it.
       m.on("click", () => m.scrollWheelZoom.enable());
       m.on("mouseout", () => m.scrollWheelZoom.disable());
@@ -123,6 +148,14 @@ export function FieldMap({ points, live, me, trailLine, selectedId, selectedLive
   useEffect(() => { if (me && map.current) map.current.setView([me.lat, me.lng], Math.max(map.current.getZoom(), 15), { animate: true }); }, [me?.lat, me?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fit(true); }, [fitToken]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Swap the base map in place: pins, route and view stay as they are.
+  useEffect(() => {
+    const m = map.current, mod = L.current;
+    if (!m || !mod) return;
+    tiles.current.forEach(t => t.remove());
+    tiles.current = baseLayers(mod, mapStyle).map(t => t.addTo(m));
+    tiles.current.forEach(t => t.bringToBack());
+  }, [mapStyle]);
 
   const zoom = (d: number) => map.current?.setZoom(map.current.getZoom() + d);
   const go = (p: Place) => { setPlace(p); map.current?.setView([p.lat, p.lng], 16, { animate: true }); };

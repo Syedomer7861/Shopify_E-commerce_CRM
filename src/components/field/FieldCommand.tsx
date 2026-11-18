@@ -11,7 +11,7 @@ import {
   advancedCount, inRange, issues as findIssues, isLive, isMissed, matches, matchesAdvanced, NO_ADVANCED, rangeBounds, reps as repSummaries, stats as dayStats, timeline, trail,
   type Advanced, type FieldVisit, type Filter, type Issue, type LiveLocation, type Range, type TimelineEvent,
 } from "@/lib/field-command";
-import type { LivePoint, MapPoint, MePoint } from "./FieldMap";
+import { MAP_STYLES, type LivePoint, type MapPoint, type MapStyle, type MePoint } from "./FieldMap";
 import { LiveShareToggle } from "./LiveLocation";
 
 const FieldMap = dynamic(() => import("./FieldMap").then(m => m.FieldMap), {
@@ -58,6 +58,11 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
   const [me, setMe] = useState<MePoint | null>(null);
   const [locating, setLocating] = useState(false);
   const [layers, setLayers] = useState({ visits: true, live: true, route: true });
+  const [mapStyle, setMapStyle] = useState<MapStyle>("colour");
+  useEffect(() => {
+    try { const s = localStorage.getItem("field-map-style"); if (MAP_STYLES.some(m => m.key === s)) setMapStyle(s as MapStyle); } catch { /* storage blocked */ }
+  }, []);
+  const pickStyle = (s: MapStyle) => { setMapStyle(s); try { localStorage.setItem("field-map-style", s); } catch { /* storage blocked */ } };
   const [fitToken, setFitToken] = useState(0);
   const [tab, setTab] = useState<"team" | "timeline">("team");
   const [from, setFrom] = useState(() => isoDay(new Date(Date.now() - 6 * 86_400_000)));
@@ -319,7 +324,7 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
               </button>
             ))}
           </div>
-          <FieldMap points={layers.visits ? points : []} live={livePoints} me={me} trailLine={line} fitToken={fitToken}
+          <FieldMap points={layers.visits ? points : []} live={livePoints} me={me} trailLine={line} fitToken={fitToken} mapStyle={mapStyle}
             selectedId={selected} selectedLive={rep} onSelect={setSelected} onSelectLive={id => { setRep(id); setSelected(null); setTab("timeline"); }}
             className="absolute inset-0" />
           <div className="absolute z-[500] top-14 right-3 flex flex-col gap-1.5">
@@ -333,6 +338,12 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
                 <input type="checkbox" checked={layers[k]} onChange={e => setLayers(l => ({ ...l, [k]: e.target.checked }))} className="accent-[#1c1c1c]" />{label}
               </label>
             ))}
+            <label className="flex items-center gap-1.5 px-1.5 pt-1 mt-0.5 border-t border-[#ebece6] text-[#6b6b67]">
+              <span>Map</span>
+              <select value={mapStyle} onChange={e => pickStyle(e.target.value as MapStyle)} aria-label="Map style" className="bg-transparent text-[#1c1c1c] font-semibold outline-none cursor-pointer">
+                {MAP_STYLES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+              </select>
+            </label>
           </div>
           {points.length === 0 && (
             <div className="absolute z-[500] inset-x-0 bottom-20 mx-auto w-fit rounded-xl bg-white/95 border border-[#ebece6] px-4 py-2 text-xs text-[#6b6b67] shadow-sm">
