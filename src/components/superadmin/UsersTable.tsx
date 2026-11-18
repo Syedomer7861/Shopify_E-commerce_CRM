@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, LogOut, Ban, CheckCircle2, ShieldCheck, Users } from "lucide-react";
 import toast from "react-hot-toast";
 import { EmptyState } from "@/components/ui";
+import { fetchAllRows } from "@/lib/fetch-all-rows";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -30,9 +31,10 @@ export function UsersTable({ orgId, showOrg = true }: { orgId?: string; showOrg?
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase.rpc("platform_user_directory", { p_org: orgId ?? null });
-    if (error) toast.error(error.message);
-    else setUsers((data || []) as PlatformUser[]);
+    const { data, error } = await fetchAllRows<PlatformUser>(
+      supabase.rpc("platform_user_directory", { p_org: orgId ?? null }), 20_000, "user_id");
+    if (error) toast.error((error as { message?: string }).message || "Could not load users");
+    else setUsers(data);
     setLoading(false);
   }, [supabase, orgId]);
 

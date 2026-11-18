@@ -33,6 +33,8 @@ export default function SuperAdminCoupons() {
   async function create() {
     const code = form.code.trim().toUpperCase();
     if (!/^[A-Z0-9][A-Z0-9_-]{1,39}$/.test(code)) return toast.error("Code: 2-40 letters, numbers, - or _");
+    // Saving an existing code only switches it back on with its OLD terms, so stop here.
+    if (coupons.some(c => c.code === code)) return toast.error(`${code} already exists. Use its switch in the list, or pick a new code.`);
     const percent = form.kind === "percent" ? Number(form.value) : null;
     const amount = form.kind === "amount" ? toMinor(form.value) : null;
     if (form.kind === "percent" && !(Number.isInteger(percent) && percent! >= 1 && percent! <= 100)) return toast.error("Percent must be 1 to 100");

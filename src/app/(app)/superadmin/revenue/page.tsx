@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { formatMinor } from "@/lib/money";
-import { monthlyMinor, monthStart, movement, mrrAt, mrrSeries, type Sub } from "@/lib/revenue";
+import { monthlyMinor, monthStart, movement, mrrAt, mrrSeries, payingAt, type Sub } from "@/lib/revenue";
 
 type Row = Sub & {
   id: string;
@@ -48,9 +48,11 @@ export default function SuperAdminRevenue() {
     const series = mrrSeries(rows, now, 12);
     const currencies = [...new Set([...Object.keys(mrr), ...Object.keys(moves), ...series.flatMap(s => Object.keys(s.mrr))])].sort();
     const current = rows.filter(r => r.status !== "cancelled");
+    // Same rule as the MRR tile (payingAt), so the per-plan split adds up to it:
+    // converted Razorpay trials count, unconverted trials don't.
+    const paying = rows.filter(r => payingAt(r, now));
     const byPlan = new Map<string, Record<string, number>>();
-    for (const r of current) {
-      if (r.trial_ends_at) continue;
+    for (const r of paying) {
       const name = r.plan_versions?.subscription_plans?.name || "Unknown plan";
       const m = byPlan.get(name) || {};
       byPlan.set(name, { ...m, [r.currency]: (m[r.currency] || 0) + monthlyMinor(r) });
@@ -58,7 +60,7 @@ export default function SuperAdminRevenue() {
     const soon = (iso: string | null, days: number) => !!iso && new Date(iso).getTime() - now.getTime() <= days * DAY;
     return {
       mrr, moves, series, currencies, byPlan: [...byPlan.entries()],
-      paying: current.filter(r => !r.trial_ends_at).length,
+      paying: paying.length,
       trialsEnding: current.filter(r => r.status === "trialing" && soon(r.trial_ends_at, 14))
         .sort((a, b) => a.trial_ends_at!.localeCompare(b.trial_ends_at!)),
       renewals: current.filter(r => r.status === "active" && soon(r.current_period_end, 30))

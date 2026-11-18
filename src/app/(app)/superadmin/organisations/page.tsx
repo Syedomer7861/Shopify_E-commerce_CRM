@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { fetchAllRows } from "@/lib/fetch-all-rows";
 
 type Org = {
   org_id: string; name: string; slug: string; plan: string | null; is_active: boolean;
@@ -26,13 +27,14 @@ export default function SuperAdminOrganisations() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "active" | "suspended">("all");
+  const [q, setQ] = useState("");
   const [focus] = useState(() => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("focus")));
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase.rpc("platform_org_directory");
-    if (error) toast.error(error.message);
-    else setOrgs((data || []) as Org[]);
+    const { data, error } = await fetchAllRows<Org>(supabase.rpc("platform_org_directory"), 20_000, "org_id");
+    if (error) toast.error((error as { message?: string }).message || "Could not load organisations");
+    else setOrgs(data);
     setLoading(false);
   }, [supabase]);
 
@@ -55,13 +57,18 @@ export default function SuperAdminOrganisations() {
     setBusyId(null);
   }
 
-  const shown = orgs.filter(o => filter === "all" || (filter === "active" ? o.is_active : !o.is_active));
+  const term = q.trim().toLowerCase();
+  const shown = orgs
+    .filter(o => filter === "all" || (filter === "active" ? o.is_active : !o.is_active))
+    .filter(o => !term || [o.name, o.slug, o.admin_email, o.plan].some(v => v?.toLowerCase().includes(term)));
 
   return (
     <div>
       <PageHeader title="Organisations" subtitle="Every organisation on CodeCrest. Suspending one locks out all of its members at once; data is kept." />
 
-      <div className="flex gap-2 mb-4">
+      <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search name, slug, admin email or plan"
+        aria-label="Search organisations" className="w-full h-10 px-3 mb-3 bg-white border border-[#ebece6] rounded-xl text-sm focus:outline-none focus:border-[#1c1c1c]/30" />
+      <div className="flex flex-wrap gap-2 mb-4">
         {(["all", "active", "suspended"] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className={cn("px-3 py-1.5 rounded-full text-xs font-semibold border capitalize",
