@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CloudUpload, CheckCircle2, WifiOff, ShoppingBag, Zap, Mail, Check, ShieldCheck, ListPlus, FileInput, KeyRound, GitBranch, Palette, ArrowLeft } from "lucide-react";
+import { Save, RefreshCw, Trash2, ToggleLeft, ToggleRight, Bell, Sliders, Package, Database, AlertCircle, Loader2, Plus, Search, X, Send, Paperclip, Smartphone, QrCode, CloudUpload, CheckCircle2, WifiOff, ShoppingBag, Zap, Mail, Check, ShieldCheck, ListPlus, FileInput, KeyRound, GitBranch, Palette, ArrowLeft, CreditCard } from "lucide-react";
 import { PageHeader, Modal, SyncProgressBar } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { cn, toDbDateString } from "@/lib/utils";
@@ -39,11 +39,12 @@ interface PipelineState {
   waiting: PipelineItem[];
 }
 
-type Tab = "general" | "appearance" | "fields" | "forms" | "api" | "security" | "telephony" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database" | "backup" | "devtools";
+type Tab = "general" | "billing" | "appearance" | "fields" | "forms" | "api" | "security" | "telephony" | "notifications" | "email" | "overrides" | "shopify" | "shiprocket" | "database" | "backup" | "devtools";
 
 const SETTINGS_SECTIONS: { label: string; items: { key: Tab; label: string; icon: typeof Sliders; desc: string }[] }[] = [
   { label: "Organisation", items: [
     { key: "general", label: "Preferences", icon: Sliders, desc: "Follow-up timings for customer retention tasks." },
+    { key: "billing", label: "Plan & Billing", icon: CreditCard, desc: "Your plan, team-member limit and payments." },
     { key: "appearance", label: "Appearance", icon: Palette, desc: "Theme, colours and branding your team sees." },
     { key: "security", label: "Security", icon: ShieldCheck, desc: "Two-step sign-in for your own account." },
   ] },
@@ -73,6 +74,7 @@ const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 import { getTemplateVariables, personaliseTemplate } from "@/lib/wa-template";
 import GoogleBackupCard from "@/components/settings/GoogleBackupCard";
 import DevToolsCard from "@/components/settings/DevToolsCard";
+import { BillingSummary } from "@/components/settings/BillingSummary";
 
 const WA_PRESETS: Record<string, string[]> = {
   wa_welcome_template: [
@@ -1198,6 +1200,7 @@ export default function SettingsPage() {
             <p className="text-sm text-[#5f5f5d]">{activeSection.desc}</p>
           </div>
 
+      {tab === "billing" && <BillingSummary />}
       {tab === "appearance" && <AppearanceManager />}
       {tab === "fields" && <CustomFieldsManager canEdit={isAdmin(profile)} />}
       {tab === "forms" && <WebFormsManager />}
