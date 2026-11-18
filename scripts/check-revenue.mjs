@@ -48,4 +48,10 @@ const series = R.mrrSeries(subs, now, 4);
 assert.deepStrictEqual(series.map(s => s.month), ["2026-08", "2026-09", "2026-10", "2026-11"]);
 assert.deepStrictEqual(series[2].mrr, { INR: 316483 }, "October closes with A and B");
 assert.deepStrictEqual(series[3].mrr, { INR: 299900, USD: 4900 }, "current month uses now");
+// Self-serve: one Razorpay row trials, then the same row is charged.
+const rz = sub({ org_id: "E", source: "razorpay", price_minor: 199900, trial_ends_at: "2026-11-15T00:00:00Z", created_at: "2026-11-01T00:00:00Z" });
+assert.deepStrictEqual(R.mrrAt([rz], new Date("2026-11-10T00:00:00Z")), {}, "self-serve trial does not count");
+assert.deepStrictEqual(R.mrrAt([rz], now), { INR: 199900 }, "self-serve row pays after its trial");
+const rzGone = { ...rz, status: "cancelled", cancelled_at: "2026-11-12T00:00:00Z" };
+assert.deepStrictEqual(R.mrrAt([rzGone], now), {}, "self-serve trial cancelled early never counts");
 console.log("check-revenue: OK");

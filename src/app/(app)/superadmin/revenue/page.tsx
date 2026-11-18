@@ -33,7 +33,7 @@ export default function SuperAdminRevenue() {
 
   useEffect(() => {
     supabase.from("org_subscriptions")
-      .select("id, org_id, status, billing_cycle, currency, price_minor, trial_ends_at, current_period_end, created_at, cancelled_at, organizations(name), plan_versions(subscription_plans(name))")
+      .select("id, org_id, status, source, billing_cycle, currency, price_minor, trial_ends_at, current_period_end, created_at, cancelled_at, organizations(name), plan_versions(subscription_plans(name))")
       .then(({ data, error }) => {
         if (error) toast.error(error.message);
         setRows((data || []) as unknown as Row[]);

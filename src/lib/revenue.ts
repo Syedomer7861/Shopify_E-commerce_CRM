@@ -5,6 +5,10 @@
 // active row (platform_assign_subscription). So a row is paying from created_at
 // until cancelled_at exactly when trial_ends_at is null. These are contracted
 // amounts, not payments received. Money is in minor units.
+//
+// Self-serve (Razorpay) rows are different: the same row carries on after its
+// trial and Razorpay charges it, so it pays from trial_ends_at. A trial
+// cancelled before then never counts.
 
 export type Sub = {
   org_id: string;
@@ -16,13 +20,17 @@ export type Sub = {
   current_period_end: string;
   created_at: string;
   cancelled_at: string | null;
+  source?: string | null;
 };
 
 /** Same rounding as platform_revenue_summary (integer division for yearly). */
 export const monthlyMinor = (s: Sub) => (s.billing_cycle === "monthly" ? s.price_minor : Math.floor(s.price_minor / 12));
 
-export const payingAt = (s: Sub, t: Date) =>
-  s.trial_ends_at == null && new Date(s.created_at) <= t && (!s.cancelled_at || new Date(s.cancelled_at) > t);
+export function payingAt(s: Sub, t: Date) {
+  if (s.trial_ends_at != null && s.source !== "razorpay") return false;
+  const from = new Date(s.trial_ends_at ?? s.created_at);
+  return from <= t && (!s.cancelled_at || new Date(s.cancelled_at) > t);
+}
 
 /** MRR per currency at an instant. */
 export function mrrAt(subs: Sub[], t: Date): Record<string, number> {
