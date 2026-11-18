@@ -6,6 +6,8 @@ import { toast } from "react-hot-toast";
 import { isDemoMode } from "@/lib/demo";
 import { BiometricPanel } from "@/components/hr/BiometricPanel";
 import { PunchSheet } from "@/components/hr/PunchSheet";
+import { AttendanceRules } from "@/components/hr/AttendanceRules";
+import { DEFAULT_POLICY, isWeeklyOff, lateDeductions, type AttendancePolicy } from "@/lib/attendance-engine";
 import { ShiftTimings, shiftLabel } from "@/components/hr/ShiftTimings";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -51,7 +53,7 @@ interface AttendanceCell {
   missingOut: boolean;
 }
 
-interface Props { members: any[]; employees: any[]; attendanceLogs: any[]; holidays: Holiday[]; onRefresh: () => void; }
+interface Props { members: any[]; employees: any[]; attendanceLogs: any[]; holidays: Holiday[]; onRefresh: () => void; attendancePolicy?: AttendancePolicy; isOrgAdmin?: boolean; }
 
 const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -66,7 +68,8 @@ function fmtHours(mins: number) {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
-export default function AttendanceRegister({ members, employees, attendanceLogs, holidays, onRefresh }: Props) {
+export default function AttendanceRegister({ members, employees, attendanceLogs, holidays, onRefresh, attendancePolicy, isOrgAdmin = false }: Props) {
+  const policy = attendancePolicy ?? DEFAULT_POLICY;
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<"register" | "shifts" | "holidays" | "analytics" | "biometric" | "sheet">("register");
   const [shiftStarts, setShiftStarts] = useState<Record<string, number>>({});
@@ -234,6 +237,8 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
   const countFor = (agent: string, status: AttStatus) =>
     Object.values(attendance[agent] || {}).filter(v => v.status === status).length;
 
+  const isOff = (day: number) => isWeeklyOff(`${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`, policy);
+
   const isHoliday = (day: number) =>
     holidays.some(h => h.date === `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`);
 
@@ -330,7 +335,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
                     const wd = new Date(year, month, d).getDay();
                     return (
                       <th key={d} className={cn("px-1 py-2 text-center text-[9px] font-bold uppercase tracking-wider min-w-[36px]",
-                        isHoliday(d) ? "text-[#6f9bdd]" : wd === 0 ? "text-rose-400 bg-rose-50/60" : "text-[#9a9a94]")}>
+                        isHoliday(d) ? "text-[#6f9bdd]" : isOff(d) ? "text-rose-400 bg-rose-50/60" : "text-[#9a9a94]")}>
                         <div className="text-[10px] text-[#1c1c1c]">{d}</div>
                         <div className="text-[8px] font-semibold normal-case">{WEEKDAY[wd]}</div>
                       </th>
@@ -354,18 +359,19 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
                       };
                       const title = cell
                         ? `${cell.status}${cell.isAuto ? " (auto-detected)" : " (manual)"}\nIn: ${fmtTime(cell.clockIn)}  Out: ${fmtTime(cell.clockOut)}\nWorked: ${fmtHours(cell.productiveMinutes)}  Break: ${fmtHours(cell.breakMinutes)}${cell.missingOut ? "\nMissed out-punch" : ""}`
-                        : (hol ? "Holiday" : "No record — click to set");
+                        : (hol ? "Holiday" : isOff(d) ? "Weekly off" : "No record — click to set");
                       return (
                         <td key={d} className="px-0.5 py-2 text-center">
                           <button
                             onClick={() => setStatus(agent.name, d, statusCycle(cell?.status))}
                             className={cn("relative w-7 h-7 rounded-lg text-[9px] font-bold transition-all hover:scale-110",
                               hol && !cell ? "bg-[#eef4fc] text-[#8fb3e8]" :
+                              !cell && isOff(d) ? "bg-rose-50 text-rose-300" :
                               cell ? STATUS_COLOR[cell.status] : "bg-[#f0f0ec] text-[#d4d5cd] hover:bg-[#e6e7e0]"
                             )}
                             title={title}
                           >
-                            {cell ? STATUS_SHORT[cell.status] : hol ? "H" : "·"}
+                            {cell ? STATUS_SHORT[cell.status] : hol ? "H" : isOff(d) ? "WO" : "·"}
                             {cell?.missingOut && (
                               <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 ring-1 ring-white" />
                             )}
@@ -383,6 +389,9 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
                         <span className="text-amber-500">HD:{countFor(agent.name, "Half Day")}</span>
                         <span className="text-rose-500">A:{countFor(agent.name, "Absent")}</span>
                         <span className="text-[#6f9bdd]">LV:{countFor(agent.name, "Leave")}</span>
+                        {policy.latesPerHalfDay > 0 && lateDeductions(countFor(agent.name, "Late"), policy) > 0 && (
+                          <span className="text-rose-600" title={`Every ${policy.latesPerHalfDay} lates = 1 half-day cut`}>CUT:{lateDeductions(countFor(agent.name, "Late"), policy)} HD</span>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -403,7 +412,8 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
           <p className="text-xs text-[#9a9a94] mb-6">
             Assign shift rotations per agent. Saved immediately and used to flag late clock-ins in the register above.
           </p>
-          <ShiftTimings onLoaded={setShiftStarts} />
+          <ShiftTimings onLoaded={setShiftStarts} canEdit={isOrgAdmin} onSaved={onRefresh} />
+          <AttendanceRules policy={attendancePolicy} canEdit={isOrgAdmin} onSaved={onRefresh} />
           <div className="space-y-3">
             {employees.map(emp => {
               const currentShift = (emp.shift_type as ShiftType) || "Morning";
@@ -452,7 +462,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
 
       {tab === "biometric" && <BiometricPanel employees={employees} onRefresh={onRefresh} />}
 
-      {tab === "sheet" && <PunchSheet employees={employees} attendanceLogs={attendanceLogs} holidays={holidays} />}
+      {tab === "sheet" && <PunchSheet employees={employees} attendanceLogs={attendanceLogs} holidays={holidays} policy={policy} />}
 
       {/* ── Holiday Calendar ── */}
       {tab === "holidays" && (

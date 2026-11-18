@@ -275,7 +275,8 @@ export function lateByMinutes(shiftType: string, clockIn: Date, timings: ShiftTi
 export function computeBiometricDays(
   rows: BiometricDay[],
   shiftByAgent: Record<string, string>,
-  timings: ShiftTimings = {}
+  timings: ShiftTimings = {},
+  policy: AttendancePolicy = DEFAULT_POLICY
 ): ComputedAttendanceRow[] {
   const out: ComputedAttendanceRow[] = [];
   for (const r of rows) {
@@ -286,8 +287,16 @@ export function computeBiometricDays(
     const minutes = missingOut ? 0 : span;
     const shift = shiftByAgent[r.agent_id] || "Morning";
     const isLate = lateFor(shift, first, timings);
-    const status: AttendanceStatus =
-      missingOut || minutes >= FULL_DAY_MINUTES ? (isLate ? "Late" : "Present") : "Half Day";
+    const lateBy = lateByMinutes(shift, first, timings);
+    const onTime: AttendanceStatus = isLate ? "Late" : "Present";
+    let status: AttendanceStatus;
+    if (missingOut) {
+      status = policy.missedPunch === "half_day" ? "Half Day" : policy.missedPunch === "absent" ? "Absent" : onTime;
+    } else if (minutes >= requiredMinutes(r.day, policy)) status = onTime;
+    else if (policy.halfDayMinutes > 0 && minutes < policy.halfDayMinutes) status = "Absent";
+    else status = "Half Day";
+    // Arriving very late turns a worked day into a half day.
+    if (policy.veryLateMinutes > 0 && lateBy > policy.veryLateMinutes && (status === "Present" || status === "Late")) status = "Half Day";
     out.push({
       agent_id: r.agent_id, date: r.day, status,
       clock_in: first.toISOString(),
@@ -295,8 +304,84 @@ export function computeBiometricDays(
       productive_minutes: minutes, break_minutes: 0,
       is_auto: true, is_late: isLate,
       source: "biometric", punch_count: r.n, missing_out: missingOut,
-      late_by_minutes: lateByMinutes(shift, first, timings),
+      late_by_minutes: lateBy,
     });
   }
   return out;
+}
+
+/**
+ * Org attendance rules (org_attendance_policy). Admin-editable; applied to
+ * biometric days. Missing row = DEFAULT_POLICY, which matches the old rules.
+ */
+export type SaturdayRule = "full" | "half" | "alt_2_4_off" | "alt_1_3_off";
+export type MissedPunchRule = "by_in_time" | "half_day" | "absent";
+export interface AttendancePolicy {
+  /** Days of week that are off (0 = Sunday ... 6 = Saturday). */
+  weeklyOff: number[];
+  /** Saturdays that are not in weeklyOff: full day, half day, or alternate Saturdays off. */
+  saturdayRule: SaturdayRule;
+  /** Minutes on site for a full day. */
+  fullDayMinutes: number;
+  /** Below this a punched day is Absent; 0 = never (short days are Half Day). */
+  halfDayMinutes: number;
+  missedPunch: MissedPunchRule;
+  /** Late by more than this (after grace) = Half Day; 0 = off. */
+  veryLateMinutes: number;
+  /** Every N lates in a month = 1 half-day deduction; 0 = off. */
+  latesPerHalfDay: number;
+}
+
+export const DEFAULT_POLICY: AttendancePolicy = {
+  weeklyOff: [0], saturdayRule: "full", fullDayMinutes: FULL_DAY_MINUTES, halfDayMinutes: 0,
+  missedPunch: "by_in_time", veryLateMinutes: 0, latesPerHalfDay: 0,
+};
+
+const clampInt = (v: unknown, lo: number, hi: number, d: number) => {
+  const n = Math.round(Number(v));
+  return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d;
+};
+
+/** DB row (snake_case, possibly null/partial) to a safe policy. */
+export function policyFromRow(row: Record<string, unknown> | null | undefined): AttendancePolicy {
+  if (!row) return DEFAULT_POLICY;
+  const off = Array.isArray(row.weekly_off) ? row.weekly_off.map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6) : DEFAULT_POLICY.weeklyOff;
+  const sat = ["full", "half", "alt_2_4_off", "alt_1_3_off"].includes(row.saturday_rule as string) ? (row.saturday_rule as SaturdayRule) : "full";
+  const mp = ["by_in_time", "half_day", "absent"].includes(row.missed_punch as string) ? (row.missed_punch as MissedPunchRule) : "by_in_time";
+  return {
+    weeklyOff: Array.from(new Set(off)).sort(),
+    saturdayRule: sat,
+    fullDayMinutes: clampInt(row.full_day_minutes, 60, 960, FULL_DAY_MINUTES),
+    halfDayMinutes: clampInt(row.half_day_minutes, 0, 600, 0),
+    missedPunch: mp,
+    veryLateMinutes: clampInt(row.very_late_minutes, 0, 480, 0),
+    latesPerHalfDay: clampInt(row.lates_per_half_day, 0, 31, 0),
+  };
+}
+
+/** Weekday (0-6) and week-of-month (1-5) of a YYYY-MM-DD date. */
+function dayParts(date: string) {
+  const [y, m, d] = date.split("-").map(Number);
+  return { wd: new Date(Date.UTC(y, m - 1, d)).getUTCDay(), nth: Math.ceil(d / 7) };
+}
+
+/** True when the org's rules make this date a day off. */
+export function isWeeklyOff(date: string, policy: AttendancePolicy = DEFAULT_POLICY) {
+  const { wd, nth } = dayParts(date);
+  if (policy.weeklyOff.includes(wd)) return true;
+  if (wd !== 6) return false;
+  return (policy.saturdayRule === "alt_2_4_off" && (nth === 2 || nth === 4))
+    || (policy.saturdayRule === "alt_1_3_off" && (nth === 1 || nth === 3));
+}
+
+/** Minutes needed for a full day on this date (half-day Saturdays need half). */
+export function requiredMinutes(date: string, policy: AttendancePolicy = DEFAULT_POLICY) {
+  return dayParts(date).wd === 6 && policy.saturdayRule === "half"
+    ? Math.round(policy.fullDayMinutes / 2)
+    : policy.fullDayMinutes;
+}
+
+/** Half-day deductions from lates: floor(lates / N). */
+export function lateDeductions(lateCount: number, policy: AttendancePolicy = DEFAULT_POLICY) {
+  return policy.latesPerHalfDay > 0 ? Math.floor(lateCount / policy.latesPerHalfDay) : 0;
 }

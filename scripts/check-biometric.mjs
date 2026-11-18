@@ -81,4 +81,28 @@ assert.ok(dates.includes("2026-11-05"), "CRM-log day before first punch kept");
 // Org timing override: Morning at 09:30 + 5 min grace makes b on time.
 assert.equal(computeBiometricDays([{ agent_id: "b", day: "2026-11-18", first_at: "2026-11-18T04:00:00Z", last_at: "2026-11-18T13:00:00Z", n: 2 }], shift, { Morning: { start: 570, grace: 5 } })[0].status, "Present");
 
+// Org policy rules.
+const eng = load("src/lib/attendance-engine.ts");
+const P = eng.policyFromRow({ weekly_off: [0], saturday_rule: "half", full_day_minutes: 480, half_day_minutes: 120, missed_punch: "half_day", very_late_minutes: 60, lates_per_half_day: 3 });
+const day = (id, date, fromZ, toZ, n = 2) => ({ agent_id: id, day: date, first_at: `${date}T${fromZ}Z`, last_at: `${date}T${toZ}Z`, n });
+const pol = Object.fromEntries(eng.computeBiometricDays([
+  day("sat", "2026-11-14", "03:30:00", "07:45:00"),       // Sat 09:00-13:15 IST: 4h15 >= half of 8h
+  day("wk7h", "2026-11-13", "03:30:00", "10:30:00"),      // Fri 7h < 8h full day
+  day("short", "2026-11-13", "03:30:00", "04:30:00"),     // 1h < 2h minimum
+  day("miss", "2026-11-13", "03:30:00", "03:30:00", 1),   // missed out-punch
+  day("vlate", "2026-11-13", "05:30:00", "13:30:00"),     // 11:00 IST, 105 min late
+], {}, {}, P).map((r) => [r.agent_id, r]));
+assert.equal(pol.sat.status, "Present", "half-day Saturday needs only half the hours");
+assert.equal(pol.wk7h.status, "Half Day");
+assert.equal(pol.short.status, "Absent");
+assert.equal(pol.miss.status, "Half Day");
+assert.equal(pol.vlate.status, "Half Day", "very late arrival is a half day");
+assert.equal(eng.isWeeklyOff("2026-11-15", P), true, "Sunday off");
+assert.equal(eng.isWeeklyOff("2026-11-14", eng.policyFromRow({ saturday_rule: "alt_2_4_off" })), true, "14 Nov is the 2nd Saturday");
+assert.equal(eng.isWeeklyOff("2026-11-07", eng.policyFromRow({ saturday_rule: "alt_2_4_off" })), false);
+assert.equal(eng.lateDeductions(7, P), 2);
+assert.deepEqual(eng.policyFromRow({ weekly_off: [9, "x", 6], full_day_minutes: 5 }).weeklyOff, [6], "bad weekdays dropped");
+assert.equal(eng.policyFromRow({ full_day_minutes: 5 }).fullDayMinutes, 60, "clamped");
+assert.equal(eng.computeBiometricDays([day("x", "2026-11-13", "03:30:00", "03:30:00", 1)], {}, {}).at(0).status, "Present", "default policy unchanged");
+
 console.log("check-biometric: OK");

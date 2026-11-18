@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import { DEFAULT_POLICY, isWeeklyOff, type AttendancePolicy } from "@/lib/attendance-engine";
 
 /**
  * Excel-style day-by-day sheet: one row per employee per day of the month with
@@ -12,7 +13,7 @@ import { cn } from "@/lib/utils";
  */
 
 interface Holiday { date: string; name: string }
-interface Props { employees: any[]; attendanceLogs: any[]; holidays: Holiday[] }
+interface Props { employees: any[]; attendanceLogs: any[]; holidays: Holiday[]; policy?: AttendancePolicy }
 
 const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const STATUS_TEXT: Record<string, string> = {
@@ -31,7 +32,7 @@ interface Row {
   lateBy: string; punches: number | ""; remarks: string;
 }
 
-export function PunchSheet({ employees, attendanceLogs, holidays }: Props) {
+export function PunchSheet({ employees, attendanceLogs, holidays, policy = DEFAULT_POLICY }: Props) {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
@@ -61,7 +62,8 @@ export function PunchSheet({ employees, attendanceLogs, holidays }: Props) {
         if (log?.is_auto && log.source !== "biometric") remarks.push("From CRM login");
         const hol = holidayByDate.get(date);
         if (hol) remarks.push(hol);
-        if (!log && wd === 0) remarks.push("Weekly off");
+        const off = isWeeklyOff(date, policy);
+        if (off) remarks.push(log ? "Worked on weekly off" : "Weekly off");
         const late = log?.late_by_minutes ?? 0;
         out.push({
           date: `${pad(d)}-${pad(month + 1)}-${year}`,
@@ -71,7 +73,7 @@ export function PunchSheet({ employees, attendanceLogs, holidays }: Props) {
           inTime: fmtTime(log?.clock_in),
           outTime: fmtTime(log?.clock_out),
           hours: fmtHm(log?.productive_minutes ?? 0),
-          status: log?.status ?? (hol ? "Holiday" : wd === 0 ? "" : "No punch"),
+          status: log?.status ?? (hol ? "Holiday" : off ? "" : "No punch"),
           lateBy: late > 0 ? `${late} min` : "",
           punches: log?.punch_count ?? "",
           remarks: remarks.join("; "),
@@ -80,7 +82,7 @@ export function PunchSheet({ employees, attendanceLogs, holidays }: Props) {
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [employees, attendanceLogs, holidays, month, year, who]);
+  }, [employees, attendanceLogs, holidays, policy, month, year, who]);
 
   const totals = useMemo(() => {
     const mins = rows.reduce((s, r) => {
@@ -143,7 +145,7 @@ export function PunchSheet({ employees, attendanceLogs, holidays }: Props) {
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={`${r.name}-${r.date}-${i}`} className={cn(r.day === "Sun" ? "bg-rose-50/50" : i % 2 ? "bg-[#fcfbf8]" : "bg-white")}>
+              <tr key={`${r.name}-${r.date}-${i}`} className={cn(r.remarks.includes("Weekly off") ? "bg-rose-50/50" : i % 2 ? "bg-[#fcfbf8]" : "bg-white")}>
                 <td className="px-3 py-1.5 border border-[#ebece6] whitespace-nowrap tabular-nums">{r.date}</td>
                 <td className="px-3 py-1.5 border border-[#ebece6]">{r.day}</td>
                 <td className="px-3 py-1.5 border border-[#ebece6] font-bold whitespace-nowrap">{r.name}</td>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { seatLimitError } from "@/lib/seats";
 import { requireInternal, hasInternalSecret, getAuthenticatedSession } from "@/lib/auth-utils";
 import { createServerClient, createAdminClient } from "@/lib/supabase";
-import { computeAutoAttendance, computeBiometricDays, type BiometricDay, type ShiftTimings } from "@/lib/attendance-engine";
+import { computeAutoAttendance, computeBiometricDays, policyFromRow, type BiometricDay, type ShiftTimings } from "@/lib/attendance-engine";
 import { computeBenchmark } from "@/lib/hr-benchmark";
 
 export async function GET(req: NextRequest) {
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
     // GET /api/hr/data?type=attendance&days=N.
     const attendanceSince = new Date(Date.now() - 90 * 86_400_000).toISOString();
     const attendanceSinceDate = attendanceSince.slice(0, 10);
-    const [employees, announcements, policies, revisions, expenses, reviews, training, grievances, attendance, rawLogs, holidays, slaTasks, openTasksWithOrders, payrollRuns, bioDays, shiftTimings] = await Promise.all([
+    const [employees, announcements, policies, revisions, expenses, reviews, training, grievances, attendance, rawLogs, holidays, slaTasks, openTasksWithOrders, payrollRuns, bioDays, shiftTimings, policyRow] = await Promise.all([
       supabase.from("profiles").select("*").order("is_active", { ascending: false }),
       supabase.from("announcements").select("*").order("is_pinned", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from("hr_policies").select("*").order("created_at", { ascending: false }),
@@ -141,11 +141,14 @@ export async function GET(req: NextRequest) {
       // Biometric (eSSL) days, summarised in the DB: one row per person per day.
       supabase.rpc("biometric_daily", { p_since: attendanceSinceDate }),
       supabase.from("org_shift_timings").select("shift_type, start_minute, grace_minutes"),
+      supabase.from("org_attendance_policy").select("*").maybeSingle(),
     ]);
 
     const shiftByAgent: Record<string, string> = {};
     for (const p of employees.data || []) shiftByAgent[p.id] = p.shift_type || "Morning";
 
+    // No row (or table not migrated yet) = built-in defaults.
+    const attendancePolicy = policyFromRow(policyRow.error ? null : (policyRow.data as Record<string, unknown> | null));
     const timings: ShiftTimings = {};
     for (const t of shiftTimings.data || []) timings[t.shift_type] = { start: t.start_minute, grace: t.grace_minutes };
     // Before the biometric migration exists these two simply return errors; the register then works as before.
@@ -154,7 +157,7 @@ export async function GET(req: NextRequest) {
       attendance.data || [],
       shiftByAgent,
       timings,
-      computeBiometricDays((bioDays.data || []) as BiometricDay[], shiftByAgent, timings)
+      computeBiometricDays((bioDays.data || []) as BiometricDay[], shiftByAgent, timings, attendancePolicy)
     );
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
@@ -184,6 +187,7 @@ export async function GET(req: NextRequest) {
       training: training.data || [],
       grievances: grievances.data || [],
       attendance: finalAttendance,
+      attendancePolicy,
       holidays: holidays.data || [],
       benchmark,
       revenueAtRiskByAgent,

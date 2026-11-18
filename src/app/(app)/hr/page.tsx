@@ -49,6 +49,7 @@ import toast from "react-hot-toast";
 import PayrollCalculator from "@/components/hr/PayrollCalculator";
 import EmployeeDirectory from "@/components/hr/EmployeeDirectory";
 import AttendanceRegister from "@/components/hr/AttendanceRegister";
+import type { AttendancePolicy } from "@/lib/attendance-engine";
 import PayrollRun from "@/components/hr/PayrollRun";
 import HRDocuments from "@/components/hr/HRDocuments";
 import Announcements from "@/components/hr/Announcements";
@@ -121,6 +122,7 @@ function HRDashboardContent() {
     training: any[];
     grievances: any[];
     attendance: any[];
+    attendancePolicy?: AttendancePolicy;
     holidays: any[];
     benchmark: { slaPct: number; grade: string; doneCount: number; resolutionDeltaPct: number; resolutionDeltaMinutes: number; hasBaseline: boolean };
     revenueAtRiskByAgent: Record<string, number>;
@@ -278,6 +280,7 @@ function HRDashboardContent() {
         training: hrData.training || [],
         grievances: hrData.grievances || [],
         attendance: hrData.attendance || [],
+        attendancePolicy: hrData.attendancePolicy,
         holidays: hrData.holidays || [],
         benchmark: hrData.benchmark || { slaPct: 0, grade: "—", doneCount: 0, resolutionDeltaPct: 0, resolutionDeltaMinutes: 0, hasBaseline: false },
         revenueAtRiskByAgent: hrData.revenueAtRiskByAgent || {},
@@ -869,6 +872,8 @@ function HRDashboardContent() {
           members={data.members} 
           employees={data.employees}
           attendanceLogs={data.attendance}
+          attendancePolicy={data.attendancePolicy}
+          isOrgAdmin={currentProfile?.role === 'admin'}
           holidays={data.holidays}
           onRefresh={fetchData} 
         />
