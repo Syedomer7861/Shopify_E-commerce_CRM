@@ -6,6 +6,9 @@ import { Avatar } from '@/components/ui';
 import { toast } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 
+/** Newest messages per side shown in the chat panel. */
+const CHAT_LIMIT = 200;
+
 interface WhatsAppChatProps {
   phone: string;
   customerName: string;
@@ -89,26 +92,28 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
     async function fetchHistory() {
       setLoading(true);
       try {
-        // 1. Fetch inbound from webhook_logs
-        const { data: inbound } = await supabase
-          .from('webhook_logs')
-          .select('*')
-          .eq('source', 'whatsapp')
-          .order('created_at', { ascending: true });
-
-        // 2. Filter inbound client-side for precision (phone mapping)
-        const filteredInbound = (inbound || []).filter(m => {
-          const from = m.payload?.from || "";
-          return from.includes(phone) || phone.includes(from);
-        });
-
-        // 3. Fetch outbound from call_logs
-        const { data: outbound } = await supabase
-          .from('call_logs')
-          .select('*')
-          .eq('outcome', 'whatsapp')
-          .eq('customer_id', customerId)
-          .order('created_at', { ascending: true });
+        // Filter on the server and take the newest messages only, so the
+        // chat stays correct and fast however many webhooks pile up.
+        const digits = phone.replace(/\D/g, "").slice(-10);
+        const [{ data: inbound }, { data: outbound }] = await Promise.all([
+          digits.length >= 6
+            ? supabase
+                .from('webhook_logs')
+                .select('id, payload, created_at')
+                .eq('source', 'whatsapp')
+                .like('payload->>from', `%${digits}%`)
+                .order('created_at', { ascending: false })
+                .limit(CHAT_LIMIT)
+            : Promise.resolve({ data: [] as any[] }),
+          supabase
+            .from('call_logs')
+            .select('id, note, created_at')
+            .eq('outcome', 'whatsapp')
+            .eq('customer_id', customerId)
+            .order('created_at', { ascending: false })
+            .limit(CHAT_LIMIT),
+        ]);
+        const filteredInbound = inbound || [];
 
         // 4. Merge and sort
         const merged = [

@@ -74,6 +74,7 @@ export default function CampaignManager() {
     is_scheduled: false
   });
   const ITEMS_PER_PAGE = 10;
+  const CAMPAIGN_POLL_MS = 10_000;
 
   const fetchData = useCallback(async () => {
     const isDemo = isDemoMode();
@@ -108,18 +109,31 @@ export default function CampaignManager() {
     fetchData();
   }, [fetchData]);
 
-  // Set up periodic polling for real-time campaign logs and progress bar update!
-  useEffect(() => {
-    const activeCampaignsExist = campaigns.some(c => c.status === "running");
-    if (activeCampaignsExist || selectedCampaignId) {
-      const timer = setInterval(() => {
-        if (typeof document !== 'undefined' && document.hidden) return;
-        fetchData();
-        if (selectedCampaignId) openLogs(selectedCampaignId);
-      }, 3000); // Poll every 3 seconds for smooth real-time updates!
-      return () => clearInterval(timer);
+  // Quiet refresh of campaign progress only (no spinner, no template reload).
+  const refreshCampaigns = useCallback(async () => {
+    try {
+      const res = await fetch("/api/campaigns");
+      if (!res.ok) return;
+      const data = await res.json();
+      setCampaigns(data.campaigns || []);
+    } catch {
+      // next tick retries
     }
-  }, [campaigns, selectedCampaignId, fetchData]);
+  }, []);
+
+  // Poll while a campaign runs or its logs are open. Sends are spaced 30s+
+  // apart, so a 10s refresh keeps the progress bar current at a third of the load.
+  const anyRunning = campaigns.some(c => c.status === "running");
+  useEffect(() => {
+    if (isDemoMode() || (!anyRunning && !selectedCampaignId)) return;
+    const timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      refreshCampaigns();
+      if (selectedCampaignId) openLogs(selectedCampaignId);
+    }, CAMPAIGN_POLL_MS);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- openLogs is re-created each render
+  }, [anyRunning, selectedCampaignId, refreshCampaigns]);
 
   if (profileLoading) {
     return (

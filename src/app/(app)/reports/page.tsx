@@ -16,6 +16,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 // The map is large and only needed lower on the page, so it loads here instead of with the page.
 const IndiaSalesMap = dynamic(() => import("@/components/IndiaSalesMap"), { ssr: false });
 import { isDemoMode } from "@/lib/demo";
+import { fetchAllRows } from "@/lib/fetch-all-rows";
 
 const REVENUE_COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444", "#14b8a6", "#f97316", "#6366f1"];
 
@@ -256,17 +257,26 @@ export default function ReportsPage() {
             callsQuery = callsQuery.eq("customer.segment", filters.segment);
         }
 
+        // Paged: a month already holds >1,000 abandoned carts, and a plain
+        // select stops at 1,000, so totals below would be undercounted.
         const [callsRes, ordersRes, abRes] = await Promise.all([
-            callsQuery,
-            ordersQuery,
-            abQuery
+            fetchAllRows<any>(callsQuery),
+            fetchAllRows<any>(ordersQuery),
+            fetchAllRows<any>(abQuery)
         ]);
+        if (ordersRes.error || abRes.error) {
+            console.error("Report query error:", ordersRes.error || abRes.error);
+            toast.error("Some report figures could not be loaded. Please refresh.");
+        }
+        if (callsRes.truncated || ordersRes.truncated || abRes.truncated) {
+            toast("Very large date range: figures cover the first 20,000 rows. Narrow the range for exact totals.");
+        }
 
         if (callsRes.error) {
             console.error("Calls Query Error:", callsRes.error);
             // Fallback to simpler query if nested joins fail
             const fallback = await supabase.from("call_logs").select("*").gte("called_at", startISO).lte("called_at", endISO);
-            callsRes.data = fallback.data as any;
+            callsRes.data = (fallback.data || []) as any[];
         }
 
         const callsData = callsRes.data || [];
@@ -758,10 +768,10 @@ export default function ReportsPage() {
     try {
       // Explicit columns (was SELECT *): only the fields the Master Archive
       // pages below actually render.
-      const { data: allCustomers } = await supabase.from("customers").select("name, phone, email, segment, total_spent, state, total_orders").order("name");
-      const { data: allOrders } = await supabase.from("orders").select("order_number, total_price, delivery_status, ordered_at, customer:customers(name, phone, state), workflow_instances(workflows(name))").order("ordered_at", { ascending: false });
-      const { data: allCalls } = await supabase.from("call_logs").select("called_at, outcome, agent_name, note, customer:customers(name, phone)").order("called_at", { ascending: false });
-      const { data: allAB } = await supabase.from("abandoned_carts").select("total_price, recovery_status, abandoned_at, customer:customers(name, phone)").order("abandoned_at", { ascending: false });
+      const { data: allCustomers } = await fetchAllRows<any>(supabase.from("customers").select("name, phone, email, segment, total_spent, state, total_orders").order("name"), 50_000);
+      const { data: allOrders } = await fetchAllRows<any>(supabase.from("orders").select("order_number, total_price, delivery_status, ordered_at, customer:customers(name, phone, state), workflow_instances(workflows(name))").order("ordered_at", { ascending: false }), 50_000);
+      const { data: allCalls } = await fetchAllRows<any>(supabase.from("call_logs").select("called_at, outcome, agent_name, note, customer:customers(name, phone)").order("called_at", { ascending: false }), 50_000);
+      const { data: allAB } = await fetchAllRows<any>(supabase.from("abandoned_carts").select("total_price, recovery_status, abandoned_at, customer:customers(name, phone)").order("abandoned_at", { ascending: false }), 50_000);
 
       // Export libraries are large and only needed on click, so they load here instead of with the page.
       const [{ default: jsPDF }, { default: autoTable }, { default: html2canvas }] = await Promise.all([import("jspdf"), import("jspdf-autotable"), import("html2canvas")]);
@@ -861,16 +871,16 @@ export default function ReportsPage() {
       }
       // Explicit columns (was SELECT *). Same filter behaviour as before -
       // only filters.state is applied here, to orders.
-      const { data: allCustomers } = await supabase.from("customers").select("name, phone, email, segment, total_spent, state, total_orders").order("name");
+      const { data: allCustomers } = await fetchAllRows<any>(supabase.from("customers").select("name, phone, email, segment, total_spent, state, total_orders").order("name"), 50_000);
       let orderQuery = supabase.from("orders").select("order_number, total_price, delivery_status, ordered_at, customer:customers(name, phone), workflow_instances(workflows(name))").order("ordered_at", { ascending: false });
 
       if (filters.state !== "all") {
           orderQuery = orderQuery.eq("customer.state", filters.state);
       }
-      const { data: allOrders } = await orderQuery;
-      const { data: allCalls } = await supabase.from("call_logs").select("called_at, outcome, agent_name, note, customer:customers(name, phone)").order("called_at", { ascending: false });
-      const { data: allAB } = await supabase.from("abandoned_carts").select("total_price, recovery_status, abandoned_at, customer:customers(name, phone)").order("abandoned_at", { ascending: false });
-      const { data: allWorkflows } = await supabase.from("workflow_instances").select("order_id, created_at, workflows(name), customers(name, phone)").not("order_id", "is", null);
+      const { data: allOrders } = await fetchAllRows<any>(orderQuery, 50_000);
+      const { data: allCalls } = await fetchAllRows<any>(supabase.from("call_logs").select("called_at, outcome, agent_name, note, customer:customers(name, phone)").order("called_at", { ascending: false }), 50_000);
+      const { data: allAB } = await fetchAllRows<any>(supabase.from("abandoned_carts").select("total_price, recovery_status, abandoned_at, customer:customers(name, phone)").order("abandoned_at", { ascending: false }), 50_000);
+      const { data: allWorkflows } = await fetchAllRows<any>(supabase.from("workflow_instances").select("order_id, created_at, workflows(name), customers(name, phone)").not("order_id", "is", null), 50_000);
 
       const XLSX = await import("@/lib/sheets");
       const wb = XLSX.utils.book_new();
@@ -932,8 +942,8 @@ export default function ReportsPage() {
     if (filters.state !== "all") q = q.eq("customer.state", filters.state);
     if (filters.segment !== "all") q = q.eq("customer.segment", filters.segment);
     if (filters.paymentMode !== "all") q = q.eq("payment_gateway", filters.paymentMode === "COD" ? "Cash on Delivery (COD)" : "Prepaid");
-    const { data } = await q;
-    return data || [];
+    const { data } = await fetchAllRows<any>(q, 50_000);
+    return data;
   }
   async function fetchExportCalls() {
     const { startISO, endISO } = exportWindow();
@@ -946,8 +956,8 @@ export default function ReportsPage() {
     if (filters.state !== "all") q = q.eq("customer.state", filters.state);
     if (filters.segment !== "all") q = q.eq("customer.segment", filters.segment);
     if (filters.agentId !== "all") q = q.eq("task.assigned_to", filters.agentId);
-    const { data } = await q;
-    return data || [];
+    const { data } = await fetchAllRows<any>(q, 50_000);
+    return data;
   }
   async function fetchExportAbandoned() {
     const { startISO, endISO } = exportWindow();
@@ -959,18 +969,18 @@ export default function ReportsPage() {
       .order("abandoned_at", { ascending: false });
     if (filters.state !== "all") q = q.eq("customer.state", filters.state);
     if (filters.segment !== "all") q = q.eq("customer.segment", filters.segment);
-    const { data } = await q;
-    return data || [];
+    const { data } = await fetchAllRows<any>(q, 50_000);
+    return data;
   }
   async function fetchExportWorkflows() {
     const { startISO, endISO } = exportWindow();
-    const { data } = await supabase
+    const { data } = await fetchAllRows<any>(supabase
       .from("workflow_instances")
       .select("order_id, status, created_at, workflows(name), orders:order_id(customer:customers(name))")
       .not("order_id", "is", null)
       .gte("created_at", startISO).lte("created_at", endISO)
-      .order("created_at", { ascending: false });
-    return data || [];
+      .order("created_at", { ascending: false }), 50_000);
+    return data;
   }
 
   async function handleAdvancedExport() {
