@@ -49,8 +49,35 @@ const by = Object.fromEntries(days.map((d) => [d.agent_id, d]));
 assert.equal(by.a.status, "Present");
 assert.equal(by.a.productive_minutes, 545);
 assert.equal(by.b.status, "Late");
-assert.equal(by.c.status, "Half Day");
+assert.equal(by.c.status, "Present", "single on-time punch is Present, not Half Day");
+assert.equal(by.c.missing_out, true);
 assert.equal(by.c.clock_out, null, "single punch: no invented clock-out");
+assert.equal(by.b.late_by_minutes, 15, "09:30 vs 09:00+15 grace");
+// Late single punch, double-tap at the door, and a short in+out day.
+const more = Object.fromEntries(computeBiometricDays([
+  { agent_id: "d", day: "2026-11-18", first_at: "2026-11-18T04:30:00Z", last_at: "2026-11-18T04:30:00Z", n: 1 }, // 10:00 IST
+  { agent_id: "e", day: "2026-11-18", first_at: "2026-11-18T03:30:00Z", last_at: "2026-11-18T03:40:00Z", n: 2 }, // 10 min apart
+  { agent_id: "f", day: "2026-11-18", first_at: "2026-11-18T03:30:00Z", last_at: "2026-11-18T07:30:00Z", n: 2 }, // 4h
+], { d: "Morning", e: "Morning", f: "Morning" }).map((r) => [r.agent_id, r]));
+assert.equal(more.d.status, "Late");
+assert.equal(more.d.missing_out, true);
+assert.equal(more.e.missing_out, true, "two punches 10 min apart = no out-punch");
+assert.equal(more.e.status, "Present");
+assert.equal(more.f.status, "Half Day");
+assert.equal(more.f.missing_out, false);
+// CRM-log days stop counting once the person has device punches.
+const { computeAutoAttendance } = load("src/lib/attendance-engine.ts");
+const bio = computeBiometricDays([{ agent_id: "a", day: "2026-11-10", first_at: "2026-11-10T03:30:00Z", last_at: "2026-11-10T12:30:00Z", n: 2 }], shift);
+const merged = computeAutoAttendance([
+  { agent_id: "a", status: "Online", created_at: "2026-11-05T04:00:00Z" },
+  { agent_id: "a", status: "Offline", created_at: "2026-11-05T05:00:00Z" },
+  { agent_id: "a", status: "Online", created_at: "2026-11-12T04:00:00Z" },
+  { agent_id: "a", status: "Offline", created_at: "2026-11-12T05:00:00Z" },
+], [], shift, {}, bio);
+const dates = merged.map((r) => r.date).sort();
+assert.ok(!dates.includes("2026-11-12"), "CRM-log day after first punch dropped");
+assert.ok(dates.includes("2026-11-10"));
+assert.ok(dates.includes("2026-11-05"), "CRM-log day before first punch kept");
 // Org timing override: Morning at 09:30 + 5 min grace makes b on time.
 assert.equal(computeBiometricDays([{ agent_id: "b", day: "2026-11-18", first_at: "2026-11-18T04:00:00Z", last_at: "2026-11-18T13:00:00Z", n: 2 }], shift, { Morning: { start: 570, grace: 5 } })[0].status, "Present");
 

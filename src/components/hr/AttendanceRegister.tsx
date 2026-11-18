@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "react-hot-toast";
 import { isDemoMode } from "@/lib/demo";
 import { BiometricPanel } from "@/components/hr/BiometricPanel";
+import { PunchSheet } from "@/components/hr/PunchSheet";
 import { ShiftTimings, shiftLabel } from "@/components/hr/ShiftTimings";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -47,9 +48,12 @@ interface AttendanceCell {
   clockOut: string | null;
   productiveMinutes: number;
   breakMinutes: number;
+  missingOut: boolean;
 }
 
 interface Props { members: any[]; employees: any[]; attendanceLogs: any[]; holidays: Holiday[]; onRefresh: () => void; }
+
+const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function fmtTime(iso: string | null) {
   if (!iso) return "—";
@@ -64,7 +68,7 @@ function fmtHours(mins: number) {
 
 export default function AttendanceRegister({ members, employees, attendanceLogs, holidays, onRefresh }: Props) {
   const [mounted, setMounted] = useState(false);
-  const [tab, setTab] = useState<"register" | "shifts" | "holidays" | "analytics" | "biometric">("register");
+  const [tab, setTab] = useState<"register" | "shifts" | "holidays" | "analytics" | "biometric" | "sheet">("register");
   const [shiftStarts, setShiftStarts] = useState<Record<string, number>>({});
   const [month, setMonth] = useState(new Date().getMonth());
   const [year, setYear] = useState(new Date().getFullYear());
@@ -98,6 +102,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
             clockOut: log.clock_out ?? null,
             productiveMinutes: log.productive_minutes ?? 0,
             breakMinutes: log.break_minutes ?? 0,
+            missingOut: !!log.missing_out,
           };
         }
       }
@@ -282,11 +287,11 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
     <div className="space-y-5">
       {/* Sub-tabs */}
       <div className="flex flex-wrap gap-1 bg-[#f0f0ec] p-1 rounded-xl w-full sm:w-fit">
-        {(["register", "shifts", "holidays", "analytics", "biometric"] as const).map(t => (
+        {(["register", "shifts", "holidays", "analytics", "biometric", "sheet"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={cn("px-4 py-1.5 text-xs font-bold rounded-lg capitalize transition-all",
               tab === t ? "bg-[#1c1c1c] text-white" : "text-[#6b6b67] hover:text-[#1c1c1c]")}>
-            {t === "register" ? "Monthly Register" : t === "shifts" ? "Shift Assignment" : t === "holidays" ? "Holiday Calendar" : t === "biometric" ? "Biometric (eSSL)" : "Analytics"}
+            {t === "register" ? "Monthly Register" : t === "shifts" ? "Shift Assignment" : t === "holidays" ? "Holiday Calendar" : t === "biometric" ? "Biometric (eSSL)" : t === "sheet" ? "Punch Sheet" : "Analytics"}
           </button>
         ))}
       </div>
@@ -310,6 +315,9 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
             <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#f0f0ec] text-[#6b6b67] flex items-center gap-1 ml-2">
               <Zap className="w-2.5 h-2.5" /> Auto-detected from clock-in
             </span>
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#f0f0ec] text-[#6b6b67] flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-rose-500" /> Missed out-punch
+            </span>
             <span className="text-[9px] text-[#9a9a94] font-bold">· Click a cell to override manually</span>
           </div>
 
@@ -318,12 +326,16 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
               <thead>
                 <tr className="bg-[#fcfbf8]">
                   <th className="px-4 py-3 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider sticky left-0 bg-[#fcfbf8] z-10 min-w-[140px]">Team Member</th>
-                  {days.map(d => (
-                    <th key={d} className={cn("px-1 py-3 text-center text-[9px] font-bold uppercase tracking-wider min-w-[36px]",
-                      isHoliday(d) ? "text-[#6f9bdd]" : "text-[#9a9a94]")}>
-                      {d}
-                    </th>
-                  ))}
+                  {days.map(d => {
+                    const wd = new Date(year, month, d).getDay();
+                    return (
+                      <th key={d} className={cn("px-1 py-2 text-center text-[9px] font-bold uppercase tracking-wider min-w-[36px]",
+                        isHoliday(d) ? "text-[#6f9bdd]" : wd === 0 ? "text-rose-400 bg-rose-50/60" : "text-[#9a9a94]")}>
+                        <div className="text-[10px] text-[#1c1c1c]">{d}</div>
+                        <div className="text-[8px] font-semibold normal-case">{WEEKDAY[wd]}</div>
+                      </th>
+                    );
+                  })}
                   <th className="px-3 py-3 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Summary</th>
                 </tr>
               </thead>
@@ -341,7 +353,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
                         return STATUS_OPTS[(idx + 1) % STATUS_OPTS.length];
                       };
                       const title = cell
-                        ? `${cell.status}${cell.isAuto ? " (auto-detected)" : " (manual)"}\nIn: ${fmtTime(cell.clockIn)}  Out: ${fmtTime(cell.clockOut)}\nWorked: ${fmtHours(cell.productiveMinutes)}  Break: ${fmtHours(cell.breakMinutes)}`
+                        ? `${cell.status}${cell.isAuto ? " (auto-detected)" : " (manual)"}\nIn: ${fmtTime(cell.clockIn)}  Out: ${fmtTime(cell.clockOut)}\nWorked: ${fmtHours(cell.productiveMinutes)}  Break: ${fmtHours(cell.breakMinutes)}${cell.missingOut ? "\nMissed out-punch" : ""}`
                         : (hol ? "Holiday" : "No record — click to set");
                       return (
                         <td key={d} className="px-0.5 py-2 text-center">
@@ -354,6 +366,9 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
                             title={title}
                           >
                             {cell ? STATUS_SHORT[cell.status] : hol ? "H" : "·"}
+                            {cell?.missingOut && (
+                              <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 ring-1 ring-white" />
+                            )}
                             {cell?.isAuto && (
                               <Zap className="w-2 h-2 absolute -top-0.5 -right-0.5 text-white drop-shadow" fill="currentColor" />
                             )}
@@ -365,6 +380,7 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
                       <div className="flex gap-2 text-[9px] font-bold">
                         <span className="text-[#3fa877]">P:{countFor(agent.name, "Present")}</span>
                         <span className="text-[#f0b43c]">L:{countFor(agent.name, "Late")}</span>
+                        <span className="text-amber-500">HD:{countFor(agent.name, "Half Day")}</span>
                         <span className="text-rose-500">A:{countFor(agent.name, "Absent")}</span>
                         <span className="text-[#6f9bdd]">LV:{countFor(agent.name, "Leave")}</span>
                       </div>
@@ -435,6 +451,8 @@ export default function AttendanceRegister({ members, employees, attendanceLogs,
       )}
 
       {tab === "biometric" && <BiometricPanel employees={employees} onRefresh={onRefresh} />}
+
+      {tab === "sheet" && <PunchSheet employees={employees} attendanceLogs={attendanceLogs} holidays={holidays} />}
 
       {/* ── Holiday Calendar ── */}
       {tab === "holidays" && (

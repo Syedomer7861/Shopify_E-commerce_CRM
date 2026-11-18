@@ -95,6 +95,11 @@ export interface ComputedAttendanceRow {
   break_minutes: number;
   is_auto: boolean;
   is_late: boolean;
+  /** Biometric days only. */
+  source?: "biometric";
+  punch_count?: number;
+  missing_out?: boolean;
+  late_by_minutes?: number;
 }
 
 function toISTDateParts(d: Date) {
@@ -212,11 +217,20 @@ export function computeAutoAttendance(
   // Manual entries win. Build a lookup so we can drop any auto row a manual
   // one already covers, then merge both into one list.
   const manualKeys = new Set(manualLogs.map((m) => `${m.agent_id}::${m.date}`));
-  // Biometric (device) days beat the CRM status log for the same agent+date.
-  const bioKeys = new Set(biometric.map((c) => `${c.agent_id}::${c.date}`));
+  // Once someone punches on the device, the device is their attendance: CRM
+  // login time no longer creates days for them from their first punch onward
+  // (a CRM login is not proof of being in the office).
+  const firstBioDay = new Map<string, string>();
+  for (const b of biometric) {
+    const prev = firstBioDay.get(b.agent_id);
+    if (!prev || b.date < prev) firstBioDay.set(b.agent_id, b.date);
+  }
   const autoOnly = [
     ...biometric,
-    ...computed.filter((c) => !bioKeys.has(`${c.agent_id}::${c.date}`)),
+    ...computed.filter((c) => {
+      const since = firstBioDay.get(c.agent_id);
+      return !since || c.date < since;
+    }),
   ].filter((c) => !manualKeys.has(`${c.agent_id}::${c.date}`));
 
   const manualAsComputed: ComputedAttendanceRow[] = manualLogs.map((m) => ({
@@ -237,11 +251,26 @@ export function computeAutoAttendance(
 /** One row per employee per IST day, from the biometric_daily() DB function. */
 export interface BiometricDay { agent_id: string; day: string; first_at: string; last_at: string; n: number }
 
+/** Punches closer together than this are a double-tap at the door, not an in and an out. */
+export const MIN_SPAN_MINUTES = 30;
+
+/** Minutes after shift start + grace that the first punch landed (0 when on time). */
+export function lateByMinutes(shiftType: string, clockIn: Date, timings: ShiftTimings = {}) {
+  const t = timings[shiftType];
+  const start = t ? t.start : (SHIFT_START_MINUTES[shiftType] ?? SHIFT_START_MINUTES.Morning);
+  const grace = t ? t.grace : LATE_GRACE_MINUTES;
+  if (start < 0 || shiftType === "Off") return 0;
+  return Math.max(0, toISTDateParts(clockIn).minutesSinceMidnight - (start + grace));
+}
+
 /**
  * Daily attendance from biometric punches: first punch of the IST day is
  * clock-in, last is clock-out, the span between them is time on site.
- * A single punch shows the day as present-but-incomplete ("Half Day") rather
- * than inventing a clock-out.
+ * - in + out >= 6h: Present, or Late when the first punch was after start + grace.
+ * - in + out under 6h: Half Day (left early).
+ * - only one punch (or two within 30 min): the person came in but the out-punch
+ *   is missing. Status follows the in-time (Present/Late) and missing_out is set
+ *   so HR can see and correct it - it is not guessed as a Half Day.
  */
 export function computeBiometricDays(
   rows: BiometricDay[],
@@ -250,18 +279,23 @@ export function computeBiometricDays(
 ): ComputedAttendanceRow[] {
   const out: ComputedAttendanceRow[] = [];
   for (const r of rows) {
-    const d = { first: new Date(r.first_at), last: new Date(r.last_at), n: r.n };
-    if (Number.isNaN(d.first.getTime()) || Number.isNaN(d.last.getTime())) continue;
-    const agentId = r.agent_id, date = r.day;
-    const minutes = d.n > 1 ? Math.round((d.last.getTime() - d.first.getTime()) / 60000) : 0;
-    const isLate = lateFor(shiftByAgent[agentId] || "Morning", d.first, timings);
-    const status: AttendanceStatus = minutes >= FULL_DAY_MINUTES ? (isLate ? "Late" : "Present") : "Half Day";
+    const first = new Date(r.first_at), last = new Date(r.last_at);
+    if (Number.isNaN(first.getTime()) || Number.isNaN(last.getTime())) continue;
+    const span = Math.round((last.getTime() - first.getTime()) / 60000);
+    const missingOut = r.n < 2 || span < MIN_SPAN_MINUTES;
+    const minutes = missingOut ? 0 : span;
+    const shift = shiftByAgent[r.agent_id] || "Morning";
+    const isLate = lateFor(shift, first, timings);
+    const status: AttendanceStatus =
+      missingOut || minutes >= FULL_DAY_MINUTES ? (isLate ? "Late" : "Present") : "Half Day";
     out.push({
-      agent_id: agentId, date, status,
-      clock_in: d.first.toISOString(),
-      clock_out: d.n > 1 ? d.last.toISOString() : null,
+      agent_id: r.agent_id, date: r.day, status,
+      clock_in: first.toISOString(),
+      clock_out: missingOut ? null : last.toISOString(),
       productive_minutes: minutes, break_minutes: 0,
       is_auto: true, is_late: isLate,
+      source: "biometric", punch_count: r.n, missing_out: missingOut,
+      late_by_minutes: lateByMinutes(shift, first, timings),
     });
   }
   return out;
