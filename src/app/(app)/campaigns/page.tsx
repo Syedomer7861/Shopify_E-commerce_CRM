@@ -375,8 +375,8 @@ export default function CampaignManager() {
         <DateRangeFilter value={range} onChange={r => { setRange(r); setCurrentPage(1); }} />
       </div>
 
-      <div className="card overflow-hidden">
-        <table className="w-full text-left border-collapse">
+      <div className="card overflow-x-auto">
+        <table className="w-full min-w-[760px] text-left border-collapse">
           <thead>
             <tr className="bg-[#f6f7f2] border-b border-[#ebece6]">
               <th className="px-6 py-4 text-[10px] font-bold text-[#9a9a94] uppercase tracking-wider">Campaign Name</th>
@@ -784,8 +784,8 @@ export default function CampaignManager() {
               </div>
 
               {/* Scrollable Recipients List Table */}
-              <div className="border border-[#ebece6] rounded-lg overflow-hidden max-h-[300px] overflow-y-auto">
-                <table className="w-full text-left border-collapse text-xs">
+              <div className="border border-[#ebece6] rounded-lg max-h-[300px] overflow-auto">
+                <table className="w-full min-w-[520px] text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-[#f6f7f2] border-b border-[#ebece6] sticky top-0 font-bold text-[#6b6b67]">
                       <th className="px-4 py-2">Recipient Name</th>

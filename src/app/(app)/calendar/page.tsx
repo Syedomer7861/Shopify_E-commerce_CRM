@@ -502,7 +502,7 @@ export default function CalendarPage() {
                         </div>
                       </div>
                       {/* Quick actions */}
-                      <div className="flex items-center gap-1.5 mt-2.5 pl-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1.5 mt-2.5 pl-4 opacity-0 group-hover:opacity-100 transition-opacity touch-show">
                         {task.customer?.phone && (
                           <button
                             onClick={(e) => {

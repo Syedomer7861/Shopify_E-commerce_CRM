@@ -622,8 +622,8 @@ function HRDashboardContent() {
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div className="xl:col-span-2 space-y-4">
-               <div className="card overflow-hidden">
-                  <table className="w-full text-left border-collapse">
+               <div className="card overflow-x-auto">
+                  <table className="w-full min-w-[640px] text-left border-collapse">
                     <thead>
                       <tr className="bg-[#fcfbf8] border-b border-[#ebece6]">
                         <th className="px-6 py-4 text-[10px] font-bold text-[#6b6b67] uppercase tracking-[0.2em]">Team Member</th>

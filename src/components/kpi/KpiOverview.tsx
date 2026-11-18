@@ -110,7 +110,7 @@ export function KpiOverview({ viewer, departments }: { viewer: Profile | null; d
       )}
 
       <div className="card overflow-x-auto">
-        <table className="w-full text-xs">
+        <table className="w-full min-w-[480px] text-xs">
           <thead><tr className="text-left text-[#5f5f5d] border-b border-[#ebece6]"><th className="p-3">Department</th><th>People</th><th>On a plan</th><th>Evaluated</th><th className="pr-3 text-right">Average score</th></tr></thead>
           <tbody>
             {deptRows.map(d => (
@@ -137,7 +137,7 @@ export function KpiOverview({ viewer, departments }: { viewer: Profile | null; d
         <div className="card p-4">
           <div className="text-xs font-bold text-[#1c1c1c] mb-2">Latest evaluations</div>
           {recent.length === 0 ? <p className="text-xs text-[#5f5f5d]">No evaluations saved yet. Managers evaluate from the Performance page.</p> : (
-            <table className="w-full text-xs">
+            <div className="overflow-x-auto"><table className="w-full min-w-[420px] text-xs">
               <tbody>
                 {recent.map(e => (
                   <tr key={e.assignment_id + e.period_start} className="border-t border-[#ebece6] first:border-0">
@@ -149,7 +149,7 @@ export function KpiOverview({ viewer, departments }: { viewer: Profile | null; d
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       </div>

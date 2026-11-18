@@ -337,8 +337,8 @@ export default function AgentIntelligence({ onRefresh }: AgentIntelligenceProps)
               <Calendar className="w-4 h-4" /> Daily Performance Ledger
             </h3>
             <div className="card border border-[#ebece6] overflow-hidden">
-               <div className="max-h-[400px] overflow-y-auto">
-                  <table className="w-full text-left border-collapse">
+               <div className="max-h-[400px] overflow-auto">
+                  <table className="w-full min-w-[760px] text-left border-collapse">
                     <thead className="sticky top-0 bg-[#fcfbf8] z-20 shadow-sm">
                       <tr className="border-b border-[#ebece6]">
                         <th className="px-6 py-3 text-[9px] font-bold text-[#9a9a94] uppercase tracking-wider">Date</th>

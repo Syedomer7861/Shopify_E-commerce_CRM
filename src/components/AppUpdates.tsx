@@ -18,6 +18,8 @@ type InstallPrompt = Event & { prompt: () => Promise<void>; userChoice: Promise<
  */
 export function AppUpdates() {
   const [install, setInstall] = useState<InstallPrompt | null>(null);
+  // iPhone/iPad Safari never fires beforeinstallprompt; it only installs via Share > Add to Home Screen.
+  const [iosHint, setIosHint] = useState(false);
 
   useEffect(() => {
     if (BUILD === "dev") return;
@@ -55,15 +57,23 @@ export function AppUpdates() {
       if (Date.now() - dismissedAt > DISMISS_FOR_MS) setInstall(e as InstallPrompt);
     };
     const onInstalled = () => setInstall(null);
+    const nav = navigator as Navigator & { standalone?: boolean };
+    const ios = /iPad|iPhone|iPod/.test(nav.userAgent) || (nav.platform === "MacIntel" && nav.maxTouchPoints > 1);
+    if (ios && !nav.standalone) {
+      let dismissedAt = 0;
+      try { dismissedAt = Number(localStorage.getItem(DISMISS_KEY)) || 0; } catch { /* storage blocked */ }
+      if (Date.now() - dismissedAt > DISMISS_FOR_MS) setIosHint(true);
+    }
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
     return () => { window.removeEventListener("beforeinstallprompt", onPrompt); window.removeEventListener("appinstalled", onInstalled); };
   }, []);
 
-  if (!install) return null;
+  if (!install && !iosHint) return null;
   const dismiss = () => {
     try { localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch { /* storage blocked */ }
     setInstall(null);
+    setIosHint(false);
   };
   return (
     <div role="dialog" aria-label="Install the app" className="fixed bottom-4 right-4 z-[60] max-w-[calc(100vw-2rem)] w-80 card p-3 flex items-start gap-3 shadow-lg">
@@ -71,7 +81,11 @@ export function AppUpdates() {
       <div className="min-w-0 flex-1">
         <div className="text-sm font-bold text-[#1c1c1c]">Install the app</div>
         <p className="text-[11px] text-[#6b6b67] leading-snug">Opens full screen from your home screen or taskbar, like a normal app. Handy for field staff.</p>
-        <button onClick={async () => { await install.prompt(); await install.userChoice.catch(() => null); setInstall(null); }} className="btn-primary text-xs py-1.5 px-3 mt-2">Install</button>
+        {install ? (
+          <button onClick={async () => { await install.prompt(); await install.userChoice.catch(() => null); setInstall(null); }} className="btn-primary text-xs py-1.5 px-3 mt-2">Install</button>
+        ) : (
+          <p className="text-[11px] text-[#1c1c1c] font-semibold mt-1.5">In Safari, tap Share, then &ldquo;Add to Home Screen&rdquo;.</p>
+        )}
       </div>
       <button onClick={dismiss} aria-label="Not now" className="p-1 text-[#9a9a94] hover:text-[#1c1c1c]"><X className="w-4 h-4" /></button>
     </div>

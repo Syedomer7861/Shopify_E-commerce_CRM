@@ -105,19 +105,23 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const link = event.notification.data?.link || "/dashboard";
+  // Same-origin only: a push payload must never open another site.
+  let link = "/dashboard";
+  try {
+    const u = new URL(event.notification.data?.link || "/dashboard", self.location.origin);
+    if (u.origin === self.location.origin) link = u.pathname + u.search + u.hash;
+  } catch { /* keep default */ }
 
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        if ("focus" in client) {
-          client.navigate(link);
-          return client.focus();
-        }
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(link);
-      }
-    })
-  );
+  event.waitUntil((async () => {
+    const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const client of clients) {
+      if (!("focus" in client)) continue;
+      try {
+        // navigate() rejects for tabs this worker doesn't control; fall through to a new window.
+        const nav = "navigate" in client ? await client.navigate(link) : client;
+        return (nav || client).focus();
+      } catch { /* try the next tab, then open one */ }
+    }
+    if (self.clients.openWindow) return self.clients.openWindow(link);
+  })());
 });

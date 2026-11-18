@@ -308,3 +308,9 @@ path.field-me-acc { fill: var(--accent); }
 .field-tip span { font-weight: 400; color: #6b6b67; }
 @keyframes field-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 70%, transparent), 0 2px 6px rgba(0,0,0,.22); } 100% { box-shadow: 0 0 0 14px transparent, 0 2px 6px rgba(0,0,0,.22); } }
 @media (prefers-reduced-motion: reduce) { .field-pin--on_site { animation: none; } }
+
+/* Touch screens have no hover, so row actions hidden until hover (opacity-0
+   group-hover:opacity-100) were invisible yet still tappable. Show them. */
+@media (hover: none) {
+  button.group-hover\:opacity-100, .touch-show.touch-show { opacity: 1; }
+}
