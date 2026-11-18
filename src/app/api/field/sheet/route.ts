@@ -27,12 +27,16 @@ export async function POST(req: NextRequest) {
   if (!UUID.test(String(body?.visitId || "")) || !event) return NextResponse.json({ error: "Bad request" }, { status: 400 });
 
   const { data: v } = await supabase!.from("visits")
-    .select("id, org_id, owner_id, party_name, purpose, status, outcome, planned_at, check_in_at, check_out_at, check_in_lat, check_in_lng, check_in_accuracy_m, check_in_photo_drive_id")
+    .select("id, org_id, owner_id, party_name, purpose, status, outcome, planned_at, check_in_at, check_out_at, check_in_lat, check_in_lng, check_in_accuracy_m, check_in_photo_drive_id, contact_id")
     .eq("id", body.visitId).maybeSingle();
   if (!v || v.owner_id !== user!.id) return NextResponse.json({ error: "Visit not found" }, { status: 404 });
 
   const conn = await getOrgGoogle(v.org_id);
   if (!conn?.field_visits_to_sheet) return NextResponse.json({ ok: false, reason: "off" });
+  // The rep can read the contact they visited (field_contacts_read policy).
+  const { data: ct } = v.contact_id
+    ? await supabase!.from("field_contacts").select("contact_person, designation, phone, whatsapp, email, category, area, city, pincode, interest, marketing_consent").eq("id", v.contact_id).maybeSingle()
+    : { data: null };
 
   const executive = profile?.name || user!.email || "Unknown";
   try {
@@ -42,6 +46,17 @@ export async function POST(req: NextRequest) {
       "Executive Name": executive,
       "Email Address": user!.email || "",
       "Client / Retailer Name": v.party_name,
+      "Type": ct?.category || "",
+      "Contact Person": ct?.contact_person || "",
+      "Role": ct?.designation || "",
+      "Mobile": ct?.phone || "",
+      "WhatsApp": ct?.whatsapp || "",
+      "Contact Email": ct?.email || "",
+      "Area": ct?.area || "",
+      "City": ct?.city || "",
+      "PIN": ct?.pincode || "",
+      "Interest": ct?.interest || "",
+      "Agreed to offers": ct ? (ct.marketing_consent === "yes" ? "Yes" : "No") : "",
       "Purpose": v.purpose || "",
       "Visit Outcome": v.outcome || "",
       "Planned": ist(v.planned_at),

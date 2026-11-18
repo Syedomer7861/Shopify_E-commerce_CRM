@@ -43,6 +43,8 @@ export type RecordsConfig = {
   dedupe?: string[];
   /** Offers a Kanban board (one column per status) next to the list. */
   board?: boolean;
+  /** Replaces the built-in create form with the module's own (Field Visits: visit + contact details). */
+  onNew?: (reload: () => void) => void;
 };
 
 const label = (s: string) => s.replace(/_/g, " ");
@@ -144,7 +146,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
 
   // The Requests page links here with ?new=1 so the form is already open.
   useEffect(() => {
-    if (canCreate && new URLSearchParams(window.location.search).get("new") === "1") setOpen(true);
+    if (canCreate && new URLSearchParams(window.location.search).get("new") === "1") { if (config.onNew) config.onNew(load); else setOpen(true); }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arrival
   }, []);
 
@@ -288,7 +290,7 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
           </div>
         )}
         {canCreate && (
-          <button onClick={() => setOpen(true)} className="btn-primary flex items-center gap-1.5 text-xs"><Plus className="w-3.5 h-3.5" /> New {noun}</button>
+          <button onClick={() => (config.onNew ? config.onNew(load) : setOpen(true))} className="btn-primary flex items-center gap-1.5 text-xs"><Plus className="w-3.5 h-3.5" /> New {noun}</button>
         )}
       </div>
 

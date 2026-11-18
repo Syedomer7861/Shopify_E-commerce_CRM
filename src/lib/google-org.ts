@@ -169,6 +169,15 @@ export async function appendFieldVisitRow(conn: OrgGoogle, row: Record<string, u
   const clean = Object.fromEntries(Object.entries(row).map(([k, v]) => [k, cell(v)]));
   for (const title of ["Field visits", sheetTabName(executive)]) {
     const sheet = doc.sheetsByTitle[title] ?? await doc.addSheet({ title, headerValues: headers });
+    // Tabs made before new columns were added get them appended on the right.
+    await sheet.loadHeaderRow().catch(() => {});
+    const have = sheet.headerValues || [];
+    const missing = headers.filter(h => !have.includes(h));
+    if (missing.length) {
+      const all = [...have, ...missing];
+      if (sheet.columnCount < all.length) await sheet.resize({ rowCount: sheet.rowCount, columnCount: all.length });
+      await sheet.setHeaderRow(all);
+    }
     await sheet.addRow(clean, { raw: true });
   }
 }

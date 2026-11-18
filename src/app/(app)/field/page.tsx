@@ -1,12 +1,15 @@
 "use client";
 import { promptDialog } from "@/components/ConfirmDialog";
 import { useState } from "react";
+import Link from "next/link";
+import { Contact } from "lucide-react";
 import toast from "react-hot-toast";
 import { ModulePage } from "@/components/records/ModulePage";
 import { FieldOverview } from "@/components/records/DeptOverviews";
 import type { RecordsConfig, RecordRow } from "@/components/records/RecordsModule";
 import { CheckInCapture, type CheckInProof } from "@/components/field/CheckInCapture";
 import { FieldCommand } from "@/components/field/FieldCommand";
+import { VisitForm } from "@/components/field/VisitForm";
 import { Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
@@ -19,6 +22,7 @@ export default function FieldVisitsPage() {
   const { profile } = useCurrentProfile();
   const [checkingIn, setCheckingIn] = useState<{ row: RecordRow; reload: () => void } | null>(null);
   const [proofUrl, setProofUrl] = useState<string | null>(null);
+  const [newVisit, setNewVisit] = useState<{ reload: () => void } | null>(null);
 
   // Photo and location arrive together from CheckInCapture; a check-in without both never reaches here.
   async function saveCheckIn(proof: CheckInProof) {
@@ -113,6 +117,8 @@ export default function FieldVisitsPage() {
       { key: "purpose", label: "Purpose" },
       { key: "planned_at", label: "Planned for", type: "datetime-local" },
     ],
+    // Visit + the contact's details (feeds Field contacts). The built-in form below stays for editing.
+    onNew: reload => setNewVisit({ reload }),
     // On site already: save the visit and go straight to the camera.
     createAndAct: { label: "Save & check in now (photo + location)", run: (row, reload) => setCheckingIn({ row, reload }) },
     rowActions: (row, reload) => {
@@ -128,10 +134,21 @@ export default function FieldVisitsPage() {
       <ModulePage
         title="Field Visits"
         subtitle="Add a visit, then tap Check in on site: it takes a live photo and your current location together. Log the outcome when you leave."
-        overview={<FieldOverview />}
+        overview={<>
+          <FieldOverview />
+          <Link href="/field/contacts" className="card mb-5 p-3 flex items-center gap-3 hover:border-[#1c1c1c] transition-colors">
+            <span className="w-9 h-9 rounded-full bg-[var(--accent)] grid place-items-center shrink-0"><Contact className="w-4 h-4 text-[#1c1c1c]" /></span>
+            <span className="min-w-0 flex-1"><span className="block text-sm font-bold text-[#1c1c1c]">Field contacts</span><span className="block text-[11px] text-[#6b6b67]">Every shop and person your team visited, with mobile, email and interest</span></span>
+            <span className="text-xs font-bold text-[#1c1c1c]">Open</span>
+          </Link>
+        </>}
         footer={<FieldCommand />}
         tabs={[{ label: "Visits", config: visits }]}
       />
+      {profile && (
+        <VisitForm open={!!newVisit} ownerId={profile.id} onClose={() => setNewVisit(null)}
+          onSaved={(row, now) => { const reload = newVisit!.reload; setNewVisit(null); reload(); if (now) setCheckingIn({ row, reload }); }} />
+      )}
       <CheckInCapture open={!!checkingIn} visiting={checkingIn?.row.party_name || ""} onClose={() => setCheckingIn(null)} onCapture={saveCheckIn} />
       <Modal open={!!proofUrl} onClose={() => setProofUrl(null)} title="Check-in photo">
         {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL, not an optimisable asset */}

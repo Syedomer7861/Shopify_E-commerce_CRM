@@ -26,6 +26,7 @@ export const PERMISSION_MODULES: { key: string; label: string; group: string; ac
   { key: "leads", label: "Leads", group: "Sales & CRM", actions: ["view", "create", "edit", "delete", "assign"] },
   { key: "deals", label: "Deals", group: "Sales & CRM", actions: ["view", "create", "edit", "delete", "assign"] },
   { key: "visits", label: "Field Visits", group: "Sales & CRM", actions: ["view", "create", "edit"] },
+  { key: "field_contacts", label: "Field contacts", group: "Sales & CRM", actions: ["view", "create", "edit", "delete", "export"] },
   { key: "work", label: "Tasks & Projects", group: "Work", actions: ["view", "create", "edit", "delete", "approve", "assign", "manage"] },
   { key: "approvals", label: "Approvals", group: "Work", actions: ["view", "approve"] },
   { key: "tickets", label: "Service Desk", group: "Work", actions: ["view", "create", "edit", "assign", "manage"] },
