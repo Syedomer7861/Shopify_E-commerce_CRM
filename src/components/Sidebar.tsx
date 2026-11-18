@@ -47,6 +47,7 @@ const nav: { key: string; label: string; href: string; icon: typeof LayoutDashbo
 // Operations, split into sub-groups in this order.
 const ADMIN_GROUPS = ["Organisation", "Insights", "Growth", "Admin"] as const;
 const adminNav: { label: string; href: string; icon: typeof LayoutDashboard; permission: string; group: (typeof ADMIN_GROUPS)[number]; ownerOnly?: boolean; module?: string }[] = [
+  { label: "Admin Dashboard", href: "/organisation/overview", icon: LayoutGrid, permission: "manage_team", group: "Organisation", module: "organisation" },
   { label: "Structure & Hierarchy", href: "/organisation", icon: Network, permission: "manage_team", group: "Organisation" },
   { label: "Team & Logins", href: "/team",      icon: Users,      permission: "manage_team", group: "Organisation" },
   { label: "Roles & Access", href: "/roles",    icon: Shield,     permission: "manage_team", group: "Organisation" },
@@ -574,7 +575,7 @@ export default function Sidebar() {
   const fromAdmin = (hrefs: string[]) => adminNav.filter(a => hrefs.includes(a.href) && canSeeAdmin(a)).map(a => L(a.label, a.href, a.icon));
   const hrItem = (label: string) => hrNav.filter(h => h.label === label).map(h => L(h.label, h.href, h.icon));
   const sections: NavSection[] = [
-    { key: "home", label: null, items: fromNav(["dashboard", "tasks", "chat", "calendar", "my-hub"]) },
+    { key: "home", label: null, items: [...fromNav(["dashboard"]), ...fromAdmin(["/organisation/overview"]), ...fromNav(["tasks", "chat", "calendar", "my-hub"])] },
     { key: "sales", label: "Sales & customers", items: [...fromNav(["customers", "orders", "leads", "quotes", "field", "performance"]), ...fromAdmin(["/abandoned-carts"])] },
     { key: "ops", label: "Operations", items: fromNav(["requests", "request-creative", "approvals", "service-desk", "finance", "rules"]) },
     { key: "work", label: "Workspace", items: showSpaces ? [

@@ -26,14 +26,28 @@ export function SidebarSections({ sections }: { sections: NavSection[] }) {
     return next;
   });
 
+  const collapsible = sections.filter(s => s.label && s.items.length > 0).map(s => s.key);
+  const allOpen = collapsible.every(k => (open ?? []).includes(k));
+  const setAll = () => {
+    const next = allOpen ? [] : collapsible;
+    try { localStorage.setItem(OPEN_KEY, JSON.stringify(next)); } catch { /* per-browser convenience only */ }
+    setOpen(next);
+  };
+
   return (
     <div className="hidden lg:flex flex-col gap-1">
-      {sections.filter(s => s.items.length > 0).map(s => {
+      {sections.filter(s => s.items.length > 0).map((s, idx) => {
         const holdsActive = s.items.some(i => i.active);
         const isOpen = !s.label || holdsActive || (open ?? []).includes(s.key);
         const badge = s.items.reduce((n, i) => n + (i.badge ?? 0), 0);
+        const firstLabelled = s.label && sections.filter(x => x.items.length > 0).findIndex(x => x.label) === idx;
         return (
           <div key={s.key} className={cn(s.label && "pt-1")}>
+            {firstLabelled && collapsible.length > 1 && (
+              <button onClick={setAll} className="w-full text-right px-4 pt-1 text-[10px] font-bold text-[#5f5f5d]/60 hover:text-[#1c1c1c] transition-colors">
+                {allOpen ? "Collapse all" : "Show all menus"}
+              </button>
+            )}
             {s.label && (
               <button onClick={() => !holdsActive && toggle(s.key)} aria-expanded={isOpen}
                 className={cn("w-full flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-[0.12em] whitespace-nowrap transition-colors",

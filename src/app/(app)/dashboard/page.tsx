@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { AlertTriangle, Clock, CheckCircle2, TrendingUp, Phone, RefreshCw, ChevronLeft, ChevronRight, Smartphone, Flame, MessageSquareWarning, Truck, Timer, Siren } from "lucide-react";
+import { AlertTriangle, Clock, CheckCircle2, TrendingUp, Phone, RefreshCw, ChevronLeft, ChevronRight, Smartphone, Flame, MessageSquareWarning, Truck, Timer, Siren, LayoutGrid } from "lucide-react";
 import { PageHeader, Avatar, Pagination } from "@/components/ui";
 import { DateRangeFilter, applyDateRange, presetRange, rangeLabel, type DateRange } from "@/components/DateRangeFilter";
 import { HeroTile, Tile } from "@/components/dashboard/Tiles";
 import { OrgPulse } from "@/components/dashboard/OrgPulse";
 import TaskCard from "@/components/TaskCard";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 // Charts load after the page shell: the chart library is the heaviest thing here.
 const AgentStats = dynamic(() => import("@/components/AgentStats").then(m => m.AgentStats), { ssr: false });
 import { Leaderboard } from "@/components/Leaderboard";
@@ -779,6 +780,13 @@ export default function Dashboard() {
                 {syncing ? "Refreshing..." : "Refresh CRM"}
               </span>
             </button>
+            {seesOrg && (
+              <Link href="/organisation/overview"
+                className="btn-secondary flex items-center justify-center gap-1.5 py-1.5 px-4 w-full sm:w-auto">
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Admin dashboard</span>
+              </Link>
+            )}
           </div>
         }
       />
