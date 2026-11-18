@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import type { Profile } from "@/types";
 import { can } from "@/lib/access";
+import { useDebounced, useLiveTable } from "@/hooks/useLiveTable";
 import { ALL_TIME, DateRangeFilter, applyDateRange, type DateRange } from "@/components/DateRangeFilter";
 
 export type RecordRow = Record<string, any> & { id: string };
@@ -45,6 +46,8 @@ export type RecordsConfig = {
   board?: boolean;
   /** Replaces the built-in create form with the module's own (Field Visits: visit + contact details). */
   onNew?: (reload: () => void) => void;
+  /** Refresh the list when anyone changes a row (Supabase Realtime; the table must be in the realtime publication). */
+  live?: boolean;
 };
 
 const label = (s: string) => s.replace(/_/g, " ");
@@ -143,6 +146,9 @@ export function RecordsModule({ config, profile }: { config: RecordsConfig; prof
   }, [supabase, table, filterKey, dataCol, dateCol, range, dateOnly, owner, ownerCol]);
 
   useEffect(() => { load(); }, [load]);
+  // A burst of changes (someone saving several rows) reloads once.
+  const reloadSoon = useDebounced(load, 2_500);
+  useLiveTable(table, reloadSoon, !!config.live);
 
   // The Requests page links here with ?new=1 so the form is already open.
   useEffect(() => {

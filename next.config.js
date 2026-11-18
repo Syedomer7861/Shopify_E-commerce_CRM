@@ -36,6 +36,8 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // Baked into the client JS; compared with public/version.json to spot a new deploy (AppUpdates).
+  env: { NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA || "dev" },
   // A stray package-lock.json higher up the disk made Next guess the wrong root.
   outputFileTracingRoot: __dirname,
   experimental: {

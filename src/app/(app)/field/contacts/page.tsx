@@ -34,7 +34,7 @@ export default function FieldContactsPage() {
   }
 
   const contacts: RecordsConfig = {
-    table: "field_contacts", module: "field_contacts", noun: "contact", ownerCol: "owner_id", ownerLabel: "Added by",
+    table: "field_contacts", live: true, module: "field_contacts", noun: "contact", ownerCol: "owner_id", ownerLabel: "Added by",
     columns: [
       { key: "business_name", label: "Business", format: (v, r) => (
         <span className="block min-w-[140px]"><span className="font-semibold">{v}</span>{r.category && <span className="block text-[10px] text-[#9a9a94]">{r.category}</span>}</span>

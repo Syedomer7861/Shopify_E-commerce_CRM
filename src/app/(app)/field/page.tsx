@@ -91,7 +91,7 @@ export default function FieldVisitsPage() {
   const link = "text-[10px] font-bold underline text-[#1c1c1c]";
   const action = "px-2.5 py-1.5 rounded-lg bg-[#1c1c1c] text-white text-[10px] font-bold";
   const visits: RecordsConfig = {
-    table: "visits", module: "visits", noun: "visit", ownerCol: "owner_id", ownerLabel: "Rep",
+    table: "visits", live: true, module: "visits", noun: "visit", ownerCol: "owner_id", ownerLabel: "Rep",
     columns: [
       { key: "party_name", label: "Visiting" },
       { key: "purpose", label: "Purpose" },

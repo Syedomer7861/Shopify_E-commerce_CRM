@@ -6,7 +6,7 @@
     "dev": "next dev",
     "chat": "node chat_server.js",
     "wa": "node wa_server.js",
-    "build": "node scripts/check-route-guards.mjs && next build",
+    "build": "node scripts/check-route-guards.mjs && node scripts/write-version.mjs && next build",
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "test:kpi-roles": "node scripts/check-kpi-roles.mjs",

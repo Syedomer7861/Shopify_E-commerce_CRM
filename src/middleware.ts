@@ -177,6 +177,6 @@ export const config = {
     // Public files (icons, manifest, service worker, offline page, sounds)
     // were always let through below; skipping them here saves an auth round
     // trip on each one.
-    '/((?!_next/static|_next/image|favicon.ico|icons/|manifest.json|sw.js|offline.html|.*\\.(?:png|jpg|jpeg|svg|webp|ico|mp3|woff2?)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|icons/|manifest.json|version.json|sw.js|offline.html|.*\\.(?:png|jpg|jpeg|svg|webp|ico|mp3|woff2?)$).*)',
   ],
 }

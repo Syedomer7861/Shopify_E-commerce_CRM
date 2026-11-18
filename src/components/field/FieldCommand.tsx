@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { AlertTriangle, Calendar, Camera, Focus, Minimize2, Search, SlidersHorizontal, Clock, Crosshair, ExternalLink, History, LogIn, LogOut, Loader2, MapPin, Maximize2, Navigation, Radio, RefreshCw, Users, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { useDebounced, useLiveTable, type LiveChange } from "@/hooks/useLiveTable";
 import { can } from "@/lib/access";
 import { cn } from "@/lib/utils";
 import {
@@ -94,17 +95,45 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
   }, [supabase, loadLive, loadFrom]);
 
   useEffect(() => { if (allowed) load(); }, [allowed, load]);
-  // Refresh every 2 minutes while the tab is visible: on-site status changes during the day.
+
+  // Live: a visit change reloads the visit list once (bursts are merged);
+  // a moving person is patched straight in from the change, with no extra query.
+  const reloadSoon = useDebounced(load, 2_500);
+  const visitsLive = useLiveTable("visits", reloadSoon, allowed);
+  const liveLive = useLiveTable("field_live_locations", (c: LiveChange) => {
+    setLoadedAt(new Date());
+    if (c.eventType === "DELETE") {
+      const gone = (c.old as { user_id?: string }).user_id;
+      if (gone) setLive(prev => prev.filter(l => l.user_id !== gone));
+      return;
+    }
+    const row = c.new as unknown as LiveLocation;
+    if (!row?.user_id) return;
+    setLive(prev => [...prev.filter(l => l.user_id !== row.user_id), row]);
+  }, allowed);
+
+  // Polling is the fallback: fast while realtime is down, slow once it is connected.
   useEffect(() => {
     if (!allowed) return;
-    const id = setInterval(() => { if (document.visibilityState === "visible") load(); }, 120_000);
+    const id = setInterval(() => { if (document.visibilityState === "visible") load(); }, visitsLive ? 600_000 : 120_000);
     return () => clearInterval(id);
+  }, [allowed, load, visitsLive]);
+  useEffect(() => {
+    if (!allowed) return;
+    const id = setInterval(() => { if (document.visibilityState === "visible") { loadLive(); setLoadedAt(new Date()); } }, liveLive ? 300_000 : 30_000);
+    return () => clearInterval(id);
+  }, [allowed, loadLive, liveLive]);
+  // Back on the tab after a while: catch up once instead of waiting for the next tick.
+  useEffect(() => {
+    if (!allowed) return;
+    let hiddenAt = 0;
+    const onVis = () => {
+      if (document.visibilityState === "hidden") hiddenAt = Date.now();
+      else if (hiddenAt && Date.now() - hiddenAt > 60_000) load();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
   }, [allowed, load]);
-  useEffect(() => {
-    if (!allowed) return;
-    const id = setInterval(() => { if (document.visibilityState === "visible") { loadLive(); setLoadedAt(new Date()); } }, 30_000);
-    return () => clearInterval(id);
-  }, [allowed, loadLive]);
 
   const locate = () => {
     if (!navigator.geolocation) return;

@@ -64,6 +64,7 @@ Thumbs.db
 # Database & Project Specific
 supabase/.temp/
 public/uploads/*
+public/version.json
 !public/uploads/.gitkeep
 shiprocket_full_order_*.json
 order_*.json

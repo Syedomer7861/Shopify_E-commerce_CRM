@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import { usePathname } from "next/navigation";
 import { AgentHeartbeat } from "@/components/AgentHeartbeat";
 import { LiveLocationAgent } from "@/components/field/LiveLocation";
+import { AppUpdates } from "@/components/AppUpdates";
 import { AdminNotifier } from "@/components/AdminNotifier";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -32,6 +33,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="app-ui flex flex-col lg:flex-row h-[100dvh] overflow-hidden bg-[#f2f3ee]">
         <AgentHeartbeat />
         <LiveLocationAgent />
+        <AppUpdates />
         <OrgThemeApplier />
         <ModuleGuard />
         <MfaGate />
