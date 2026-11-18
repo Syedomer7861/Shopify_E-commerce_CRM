@@ -86,6 +86,7 @@ assert.deepStrictEqual(ids(A({ outcome: "missing" })), ["blank"], "missing = com
 assert.deepStrictEqual(ids(A({ gps: "weak" })), ["onsite"]);
 assert.deepStrictEqual(ids(A({ gps: "none" })), ["blank"], "checked in without GPS");
 assert.deepStrictEqual(ids(A({ photo: "yes" })), []);
+assert.ok(matchesAdvanced(rows[0], A({ q: "ravi" }), "Ravi Kumar") && !matchesAdvanced(rows[0], A({ q: "ravi" })), "search finds the executive by name");
 assert.strictEqual(advancedCount(A({ q: " ", gps: "weak" })), 1);
 
 console.log("check-field-command: OK");

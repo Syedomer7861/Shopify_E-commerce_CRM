@@ -64,10 +64,10 @@ export const NO_ADVANCED: Advanced = { q: "", purpose: "", outcome: "any", photo
 export const advancedCount = (a: Advanced) =>
   [a.q.trim(), a.purpose, a.outcome !== "any", a.photo !== "any", a.gps !== "any"].filter(Boolean).length;
 
-/** Extra filters from the Filters panel: search, purpose, outcome, photo proof, GPS quality. */
-export function matchesAdvanced(v: FieldVisit, a: Advanced) {
+/** Extra filters from the Filters panel: search (client, executive, purpose, outcome), purpose, outcome, photo proof, GPS quality. */
+export function matchesAdvanced(v: FieldVisit, a: Advanced, ownerName = "") {
   const q = a.q.trim().toLowerCase();
-  if (q && !`${v.party_name} ${v.purpose ?? ""} ${v.outcome ?? ""}`.toLowerCase().includes(q)) return false;
+  if (q && !`${v.party_name} ${ownerName} ${v.purpose ?? ""} ${v.outcome ?? ""}`.toLowerCase().includes(q)) return false;
   if (a.purpose && (v.purpose || "") !== a.purpose) return false;
   const logged = !!v.outcome?.trim();
   if (a.outcome === "logged" && !logged) return false;

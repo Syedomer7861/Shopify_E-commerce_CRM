@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { AlertTriangle, Calendar, Camera, Search, SlidersHorizontal, Clock, Crosshair, ExternalLink, History, LogIn, LogOut, Loader2, MapPin, Maximize2, Navigation, Radio, RefreshCw, Users, X } from "lucide-react";
+import { AlertTriangle, Calendar, Camera, Focus, Minimize2, Search, SlidersHorizontal, Clock, Crosshair, ExternalLink, History, LogIn, LogOut, Loader2, MapPin, Maximize2, Navigation, Radio, RefreshCw, Users, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { can } from "@/lib/access";
@@ -63,6 +63,13 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
   const [to, setTo] = useState(() => isoDay(new Date()));
   const [adv, setAdv] = useState<Advanced>(NO_ADVANCED);
   const [showFilters, setShowFilters] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    if (!expanded) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setExpanded(false); };
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [expanded]);
   // Normally the last 31 days are loaded; a custom range reaching further back loads from its first day.
   const loadFrom = range === "custom" ? [from, to].sort()[0] : "";
 
@@ -113,11 +120,11 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
   const [start, end] = useMemo(() => (loadedAt ? rangeBounds(range, loadedAt, from, to) : [0, 0]), [loadedAt, range, from, to]);
   const scoped = useMemo(() => {
     if (!rows || !loadedAt) return [];
-    return rows.filter(v => inRange(v, start, end) && (!rep || v.owner_id === rep) && matchesAdvanced(v, adv));
-  }, [rows, loadedAt, start, end, rep, adv]);
+    return rows.filter(v => inRange(v, start, end) && (!rep || v.owner_id === rep) && matchesAdvanced(v, adv, people[v.owner_id || ""]));
+  }, [rows, loadedAt, start, end, rep, adv, people]);
   const purposes = useMemo(() => [...new Set((rows || []).map(v => v.purpose?.trim()).filter(Boolean) as string[])].sort(), [rows]);
-  const repOptions = useMemo(() => [...new Set((rows || []).map(v => v.owner_id).filter(Boolean) as string[])]
-    .map(id => ({ id, name: people[id] || "Unnamed" })).sort((a, b) => a.name.localeCompare(b.name)), [rows, people]);
+  const repOptions = useMemo(() => [...new Set([...(rows || []).map(v => v.owner_id), ...live.map(l => l.user_id)].filter(Boolean) as string[])]
+    .map(id => ({ id, name: people[id] || "Unnamed" })).sort((a, b) => a.name.localeCompare(b.name)), [rows, live, people]);
   const activeFilters = advancedCount(adv) + (rep ? 1 : 0);
   const shown = useMemo(() => scoped.filter(v => matches(v, filter, now)), [scoped, filter, now]);
   const needs = useMemo(() => findIssues(scoped, now), [scoped, now]);
@@ -230,7 +237,7 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
             <span className="block text-[10px] font-bold uppercase tracking-wider text-[#9a9a94] mb-1">Search</span>
             <span className="relative block">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9a9a94]" />
-              <input value={adv.q} onChange={e => setAdv(a => ({ ...a, q: e.target.value }))} placeholder="Client, purpose or outcome" className="input w-full py-1.5 pl-8 text-xs" />
+              <input value={adv.q} onChange={e => setAdv(a => ({ ...a, q: e.target.value }))} placeholder="Client, executive, purpose or outcome" className="input w-full py-1.5 pl-8 text-xs" />
             </span>
           </label>
           <Pick label="Executive" value={rep || ""} onChange={v => setRep(v || null)} options={[["", "Everyone"], ...repOptions.map(r => [r.id, r.name] as [string, string])]} />
@@ -273,7 +280,8 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
         </aside>
 
         {/* Map */}
-        <div className={cn("card p-0 overflow-hidden relative min-h-[460px] lg:min-h-[640px] isolate", !compact && "order-first md:col-span-2 xl:col-span-1 xl:order-none")}>
+        <div className={cn("card p-0 overflow-hidden relative min-h-[460px] lg:min-h-[640px] isolate", !compact && "order-first md:col-span-2 xl:col-span-1 xl:order-none",
+          expanded && "!fixed !inset-3 z-[300] !min-h-0 shadow-2xl")}>
           <div className="absolute z-[500] top-3 left-3 right-3 flex flex-wrap gap-1 rounded-full bg-white/95 border border-[#ebece6] p-1 w-fit max-w-[calc(100%-1.5rem)] overflow-x-auto shadow-sm">
             {FILTERS.map(f => (
               <button key={f.key} onClick={() => setFilter(f.key)} aria-pressed={filter === f.key} className={chip(filter === f.key)}>
@@ -287,7 +295,8 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
             className="absolute inset-0" />
           <div className="absolute z-[500] top-14 right-3 flex flex-col gap-1.5">
             <MapButton label="Show my location" onClick={locate} on={!!me}>{locating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crosshair className="w-4 h-4" />}</MapButton>
-            <MapButton label="Fit everything" onClick={() => setFitToken(t => t + 1)}><Maximize2 className="w-4 h-4" /></MapButton>
+            <MapButton label={expanded ? "Exit full screen (Esc)" : "Full screen"} onClick={() => setExpanded(v => !v)} on={expanded}>{expanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}</MapButton>
+            <MapButton label="Fit everything in view" onClick={() => setFitToken(t => t + 1)}><Focus className="w-4 h-4" /></MapButton>
           </div>
           <div className="absolute z-[500] top-14 left-3 flex flex-col gap-1 rounded-xl bg-white/95 border border-[#ebece6] p-1.5 shadow-sm text-[11px] font-semibold">
             {([["visits", "Visits"], ["live", "Live team"], ["route", "Route"]] as const).map(([k, label]) => (

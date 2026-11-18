@@ -26,7 +26,7 @@ const securityHeaders = [
     "img-src 'self' data: blob: https:",
     "media-src 'self' blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.razorpay.com https://lumberjack.razorpay.com https://us.i.posthog.com https://us-assets.i.posthog.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.razorpay.com https://lumberjack.razorpay.com https://us.i.posthog.com https://us-assets.i.posthog.com https://nominatim.openstreetmap.org",
     "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
     "worker-src 'self' blob:",
     "manifest-src 'self'",

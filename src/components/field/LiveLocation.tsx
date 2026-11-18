@@ -8,23 +8,33 @@ import { distanceM } from "@/lib/field-command";
 import { cn } from "@/lib/utils";
 
 /**
- * Live location sharing for field staff. Opt-in per person, per device: the
- * switch is remembered in this browser only, and it stops by itself after
- * MAX_HOURS. Only the latest position is kept (one row per person), so it
- * never grows. Works while the app is open; a web page can't track a phone
- * in the background.
+ * Live location sharing for field staff. On by default for people who do
+ * field visits (anyone who logged a visit in the last 30 days): it starts
+ * when they open the app and stops by itself after MAX_HOURS. Pausing lasts
+ * for the rest of that day; it comes back on the next working day.
+ * Only the latest position is kept (one row per person). Who can see it is
+ * decided by the database (own row, or visit access to that person).
+ * Works while the app is open; a web page can't track a phone in the background.
  */
 const KEY = "field-live-share";
 const EVENT = "field-live-share-change";
 const MAX_HOURS = 10;
 const SEND_EVERY_MS = 60_000;
 const SEND_IF_MOVED_M = 75;
+const FIELD_STAFF_DAYS = 30;
 
-function read(): number | null {
-  try { const v = Number(localStorage.getItem(KEY)); return v > 0 ? v : null; } catch { return null; }
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+
+/** Stored value: a start time in ms while sharing, or "off:<day>" when paused that day. */
+function raw(): string | null {
+  try { return localStorage.getItem(KEY); } catch { return null; }
 }
-function write(v: number | null) {
-  try { if (v) localStorage.setItem(KEY, String(v)); else localStorage.removeItem(KEY); } catch { /* private mode */ }
+function read(): number | null {
+  const v = Number(raw());
+  return v > 0 ? v : null;
+}
+function write(v: string | null) {
+  try { if (v) localStorage.setItem(KEY, v); else localStorage.removeItem(KEY); } catch { /* private mode */ }
   window.dispatchEvent(new Event(EVENT));
 }
 const subscribe = (cb: () => void) => {
@@ -32,10 +42,11 @@ const subscribe = (cb: () => void) => {
   window.addEventListener("storage", cb);
   return () => { window.removeEventListener(EVENT, cb); window.removeEventListener("storage", cb); };
 };
+const pausedToday = () => raw() === `off:${today()}`;
 
 // Module-level so they keep one identity across renders (the agent's effect depends on stop).
-const startShare = () => write(Date.now());
-const stopShare = () => write(null);
+const startShare = () => write(String(Date.now()));
+const stopShare = () => write(`off:${today()}`);
 
 /** When this device started sharing (ms), or null. */
 export function useLiveShare() {
@@ -47,11 +58,25 @@ async function markStopped(userId: string) {
   await createClient().from("field_live_locations").update({ sharing: false, updated_at: new Date().toISOString() }).eq("user_id", userId);
 }
 
-/** Mounted once in the app layout; sends positions while sharing is on. Renders nothing. */
+/** Mounted once in the app layout; turns sharing on for field staff and sends positions. Renders nothing. */
 export function LiveLocationAgent() {
   const { profile } = useCurrentProfile();
-  const { since, stop } = useLiveShare();
+  const { since, start, stop } = useLiveShare();
   const last = useRef<{ at: number; pos: [number, number] } | null>(null);
+
+  // Default on: field staff start sharing when they open the app, unless they paused it today.
+  useEffect(() => {
+    if (!profile?.id || since || pausedToday() || typeof navigator === "undefined" || !navigator.geolocation) return;
+    let dead = false;
+    const after = new Date(Date.now() - FIELD_STAFF_DAYS * 86_400_000).toISOString();
+    createClient().from("visits").select("id", { count: "exact", head: true }).eq("owner_id", profile.id).gte("created_at", after)
+      .then(({ count, error }) => {
+        if (dead || error || !count || read() || pausedToday()) return;
+        start();
+        toast("Your live location is shared with your manager while you work. You can pause it on the Field visits page.", { icon: "📍", duration: 7000 });
+      });
+    return () => { dead = true; };
+  }, [profile?.id, since, start]);
 
   useEffect(() => {
     if (!since || !profile?.id || typeof navigator === "undefined" || !navigator.geolocation) return;
@@ -66,7 +91,7 @@ export function LiveLocationAgent() {
       if (first) row.started_at = new Date(since).toISOString();
       const { error } = await supabase.from("field_live_locations").upsert(row, { onConflict: "user_id" });
       if (error) {
-        // Table not there yet (migration pending): stop quietly instead of retrying every minute.
+        // Table missing (migration not applied): stop quietly instead of retrying every minute.
         if (/field_live_locations|relation|schema cache/i.test(error.message)) { dead = true; stop(); }
         return;
       }
@@ -83,7 +108,7 @@ export function LiveLocationAgent() {
       send(pos[0], pos[1], p.coords.accuracy);
     }, err => {
       if (err.code === err.PERMISSION_DENIED) {
-        toast.error("Location permission is off, so live sharing stopped. Allow location for this site to share.");
+        toast.error("Location permission is off, so your manager can't see your live location. Allow location for this site to share it.");
         stop(); markStopped(userId);
       }
     }, { enableHighAccuracy: true, maximumAge: 30_000, timeout: 30_000 });
@@ -104,16 +129,16 @@ export function LiveShareToggle({ className }: { className?: string }) {
     if (on) {
       stop();
       if (profile?.id) markStopped(profile.id);
-      toast.success("Stopped sharing your location");
+      toast.success("Paused for today. It turns back on tomorrow when you open the app.");
       return;
     }
     if (!navigator.geolocation) return void toast.error("This device can't share location.");
     start();
-    toast.success("Sharing your live location with your manager while the app is open. Stops by itself after 10 hours.", { duration: 6000 });
+    toast.success("Sharing your live location with your manager while the app is open.", { duration: 5000 });
   };
   return (
     <button type="button" onClick={toggle} aria-pressed={on}
-      title={on ? `Sharing since ${new Date(since!).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}` : "Let your manager see where you are while you work"}
+      title={on ? `Sharing since ${new Date(since!).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}. Click to pause for today.` : "Let your manager see where you are while you work"}
       className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold border transition-colors",
         on ? "bg-[var(--accent)] border-[var(--accent)] text-[#1c1c1c]" : "bg-white border-[#ebece6] text-[#55554f] hover:border-[#1c1c1c]", className)}>
       <span className={cn("relative flex w-2 h-2", on && "after:absolute after:inset-0 after:rounded-full after:bg-[#1c1c1c] after:animate-ping motion-reduce:after:hidden")}>
