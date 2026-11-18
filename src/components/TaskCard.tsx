@@ -47,6 +47,8 @@ import RTOClaimGenerator from "./RTOClaimGenerator";
 import { WhatsAppChat } from "./chat/WhatsAppChat";
 import ClickToCallModal from "./ClickToCallModal";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { useOrgName } from "@/hooks/useOrgName";
+import { rebrand } from "@/lib/brand";
 
 interface TaskCardProps {
   task: Task & { customer: Customer; order?: Order; abandoned_cart?: AbandonedCart };
@@ -226,6 +228,9 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
   };
 
   const { profile: currentAgentProfile, loading: agentProfileLoading } = useCurrentProfile();
+  // Templates are CureForever's wording; other organisations get their own name and no CureForever links.
+  const orgName = useOrgName();
+  const rb = (t: string) => rebrand(t, orgName);
   const [logistics, setLogistics] = useState<LogisticsRecommendation | null>(null);
   const [upsells, setUpsells] = useState<UpsellSuggestion[]>([]);
   const [aiUpsellsLoaded, setAiUpsellsLoaded] = useState(false);
@@ -820,7 +825,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
       msg = msg.replace("{{abandon_link}}", abandonLink);
     }
     
-    setWaMessage(msg);
+    setWaMessage(rb(msg));
     setWaModal(true);
   }
 
@@ -836,8 +841,8 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
       msg = msg.replace("{{abandon_link}}", abandonLink);
     }
     
-    setEmailSubject(`${TASK_TYPE_CONFIG[task.task_type].label} - CureForever`);
-    setEmailMessage(msg);
+    setEmailSubject(rb(`${TASK_TYPE_CONFIG[task.task_type].label} - CureForever`));
+    setEmailMessage(rb(msg));
     setEmailModal(true);
   }
   const logisticsMetrics = useMemo(() => {
@@ -849,7 +854,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
 
   // Real AI script when available, otherwise the static template - used
   // everywhere the card offers a "battle script" (detail panel, WA/Email presets).
-  const effectiveScript = aiScript || getBattleScript(
+  const effectiveScript = aiScript || rb(getBattleScript(
     task.task_type,
     task.customer.segment,
     task.customer.name.split(' ')[0],
@@ -858,7 +863,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
     (task as any).sentiment,
     (task as any).is_urgent,
     logistics?.rto_probability
-  );
+  ));
 
   return (
     <>
@@ -1443,7 +1448,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                       const abandonLink = checkoutUrl || "https://cureforever.in/cart";
                       msg = msg.replace("{{abandon_link}}", abandonLink);
                     }
-                    setWaMessage(msg);
+                    setWaMessage(rb(msg));
                   }}
                 >
                   {key.replace("_", " ")}
@@ -1504,7 +1509,7 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
               )}
               onClick={() => {
                 setEmailMessage(effectiveScript);
-                setEmailSubject(`AI Tactical Script - CureForever`);
+                setEmailSubject(rb(`AI Tactical Script - CureForever`));
               }}
             >
               🚀 AI Tactical Script
@@ -1533,8 +1538,8 @@ export default function TaskCard({ task, onComplete, onReschedule, onSkip, onWha
                       const abandonLink = checkoutUrl || "https://cureforever.in/cart";
                       msg = msg.replace("{{abandon_link}}", abandonLink);
                     }
-                    setEmailMessage(msg);
-                    setEmailSubject(`${key.replace("_", " ").toUpperCase()} - CureForever`);
+                    setEmailMessage(rb(msg));
+                    setEmailSubject(rb(`${key.replace("_", " ").toUpperCase()} - CureForever`));
                   }}
                 >
                   {key.replace("_", " ")}

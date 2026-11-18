@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase";
 import { getTaskProductName } from "@/lib/utils";
 import { bridgeUrlFor, getSystemSettings } from "@/lib/server-settings";
 import { requireOwnerOrInternal } from "@/lib/auth-utils";
+import { orgNameFor } from "@/lib/org-name-server";
+import { rebrand } from "@/lib/brand";
 
 function getSupabase() {
   return createAdminClient();
@@ -99,7 +101,7 @@ async function processOrg(supabase: any, orgId: string) {
         const res = await fetch(`${bridgeUrl}/send`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: customer.phone, message }),
+          body: JSON.stringify({ phone: customer.phone, message: rebrand(message, await orgNameFor(orgId)) }),
         });
         
         const result = await res.json();

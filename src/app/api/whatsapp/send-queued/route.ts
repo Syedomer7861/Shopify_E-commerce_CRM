@@ -3,6 +3,8 @@ import { requirePrivileged } from "@/lib/auth-utils";
 import { createServerClient } from "@/lib/supabase";
 import { bridgeUrlFor, getSystemSettings } from "@/lib/server-settings";
 import { logServerAuditEvent } from "@/lib/audit";
+import { orgNameFor } from "@/lib/org-name-server";
+import { rebrand } from "@/lib/brand";
 
 function getSupabase() {
   return createServerClient();
@@ -74,8 +76,8 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
-        phone: customer.phone, 
-        message, 
+        phone: customer.phone,
+        message: rebrand(message, await orgNameFor(settings?.org_id ?? task.org_id)),
         mediaData, 
         mimetype, 
         filename 

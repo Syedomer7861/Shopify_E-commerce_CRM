@@ -3,6 +3,8 @@ import { memberScope } from "@/lib/auth-utils";
 import { rateLimit } from "@/lib/rate-limit";
 import { getServiceSupabase } from "@/lib/supabase";
 import { generateAiText } from "@/lib/ai";
+import { orgNameFor } from "@/lib/org-name-server";
+import { rebrand } from "@/lib/brand";
 
 export async function POST(req: NextRequest) {
   const scope = await memberScope(req);
@@ -75,7 +77,9 @@ Guidelines:
 7. Use 1-2 positive emojis to increase engagement (e.g. 👋, 🌿, 💊, 🛒, ✅) naturally, matching the CureForever brand style.
 `;
 
-    const result = await generateAiText(`${systemPrompt}\n\nContext:\n${context}`);
+    // Prompts and fallbacks are CureForever's wording; other organisations get their own name.
+    const orgName = await orgNameFor(scope.orgId);
+    const result = await generateAiText(rebrand(`${systemPrompt}\n\nContext:\n${context}`, orgName));
     if (result) {
       suggestion = result.text;
       isMock = false;
@@ -97,7 +101,7 @@ Guidelines:
       }
     }
 
-    return NextResponse.json({ suggestion, isMock });
+    return NextResponse.json({ suggestion: rebrand(suggestion, orgName), isMock });
   } catch (e: any) {
     console.error("suggest-reply endpoint error:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });

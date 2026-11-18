@@ -3,6 +3,8 @@ import { memberScope } from "@/lib/auth-utils";
 import { rateLimit } from "@/lib/rate-limit";
 import { getServiceSupabase } from "@/lib/supabase";
 import { generateAiText } from "@/lib/ai";
+import { orgNameFor } from "@/lib/org-name-server";
+import { rebrand } from "@/lib/brand";
 
 /**
  * Real AI generation for the two TaskCard panels that used to be static
@@ -75,7 +77,7 @@ ${typeof rtoProbability === "number" ? `RTO risk: ${rtoProbability}%` : ""}
       ? `You are ${agentName || "a CureForever team member"}, a sales/retention rep for "CureForever", a premium wellness brand, about to call or WhatsApp ${firstName} about this task. Write ONE short, professional opening (under 45 words). ${greetingInstruction} - then get to the point for this specific task. Professional and courteous tone, never casual or salesy-desperate. Match urgency/sentiment in word choice, not in dropping the greeting. ${outputRules}\n\nContext:\n${context}`
       : `You are logging a customer support call outcome for "CureForever". Write a short internal call note (1-2 sentences, under 40 words) describing what happened, consistent with a "${disposition || "general"}" outcome for ${firstName} regarding ${product}. ${outputRules}\n\nContext:\n${context}`;
 
-    const result = await generateAiText(prompt);
+    const result = await generateAiText(rebrand(prompt, await orgNameFor(task.org_id)));
     if (!result) return NextResponse.json({ text: null, isMock: true });
 
     if (mode === "battle_script") {
@@ -131,7 +133,7 @@ Pick 1-3 products from that list that genuinely complement "${currentProduct}" (
 Your entire response must be nothing but the raw JSON array below - the first character must be [ and the last must be ]. No markdown fences, no preamble like "Here are...", no commentary before or after.
 [{"product_name":"...","reason":"...","script":"..."}]`;
 
-  const result = await generateAiText(prompt, 3000);
+  const result = await generateAiText(rebrand(prompt, await orgNameFor(orgId)), 3000);
   if (!result) return NextResponse.json({ suggestions: [], isMock: true });
 
   let parsed: any[] = [];

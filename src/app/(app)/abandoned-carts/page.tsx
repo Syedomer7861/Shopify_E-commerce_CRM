@@ -23,9 +23,12 @@ import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
 import { RefreshCw } from "lucide-react";
 import { ALL_TIME, DateRangeFilter, applyDateRange, type DateRange } from "@/components/DateRangeFilter";
+import { useOrgName } from "@/hooks/useOrgName";
+import { isSeedBrand } from "@/lib/brand";
 
 export default function AbandonedCartsPage() {
   const { profile, loading: profileLoading } = useCurrentProfile();
+  const orgName = useOrgName();
   const [carts, setCarts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -185,7 +188,7 @@ export default function AbandonedCartsPage() {
     const formattedPhone = phone.length === 10 ? `91${phone}` : phone;
     const name = cart.customer?.name || "Customer";
     const items = (cart.line_items as any[])?.map(i => i.title).join(", ") || "items";
-    const message = `Hi ${name}, we noticed you left some ${items} in your cart at CureForever. Since these items are in high demand, we wanted to check if you had any questions or needed help completing your order?`;
+    const message = `Hi ${name}, we noticed you left some ${items} in your cart at ${orgName && !isSeedBrand(orgName) ? orgName : "CureForever"}. Since these items are in high demand, we wanted to check if you had any questions or needed help completing your order?`;
     return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
   }
 

@@ -1,8 +1,16 @@
 import { google } from "googleapis";
 import { createServerClient } from "./supabase";
 import { getSystemSettings } from "./server-settings";
+import { isSeedBrand, rebrand } from "./brand";
+import { orgNameFor } from "./org-name-server";
 
 export async function getGmailClient(orgId?: string) {
+  return (await loadGmail(orgId)).auth;
+}
+
+const escapeHtml = (v: string) => v.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+
+async function loadGmail(orgId?: string) {
   const supabase = createServerClient();
   // settings RLS is admin-only now (it holds API secrets); this is called
   // from automated flows (order-confirmation emails, workflow-engine) that
@@ -30,7 +38,7 @@ export async function getGmailClient(orgId?: string) {
     });
   }
 
-  return oauth2Client;
+  return { auth: oauth2Client, orgId: (settings.org_id as string | null) ?? orgId ?? null };
 }
 
 export async function sendGmail({
@@ -46,16 +54,38 @@ export async function sendGmail({
   attachments?: { filename: string; content: string; contentType: string }[];
   orgId?: string;
 }) {
-  const auth = await getGmailClient(orgId);
+  const { auth, orgId: sendingOrg } = await loadGmail(orgId);
   const gmail = google.gmail({ version: "v1", auth });
+
+  // CureForever keeps its logo and footer; every other organisation gets a
+  // plain text header and footer with its own name.
+  const orgName = await orgNameFor(sendingOrg);
+  const seed = isSeedBrand(orgName);
+  subject = rebrand(subject, orgName);
+  body = rebrand(body, orgName);
+  const brand = escapeHtml(orgName || "");
+  const headerHtml = seed
+    ? `<a href="https://cureforever.in" style="text-decoration:none;">
+                    <img src="https://cureforever.in/cdn/shop/files/Cureforever_TM_Logo_1.png?v=1751527749&width=600" width="220" alt="CureForever" style="display:block; border:0; margin:0 auto; max-width:220px; height:auto;">
+                  </a>`
+    : `<div style="font-size:26px; font-weight:900; letter-spacing:-0.02em; color:#1c1c1c;">${brand}</div>`;
+  const teamHtml = seed
+    ? `Team <a href="https://cureforever.in" style="color:#1c1c1c; text-decoration:none;">CureForever</a>`
+    : `Team ${brand}`;
+  const footerHtml = seed
+    ? `&copy; 2026 <a href="https://cureforever.in" style="color:#5f5f5d; text-decoration:underline;">CureForever</a>. All rights reserved.<br>
+                  <div style="margin-top:15px; font-size:9px; opacity:0.6; text-transform:none; letter-spacing:normal;">
+                    <a href="https://cureforever.in" style="color:#5f5f5d; text-decoration:underline;">Cureforever</a>, a health and wellness supplement brand.
+                  </div>`
+    : `&copy; ${new Date().getFullYear()} ${brand}. All rights reserved.`;
 
   // An HTML-only message (no text/plain alternative) is a real spam-score
   // factor - most filters treat "html with no plain fallback" as a signal.
   // Structure: multipart/mixed (attachments) wrapping multipart/alternative
   // (plain + html), which is the conventional nesting mail clients expect;
   // multipart/alternative alone when there's nothing to attach.
-  const mixedBoundary = "__CUREFOREVER_MIXED__";
-  const altBoundary = "__CUREFOREVER_ALT__";
+  const mixedBoundary = "__CRM_MIXED__";
+  const altBoundary = "__CRM_ALT__";
   const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
   const plainText = body; // caller passes the raw, unescaped message text
   const htmlBody = body.replace(/\n/g, '<br/>');
@@ -103,9 +133,7 @@ export async function sendGmail({
             <table role="presentation" width="600" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" style="background-color:#ffffff; max-width:600px; border-radius:24px; border:1px solid #eceae4; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
               <tr>
                 <td align="center" bgcolor="#ffffff" style="background-color:#ffffff; padding: 50px 20px; border-bottom: 1px solid #f7f4ed;">
-                  <a href="https://cureforever.in" style="text-decoration:none;">
-                    <img src="https://cureforever.in/cdn/shop/files/Cureforever_TM_Logo_1.png?v=1751527749&width=600" width="220" alt="CureForever" style="display:block; border:0; margin:0 auto; max-width:220px; height:auto;">
-                  </a>
+                  ${headerHtml}
                 </td>
               </tr>
               <tr>
@@ -117,17 +145,14 @@ export async function sendGmail({
 
                   <div style="margin-top:50px; padding-top:40px; border-top:1px solid #f3f3f1;">
                     <p style="margin:0; font-size:15px; color:#5f5f5d;">Best regards,</p>
-                    <p style="margin:8px 0 0; font-weight:900; font-size:20px; letter-spacing:-0.02em; color:#1c1c1c;">Team <a href="https://cureforever.in" style="color:#1c1c1c; text-decoration:none;">CureForever</a></p>
+                    <p style="margin:8px 0 0; font-weight:900; font-size:20px; letter-spacing:-0.02em; color:#1c1c1c;">${teamHtml}</p>
                     <p style="margin:4px 0 0; font-size:10px; color:#5f5f5d; text-transform:uppercase; letter-spacing:0.2em; font-weight:bold;">Customer Success Operations</p>
                   </div>
                 </td>
               </tr>
               <tr>
                 <td align="center" bgcolor="#fcfbf8" style="background-color:#fcfbf8; padding:40px; border-top:1px solid #eceae4; font-size:11px; color:#5f5f5d; text-transform:uppercase; letter-spacing:0.15em;">
-                  &copy; 2026 <a href="https://cureforever.in" style="color:#5f5f5d; text-decoration:underline;">CureForever</a>. All rights reserved.<br>
-                  <div style="margin-top:15px; font-size:9px; opacity:0.6; text-transform:none; letter-spacing:normal;">
-                    <a href="https://cureforever.in" style="color:#5f5f5d; text-decoration:underline;">Cureforever</a>, a health and wellness supplement brand.
-                  </div>
+                  ${footerHtml}
                 </td>
               </tr>
             </table>

@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase';
 import { Avatar } from '@/components/ui';
 import { toast } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
+import { useOrgName } from '@/hooks/useOrgName';
+import { rebrand } from '@/lib/brand';
 
 /** Newest messages per side shown in the chat panel. */
 const CHAT_LIMIT = 200;
@@ -21,6 +23,7 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
+  const orgName = useOrgName();
 
   const [templates, setTemplates] = useState<any[]>([]);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -83,7 +86,7 @@ export function WhatsAppChat({ phone, customerName, customerId }: WhatsAppChatPr
       .replace(/{{order_no}}/g, orderNo)
       .replace(/{{abandon_link}}/g, abandonLink);
 
-    setInput(resolved);
+    setInput(rebrand(resolved, orgName));
     setShowTemplates(false);
     toast.success(`Loaded template: "${tpl.name}"`);
   };

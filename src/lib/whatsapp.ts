@@ -1,4 +1,6 @@
 import { orQuote } from "@/lib/utils";
+import { rebrand } from "./brand";
+import { orgNameFor } from "./org-name-server";
 /**
  * WhatsApp messaging via Meta Cloud API (Primary) and Local Bridge (Fallback)
  */
@@ -175,7 +177,8 @@ export async function sendWhatsApp(phone: string, message: string, media?: Whats
     await enforceSafeguardDelay(supabase);
 
     const settings = await getSystemSettings(supabase, orgId);
-
+    // Other organisations never send CureForever's name or links (no-op for CureForever).
+    message = rebrand(message, await orgNameFor(settings?.org_id ?? orgId));
 
     let whatsappResult: WhatsAppResponse = { ok: false, error: "No WhatsApp messaging gateway configured" };
 

@@ -5,6 +5,8 @@ import { bridgeUrlFor, getSystemSettings } from "@/lib/server-settings";
 import { sendGmail } from "@/lib/gmail";
 import { personaliseTemplate, getTemplateVariables } from "@/lib/whatsapp";
 import { privilegedScope } from "@/lib/auth-utils";
+import { orgNameFor } from "@/lib/org-name-server";
+import { rebrand } from "@/lib/brand";
 
 function getSupabase() {
   return createAdminClient();
@@ -121,7 +123,7 @@ async function processOrg(supabase: any, orgId: string) {
           const res = await fetch(`${effectiveBridgeUrl}/send`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ phone: customer.phone, message }),
+            body: JSON.stringify({ phone: customer.phone, message: rebrand(message, await orgNameFor(orgId)) }),
           });
           const result = await res.json();
           if (res.ok && result.ok) {
