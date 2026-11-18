@@ -4,7 +4,6 @@ import { FloatingChat } from "@/components/chat/FloatingChat";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import Sidebar from "@/components/Sidebar";
 import { usePathname } from "next/navigation";
-import { AgentHeartbeat } from "@/components/AgentHeartbeat";
 import { LiveLocationAgent } from "@/components/field/LiveLocation";
 import { AppUpdates } from "@/components/AppUpdates";
 import { AdminNotifier } from "@/components/AdminNotifier";
@@ -31,7 +30,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <ProfileProvider>
     <ChatProvider>
       <div className="app-ui flex flex-col lg:flex-row h-[100dvh] overflow-hidden bg-[#f2f3ee]">
-        <AgentHeartbeat />
         <LiveLocationAgent />
         <AppUpdates />
         <OrgThemeApplier />

@@ -325,13 +325,18 @@ function HRDashboardContent() {
       // and the header "Refresh" button covers everything else on demand.
 
       const supabase = createClient();
+      // One reload per burst: a shift change can fire dozens of status rows at
+      // once, and each used to trigger a full HR reload.
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const refetchSoon = () => { clearTimeout(timer); timer = setTimeout(fetchData, 2000); };
       const channel = supabase
         .channel("hr-live")
-        .on("postgres_changes", { event: "*", schema: "public", table: "agent_status_logs" }, fetchData)
-        .on("postgres_changes", { event: "*", schema: "public", table: "leaves" }, fetchData)
+        .on("postgres_changes", { event: "*", schema: "public", table: "agent_status_logs" }, refetchSoon)
+        .on("postgres_changes", { event: "*", schema: "public", table: "leaves" }, refetchSoon)
         .subscribe();
 
       return () => {
+        clearTimeout(timer);
         supabase.removeChannel(channel);
       };
     }

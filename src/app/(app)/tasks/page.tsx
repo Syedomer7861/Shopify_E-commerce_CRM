@@ -1,4 +1,5 @@
 "use client";
+import dynamic from "next/dynamic";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { isDemoMode } from "@/lib/demo";
 import { 
@@ -19,7 +20,8 @@ import {
   Info
 } from "lucide-react";
 import { PageHeader, EmptyState, TaskTypeBadge, Pagination, Modal, Select } from "@/components/ui";
-import { CallsInsights } from "@/components/charts/LiveCharts";
+// Charts load with their own chunk, so the list shows without waiting for recharts.
+const CallsInsights = dynamic(() => import("@/components/charts/LiveCharts").then(m => m.CallsInsights), { ssr: false });
 import TaskCard from "@/components/TaskCard";
 import { createClient } from "@/lib/supabase";
 import { sendAdminNotification } from "@/lib/notifications";

@@ -17,7 +17,8 @@ import toast from "react-hot-toast";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { hasPermission } from "@/lib/permissions";
 import { logAuditEvent } from "@/lib/audit";
-import { CustomersInsights } from "@/components/charts/LiveCharts";
+// Charts load with their own chunk, so the list shows without waiting for recharts.
+const CustomersInsights = dynamic(() => import("@/components/charts/LiveCharts").then(m => m.CustomersInsights), { ssr: false });
 
 const SEGS: { label: string; value: string }[] = [
   { label: "All", value: "all" },
