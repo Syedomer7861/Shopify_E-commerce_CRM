@@ -11,7 +11,7 @@ export type FieldVisit = {
   check_in_photo_path?: string | null; check_in_photo_drive_id?: string | null; outcome: string | null; owner_id: string | null; created_at: string;
 };
 
-export type Range = "today" | "7d" | "30d";
+export type Range = "today" | "yesterday" | "7d" | "30d" | "custom";
 export type Filter = "all" | "on_site" | "planned" | "done" | "missed";
 export type Issue = { visit: FieldVisit; kind: "missed" | "long_on_site" | "no_outcome" | "weak_location"; title: string; detail: string };
 
@@ -33,8 +33,54 @@ export function rangeStart(range: Range, now: Date) {
 }
 
 /** A visit belongs to the range when it was planned or checked into within it. */
-export function inRange(v: FieldVisit, start: number) {
-  return t(v.planned_at) >= start || t(v.check_in_at) >= start;
+export function inRange(v: FieldVisit, start: number, end = Infinity) {
+  const p = t(v.planned_at), c = t(v.check_in_at);
+  return (p >= start && p < end) || (c >= start && c < end);
+}
+
+/**
+ * [start, end) in ms for a range. "custom" takes local dates "YYYY-MM-DD"
+ * (both days included); swapped dates are put in order.
+ */
+export function rangeBounds(range: Range, now: Date, from?: string, to?: string): [number, number] {
+  const midnight = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
+  if (range === "yesterday") { const end = midnight(now); return [end - 24 * HOUR, end]; }
+  if (range === "custom" && from && to) {
+    const day = (s: string) => midnight(new Date(`${s}T00:00:00`));
+    const [a, b] = [day(from), day(to)].sort((x, y) => x - y);
+    return [a, b + 24 * HOUR];
+  }
+  return [rangeStart(range === "custom" ? "7d" : range, now), Infinity];
+}
+
+export type Advanced = {
+  q: string; purpose: string;
+  outcome: "any" | "logged" | "missing";
+  photo: "any" | "yes" | "no";
+  gps: "any" | "good" | "weak" | "none";
+};
+export const NO_ADVANCED: Advanced = { q: "", purpose: "", outcome: "any", photo: "any", gps: "any" };
+
+export const advancedCount = (a: Advanced) =>
+  [a.q.trim(), a.purpose, a.outcome !== "any", a.photo !== "any", a.gps !== "any"].filter(Boolean).length;
+
+/** Extra filters from the Filters panel: search, purpose, outcome, photo proof, GPS quality. */
+export function matchesAdvanced(v: FieldVisit, a: Advanced) {
+  const q = a.q.trim().toLowerCase();
+  if (q && !`${v.party_name} ${v.purpose ?? ""} ${v.outcome ?? ""}`.toLowerCase().includes(q)) return false;
+  if (a.purpose && (v.purpose || "") !== a.purpose) return false;
+  const logged = !!v.outcome?.trim();
+  if (a.outcome === "logged" && !logged) return false;
+  if (a.outcome === "missing" && (logged || v.status !== "completed")) return false;
+  const photo = !!(v.check_in_photo_path || v.check_in_photo_drive_id);
+  if (a.photo === "yes" && !photo) return false;
+  if (a.photo === "no" && (photo || !v.check_in_at)) return false;
+  const hasGps = v.check_in_lat != null;
+  const weak = hasGps && (v.check_in_accuracy_m ?? 0) > WEAK_LOCATION_M;
+  if (a.gps === "good" && (!hasGps || weak)) return false;
+  if (a.gps === "weak" && !weak) return false;
+  if (a.gps === "none" && (hasGps || !v.check_in_at)) return false;
+  return true;
 }
 
 export function matches(v: FieldVisit, f: Filter, now: number) {

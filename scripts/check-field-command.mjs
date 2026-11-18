@@ -71,4 +71,21 @@ for (let i = 1; i < tl.length; i++) assert.ok(new Date(tl[i - 1].at) >= new Date
 const d = distanceM([17.385, 78.4867], [17.4065, 78.4772]);
 assert.ok(d > 2500 && d < 2700, `Hyderabad ~2.6km, got ${d}`);
 
+const { rangeBounds, matchesAdvanced, NO_ADVANCED, advancedCount } = mod.exports;
+const [ys, ye] = rangeBounds("yesterday", now);
+assert.strictEqual(ye - ys, 24 * 3_600_000);
+assert.strictEqual(ye, rangeStart("today", now), "yesterday ends at today's midnight");
+const [cs, ce] = rangeBounds("custom", now, "2026-11-17", "2026-11-10");
+assert.strictEqual(new Date(cs).getDate(), 10, "swapped dates put in order");
+assert.strictEqual(ce - cs, 8 * 24 * 3_600_000, "both days included");
+assert.ok(inRange(rows[4], ys + 0, Infinity) && !inRange(v("x", { planned_at: ago(48) }), ys, ye));
+const A = (o) => ({ ...NO_ADVANCED, ...o });
+const ids = (a) => rows.filter((x) => matchesAdvanced(x, a)).map((x) => x.id);
+assert.deepStrictEqual(ids(A({ q: "STUCK" })), ["stuck"], "search ignores case");
+assert.deepStrictEqual(ids(A({ outcome: "missing" })), ["blank"], "missing = completed without outcome");
+assert.deepStrictEqual(ids(A({ gps: "weak" })), ["onsite"]);
+assert.deepStrictEqual(ids(A({ gps: "none" })), ["blank"], "checked in without GPS");
+assert.deepStrictEqual(ids(A({ photo: "yes" })), []);
+assert.strictEqual(advancedCount(A({ q: " ", gps: "weak" })), 1);
+
 console.log("check-field-command: OK");

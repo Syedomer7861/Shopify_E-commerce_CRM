@@ -1,14 +1,14 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { AlertTriangle, Camera, Clock, Crosshair, ExternalLink, History, LogIn, LogOut, Loader2, MapPin, Maximize2, Navigation, Radio, RefreshCw, Users, X } from "lucide-react";
+import { AlertTriangle, Calendar, Camera, Search, SlidersHorizontal, Clock, Crosshair, ExternalLink, History, LogIn, LogOut, Loader2, MapPin, Maximize2, Navigation, Radio, RefreshCw, Users, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { can } from "@/lib/access";
 import { cn } from "@/lib/utils";
 import {
-  inRange, issues as findIssues, isLive, isMissed, matches, rangeStart, reps as repSummaries, stats as dayStats, timeline, trail,
-  type FieldVisit, type Filter, type Issue, type LiveLocation, type Range, type TimelineEvent,
+  advancedCount, inRange, issues as findIssues, isLive, isMissed, matches, matchesAdvanced, NO_ADVANCED, rangeBounds, reps as repSummaries, stats as dayStats, timeline, trail,
+  type Advanced, type FieldVisit, type Filter, type Issue, type LiveLocation, type Range, type TimelineEvent,
 } from "@/lib/field-command";
 import type { LivePoint, MapPoint, MePoint } from "./FieldMap";
 import { LiveShareToggle } from "./LiveLocation";
@@ -20,6 +20,11 @@ const FieldMap = dynamic(() => import("./FieldMap").then(m => m.FieldMap), {
 const COLS = "id, party_name, purpose, status, planned_at, check_in_at, check_out_at, check_in_lat, check_in_lng, check_in_accuracy_m, check_in_photo_path, outcome, owner_id, created_at";
 // Added by migration 20261118i; the query falls back to COLS until it is applied.
 const DRIVE_COL = ", check_in_photo_drive_id";
+const isoDay = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const RANGES: { key: Range; label: string }[] = [
+  { key: "today", label: "Today" }, { key: "yesterday", label: "Yesterday" }, { key: "7d", label: "7 days" },
+  { key: "30d", label: "30 days" }, { key: "custom", label: "Custom" },
+];
 const LIVE_COLS = "user_id, lat, lng, accuracy_m, sharing, started_at, updated_at";
 const ago = (v: string, now: number) => { const m = Math.max(0, Math.round((now - new Date(v).getTime()) / 60_000)); return m < 1 ? "just now" : m < 60 ? `${m} min ago` : `${Math.floor(m / 60)}h ${m % 60}m ago`; };
 const PROOF_BUCKET = "visit-proofs";
@@ -54,6 +59,12 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
   const [layers, setLayers] = useState({ visits: true, live: true, route: true });
   const [fitToken, setFitToken] = useState(0);
   const [tab, setTab] = useState<"team" | "timeline">("team");
+  const [from, setFrom] = useState(() => isoDay(new Date(Date.now() - 6 * 86_400_000)));
+  const [to, setTo] = useState(() => isoDay(new Date()));
+  const [adv, setAdv] = useState<Advanced>(NO_ADVANCED);
+  const [showFilters, setShowFilters] = useState(false);
+  // Normally the last 31 days are loaded; a custom range reaching further back loads from its first day.
+  const loadFrom = range === "custom" ? [from, to].sort()[0] : "";
 
   // Live positions are tiny (one row per person), so they poll faster than visits.
   const loadLive = useCallback(async () => {
@@ -63,15 +74,17 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
 
   const load = useCallback(async () => {
     setLoading(true);
-    const since = new Date(Date.now() - 31 * 86_400_000).toISOString();
-    const visits = (cols: string) => supabase.from("visits").select(cols).or(`planned_at.gte.${since},check_in_at.gte.${since}`).order("planned_at", { ascending: false }).limit(1000);
+    const base = Date.now() - 31 * 86_400_000;
+    const custom = loadFrom ? new Date(`${loadFrom}T00:00:00`).getTime() : base;
+    const since = new Date(Math.min(base, custom)).toISOString();
+    const visits = (cols: string) => supabase.from("visits").select(cols).or(`planned_at.gte.${since},check_in_at.gte.${since}`).order("planned_at", { ascending: false }).limit(custom < base ? 3000 : 1000);
     const [first, p] = await Promise.all([visits(COLS + DRIVE_COL), supabase.from("profiles").select("id,name"), loadLive()]);
     const v = first.error ? await visits(COLS) : first;
     setRows(v.error ? [] : ((v.data || []) as unknown as FieldVisit[]));
     setPeople(Object.fromEntries((p.data || []).map((x: { id: string; name: string | null }) => [x.id, x.name || "Unnamed"])));
     setLoadedAt(new Date());
     setLoading(false);
-  }, [supabase, loadLive]);
+  }, [supabase, loadLive, loadFrom]);
 
   useEffect(() => { if (allowed) load(); }, [allowed, load]);
   // Refresh every 2 minutes while the tab is visible: on-site status changes during the day.
@@ -97,11 +110,15 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
   };
 
   const now = loadedAt?.getTime() ?? 0;
+  const [start, end] = useMemo(() => (loadedAt ? rangeBounds(range, loadedAt, from, to) : [0, 0]), [loadedAt, range, from, to]);
   const scoped = useMemo(() => {
     if (!rows || !loadedAt) return [];
-    const start = rangeStart(range, loadedAt);
-    return rows.filter(v => inRange(v, start) && (!rep || v.owner_id === rep));
-  }, [rows, loadedAt, range, rep]);
+    return rows.filter(v => inRange(v, start, end) && (!rep || v.owner_id === rep) && matchesAdvanced(v, adv));
+  }, [rows, loadedAt, start, end, rep, adv]);
+  const purposes = useMemo(() => [...new Set((rows || []).map(v => v.purpose?.trim()).filter(Boolean) as string[])].sort(), [rows]);
+  const repOptions = useMemo(() => [...new Set((rows || []).map(v => v.owner_id).filter(Boolean) as string[])]
+    .map(id => ({ id, name: people[id] || "Unnamed" })).sort((a, b) => a.name.localeCompare(b.name)), [rows, people]);
+  const activeFilters = advancedCount(adv) + (rep ? 1 : 0);
   const shown = useMemo(() => scoped.filter(v => matches(v, filter, now)), [scoped, filter, now]);
   const needs = useMemo(() => findIssues(scoped, now), [scoped, now]);
   const issueIds = useMemo(() => new Set(needs.map(i => i.visit.id)), [needs]);
@@ -133,8 +150,8 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
   const liveNow = live.filter(l => isLive(l, now)).length;
   const events = useMemo(() => {
     if (!loadedAt) return [];
-    return timeline(scoped, live.filter(l => !rep || l.user_id === rep), rangeStart(range, loadedAt), now);
-  }, [scoped, live, rep, range, loadedAt, now]);
+    return timeline(scoped, live.filter(l => !rep || l.user_id === rep), start, now).filter(e => new Date(e.at).getTime() < end);
+  }, [scoped, live, rep, start, end, loadedAt, now]);
 
   // Signed photo URL for the open visit; short-lived, fetched on demand.
   useEffect(() => {
@@ -174,23 +191,62 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {liveNow > 0 && <span className="text-[11px] font-bold text-[#1c1c1c] inline-flex items-center gap-1"><Radio className="w-3.5 h-3.5" />{liveNow} live</span>}
           <LiveShareToggle />
-          <div role="radiogroup" aria-label="Period" className="inline-flex rounded-lg border border-[#ebece6] bg-white p-0.5">
-            {(["today", "7d", "30d"] as Range[]).map(r => (
-              <button key={r} role="radio" aria-checked={range === r} onClick={() => setRange(r)}
-                className={"px-2.5 py-1 rounded-md text-[11px] font-bold " + (range === r ? "bg-[#1c1c1c] text-white" : "text-[#6b6b67]")}>
-                {r === "today" ? "Today" : r === "7d" ? "7 days" : "30 days"}
+          <div role="radiogroup" aria-label="Period" className="inline-flex flex-wrap rounded-lg border border-[#ebece6] bg-white p-0.5">
+            {RANGES.map(r => (
+              <button key={r.key} role="radio" aria-checked={range === r.key} onClick={() => setRange(r.key)}
+                className={"px-2.5 py-1 rounded-md text-[11px] font-bold inline-flex items-center gap-1 " + (range === r.key ? "bg-[#1c1c1c] text-white" : "text-[#6b6b67] hover:text-[#1c1c1c]")}>
+                {r.key === "custom" && <Calendar className="w-3 h-3" />}{r.label}
               </button>
             ))}
           </div>
-          {rep && (
-            <button onClick={() => setRep(null)} className="px-2.5 py-1 rounded-full bg-[#f0f0ec] text-[11px] font-bold inline-flex items-center gap-1">
-              {people[rep] || "Rep"} <X className="w-3 h-3" />
-            </button>
-          )}
+          <button type="button" onClick={() => setShowFilters(v => !v)} aria-expanded={showFilters}
+            className={cn("px-3 py-1.5 rounded-lg border text-[11px] font-bold inline-flex items-center gap-1.5",
+              showFilters || activeFilters ? "bg-[#1c1c1c] border-[#1c1c1c] text-white" : "bg-white border-[#ebece6] text-[#1c1c1c] hover:border-[#1c1c1c]")}>
+            <SlidersHorizontal className="w-3.5 h-3.5" /> Filters
+            {activeFilters > 0 && <span className="px-1.5 rounded bg-[var(--accent)] text-[#1c1c1c] text-[10px]">{activeFilters}</span>}
+          </button>
         </div>
       </div>
 
-      <div className={cn("grid grid-cols-1 gap-4", compact ? "lg:grid-cols-[280px_1fr]" : "lg:grid-cols-[300px_1fr_300px]")}>
+      {range === "custom" && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-[#55554f]">
+          <Calendar className="w-3.5 h-3.5" />
+          <label className="inline-flex items-center gap-1.5">From
+            <input type="date" value={from} max={to} onChange={e => e.target.value && setFrom(e.target.value)} className="input py-1 px-2 text-xs w-auto" />
+          </label>
+          <label className="inline-flex items-center gap-1.5">To
+            <input type="date" value={to} min={from} max={isoDay(new Date())} onChange={e => e.target.value && setTo(e.target.value)} className="input py-1 px-2 text-xs w-auto" />
+          </label>
+          {([["This week", 6], ["Last 14 days", 13], ["Last 90 days", 89]] as const).map(([label, d]) => (
+            <button key={label} type="button" onClick={() => { setFrom(isoDay(new Date(Date.now() - d * 86_400_000))); setTo(isoDay(new Date())); }}
+              className="px-2.5 py-1 rounded-full border border-[#ebece6] bg-white hover:border-[#1c1c1c]">{label}</button>
+          ))}
+        </div>
+      )}
+
+      {(showFilters || activeFilters > 0) && (
+        <div className="card mb-3 p-3 flex flex-wrap items-end gap-2">
+          <label className="flex-1 min-w-[180px]">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-[#9a9a94] mb-1">Search</span>
+            <span className="relative block">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9a9a94]" />
+              <input value={adv.q} onChange={e => setAdv(a => ({ ...a, q: e.target.value }))} placeholder="Client, purpose or outcome" className="input w-full py-1.5 pl-8 text-xs" />
+            </span>
+          </label>
+          <Pick label="Executive" value={rep || ""} onChange={v => setRep(v || null)} options={[["", "Everyone"], ...repOptions.map(r => [r.id, r.name] as [string, string])]} />
+          <Pick label="Purpose" value={adv.purpose} onChange={v => setAdv(a => ({ ...a, purpose: v }))} options={[["", "Any purpose"], ...purposes.map(p => [p, p] as [string, string])]} />
+          <Pick label="Outcome" value={adv.outcome} onChange={v => setAdv(a => ({ ...a, outcome: v as Advanced["outcome"] }))} options={[["any", "Any"], ["logged", "Logged"], ["missing", "Done, not logged"]]} />
+          <Pick label="Photo proof" value={adv.photo} onChange={v => setAdv(a => ({ ...a, photo: v as Advanced["photo"] }))} options={[["any", "Any"], ["yes", "With photo"], ["no", "Checked in, no photo"]]} />
+          <Pick label="GPS" value={adv.gps} onChange={v => setAdv(a => ({ ...a, gps: v as Advanced["gps"] }))} options={[["any", "Any"], ["good", "Accurate"], ["weak", "Weak (over 150m)"], ["none", "No GPS"]]} />
+          {activeFilters > 0 && (
+            <button type="button" onClick={() => { setAdv(NO_ADVANCED); setRep(null); }} className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-[#55554f] hover:text-[#1c1c1c] inline-flex items-center gap-1">
+              <X className="w-3 h-3" /> Clear all
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className={cn("grid grid-cols-1 gap-4", compact ? "lg:grid-cols-[280px_1fr]" : "md:grid-cols-2 xl:grid-cols-[300px_1fr_320px]")}>
         {/* Needs you */}
         <aside className="card p-0 overflow-hidden flex flex-col lg:max-h-[640px]">
           <div className="px-4 pt-4 pb-3 border-b border-[#ebece6]">
@@ -217,7 +273,7 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
         </aside>
 
         {/* Map */}
-        <div className="card p-0 overflow-hidden relative min-h-[420px] lg:min-h-[640px] isolate">
+        <div className={cn("card p-0 overflow-hidden relative min-h-[460px] lg:min-h-[640px] isolate", !compact && "order-first md:col-span-2 xl:col-span-1 xl:order-none")}>
           <div className="absolute z-[500] top-3 left-3 right-3 flex flex-wrap gap-1 rounded-full bg-white/95 border border-[#ebece6] p-1 w-fit max-w-[calc(100%-1.5rem)] overflow-x-auto shadow-sm">
             {FILTERS.map(f => (
               <button key={f.key} onClick={() => setFilter(f.key)} aria-pressed={filter === f.key} className={chip(filter === f.key)}>
@@ -245,7 +301,7 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
               No check-in locations for this filter yet.
             </div>
           )}
-          <div className="absolute z-[500] bottom-3 left-3 right-14 grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="absolute z-[500] bottom-3 left-3 right-14 grid grid-cols-2 2xl:grid-cols-4 gap-2">
             <Tile label="On site now" value={s.onSite} sub={`of ${s.total}`} />
             <Tile label="Completion" value={s.completion === null ? "—" : `${s.completion}%`} sub={`${s.done} done`} />
             <Tile label="Missed" value={s.missed} sub="12h+ late" warn={s.missed > 0} />
@@ -431,5 +487,16 @@ function Timeline({ events, people, onPick }: { events: TimelineEvent[]; people:
         );
       })}
     </ol>
+  );
+}
+
+function Pick({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: [string, string][] }) {
+  return (
+    <label className="min-w-[140px]">
+      <span className="block text-[10px] font-bold uppercase tracking-wider text-[#9a9a94] mb-1">{label}</span>
+      <select value={value} onChange={e => onChange(e.target.value)} className="input w-full py-1.5 text-xs">
+        {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>
+    </label>
   );
 }
