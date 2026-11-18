@@ -94,7 +94,7 @@ export function DocGenerator({ tpl, employees, attendance, companyName, onClose 
   }
 
   return (
-    <div className="grid gap-3 lg:grid-cols-[300px_1fr]">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[300px_1fr]">
       <div className="card p-4 space-y-3 self-start">
         <div className="text-sm font-bold text-[#1c1c1c]">{tpl.name}</div>
         <label className="text-xs text-[#6b6b67] block space-y-1">Employee

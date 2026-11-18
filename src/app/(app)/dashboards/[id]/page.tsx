@@ -155,7 +155,7 @@ export default function DashboardBuilderPage() {
           {profile && <DashboardGrid profile={profile} range={ALL_TIME} items={items} />}
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[220px_1fr_260px]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[220px_1fr_260px]">
           {/* Library */}
           <aside className="card p-3 space-y-3 h-fit">
             <div className="text-xs font-bold text-[#1c1c1c]">Widgets</div>

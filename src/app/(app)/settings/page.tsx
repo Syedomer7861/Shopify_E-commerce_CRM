@@ -1172,9 +1172,9 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[232px_minmax(0,1fr)] items-start">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[232px_minmax(0,1fr)] items-start">
         {/* Section menu: a sticky list on desktop, a scrolling strip of chips on phones. */}
-        <nav aria-label="Settings sections" className="card p-2 lg:sticky lg:top-6">
+        <nav aria-label="Settings sections" className="card p-2 min-w-0 lg:sticky lg:top-6">
           <div className="flex lg:flex-col gap-1 overflow-x-auto scroller-hide lg:overflow-visible">
             {SETTINGS_SECTIONS.map(group => (
               <div key={group.label} className="contents lg:block lg:pb-2">

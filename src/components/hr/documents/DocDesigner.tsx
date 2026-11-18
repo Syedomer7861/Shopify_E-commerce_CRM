@@ -171,7 +171,7 @@ export function DocDesigner({ initial, onClose, onSaved }: { initial: DocTemplat
         <span className="text-[11px] text-[#9a9a94] self-center ml-1">Type {"{{anything}}"} for a value you fill in when printing.</span>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[1fr_260px]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_260px]">
         <div ref={wrap} className="card p-3 bg-[#e9eae4] overflow-hidden" onPointerDown={e => { if (e.target === e.currentTarget) setSel(null); }}>
           <div style={{ width: page.w * zoom, height: page.h * zoom }} className="mx-auto">
             <div style={{ width: page.w, height: page.h, transform: `scale(${zoom})`, transformOrigin: "top left" }}

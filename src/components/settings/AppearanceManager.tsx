@@ -56,7 +56,7 @@ export function AppearanceManager() {
   if (!saved) return <div className="py-16 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
       <div className="card p-5 space-y-6">
         <div>
           <h2 className="text-sm font-bold text-[#1c1c1c]">Appearance</h2>
