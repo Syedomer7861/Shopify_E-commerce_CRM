@@ -9,7 +9,7 @@ import { RecordsModule, ModuleTabs, type RecordsConfig } from "./RecordsModule";
  * A whole module page from config: one tab per table the viewer may see.
  * Used by Finance, Service Desk, Leads & Deals and Field Visits.
  */
-export function ModulePage({ title, subtitle, tabs, overview }: { title: string; subtitle: string; tabs: { label: string; config: RecordsConfig }[]; overview?: ReactNode }) {
+export function ModulePage({ title, subtitle, tabs, overview, footer }: { title: string; subtitle: string; tabs: { label: string; config: RecordsConfig }[]; overview?: ReactNode; footer?: ReactNode }) {
   const { profile, loading } = useCurrentProfile();
   // ?tab=<table> opens that tab (global search links straight to it).
   const [active, setActive] = useState<string | null>(() =>
@@ -28,6 +28,7 @@ export function ModulePage({ title, subtitle, tabs, overview }: { title: string;
       {overview}
       <ModuleTabs tabs={allowed.map(t => ({ key: t.config.table, label: t.label }))} active={current.config.table} onChange={setActive} />
       <RecordsModule key={current.config.table} config={current.config} profile={profile} />
+      {footer}
     </div>
   );
 }

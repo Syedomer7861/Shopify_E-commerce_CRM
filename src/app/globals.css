@@ -285,3 +285,15 @@ h1, h2, h3, h4 {
 html[data-density="compact"] #main-application-content .card { padding: 0.75rem 1rem; }
 html[data-density="compact"] #main-application-content .table-row { padding-top: 0.5rem; padding-bottom: 0.5rem; }
 html[data-density="compact"] #main-application-content .table-header { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+
+/* Field command map (src/components/field/FieldMap.tsx): muted tiles, neutral pins. */
+.field-tiles { filter: grayscale(1) contrast(0.9) brightness(1.05); }
+.field-pin { display: block; width: 22px; height: 22px; border-radius: 9999px; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); background: #9a9a94; cursor: pointer; }
+.field-pin--done { background: #1c1c1c; }
+.field-pin--on_site { background: #1c1c1c; box-shadow: 0 0 0 6px rgba(28,28,28,.15), 0 1px 4px rgba(0,0,0,.25); animation: field-pulse 2s ease-out infinite; }
+.field-pin--issue { background: #e11d48; box-shadow: 0 0 0 6px rgba(225,29,72,.15), 0 1px 4px rgba(0,0,0,.25); }
+.field-pin--sel { transform: scale(1.35); outline: 2px solid #1c1c1c; outline-offset: 2px; }
+.field-tip { border-radius: 10px; border: 1px solid #ebece6; box-shadow: 0 4px 16px rgba(0,0,0,.08); font: 600 11px/1.35 inherit; padding: 6px 10px; }
+.field-tip span { font-weight: 400; color: #6b6b67; }
+@keyframes field-pulse { 0% { box-shadow: 0 0 0 0 rgba(28,28,28,.3), 0 1px 4px rgba(0,0,0,.25); } 100% { box-shadow: 0 0 0 12px rgba(28,28,28,0), 0 1px 4px rgba(0,0,0,.25); } }
+@media (prefers-reduced-motion: reduce) { .field-pin--on_site { animation: none; } }

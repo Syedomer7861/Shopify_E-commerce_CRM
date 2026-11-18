@@ -19,6 +19,8 @@ import { hasPermission } from "@/lib/permissions";
 import AnnouncementFeed from "@/components/AnnouncementFeed";
 import { KpiScorecard } from "@/components/kpi/KpiScorecard";
 import { OrgSnapshot } from "@/components/organisation/overview/OrgSnapshot";
+import { FieldOverview, SalesOverview, FinanceOverview, ServiceDeskOverview } from "@/components/records/DeptOverviews";
+import { FieldCommand } from "@/components/field/FieldCommand";
 
 /** Live counts for the modules this person can open. RLS scopes every number to what they may see. */
 function Pulse({ profile, range }: { profile: Profile; range: DateRange }) {
@@ -85,6 +87,17 @@ export const HOME_WIDGETS: HomeWidget[] = [
   { key: "announcements", label: "Announcements", category: "Organisation", description: "Organisation announcements and bulletins.", wide: true, builderOnly: true, allowed: () => true, render: () => <AnnouncementFeed /> },
   { key: "org-snapshot", label: "Organisation snapshot", category: "Organisation", description: "Active employees, departments, leave today, new joiners. Admins and organisation viewers only.", wide: true, builderOnly: true,
     allowed: p => hasPermission(p, "manage_team") || can(p, "organisation", "view") !== null, render: () => <OrgSnapshot /> },
+  // Department overviews and the field map. Builder only, so no role's default home changes.
+  { key: "field-command", label: "Field command map", category: "Field team", description: "Live map of check-ins, reps' routes, visits that need attention and photo proof.", wide: true, builderOnly: true,
+    allowed: p => can(p, "visits", "view") !== null, render: () => <FieldCommand className="" /> },
+  { key: "field-overview", label: "Field visits overview", category: "Field team", description: "Visits today, missed, completed and check-ins per day.", wide: true, builderOnly: true,
+    allowed: p => can(p, "visits", "view") !== null, render: () => <FieldOverview /> },
+  { key: "sales-overview", label: "Sales pipeline overview", category: "Sales & CRM", description: "Lead funnel, deal values and conversion.", wide: true, builderOnly: true,
+    allowed: p => can(p, "leads", "view") !== null || can(p, "deals", "view") !== null, render: () => <SalesOverview /> },
+  { key: "finance-overview", label: "Finance overview", category: "Finance", description: "Claims, invoices due and overdue, spend by category.", wide: true, builderOnly: true,
+    allowed: p => can(p, "expenses", "view") !== null || can(p, "invoices", "view") !== null, render: () => <FinanceOverview /> },
+  { key: "support-overview", label: "Service desk overview", category: "Support", description: "Open tickets, SLA breaches and resolution times.", wide: true, builderOnly: true,
+    allowed: p => can(p, "tickets", "view") !== null, render: () => <ServiceDeskOverview /> },
   { key: "approvals", label: "Approvals waiting on me", category: "Tasks & productivity", description: "Requests waiting for the viewer's decision.", title: "Waiting on you", href: "/approvals", allowed: p => visibleModules(p).some(m => m.key === "approvals"), render: p => <ApprovalsInbox profile={p} compact /> },
 ];
 
