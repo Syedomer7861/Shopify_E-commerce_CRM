@@ -26,7 +26,9 @@ export default function FieldVisitsPage() {
     const { row, reload } = checkingIn;
     const supabase = createClient();
     const path = `${profile.org_id}/${profile.id}/${row.id}-${proof.takenAt.getTime()}.jpg`;
-    const upload = await supabase.storage.from(PROOF_BUCKET).upload(path, proof.photo, { contentType: "image/jpeg" });
+    // The org's own Google Drive first, when switched on; otherwise (or if Drive fails) the app's storage.
+    const inDrive = await toDrive(row.id, proof.photo);
+    const upload = inDrive ? { error: null } : await supabase.storage.from(PROOF_BUCKET).upload(path, proof.photo, { contentType: "image/jpeg" });
     // Only a database that hasn't had migration 20261112a yet may check in without the photo.
     if (upload.error && !/bucket not found/i.test(upload.error.message)) {
       throw new Error("Couldn't upload the photo. Check your connection and try again.");
@@ -39,14 +41,32 @@ export default function FieldVisitsPage() {
       check_in_lat: Number(proof.lat.toFixed(6)),
       check_in_lng: Number(proof.lng.toFixed(6)),
       // Photo columns arrive with migration 20261112a; until then the check-in still saves with location.
-      ...(upload.error ? {} : { check_in_photo_path: path, check_in_accuracy_m: Number(proof.accuracyM.toFixed(1)) }),
+      ...(upload.error ? {} : { check_in_photo_path: inDrive ? null : path, check_in_accuracy_m: Number(proof.accuracyM.toFixed(1)) }),
     }).eq("id", row.id);
     if (error) throw new Error(error.message);
 
     if (upload.error) toast("Checked in with location. The photo wasn't saved: photo storage isn't set up yet (ask your admin).", { duration: 7000 });
-    else toast.success("Checked in with photo and location");
+    else toast.success(inDrive ? "Checked in. Photo saved to Google Drive." : "Checked in with photo and location");
+    logToSheet(row.id, "checked_in");
     setCheckingIn(null);
     reload();
+  }
+
+  async function toDrive(visitId: string, photo: Blob) {
+    try {
+      const form = new FormData();
+      form.append("visitId", visitId);
+      form.append("photo", photo, "checkin.jpg");
+      const res = await fetch("/api/field/proof", { method: "POST", body: form });
+      const data = await res.json().catch(() => ({}));
+      if (data.error && res.ok) toast(data.error);
+      return res.ok && data.stored === "drive";
+    } catch { return false; }
+  }
+
+  // Fire and forget: the visit is already saved; the sheet is a copy.
+  function logToSheet(visitId: string, event: "checked_in" | "completed") {
+    fetch("/api/field/sheet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ visitId, event }) }).catch(() => {});
   }
 
   async function viewProof(path: string) {
@@ -61,7 +81,7 @@ export default function FieldVisitsPage() {
     const { error } = await createClient().from("visits")
       .update({ status: "completed", check_out_at: new Date().toISOString(), outcome: outcome.trim() || null }).eq("id", row.id);
     if (error) toast.error(error.message);
-    else reload();
+    else { logToSheet(row.id, "completed"); reload(); }
   }
 
   const link = "text-[10px] font-bold underline text-[#1c1c1c]";
@@ -74,7 +94,7 @@ export default function FieldVisitsPage() {
       { key: "planned_at", label: "Planned", format: when },
       { key: "check_in_at", label: "Checked in", format: when },
       {
-        key: "check_in_lat", label: "Proof", format: (lat, row) => lat == null && !row.check_in_photo_path ? "—" : (
+        key: "check_in_lat", label: "Proof", format: (lat, row) => lat == null && !row.check_in_photo_path && !row.check_in_photo_drive_id ? "—" : (
           <span className="flex gap-2 whitespace-nowrap">
             {lat != null && (
               <a href={`https://www.google.com/maps?q=${lat},${row.check_in_lng}`} target="_blank" rel="noopener noreferrer" className={link}>
@@ -82,6 +102,7 @@ export default function FieldVisitsPage() {
               </a>
             )}
             {row.check_in_photo_path && <button onClick={() => viewProof(row.check_in_photo_path)} className={link}>Photo</button>}
+            {!row.check_in_photo_path && row.check_in_photo_drive_id && <button onClick={() => setProofUrl(`/api/field/proof?visit=${row.id}`)} className={link}>Photo</button>}
           </span>
         ),
       },

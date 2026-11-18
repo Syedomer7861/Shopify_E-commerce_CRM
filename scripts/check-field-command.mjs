@@ -12,7 +12,7 @@ const ts = require_("typescript");
 const js = ts.transpileModule(readFileSync("src/lib/field-command.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
 const mod = { exports: {} };
 new Function("module", "exports", "require", js)(mod, mod.exports, require_);
-const { issues, reps, stats, trail, matches, inRange, rangeStart } = mod.exports;
+const { issues, reps, stats, trail, matches, inRange, rangeStart, timeline, isLive, distanceM } = mod.exports;
 
 const now = new Date("2026-11-18T15:00:00");
 const N = now.getTime();
@@ -51,5 +51,24 @@ assert.deepStrictEqual(trail(rows, "a"), [[17.0, 78.0], [17.2, 78.2]], "trail in
 
 const start = rangeStart("today", now);
 assert.ok(inRange(rows[1], start) && !inRange(v("old", { planned_at: ago(48) }), start));
+
+const live = [
+  { user_id: "a", lat: 17, lng: 78, accuracy_m: 10, sharing: true, started_at: ago(2), updated_at: ago(0.05) },
+  { user_id: "b", lat: 17, lng: 78, accuracy_m: 10, sharing: true, started_at: ago(3), updated_at: ago(1) },
+];
+assert.ok(isLive(live[0], N) && !isLive(live[1], N), "fresh under 10 minutes only");
+const tl = timeline(rows, live, N - 24 * 3_600_000, N);
+const at = (k) => tl.find((e) => e.key === k);
+assert.deepStrictEqual(tl.slice(0, 2).map((e) => e.key), ["p-upcoming", "lu-a"], "newest first; future plans on top");
+assert.strictEqual(at("lu-a").title, "Live now");
+assert.strictEqual(at("lu-b").title, "Last seen (signal lost)");
+assert.ok(at("p-missed").title.startsWith("Missed"), "missed plan labelled");
+assert.ok(at("p-upcoming").title.startsWith("Planned"), "future plan labelled");
+assert.ok(!at("p-done"), "a checked-in visit has no plan event");
+assert.strictEqual(at("o-blank").sub, "No outcome logged");
+assert.ok(at("i-onsite").sub.includes("±400m"));
+for (let i = 1; i < tl.length; i++) assert.ok(new Date(tl[i - 1].at) >= new Date(tl[i].at), "sorted");
+const d = distanceM([17.385, 78.4867], [17.4065, 78.4772]);
+assert.ok(d > 2500 && d < 2700, `Hyderabad ~2.6km, got ${d}`);
 
 console.log("check-field-command: OK");

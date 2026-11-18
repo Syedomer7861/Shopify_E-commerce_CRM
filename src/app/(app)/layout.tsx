@@ -5,6 +5,7 @@ import { ChatWindow } from "@/components/chat/ChatWindow";
 import Sidebar from "@/components/Sidebar";
 import { usePathname } from "next/navigation";
 import { AgentHeartbeat } from "@/components/AgentHeartbeat";
+import { LiveLocationAgent } from "@/components/field/LiveLocation";
 import { AdminNotifier } from "@/components/AdminNotifier";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -30,6 +31,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <ChatProvider>
       <div className="app-ui flex flex-col lg:flex-row h-[100dvh] overflow-hidden bg-[#f2f3ee]">
         <AgentHeartbeat />
+        <LiveLocationAgent />
         <OrgThemeApplier />
         <ModuleGuard />
         <MfaGate />

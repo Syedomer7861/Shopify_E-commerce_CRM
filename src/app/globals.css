@@ -286,14 +286,23 @@ html[data-density="compact"] #main-application-content .card { padding: 0.75rem 
 html[data-density="compact"] #main-application-content .table-row { padding-top: 0.5rem; padding-bottom: 0.5rem; }
 html[data-density="compact"] #main-application-content .table-header { padding-top: 0.5rem; padding-bottom: 0.5rem; }
 
-/* Field command map (src/components/field/FieldMap.tsx): muted tiles, neutral pins. */
-.field-tiles { filter: grayscale(1) contrast(0.9) brightness(1.05); }
-.field-pin { display: block; width: 22px; height: 22px; border-radius: 9999px; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); background: #9a9a94; cursor: pointer; }
-.field-pin--done { background: #1c1c1c; }
-.field-pin--on_site { background: #1c1c1c; box-shadow: 0 0 0 6px rgba(28,28,28,.15), 0 1px 4px rgba(0,0,0,.25); animation: field-pulse 2s ease-out infinite; }
-.field-pin--issue { background: #e11d48; box-shadow: 0 0 0 6px rgba(225,29,72,.15), 0 1px 4px rgba(0,0,0,.25); }
-.field-pin--sel { transform: scale(1.35); outline: 2px solid #1c1c1c; outline-offset: 2px; }
-.field-tip { border-radius: 10px; border: 1px solid #ebece6; box-shadow: 0 4px 16px rgba(0,0,0,.08); font: 600 11px/1.35 inherit; padding: 6px 10px; }
+/* Field command map (src/components/field/FieldMap.tsx): warm muted tiles, pins in the org accent. */
+.field-tiles { filter: grayscale(1) sepia(0.12) contrast(0.92) brightness(1.05); }
+.field-pin { display: block; width: 24px; height: 24px; border-radius: 9999px; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.22); background: #c4c5bd; cursor: pointer; transition: transform .15s ease; }
+.field-pin:hover { transform: scale(1.15); }
+.field-pin--done { background: radial-gradient(circle, var(--accent) 0 32%, #1c1c1c 34%); }
+.field-pin--on_site { background: var(--accent); border-color: #1c1c1c; animation: field-pulse 2s ease-out infinite; }
+.field-pin--issue { background: #e11d48; box-shadow: 0 0 0 5px rgba(225,29,72,.18), 0 2px 6px rgba(0,0,0,.22); }
+.field-pin--sel { transform: scale(1.35); outline: 3px solid var(--accent); outline-offset: 2px; }
+.field-live { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9999px; background: #1c1c1c; color: var(--accent); font: 700 13px/1 var(--font-sans, system-ui); border: 3px solid var(--accent); box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 30%, transparent), 0 3px 10px rgba(0,0,0,.25); cursor: pointer; }
+.field-live--stale { color: #fff; background: #9a9a94; border-color: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.2); }
+.field-live--sel { transform: scale(1.15); }
+.field-me { display: block; width: 18px; height: 18px; border-radius: 9999px; background: var(--accent); border: 3px solid #1c1c1c; box-shadow: 0 0 0 4px #fff, 0 2px 8px rgba(0,0,0,.3); }
+.field-step { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 9999px; background: #1c1c1c; color: var(--accent); font: 700 10px/1 var(--font-sans, system-ui); border: 2px solid #fff; }
+.field-tip { border-radius: 12px; border: 1px solid #ebece6; box-shadow: 0 6px 20px rgba(0,0,0,.1); font: 600 11px/1.35 var(--font-sans, system-ui); padding: 7px 11px; color: #1c1c1c; }
+/* SVG attributes cannot read CSS vars, so the org accent is applied here. */
+path.field-route-dash { stroke: var(--accent); }
+path.field-me-acc { fill: var(--accent); }
 .field-tip span { font-weight: 400; color: #6b6b67; }
-@keyframes field-pulse { 0% { box-shadow: 0 0 0 0 rgba(28,28,28,.3), 0 1px 4px rgba(0,0,0,.25); } 100% { box-shadow: 0 0 0 12px rgba(28,28,28,0), 0 1px 4px rgba(0,0,0,.25); } }
+@keyframes field-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 70%, transparent), 0 2px 6px rgba(0,0,0,.22); } 100% { box-shadow: 0 0 0 14px transparent, 0 2px 6px rgba(0,0,0,.22); } }
 @media (prefers-reduced-motion: reduce) { .field-pin--on_site { animation: none; } }

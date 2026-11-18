@@ -28,11 +28,20 @@ export function googleOAuthClient() {
   return new OAuth2Client(clientId(), clientSecret(), googleRedirectUri());
 }
 
-export type OrgGoogle = { org_id: string; refresh_token: string; email: string | null; sheet_id: string | null; last_backup_at: string | null; last_backup_status: string | null };
+export type OrgGoogle = {
+  org_id: string; refresh_token: string; email: string | null; sheet_id: string | null; last_backup_at: string | null; last_backup_status: string | null;
+  field_photos_to_drive?: boolean; field_visits_to_sheet?: boolean; field_folder_id?: string | null;
+};
+const CONN_COLS = "org_id, refresh_token, email, sheet_id, last_backup_at, last_backup_status";
+const FIELD_COLS = ", field_photos_to_drive, field_visits_to_sheet, field_folder_id";
 
 export async function getOrgGoogle(orgId: string): Promise<OrgGoogle | null> {
-  const { data } = await createAdminClient().from("org_google_connections").select("org_id, refresh_token, email, sheet_id, last_backup_at, last_backup_status").eq("org_id", orgId).maybeSingle();
-  return data;
+  const db = createAdminClient();
+  // The field switches arrive with migration 20261118i; before it, read the base columns.
+  const full = await db.from("org_google_connections").select(CONN_COLS + FIELD_COLS).eq("org_id", orgId).maybeSingle();
+  if (!full.error) return full.data as OrgGoogle | null;
+  const { data } = await db.from("org_google_connections").select(CONN_COLS).eq("org_id", orgId).maybeSingle();
+  return data as OrgGoogle | null;
 }
 
 function authFor(conn: OrgGoogle) {
@@ -116,3 +125,50 @@ export async function openOrgSheet(conn: OrgGoogle) {
 }
 
 export { cell as sheetCell };
+
+const FIELD_FOLDER = "CodeCrest field visits";
+
+/** Saves a check-in photo into "CodeCrest field visits" in the org's Drive. Private: no sharing is added. */
+export async function uploadFieldPhoto(conn: OrgGoogle, photo: Buffer, name: string) {
+  const drive = google.drive({ version: "v3", auth: authFor(conn) });
+  let folderId = conn.field_folder_id || null;
+  if (folderId) {
+    // The folder may have been deleted or trashed in Drive since.
+    const ok = await drive.files.get({ fileId: folderId, fields: "id, trashed" }).then(r => !r.data.trashed).catch(() => false);
+    if (!ok) folderId = null;
+  }
+  if (!folderId) {
+    folderId = (await drive.files.create({ requestBody: { name: FIELD_FOLDER, mimeType: "application/vnd.google-apps.folder" }, fields: "id" })).data.id!;
+    await createAdminClient().from("org_google_connections").update({ field_folder_id: folderId }).eq("org_id", conn.org_id);
+  }
+  const file = await drive.files.create({
+    requestBody: { name, parents: [folderId] },
+    media: { mimeType: "image/jpeg", body: Readable.from([photo]) },
+    fields: "id",
+  });
+  return file.data.id!;
+}
+
+/** Reads a file the CRM created back out of the org's Drive (drive.file scope). */
+export async function readDriveFile(conn: OrgGoogle, fileId: string) {
+  const drive = google.drive({ version: "v3", auth: authFor(conn) });
+  const res = await drive.files.get({ fileId, alt: "media" }, { responseType: "arraybuffer" });
+  return Buffer.from(res.data as ArrayBuffer);
+}
+
+/** Sheet tab names can't hold : \ / ? * [ ] and max 100 chars (same rule as the old Apps Script). */
+export const sheetTabName = (name: string) => name.replace(/[:\/?*[\]]/g, "").trim().slice(0, 100) || "Unknown";
+
+/**
+ * Field visit log in the org's live sheet: one row per event on the
+ * "Field visits" tab, and the same row on a tab per executive.
+ */
+export async function appendFieldVisitRow(conn: OrgGoogle, row: Record<string, unknown>, executive: string) {
+  const doc = await openOrgSheet(conn);
+  const headers = Object.keys(row);
+  const clean = Object.fromEntries(Object.entries(row).map(([k, v]) => [k, cell(v)]));
+  for (const title of ["Field visits", sheetTabName(executive)]) {
+    const sheet = doc.sheetsByTitle[title] ?? await doc.addSheet({ title, headerValues: headers });
+    await sheet.addRow(clean, { raw: true });
+  }
+}

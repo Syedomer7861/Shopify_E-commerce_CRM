@@ -4,7 +4,7 @@ import { confirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
-import { CheckCircle2, CloudUpload, ExternalLink, Loader2 } from "lucide-react";
+import { Camera, CheckCircle2, CloudUpload, ExternalLink, Loader2, Sheet } from "lucide-react";
 
 type Status = {
   enabled: boolean;
@@ -13,6 +13,8 @@ type Status = {
   sheetUrl: string | null;
   lastBackupAt: string | null;
   lastBackupStatus: string | null;
+  fieldPhotosToDrive?: boolean;
+  fieldVisitsToSheet?: boolean;
 };
 
 const RESULT: Record<string, [ "success" | "error", string ]> = {
@@ -66,6 +68,14 @@ export default function GoogleBackupCard() {
     }
   };
 
+  const setField = async (key: "fieldPhotosToDrive" | "fieldVisitsToSheet", value: boolean) => {
+    setS(prev => (prev ? { ...prev, [key]: value } : prev));
+    const res = await fetch("/api/google/connection", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [key]: value }) });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) toast.success(value ? "Switched on" : "Switched off");
+    else { toast.error(data.error || "Could not save"); await load(); }
+  };
+
   if (denied) return <div className="card p-6 text-xs text-[#5f5f5d]">Only an admin of this workspace can manage Google backups.</div>;
   if (!s) return <div className="card p-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-[#5f5f5d]" /></div>;
 
@@ -112,8 +122,47 @@ export default function GoogleBackupCard() {
             )}
             <button onClick={disconnect} disabled={busy} className="text-xs font-semibold text-rose-600 hover:text-rose-700 disabled:opacity-50">Disconnect</button>
           </div>
+
+          <div className="border-t border-[#ebece6] pt-4 space-y-3">
+            <div>
+              <h4 className="text-xs font-bold text-[#1c1c1c]">Field visits (offline team)</h4>
+              <p className="text-[11px] text-[#5f5f5d] mt-0.5">Keep check-in photos in your own Drive instead of the app&apos;s storage, and log every visit in your sheet like the old Google Form.</p>
+            </div>
+            <FieldSwitch icon={<Camera className="w-4 h-4" />} on={!!s.fieldPhotosToDrive} onChange={v => setField("fieldPhotosToDrive", v)}
+              title="Save check-in photos to Google Drive"
+              desc="New photos go to a private “CodeCrest field visits” folder. Managers still see them in the app. If Drive is unreachable the photo is kept in the app so proof is never lost." />
+            <FieldSwitch icon={<Sheet className="w-4 h-4" />} on={!!s.fieldVisitsToSheet} onChange={v => setField("fieldVisitsToSheet", v)}
+              title="Log visits in Google Sheets"
+              desc="Each check-in and completion adds a row to a “Field visits” tab and to a tab per executive, with location, Google Maps link and photo link." />
+          </div>
         </div>
       )}
+
+      <details className="rounded-xl bg-[#f6f7f2] px-4 py-3 text-[11px] text-[#3a3a36]">
+        <summary className="cursor-pointer font-bold text-[#1c1c1c]">How to set it up</summary>
+        <ol className="mt-2 space-y-1.5 list-decimal pl-4">
+          <li>Click <b>Connect Google</b> and sign in with the Google account that should own the files (use a company account, not a personal one).</li>
+          <li>Allow Google Drive access. The CRM can only see files it creates, never the rest of your Drive.</li>
+          <li>Switch on <b>Save check-in photos to Google Drive</b> and/or <b>Log visits in Google Sheets</b>.</li>
+          <li>Open the live data sheet from the link above. New tabs “Field visits” and one per executive appear after the first check-in.</li>
+          <li>To share with a manager outside the CRM, share that sheet or the “CodeCrest field visits” folder from Google Drive.</li>
+        </ol>
+        <p className="mt-2 text-[#5f5f5d]">Photos already taken stay where they are. Disconnecting stops new uploads; files already in your Drive stay there.</p>
+      </details>
     </div>
+  );
+}
+
+function FieldSwitch({ icon, title, desc, on, onChange }: { icon: React.ReactNode; title: string; desc: string; on: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-start gap-3 rounded-xl border border-[#ebece6] p-3 cursor-pointer hover:border-[#c4c5bd]">
+      <span className="mt-0.5 text-[#5f5f5d]">{icon}</span>
+      <span className="flex-1 min-w-0">
+        <span className="block text-xs font-semibold text-[#1c1c1c]">{title}</span>
+        <span className="block text-[11px] text-[#5f5f5d] leading-relaxed">{desc}</span>
+      </span>
+      <input type="checkbox" role="switch" checked={on} onChange={e => onChange(e.target.checked)} className="sr-only peer" />
+      <span aria-hidden className="relative mt-0.5 w-9 h-5 shrink-0 rounded-full bg-[#d4d5cd] transition-colors peer-checked:bg-[var(--accent)] peer-focus-visible:ring-2 peer-focus-visible:ring-[#1c1c1c] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-4" />
+    </label>
   );
 }

@@ -20,7 +20,24 @@ export async function GET() {
     sheetUrl: conn?.sheet_id ? `https://docs.google.com/spreadsheets/d/${conn.sheet_id}` : null,
     lastBackupAt: conn?.last_backup_at ?? null,
     lastBackupStatus: conn?.last_backup_status ?? null,
+    fieldPhotosToDrive: conn?.field_photos_to_drive ?? false,
+    fieldVisitsToSheet: conn?.field_visits_to_sheet ?? false,
   });
+}
+
+/** Field visit switches: proof photos into Drive, visit rows into the sheet. */
+export async function PATCH(req: NextRequest) {
+  const { errorResponse, profile } = await ensureAdmin();
+  if (errorResponse) return errorResponse;
+  const body = await req.json().catch(() => ({}));
+  const change: Record<string, boolean> = {};
+  if (typeof body?.fieldPhotosToDrive === "boolean") change.field_photos_to_drive = body.fieldPhotosToDrive;
+  if (typeof body?.fieldVisitsToSheet === "boolean") change.field_visits_to_sheet = body.fieldVisitsToSheet;
+  if (!profile?.org_id || !Object.keys(change).length) return NextResponse.json({ error: "Nothing to change" }, { status: 400 });
+  const { data, error } = await createAdminClient().from("org_google_connections").update(change).eq("org_id", profile.org_id).select("org_id");
+  if (error) return NextResponse.json({ error: /column/.test(error.message) ? "This needs the latest update. Ask support." : "Could not save" }, { status: 500 });
+  if (!data?.length) return NextResponse.json({ error: "Connect Google first." }, { status: 400 });
+  return NextResponse.json({ ok: true });
 }
 
 /** Back up now (at most once an hour). */

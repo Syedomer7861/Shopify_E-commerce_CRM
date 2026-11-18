@@ -1,22 +1,27 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { AlertTriangle, Camera, Clock, ExternalLink, Loader2, MapPin, Navigation, RefreshCw, Users, X } from "lucide-react";
+import { AlertTriangle, Camera, Clock, Crosshair, ExternalLink, History, LogIn, LogOut, Loader2, MapPin, Maximize2, Navigation, Radio, RefreshCw, Users, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { can } from "@/lib/access";
 import { cn } from "@/lib/utils";
 import {
-  inRange, issues as findIssues, isMissed, matches, rangeStart, reps as repSummaries, stats as dayStats, trail,
-  type FieldVisit, type Filter, type Issue, type Range,
+  inRange, issues as findIssues, isLive, isMissed, matches, rangeStart, reps as repSummaries, stats as dayStats, timeline, trail,
+  type FieldVisit, type Filter, type Issue, type LiveLocation, type Range, type TimelineEvent,
 } from "@/lib/field-command";
-import type { MapPoint } from "./FieldMap";
+import type { LivePoint, MapPoint, MePoint } from "./FieldMap";
+import { LiveShareToggle } from "./LiveLocation";
 
 const FieldMap = dynamic(() => import("./FieldMap").then(m => m.FieldMap), {
   ssr: false, loading: () => <div className="h-full grid place-items-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin" /></div>,
 });
 
 const COLS = "id, party_name, purpose, status, planned_at, check_in_at, check_out_at, check_in_lat, check_in_lng, check_in_accuracy_m, check_in_photo_path, outcome, owner_id, created_at";
+// Added by migration 20261118i; the query falls back to COLS until it is applied.
+const DRIVE_COL = ", check_in_photo_drive_id";
+const LIVE_COLS = "user_id, lat, lng, accuracy_m, sharing, started_at, updated_at";
+const ago = (v: string, now: number) => { const m = Math.max(0, Math.round((now - new Date(v).getTime()) / 60_000)); return m < 1 ? "just now" : m < 60 ? `${m} min ago` : `${Math.floor(m / 60)}h ${m % 60}m ago`; };
 const PROOF_BUCKET = "visit-proofs";
 const time = (v: string | null) => (v ? new Date(v).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "—");
 const dayTime = (v: string | null) => (v ? new Date(v).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—");
@@ -43,19 +48,30 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
   const [photo, setPhoto] = useState<{ id: string; url: string | null } | null>(null);
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
+  const [live, setLive] = useState<LiveLocation[]>([]);
+  const [me, setMe] = useState<MePoint | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [layers, setLayers] = useState({ visits: true, live: true, route: true });
+  const [fitToken, setFitToken] = useState(0);
+  const [tab, setTab] = useState<"team" | "timeline">("team");
+
+  // Live positions are tiny (one row per person), so they poll faster than visits.
+  const loadLive = useCallback(async () => {
+    const { data, error } = await supabase.from("field_live_locations").select(LIVE_COLS);
+    if (!error) setLive((data || []) as LiveLocation[]);
+  }, [supabase]);
 
   const load = useCallback(async () => {
     setLoading(true);
     const since = new Date(Date.now() - 31 * 86_400_000).toISOString();
-    const [v, p] = await Promise.all([
-      supabase.from("visits").select(COLS).or(`planned_at.gte.${since},check_in_at.gte.${since}`).order("planned_at", { ascending: false }).limit(1000),
-      supabase.from("profiles").select("id,name"),
-    ]);
+    const visits = (cols: string) => supabase.from("visits").select(cols).or(`planned_at.gte.${since},check_in_at.gte.${since}`).order("planned_at", { ascending: false }).limit(1000);
+    const [first, p] = await Promise.all([visits(COLS + DRIVE_COL), supabase.from("profiles").select("id,name"), loadLive()]);
+    const v = first.error ? await visits(COLS) : first;
     setRows(v.error ? [] : ((v.data || []) as unknown as FieldVisit[]));
     setPeople(Object.fromEntries((p.data || []).map((x: { id: string; name: string | null }) => [x.id, x.name || "Unnamed"])));
     setLoadedAt(new Date());
     setLoading(false);
-  }, [supabase]);
+  }, [supabase, loadLive]);
 
   useEffect(() => { if (allowed) load(); }, [allowed, load]);
   // Refresh every 2 minutes while the tab is visible: on-site status changes during the day.
@@ -64,6 +80,21 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
     const id = setInterval(() => { if (document.visibilityState === "visible") load(); }, 120_000);
     return () => clearInterval(id);
   }, [allowed, load]);
+  useEffect(() => {
+    if (!allowed) return;
+    const id = setInterval(() => { if (document.visibilityState === "visible") { loadLive(); setLoadedAt(new Date()); } }, 30_000);
+    return () => clearInterval(id);
+  }, [allowed, loadLive]);
+
+  const locate = () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      p => { setMe({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }); setLocating(false); },
+      () => setLocating(false),
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 30_000 },
+    );
+  };
 
   const now = loadedAt?.getTime() ?? 0;
   const scoped = useMemo(() => {
@@ -91,17 +122,33 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
     kind: issueIds.has(v.id) ? "issue" : v.status === "checked_in" ? "on_site" : v.status === "completed" ? "done" : "other",
     label: v.party_name, sub: `${people[v.owner_id || ""] || "Unassigned"} · ${time(v.check_in_at)}`,
   }));
-  const line = trailRep ? trail(scoped, trailRep) : [];
+  const line = layers.route && trailRep ? trail(scoped, trailRep) : [];
+  // Only people sharing right now appear on the map; someone who switched it off is not shown.
+  const livePoints: LivePoint[] = layers.live ? live.filter(l => l.sharing && (!rep || l.user_id === rep)).map(l => {
+    const name = people[l.user_id] || "Team member";
+    const fresh = isLive(l, now);
+    return { id: l.user_id, lat: Number(l.lat), lng: Number(l.lng), initial: name.slice(0, 1).toUpperCase(), label: name,
+      sub: `${fresh ? "Live" : "Signal lost"} · ${ago(l.updated_at, now)}${l.accuracy_m != null ? ` · ±${Math.round(l.accuracy_m)}m` : ""}`, fresh };
+  }) : [];
+  const liveNow = live.filter(l => isLive(l, now)).length;
+  const events = useMemo(() => {
+    if (!loadedAt) return [];
+    return timeline(scoped, live.filter(l => !rep || l.user_id === rep), rangeStart(range, loadedAt), now);
+  }, [scoped, live, rep, range, loadedAt, now]);
 
   // Signed photo URL for the open visit; short-lived, fetched on demand.
   useEffect(() => {
-    if (!current?.check_in_photo_path) { setPhoto(null); return; }
+    if (!current?.check_in_photo_path) {
+      // Photo kept in the org's Google Drive: streamed through our proxy, never public.
+      setPhoto(current?.check_in_photo_drive_id ? { id: current.id, url: `/api/field/proof?visit=${current.id}` } : null);
+      return;
+    }
     let live = true;
     setPhoto({ id: current.id, url: null });
     supabase.storage.from(PROOF_BUCKET).createSignedUrl(current.check_in_photo_path, 300)
       .then(({ data }) => { if (live) setPhoto({ id: current.id, url: data?.signedUrl ?? "" }); });
     return () => { live = false; };
-  }, [current?.id, current?.check_in_photo_path, supabase]);
+  }, [current?.id, current?.check_in_photo_path, current?.check_in_photo_drive_id, supabase]);
 
   if (!profile || !allowed) return null;
   if (!rows) return <div className="card p-10 text-center text-[#9a9a94]"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>;
@@ -125,6 +172,8 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
           </p>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
+          {liveNow > 0 && <span className="text-[11px] font-bold text-[#1c1c1c] inline-flex items-center gap-1"><Radio className="w-3.5 h-3.5" />{liveNow} live</span>}
+          <LiveShareToggle />
           <div role="radiogroup" aria-label="Period" className="inline-flex rounded-lg border border-[#ebece6] bg-white p-0.5">
             {(["today", "7d", "30d"] as Range[]).map(r => (
               <button key={r} role="radio" aria-checked={range === r} onClick={() => setRange(r)}
@@ -177,7 +226,20 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
               </button>
             ))}
           </div>
-          <FieldMap points={points} trailLine={line} selectedId={selected} onSelect={setSelected} className="absolute inset-0" />
+          <FieldMap points={layers.visits ? points : []} live={livePoints} me={me} trailLine={line} fitToken={fitToken}
+            selectedId={selected} selectedLive={rep} onSelect={setSelected} onSelectLive={id => { setRep(id); setSelected(null); setTab("timeline"); }}
+            className="absolute inset-0" />
+          <div className="absolute z-[500] top-14 right-3 flex flex-col gap-1.5">
+            <MapButton label="Show my location" onClick={locate} on={!!me}>{locating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crosshair className="w-4 h-4" />}</MapButton>
+            <MapButton label="Fit everything" onClick={() => setFitToken(t => t + 1)}><Maximize2 className="w-4 h-4" /></MapButton>
+          </div>
+          <div className="absolute z-[500] top-14 left-3 flex flex-col gap-1 rounded-xl bg-white/95 border border-[#ebece6] p-1.5 shadow-sm text-[11px] font-semibold">
+            {([["visits", "Visits"], ["live", "Live team"], ["route", "Route"]] as const).map(([k, label]) => (
+              <label key={k} className="flex items-center gap-1.5 px-1.5 py-0.5 cursor-pointer text-[#1c1c1c]">
+                <input type="checkbox" checked={layers[k]} onChange={e => setLayers(l => ({ ...l, [k]: e.target.checked }))} className="accent-[#1c1c1c]" />{label}
+              </label>
+            ))}
+          </div>
           {points.length === 0 && (
             <div className="absolute z-[500] inset-x-0 bottom-20 mx-auto w-fit rounded-xl bg-white/95 border border-[#ebece6] px-4 py-2 text-xs text-[#6b6b67] shadow-sm">
               No check-in locations for this filter yet.
@@ -200,10 +262,18 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
                 onRep={() => { setRep(current.owner_id); setSelected(null); }} onClose={() => setSelected(null)} />
             ) : (
               <>
-                <div className="px-4 pt-4 pb-3 border-b border-[#ebece6] flex items-center gap-2">
-                  <Users className="w-4 h-4 text-[#6b6b67]" /><h3 className="text-sm font-bold text-[#1c1c1c]">Team in the field</h3>
-                  <span className="ml-auto text-[10px] text-[#9a9a94]">{team.length} reps</span>
+                <div role="tablist" aria-label="Side panel" className="flex border-b border-[#ebece6]">
+                  {([["team", "Team", <Users key="u" className="w-3.5 h-3.5" />, team.length], ["timeline", "Timeline", <History key="h" className="w-3.5 h-3.5" />, events.length]] as const).map(([k, label, icon, n]) => (
+                    <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+                      className={cn("flex-1 px-4 py-3 text-xs font-bold inline-flex items-center justify-center gap-1.5 border-b-2 -mb-px",
+                        tab === k ? "border-[var(--accent)] text-[#1c1c1c]" : "border-transparent text-[#9a9a94] hover:text-[#1c1c1c]")}>
+                      {icon}{label}<span className="text-[10px] opacity-60 tabular-nums">{n}</span>
+                    </button>
+                  ))}
                 </div>
+                {tab === "timeline" ? (
+                  <Timeline events={events} people={people} onPick={e => { if (e.visitId) setSelected(e.visitId); else if (e.userId) setRep(e.userId); }} />
+                ) : (<>
                 <div className="flex-1 overflow-y-auto divide-y divide-[#f0f0ec]">
                   {team.length === 0 && <p className="py-8 text-center text-xs text-[#9a9a94]">No visits in this period.</p>}
                   {team.map(r => (
@@ -215,6 +285,7 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
                           <div className="text-xs font-semibold text-[#1c1c1c] truncate">{people[r.id] || "Unassigned"}</div>
                           <div className="text-[10px] text-[#9a9a94] truncate">{r.last ? `Last: ${r.last.party_name}, ${time(r.last.check_in_at)}` : "No check-in yet"}</div>
                         </div>
+                        {live.some(l => l.user_id === r.id && isLive(l, now)) && <span className="px-1.5 py-0.5 rounded bg-[var(--accent)] text-[#1c1c1c] text-[9px] font-bold uppercase">Live</span>}
                         {r.onSite > 0 && <span className="px-1.5 py-0.5 rounded bg-[#1c1c1c] text-white text-[9px] font-bold uppercase">On site</span>}
                       </div>
                       <div className="mt-2 grid grid-cols-3 gap-1 text-[10px] text-[#6b6b67] tabular-nums">
@@ -226,6 +297,7 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
                   ))}
                 </div>
                 <p className="px-4 py-2.5 border-t border-[#ebece6] text-[10px] text-[#9a9a94]">Pick a rep to see their route; pick a pin or card for the visit.</p>
+                </>)}
               </>
             )}
           </aside>
@@ -309,5 +381,55 @@ function Fact({ icon, label, value, sub }: { icon: React.ReactNode; label: strin
       <div className="text-sm font-bold text-[#1c1c1c] tabular-nums">{value}</div>
       {sub && <div className="text-[10px] text-amber-600">{sub}</div>}
     </div>
+  );
+}
+
+function MapButton({ label, onClick, on, children }: { label: string; onClick: () => void; on?: boolean; children: React.ReactNode }) {
+  return (
+    <button type="button" onClick={onClick} aria-label={label} title={label}
+      className={cn("w-9 h-9 grid place-items-center rounded-xl border shadow-sm transition-colors",
+        on ? "bg-[#1c1c1c] text-[var(--accent)] border-[#1c1c1c]" : "bg-white/95 text-[#1c1c1c] border-[#ebece6] hover:border-[#1c1c1c]")}>
+      {children}
+    </button>
+  );
+}
+
+const EVENT_ICON: Record<TimelineEvent["kind"], React.ReactNode> = {
+  planned: <Clock className="w-3 h-3" />, check_in: <LogIn className="w-3 h-3" />, check_out: <LogOut className="w-3 h-3" />,
+  live_start: <Radio className="w-3 h-3" />, live_seen: <Radio className="w-3 h-3" />,
+};
+
+/** Everything that happened in the period, newest first, grouped by day. */
+function Timeline({ events, people, onPick }: { events: TimelineEvent[]; people: Record<string, string>; onPick: (e: TimelineEvent) => void }) {
+  if (!events.length) return <p className="flex-1 py-8 text-center text-xs text-[#9a9a94]">Nothing logged in this period yet.</p>;
+  const day = (v: string) => new Date(v).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+  return (
+    <ol className="flex-1 overflow-y-auto px-4 py-3">
+      {events.map((e, i) => {
+        const d = day(e.at);
+        const head = i === 0 || day(events[i - 1].at) !== d;
+        const strong = e.kind === "check_in" || (e.kind === "live_seen" && e.title === "Live now");
+        return (
+          <li key={e.key}>
+            {head && <div className="sticky top-0 bg-white pt-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-[#9a9a94]">{d}</div>}
+            <button type="button" onClick={() => onPick(e)} className="group w-full text-left flex gap-3 pb-3 relative">
+              <span className="absolute left-[11px] top-6 bottom-0 w-px bg-[#ebece6]" aria-hidden />
+              <span className={cn("w-6 h-6 rounded-full grid place-items-center shrink-0 border",
+                strong ? "bg-[var(--accent)] border-[#1c1c1c] text-[#1c1c1c]" : e.title.startsWith("Missed") ? "bg-rose-50 border-rose-200 text-rose-600" : "bg-white border-[#ebece6] text-[#6b6b67]")}>
+                {EVENT_ICON[e.kind]}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-baseline gap-2">
+                  <span className="text-[11px] font-bold tabular-nums text-[#1c1c1c]">{time(e.at)}</span>
+                  <span className="text-[10px] text-[#9a9a94] truncate">{people[e.userId || ""] || "Unassigned"}</span>
+                </span>
+                <span className="block text-xs font-semibold text-[#1c1c1c] group-hover:underline break-words">{e.title}</span>
+                {e.sub && <span className="block text-[10px] text-[#6b6b67] break-words">{e.sub}</span>}
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
