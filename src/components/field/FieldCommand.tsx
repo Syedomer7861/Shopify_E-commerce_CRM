@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { AlertTriangle, Calendar, Camera, Focus, Minimize2, Search, SlidersHorizontal, Clock, Crosshair, ExternalLink, History, LogIn, LogOut, Loader2, MapPin, Maximize2, Navigation, Radio, RefreshCw, Users, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
@@ -59,6 +59,8 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
   const [locating, setLocating] = useState(false);
   const [layers, setLayers] = useState({ visits: true, live: true, route: true });
   const [mapStyle, setMapStyle] = useState<MapStyle>("colour");
+  const layersBox = useRef<HTMLDetailsElement>(null);
+  useEffect(() => { if (layersBox.current && window.matchMedia("(min-width: 640px)").matches) layersBox.current.open = true; }, []);
   useEffect(() => {
     try { const s = localStorage.getItem("field-map-style"); if (MAP_STYLES.some(m => m.key === s)) setMapStyle(s as MapStyle); } catch { /* storage blocked */ }
   }, []);
@@ -316,7 +318,7 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
         {/* Map */}
         <div className={cn("card p-0 overflow-hidden relative min-h-[460px] lg:min-h-[640px] isolate", !compact && "order-first md:col-span-2 xl:col-span-1 xl:order-none",
           expanded && "!fixed !inset-3 z-[300] !min-h-0 shadow-2xl")}>
-          <div className="absolute z-[500] top-3 left-3 right-3 flex flex-wrap gap-1 rounded-full bg-white/95 border border-[#ebece6] p-1 w-fit max-w-[calc(100%-1.5rem)] overflow-x-auto shadow-sm">
+          <div className="absolute z-[500] top-3 left-3 right-3 flex flex-nowrap sm:flex-wrap gap-1 rounded-full bg-white/95 border border-[#ebece6] p-1 w-fit max-w-[calc(100%-1.5rem)] overflow-x-auto shadow-sm">
             {FILTERS.map(f => (
               <button key={f.key} onClick={() => setFilter(f.key)} aria-pressed={filter === f.key} className={chip(filter === f.key)}>
                 {f.dot && <span className={cn("w-1.5 h-1.5 rounded-full", filter === f.key ? "bg-white" : f.dot)} />}
@@ -332,7 +334,10 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
             <MapButton label={expanded ? "Exit full screen (Esc)" : "Full screen"} onClick={() => setExpanded(v => !v)} on={expanded}>{expanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}</MapButton>
             <MapButton label="Fit everything in view" onClick={() => setFitToken(t => t + 1)}><Focus className="w-4 h-4" /></MapButton>
           </div>
-          <div className="absolute z-[500] top-14 left-3 flex flex-col gap-1 rounded-xl bg-white/95 border border-[#ebece6] p-1.5 shadow-sm text-[11px] font-semibold">
+          {/* Folded on phones so it does not cover the map; open on larger screens. */}
+          <details ref={layersBox} className="group absolute z-[500] top-14 left-3 rounded-xl bg-white/95 border border-[#ebece6] p-1.5 shadow-sm text-[11px] font-semibold">
+            <summary className="list-none cursor-pointer px-1.5 py-0.5 text-[#1c1c1c] select-none [&::-webkit-details-marker]:hidden">Layers <span className="text-[#9a9a94] group-open:hidden">▾</span><span className="text-[#9a9a94] hidden group-open:inline">▴</span></summary>
+            <div className="flex flex-col gap-1 mt-1">
             {([["visits", "Visits"], ["live", "Live team"], ["route", "Route"]] as const).map(([k, label]) => (
               <label key={k} className="flex items-center gap-1.5 px-1.5 py-0.5 cursor-pointer text-[#1c1c1c]">
                 <input type="checkbox" checked={layers[k]} onChange={e => setLayers(l => ({ ...l, [k]: e.target.checked }))} className="accent-[#1c1c1c]" />{label}
@@ -344,9 +349,10 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
                 {MAP_STYLES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
               </select>
             </label>
-          </div>
+            </div>
+          </details>
           {points.length === 0 && (
-            <div className="absolute z-[500] inset-x-0 bottom-20 mx-auto w-fit rounded-xl bg-white/95 border border-[#ebece6] px-4 py-2 text-xs text-[#6b6b67] shadow-sm">
+            <div className="absolute z-[500] inset-x-0 top-1/2 -translate-y-1/2 mx-auto w-fit max-w-[calc(100%-1.5rem)] text-center rounded-xl bg-white/95 border border-[#ebece6] px-4 py-2 text-xs text-[#6b6b67] shadow-sm">
               No check-in locations for this filter yet.
             </div>
           )}
@@ -414,10 +420,10 @@ export function FieldCommand({ compact = false, className = "mt-8" }: { compact?
 
 function Tile({ label, value, sub, warn }: { label: string; value: string | number; sub: string; warn?: boolean }) {
   return (
-    <div className="rounded-xl bg-white/95 border border-[#ebece6] px-3 py-2 shadow-sm">
-      <div className="text-[10px] text-[#9a9a94]">{label}</div>
-      <div className={cn("text-lg font-bold tabular-nums leading-tight", warn ? "text-rose-600" : "text-[#1c1c1c]")}>{value}</div>
-      <div className="text-[10px] text-[#9a9a94] truncate">{sub}</div>
+    <div className="rounded-xl bg-white/95 border border-[#ebece6] px-2 py-1 sm:px-3 sm:py-2 shadow-sm min-w-0">
+      <div className="text-[10px] text-[#9a9a94] truncate">{label}</div>
+      <div className={cn("text-base sm:text-lg font-bold tabular-nums leading-tight", warn ? "text-rose-600" : "text-[#1c1c1c]")}>{value}</div>
+      <div className="hidden sm:block text-[10px] text-[#9a9a94] truncate">{sub}</div>
     </div>
   );
 }

@@ -30,8 +30,9 @@ function baseLayers(mod: typeof import("leaflet"), style: MapStyle) {
     // Place names and borders on top, so the photo still reads as a map.
     mod.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19 }),
   ];
-  if (style === "colour") return [mod.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-    maxZoom: 20, subdomains: "abcd", attribution: `${OSM_ATTR} &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>`,
+  // CARTO now shows "API key required" on live sites, so Colour uses Esri's keyless street map.
+  if (style === "colour") return [mod.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+    maxZoom: 19, attribution: "Tiles &copy; Esri",
   })];
   return [mod.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19, subdomains: "abc", className: style === "light" ? "field-tiles" : "", attribution: OSM_ATTR,
